@@ -19,7 +19,7 @@ import qualified Database.Persist.TH as PTH
 import GHC.Generics (Generic)
 import Servant.Docs
 
-import UserTypes
+import Types
 
 PTH.share
   [PTH.mkPersist PTH.sqlSettings, PTH.mkMigrate "migrateAll"]

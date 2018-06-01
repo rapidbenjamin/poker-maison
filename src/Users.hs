@@ -36,7 +36,7 @@ import Servant.API
 import Servant.Docs
 import Servant.Server.Experimental.Auth
 import System.Random
-import UserTypes
+import Types
 
 import qualified Web.JWT as J
 

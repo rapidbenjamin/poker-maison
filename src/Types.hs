@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module UserTypes where
+module Types where
 
 import Data.Aeson (decode)
 import Data.Aeson.Types
@@ -52,9 +52,8 @@ instance FromJSON Register where
 type UserID = Text
 
 data UserProfile = UserProfile
-  { proName :: Text
+  { proUsername :: Text
   , proEmail :: Text
-  , proUsername :: Text
   , proChips :: Int
   } deriving (Eq, Show, Generic)
 

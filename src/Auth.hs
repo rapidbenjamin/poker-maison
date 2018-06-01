@@ -32,13 +32,14 @@ import Database.Persist.Postgresql
 import GHC.Generics
 import Network.Wai
 import Network.Wai.Handler.Warp (run)
+import Prelude
 import Schema
 import Servant
 import Servant.API
 import Servant.Docs
 import Servant.Server.Experimental.Auth
 import System.Random
-import UserTypes
+import Types
 
 import qualified Web.JWT as J
 
@@ -106,18 +107,18 @@ checkExpValid' (Just d) = do
   cur <- getPOSIXTime
   return (J.secondsSinceEpoch d > cur)
 
-getClaimSetFromToken :: Token -> Maybe J.JWTClaimsSet
-getClaimSetFromToken (Token t) =
-  fmap J.claims $ J.decodeAndVerifySignature getSecret t
-
 checkToken :: Token -> Handler Text
-checkToken token = do
-  case getClaimSetFromToken token of
-    Nothing -> throwError (err401 {errBody = "Invalid Token"})
-    Just tokenClaims -> do
+checkToken (Token t) = do
+  liftIO $ print t
+  case J.decodeAndVerifySignature getSecret t of
+    Nothing ->
+      throwError (err401 {errBody = "Could Not Verify Token Signature"})
+    (Just verifiedToken) -> do
       isValid <- liftIO $ checkExpValid tokenClaims
       if isValid
         then case J.iss tokenClaims of
-               Nothing -> throwError (err401 {errBody = "Invalid Token"})
+               Nothing ->
+                 throwError (err401 {errBody = "No issuer in token claims"})
                (Just issuer) -> return $ J.stringOrURIToText issuer
         else throwError (err401 {errBody = "Token Expired"})
+      where tokenClaims = J.claims verifiedToken

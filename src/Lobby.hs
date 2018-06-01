@@ -16,8 +16,9 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
-module API where
+module Lobby where
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (throwE)
@@ -30,37 +31,29 @@ import Database.Persist.Postgresql
 import Network.Wai hiding (run)
 
 import Auth (authHandler)
-import Lobby
 import Servant.API
 import Servant.Client
 import qualified Servant.Docs as Docs
+import Servant.JS
 import Servant.Server
 import Servant.Server.Experimental.Auth
+import Types
 import Users
 
 import Database
 import Schema
 
-type API = UsersAPI :<|> LoginRequiredAPI
+type LobbyAPI = "lobby" :> AuthProtect "JWT" :> Get '[ JSON] UserProfile
 
-type LoginRequiredAPI = LobbyAPI
+lobbyAPI :: Proxy LobbyAPI
+lobbyAPI = Proxy :: Proxy LobbyAPI
 
-loginRequiredAPI :: Proxy LoginRequiredAPI
-loginRequiredAPI = Proxy :: Proxy LoginRequiredAPI
+--lobbyAPIDocs = Docs.markdown $ Docs.docs lobbyAPI
+lobbyServer :: ConnectionString -> Server LobbyAPI
+lobbyServer connString = (h connString)
 
-api :: Proxy API
-api = Proxy :: Proxy API
-
---lobbyApiDocs = Docs.markdown $ Docs.docs loginRequiredAPI
-server :: ConnectionString -> Server API
-server connString =
-  (usersServer connString) :<|> (loginRequiredServer connString)
-
-loginRequiredServer :: ConnectionString -> Server LoginRequiredAPI
-loginRequiredServer connString = lobbyServer connString
-
-app :: ConnectionString -> Application
-app connString = serveWithContext api serverAuthContext (server connString)
-  where
-    serverAuthContext :: Context (AuthHandler Request User ': '[])
-    serverAuthContext = (authHandler connString) :. EmptyContext
+h :: ConnectionString -> User -> Handler UserProfile
+h connString User {..} =
+  return
+    UserProfile
+      {proEmail = userEmail, proChips = userChips, proUsername = userUsername}

@@ -18,7 +18,7 @@ import Database.Persist.Postgresql
   , withPostgresqlConn
   )
 
-import UserTypes
+import Types
 
 import Database.Persist.Sql
 
