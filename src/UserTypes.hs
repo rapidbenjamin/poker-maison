@@ -42,7 +42,7 @@ instance FromJSON Login where
 
 data Register = Register
   { newUserEmail :: Text
-  , newUserName :: Text
+  , newUsername :: Text
   , newUserPassword :: Text
   } deriving (Eq, Show, Generic)
 

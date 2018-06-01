@@ -41,6 +41,7 @@ dependencies:
 - text
 - wai
 - warp
+- servant-docs
 - jwt
 
 library:

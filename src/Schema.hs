@@ -17,6 +17,8 @@ import Data.Text (Text)
 import Database.Persist (Entity(..), Entity)
 import qualified Database.Persist.TH as PTH
 import GHC.Generics (Generic)
+import Servant.Docs
+
 import UserTypes
 
 PTH.share
@@ -37,6 +39,15 @@ instance FromJSON User where
     v .: "password"
   parseJSON _ = mzero
 
+instance ToJSON User where
+  toJSON p =
+    object
+      [ "username" .= userUsername p
+      , "email" .= userEmail p
+      , "chips" .= userChips p
+      , "password" .= userPassword p
+      ]
+
 parseUser :: Object -> Parser User
 parseUser o = do
   uUsername <- o .: "username"
@@ -50,3 +61,14 @@ parseUser o = do
       , userEmail = uEmail
       , userChips = uChips
       }
+
+instance ToSample User where
+  toSamples _ = [("Sample User", g)]
+    where
+      g =
+        User
+          { userChips = 2000
+          , userUsername = "Tom"
+          , userEmail = "gooby@g.com"
+          , userPassword = "n84!@R5G"
+          }

@@ -9,6 +9,13 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module API where
 
@@ -24,6 +31,7 @@ import Network.Wai hiding (run)
 
 import Servant.API
 import Servant.Client
+import qualified Servant.Docs as Docs
 import Servant.Server
 import Servant.Server.Experimental.Auth
 import Users
@@ -40,6 +48,8 @@ loginRequiredAPI = Proxy :: Proxy LoginRequiredAPI
 
 api :: Proxy API
 api = Proxy :: Proxy API
+
+loginapiDocs = Docs.markdown $ Docs.docs loginRequiredAPI
 
 server :: ConnectionString -> Server API
 server connString =
