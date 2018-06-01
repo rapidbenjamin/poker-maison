@@ -29,6 +29,7 @@ import Database.Persist
 import Database.Persist.Postgresql
 import Network.Wai hiding (run)
 
+import Auth (authHandler)
 import Servant.API
 import Servant.Client
 import qualified Servant.Docs as Docs

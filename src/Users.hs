@@ -7,6 +7,7 @@
 
 module Users where
 
+import Auth (signToken)
 import Control.Monad.Except (liftIO)
 import qualified Crypto.Hash.SHA256 as H
 import Data.Aeson (Result(..), fromJSON, toJSON)
@@ -56,24 +57,6 @@ usersServer connString =
   (fetchUserProfileHandler connString) :<|> (loginHandler connString) :<|>
   (registerUserHandler connString)
 
-authHandler :: ConnectionString -> AuthHandler Request User
-  -- FIXME Too nested.
-authHandler connString =
-  let handler req =
-        case lookup "Authorization" (requestHeaders req) of
-          Nothing ->
-            throwError
-              (err401 {errBody = "Missing Token in 'Authorization' header"})
-          Just token -> do
-            email <- checkToken (Token (decodeUtf8 token))
-            maybeUser <- liftIO $ dbgGetUserByEmail connString (email)
-            case maybeUser of
-              Nothing ->
-                throwError
-                  (err401 {errBody = "No User with Given Email Exists in DB"})
-              Just userEntity -> return $ entityVal userEntity
-   in mkAuthHandler handler
-
 fetchUserProfileHandler :: ConnectionString -> User -> Handler UserProfile
 fetchUserProfileHandler connString User {..} =
   return
@@ -109,65 +92,3 @@ registerUserHandler connString Register {..} = do
         of
     Left _ -> throwError (err401 {errBody = "Email Already Taken"})
     _ -> signToken newUserEmail
-
-getSecret :: J.Secret
-getSecret = J.secret "wwaaifidsa9109f0dasfda-=2-13"
-
-getAlgorithm :: J.Algorithm
-getAlgorithm = J.HS256
-
-getNewToken :: User -> Password -> Handler ReturnToken
-getNewToken User {..} password
-  | password /= decodeUtf8 hashedPassword =
-    throwError (err401 {errBody = "Password Invalid"})
-  | otherwise = signToken userEmail
-  where
-    hashedPassword = H.hash $ encodeUtf8 password
-
-randomText :: IO T.Text
-randomText = do
-  gen <- newStdGen
-  let s = T.pack . take 128 $ filter isAlphaNum $ randomRs ('A', 'z') gen
-  return s
-
-signToken :: Text -> Handler ReturnToken
-signToken userId = do
-  expTime <- liftIO $ createExpTime 60 -- expire at 1 hour
-  let jwtClaimsSet =
-        J.def {J.iss = J.stringOrURI userId, J.exp = J.intDate expTime} -- iss is the issuer (username)
-      s = getSecret
-      alg = getAlgorithm
-      token = J.encodeSigned alg s jwtClaimsSet
-  randomText <- liftIO $ randomText
-  return $
-    ReturnToken
-      {access_token = token, refresh_token = randomText, expiration = (60 * 60)}
-
-createExpTime :: Int -> IO NominalDiffTime
-createExpTime min = do
-  cur <- getPOSIXTime
-  return $ cur + (fromIntegral min + 5) * 60 -- add 5 more minutes
-
-checkExpValid = checkExpValid' . J.exp
-
-checkExpValid' :: Maybe J.IntDate -> IO Bool
-checkExpValid' Nothing = return False
-checkExpValid' (Just d) = do
-  cur <- getPOSIXTime
-  return (J.secondsSinceEpoch d > cur)
-
-getClaimSetFromToken :: Token -> Maybe J.JWTClaimsSet
-getClaimSetFromToken (Token t) =
-  fmap J.claims $ J.decodeAndVerifySignature getSecret t
-
-checkToken :: Token -> Handler Text
-checkToken token = do
-  case getClaimSetFromToken token of
-    Nothing -> throwError (err401 {errBody = "Invalid Token"})
-    Just tokenClaims -> do
-      isValid <- liftIO $ checkExpValid tokenClaims
-      if isValid
-        then case J.iss tokenClaims of
-               Nothing -> throwError (err401 {errBody = "Invalid Token"})
-               (Just issuer) -> return $ J.stringOrURIToText issuer
-        else throwError (err401 {errBody = "Token Expired"})
