@@ -14,7 +14,7 @@
 {
       newUserUsername: "Argo",
       newUserEmail: "gooby@goo.com",
-      newUserpassword: "password123"
+      newUserPassword: "password123"
 }
     ```
 
@@ -73,4 +73,37 @@
 
     ```
 
+
+
+
+## GET /profile
+
+### Request:
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Headers:
+    - Authorization: eyJhbGciOiJIUzI1NiIs
+
+Ensure access token is in Authorization header
+### Response:
+
+- Supported content types are:
+
+    - `application/json;charset=utf-8`
+    - `application/json`
+
+- Sample ReturnToken (`application/json;charset=utf-8`, `application/json`):
+
+    ```javascript
+{
+    "proChips": 3000,
+    "proUsername": "Argo",
+    "proEmail": "gooby@goo.com"
+}
+
+    ```
 
