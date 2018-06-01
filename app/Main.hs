@@ -1,20 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Main where
 
 import API
+import Config
 import Data.Aeson
+import qualified Data.ByteString.Char8 as C
 import Data.Text
-import Network.Wai.Handler.Warp (run)
-
 import Database
+import Network.Wai.Handler.Warp (run)
 import Prelude
 import Schema
+import System.Environment (lookupEnv)
 
 main :: IO ()
 main = do
-  connString <- fetchPostgresConnection
-  migrateDB connString
- -- writeFile "docs/api.md" apiDocs
-  run 8000 (app connString)
---  migrateDB localConnString
+  dbConnString <- getDBConnStrFromEnv
+  port <- getPortFromEnv defaultPort
+  migrateDB dbConnString
+  -- writeFile "docs/api.md" apiDocs
+  run port (app dbConnString)
+  where
+    defaultPort = 8000

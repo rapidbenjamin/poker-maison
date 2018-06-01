@@ -97,7 +97,7 @@ signToken userId = do
 createExpTime :: Int -> IO NominalDiffTime
 createExpTime min = do
   cur <- getPOSIXTime
-  return $ cur + (fromIntegral min + 5) * 60 -- add 5 more minutes
+  return $ cur + (fromIntegral min + 5) * 600 -- add 5 more minutes
 
 checkExpValid = checkExpValid' . J.exp
 

@@ -1,3 +1,4 @@
 .stack-work/
 poker-server.cabal
 *~
+.env
