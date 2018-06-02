@@ -56,7 +56,13 @@ authClient state dbConn conn token = do
              ServerState {..} <- liftIO $ readMVar state
              updateServerState state $
                ServerState
-                 {clients = addClient Client {conn = conn} username clients}
+                 { clients =
+                     addClient
+                       Client {conn = conn, email = userEmail}
+                       username
+                       clients
+                 , ..
+                 }
              runReaderT (addClientMsgListener msgHandler) msgHandlerConfig
 
 clientExists :: Username -> Map Username Client -> Bool
