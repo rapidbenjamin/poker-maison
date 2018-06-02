@@ -27,8 +27,8 @@ runSocketServer port dbConnString = do
 -- Once the token is verified the connection only then will the server state be 
 -- updated with the newly authenticated client
 application :: ConnectionString -> MVar ServerState -> WS.ServerApp
-application dbConn serverState pending = do
-  conn <- WS.acceptRequest pending
-  WS.forkPingThread conn 30
-  msg <- WS.receiveData conn
-  authClient serverState dbConn conn $ Token msg
+application dbConnString serverState pending = do
+  newConn <- WS.acceptRequest pending
+  WS.forkPingThread newConn 30
+  msg <- WS.receiveData newConn
+  authClient serverState dbConnString newConn $ Token msg

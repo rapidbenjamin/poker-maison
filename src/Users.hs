@@ -11,6 +11,7 @@ import qualified Crypto.Hash.SHA256 as H
 import qualified Data.ByteString.Char8 as C
 import Data.Proxy
 import qualified Data.Text as T
+import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Database
 import Database.Persist
@@ -33,11 +34,11 @@ usersAPI = Proxy :: Proxy UsersAPI
 
 usersServer :: ConnectionString -> Server UsersAPI
 usersServer connString =
-  (fetchUserProfileHandler connString) :<|> (loginHandler connString) :<|>
-  (registerUserHandler connString)
+  fetchUserProfileHandler :<|> loginHandler connString :<|>
+  registerUserHandler connString
 
-fetchUserProfileHandler :: ConnectionString -> User -> Handler UserProfile
-fetchUserProfileHandler connString User {..} =
+fetchUserProfileHandler :: User -> Handler UserProfile
+fetchUserProfileHandler User {..} =
   return
     UserProfile
       { proEmail = userEmail
@@ -52,15 +53,15 @@ loginHandler conn Login {..} = do
   maybeUser <- liftIO $ dbGetUserByLogin conn loginWithHashedPswd
   maybe (throwError unAuthErr) createToken maybeUser
   where
-    unAuthErr = (err401 {errBody = "Incorrect email or password"})
+    unAuthErr = err401 {errBody = "Incorrect email or password"}
     createToken (Entity _ User {..}) = signToken userEmail
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
 
+hashPassword :: Text -> Text
 hashPassword password = T.pack $ C.unpack $ H.hash $ encodeUtf8 password
 
 registerUserHandler :: ConnectionString -> Register -> Handler ReturnToken
 registerUserHandler connString Register {..} = do
-  liftIO $ print "register handler"
   let hashedPassword = hashPassword newUserPassword
   let (Username username) = newUsername
   let newUser =

@@ -5,7 +5,7 @@ module Socket.Clients
   ( authClient
   ) where
 
-import Control.Concurrent (MVar, modifyMVar, modifyMVar_, newMVar, readMVar)
+import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -40,11 +40,12 @@ addClientMsgListener msgCallback = do
 authClient ::
      MVar ServerState -> ConnectionString -> WS.Connection -> Token -> IO ()
 authClient state dbConn conn token = do
-  authResult <- runExceptT $ verifyClientToken state dbConn conn token
+  authResult <- runExceptT $ verifyToken dbConn token
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
-    (Right username) ->
-      let msgHandlerConfig =
+    (Right User {..}) ->
+      let username = Username userUsername
+          msgHandlerConfig =
             MsgHandlerConfig
               { serverState = state
               , username = username
@@ -52,29 +53,11 @@ authClient state dbConn conn token = do
               , clientConn = conn
               }
        in do sendMsg conn AuthSuccess
+             ServerState {..} <- liftIO $ readMVar state
+             updateServerState state $
+               ServerState
+                 {clients = addClient Client {conn = conn} username clients}
              runReaderT (addClientMsgListener msgHandler) msgHandlerConfig
-
-verifyClientToken ::
-     MVar ServerState
-  -> ConnectionString
-  -> WS.Connection
-  -> Token
-  -> ExceptT Text IO Username
-verifyClientToken state dbConnString conn token = do
-  ServerState {..} <- liftIO $ readMVar state
-  email <- liftIO $ checkToken' token
-  parsedToken <- liftIO $ checkToken' token
-  case parsedToken of
-    (Left err) -> throwError err
-    (Right email) -> do
-      maybeUser <- liftIO $ dbGetUserByEmail dbConnString email
-      case maybeUser of
-        Nothing -> throwNotInDbErr
-        (Just userEntity) ->
-          let User {..} = entityVal userEntity
-           in return $ Username userUsername
-  where
-    throwNotInDbErr = (throwError "No User with Given Email Exists in DB")
 
 clientExists :: Username -> Map Username Client -> Bool
 clientExists = M.member

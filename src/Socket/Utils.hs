@@ -1,5 +1,8 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Socket.Utils where
 
+import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
 import Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Text (Text)
@@ -10,6 +13,7 @@ import Data.Time.Calendar
 import Data.Time.Clock
 import Prelude
 import Socket.Types
+import Text.Pretty.Simple (pPrint)
 
 encodeMsg :: Msg -> Text
 encodeMsg a = T.pack $ show $ X.toStrict $ D.decodeUtf8 $ encode a
@@ -19,3 +23,11 @@ parseMsg jsonTxt = decode $ C.pack $ T.unpack jsonTxt
 
 getTimestamp :: UTCTime
 getTimestamp = UTCTime (ModifiedJulianDay 0) (secondsToDiffTime 0)
+
+updateServerState :: MVar ServerState -> ServerState -> IO ()
+updateServerState state newServerState =
+  modifyMVar_
+    state
+    (\serverState@ServerState {..} -> do
+       pPrint serverState
+       return newServerState)

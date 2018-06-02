@@ -7,11 +7,12 @@
 module Auth
   ( authHandler
   , signToken
-  , checkToken'
+  , verifyToken
   ) where
 
-import Control.Monad.Except (liftIO)
+import Control.Monad.Except
 import qualified Crypto.Hash.SHA256 as H
+import qualified Data.ByteString.Lazy.Char8 as CL
 import Data.Char (isAlphaNum)
 import Data.Either
 import Data.Text (Text)
@@ -40,14 +41,22 @@ authHandler connString =
             throwError
               (err401 {errBody = "Missing Token in 'Authorization' header"})
           Just token -> do
-            email <- checkToken (Token (decodeUtf8 token))
-            maybeUser <- liftIO $ dbGetUserByEmail connString email
-            case maybeUser of
-              Nothing ->
-                throwError
-                  (err401 {errBody = "No User with Given Email Exists in DB"})
-              Just userEntity -> return $ entityVal userEntity
+            authResult <-
+              liftIO $
+              runExceptT $ verifyToken connString $ Token $ decodeUtf8 token
+            case authResult of
+              (Left err) ->
+                throwError $ err401 {errBody = CL.pack $ T.unpack err}
+              (Right user) -> return user
    in mkAuthHandler handler
+
+verifyToken :: ConnectionString -> Token -> ExceptT Text IO User
+verifyToken connString token = do
+  (Username email) <- verifyJWTToken token
+  maybeUser <- liftIO $ dbGetUserByEmail connString email
+  case maybeUser of
+    Nothing -> throwError "No User with Given Email Exists in DB"
+    Just userEntity -> return $ entityVal userEntity
 
 getSecret :: J.Secret
 getSecret = J.secret "wwaaifidsa9109f0dasfda-=2-13"
@@ -80,7 +89,7 @@ signToken userId = do
   randomText <- liftIO $ randomText
   return $
     ReturnToken
-      {access_token = token, refresh_token = randomText, expiration = (60 * 60)}
+      {access_token = token, refresh_token = randomText, expiration = 60 * 60}
 
 createExpTime :: Int -> IO NominalDiffTime
 createExpTime min = do
@@ -95,30 +104,15 @@ checkExpValid' (Just d) = do
   cur <- getPOSIXTime
   return (J.secondsSinceEpoch d > cur)
 
-checkToken :: Token -> Handler Text
-checkToken (Token t) =
-  case J.decodeAndVerifySignature getSecret t of
-    Nothing ->
-      throwError (err401 {errBody = "Could Not Verify Token Signature"})
+verifyJWTToken :: Token -> ExceptT Text IO Username
+verifyJWTToken (Token token) =
+  case J.decodeAndVerifySignature getSecret token of
+    Nothing -> throwError "Could Not Verify Token Signature"
     (Just verifiedToken) -> do
       isValid <- liftIO $ checkExpValid tokenClaims
       if isValid
         then case J.iss tokenClaims of
-               Nothing ->
-                 throwError (err401 {errBody = "No issuer in token claims"})
-               (Just issuer) -> return $ J.stringOrURIToText issuer
-        else throwError (err401 {errBody = "Token Expired"})
-      where tokenClaims = J.claims verifiedToken
-
-checkToken' :: Token -> IO (Either Text Text)
-checkToken' (Token t) =
-  case J.decodeAndVerifySignature getSecret t of
-    Nothing -> return $ Left "Could Not Verify Token Signature"
-    (Just verifiedToken) -> do
-      isValid <- checkExpValid tokenClaims
-      if isValid
-        then case J.iss tokenClaims of
-               Nothing -> return $ Left "No issuer in token claims"
-               (Just issuer) -> return $ Right $ J.stringOrURIToText issuer
-        else return $ Left "Token Expired"
+               Nothing -> throwError "No issuer in token claims"
+               (Just issuer) -> return $ Username $ J.stringOrURIToText issuer
+        else throwError "Token Expired"
       where tokenClaims = J.claims verifiedToken

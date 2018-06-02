@@ -3,7 +3,7 @@
 
 module Database where
 
-import Control.Monad.Logger (LoggingT, MonadLogger, runStdoutLoggingT)
+import Control.Monad.Logger (LoggingT, runStdoutLoggingT)
 import Control.Monad.Reader (runReaderT)
 import Data.Int (Int64)
 import Data.Text (Text)

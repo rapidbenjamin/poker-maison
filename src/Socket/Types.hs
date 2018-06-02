@@ -2,24 +2,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
---{-# LANGUAGE DuplicateRecordFields #-}
 module Socket.Types where
 
-import Control.Concurrent (MVar, modifyMVar, modifyMVar_, newMVar, readMVar)
-import Control.Exception (finally)
+import Control.Concurrent (MVar)
 import Data.Aeson.Types
-import Data.Foldable
-import Data.IntMap
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
-import Data.Monoid
 import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Time.Clock
 import Database.Persist.Postgresql (ConnectionString)
 import GHC.Generics
-
 import qualified Network.WebSockets as WS
+
 import Types (Username)
 
 data MsgHandlerConfig = MsgHandlerConfig
@@ -35,6 +29,7 @@ data Game = Game
 
 data Client = Client
   { email :: Text
+  , chips :: Int
   , conn :: WS.Connection
   }
 
