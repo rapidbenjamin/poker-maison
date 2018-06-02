@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
@@ -10,20 +8,13 @@ module Socket.Types where
 import Control.Concurrent (MVar, modifyMVar, modifyMVar_, newMVar, readMVar)
 import Control.Exception (finally)
 import Data.Aeson.Types
-import Data.Aeson.Types
 import Data.Foldable
 import Data.IntMap
 import Data.Map.Lazy (Map)
-import Data.Map.Lazy (Map)
-import qualified Data.Map.Lazy as M
-import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Monoid
-import Data.Monoid
-import Data.Text (Text)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Time.Clock
 import Data.Time.Clock
 import Database.Persist.Postgresql (ConnectionString)
 import GHC.Generics

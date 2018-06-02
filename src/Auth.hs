@@ -3,7 +3,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Auth
   ( authHandler
@@ -13,40 +12,27 @@ module Auth
 
 import Control.Monad.Except (liftIO)
 import qualified Crypto.Hash.SHA256 as H
-import Data.Aeson (Result(..), fromJSON, toJSON)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as C
 import Data.Char (isAlphaNum)
 import Data.Either
-import Data.Int (Int64)
-import qualified Data.Map as Map
-import Data.Maybe (fromMaybe)
-import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Data.Time (UTCTime)
 import Data.Time.Clock
 import Data.Time.Clock.POSIX
-import Database
 import Database.Persist
 import Database.Persist.Postgresql
-import GHC.Generics
 import Network.Wai
-import Network.Wai.Handler.Warp (run)
 import Prelude
-import Schema
 import Servant
-import Servant.API
-import Servant.Docs
 import Servant.Server.Experimental.Auth
 import System.Random
-import Types
-
 import qualified Web.JWT as J
 
+import Database
+import Schema
+import Types
+
 authHandler :: ConnectionString -> AuthHandler Request User
-  -- FIXME Too nested.
 authHandler connString =
   let handler req =
         case lookup "Authorization" (requestHeaders req) of
@@ -55,7 +41,7 @@ authHandler connString =
               (err401 {errBody = "Missing Token in 'Authorization' header"})
           Just token -> do
             email <- checkToken (Token (decodeUtf8 token))
-            maybeUser <- liftIO $ dbGetUserByEmail connString (email)
+            maybeUser <- liftIO $ dbGetUserByEmail connString email
             case maybeUser of
               Nothing ->
                 throwError
@@ -87,7 +73,7 @@ signToken :: Text -> Handler ReturnToken
 signToken userId = do
   expTime <- liftIO $ createExpTime 60 -- expire at 1 hour
   let jwtClaimsSet =
-        J.def {J.iss = J.stringOrURI userId, J.exp = J.intDate expTime} -- iss is the issuer (username)
+        J.def {J.iss = J.stringOrURI userId, J.exp = J.numericDate expTime} -- iss is the issuer (username)
       s = getSecret
       alg = getAlgorithm
       token = J.encodeSigned alg s jwtClaimsSet
@@ -103,15 +89,14 @@ createExpTime min = do
 
 checkExpValid = checkExpValid' . J.exp
 
-checkExpValid' :: Maybe J.IntDate -> IO Bool
+checkExpValid' :: Maybe J.NumericDate -> IO Bool
 checkExpValid' Nothing = return False
 checkExpValid' (Just d) = do
   cur <- getPOSIXTime
   return (J.secondsSinceEpoch d > cur)
 
 checkToken :: Token -> Handler Text
-checkToken (Token t) = do
-  liftIO $ print t
+checkToken (Token t) =
   case J.decodeAndVerifySignature getSecret t of
     Nothing ->
       throwError (err401 {errBody = "Could Not Verify Token Signature"})
@@ -126,7 +111,7 @@ checkToken (Token t) = do
       where tokenClaims = J.claims verifiedToken
 
 checkToken' :: Token -> IO (Either Text Text)
-checkToken' (Token t) = do
+checkToken' (Token t) =
   case J.decodeAndVerifySignature getSecret t of
     Nothing -> return $ Left "Could Not Verify Token Signature"
     (Just verifiedToken) -> do

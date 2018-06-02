@@ -3,51 +3,30 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Users where
 
-import Auth (signToken)
 import Control.Monad.Except (liftIO)
 import qualified Crypto.Hash.SHA256 as H
-import Data.Aeson (Result(..), fromJSON, toJSON)
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
-import Data.Char (isAlphaNum)
-import Data.Int (Int64)
-import qualified Data.Map as Map
-import Data.Maybe (fromMaybe)
 import Data.Proxy
-import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Data.Time (UTCTime)
-import Data.Time.Clock
-import Data.Time.Clock.POSIX
+import Data.Text.Encoding (encodeUtf8)
 import Database
 import Database.Persist
 import Database.Persist.Postgresql
-import GHC.Generics
-import Network.Wai
-import Network.Wai.Handler.Warp (run)
-import Schema
 import Servant
-import Servant.API
-import Servant.Docs
 import Servant.Server.Experimental.Auth
-import System.Random
-import Types
 
-import qualified Web.JWT as J
+import Auth (signToken)
+import Schema
+import Types
 
 type UsersAPI
    = "profile" :> AuthProtect "JWT" :> Get '[ JSON] UserProfile :<|> "login" :> ReqBody '[ JSON] Login :> Post '[ JSON] ReturnToken :<|> "register" :> ReqBody '[ JSON] Register :> Post '[ JSON] ReturnToken
 
 -- | We need to specify the data returned after authentication
 type instance AuthServerData (AuthProtect "JWT") = User
-
-instance ToSample Int64 where
-  toSamples _ = [("Sample User", 1)]
 
 usersAPI :: Proxy UsersAPI
 usersAPI = Proxy :: Proxy UsersAPI

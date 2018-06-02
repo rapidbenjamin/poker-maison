@@ -3,26 +3,21 @@
 
 module Database where
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Logger (LoggingT, MonadLogger, runStdoutLoggingT)
 import Control.Monad.Reader (runReaderT)
-import Data.Either
 import Data.Int (Int64)
 import Data.Text (Text)
 import Database.Persist
-import Database.Persist.Class
 import Database.Persist.Postgresql
   ( ConnectionString
   , SqlPersistT
   , runMigration
   , withPostgresqlConn
   )
-
-import Types
-
 import Database.Persist.Sql
 
 import Schema
+import Types
 
 runAction :: ConnectionString -> SqlPersistT (LoggingT IO) a -> IO a
 runAction connectionString action =
@@ -32,7 +27,6 @@ runAction connectionString action =
 migrateDB :: ConnectionString -> IO ()
 migrateDB connString = runAction connString (runMigration migrateAll)
 
---getFilteredUsers connString age = runAction connString (selectYoungUsers age)
 deleteUserPG :: ConnectionString -> Int64 -> IO ()
 deleteUserPG connString uid = runAction connString (delete userKey)
   where

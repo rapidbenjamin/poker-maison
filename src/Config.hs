@@ -1,17 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Config where
 
-import Control.Monad.IO.Class
-import Data.Aeson
 import qualified Data.ByteString.Char8 as C
 import Data.Maybe
-import Data.Text
-import Database
-import Network.Wai.Handler.Warp (run)
 import Prelude
-import Schema
 import System.Environment (lookupEnv)
 import Text.Read
 

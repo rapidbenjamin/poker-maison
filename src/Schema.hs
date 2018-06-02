@@ -14,12 +14,8 @@ import Control.Monad
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Text (Text)
-import Database.Persist (Entity(..), Entity)
 import qualified Database.Persist.TH as PTH
-import GHC.Generics (Generic)
 import Servant.Docs
-
-import Types
 
 PTH.share
   [PTH.mkPersist PTH.sqlSettings, PTH.mkMigrate "migrateAll"]
