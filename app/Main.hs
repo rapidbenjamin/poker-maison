@@ -12,14 +12,16 @@ import Database
 import Network.Wai.Handler.Warp (run)
 import Prelude
 import Schema
+import Socket
 import System.Environment (lookupEnv)
 
 main :: IO ()
 main = do
   dbConnString <- getDBConnStrFromEnv
-  port <- getPortFromEnv defaultPort
+  userAPIPort <- getUserAPIPort defaultUserAPIPort
+  socketAPIPort <- getSocketAPIPort defaultSocketAPIPort
   migrateDB dbConnString
-  -- writeFile "docs/api.md" apiDocs
-  run port (app dbConnString)
+  run userAPIPort (app dbConnString)
   where
-    defaultPort = 8000
+    defaultUserAPIPort = 8000
+    defaultSocketAPIPort = 3000

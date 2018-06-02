@@ -20,11 +20,23 @@ import Data.Aeson.Types
   , toJSON
   , withObject
   )
+import Data.Aeson.Types
+import Data.Aeson.Types
 import Data.Char (toLower)
+import Data.IntMap
+import Data.Map.Lazy (Map)
+import Data.Map.Lazy (Map)
+import qualified Data.Map.Lazy as M
 import Data.Maybe (fromMaybe, isNothing)
+import Data.Monoid
+import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Text (Text)
 import Data.Time (UTCTime)
+import Data.Time.Clock
+import Data.Time.Clock
+import GHC.Generics
 
 import GHC.Generics (Generic)
 import GHC.Int (Int64)
@@ -42,9 +54,13 @@ instance FromJSON Login where
 
 data Register = Register
   { newUserEmail :: Text
-  , newUsername :: Text
+  , newUsername :: Username
   , newUserPassword :: Text
   } deriving (Eq, Show, Generic)
+
+newtype Username =
+  Username Text
+  deriving (Generic, FromJSON, ToJSON, Show, Eq, Ord)
 
 instance FromJSON Register where
   parseJSON = genericParseJSON defaultOptions
@@ -52,20 +68,13 @@ instance FromJSON Register where
 type UserID = Text
 
 data UserProfile = UserProfile
-  { proUsername :: Text
+  { proUsername :: Username
   , proEmail :: Text
   , proChips :: Int
   } deriving (Eq, Show, Generic)
 
 instance ToJSON UserProfile where
   toJSON = genericToJSON defaultOptions
-
-data DBUser = DBUser
-  { usrId :: Int64
-  , usrEmail :: Text
-  , usrUsername :: Text
-  , usrPassword :: Text
-  } deriving (Eq, Show, Generic)
 
 data ReturnToken = ReturnToken
   { access_token :: Text

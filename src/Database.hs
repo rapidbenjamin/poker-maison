@@ -39,8 +39,8 @@ deleteUserPG connString uid = runAction connString (delete userKey)
     userKey :: Key User
     userKey = toSqlKey uid
 
-dbgGetUserByEmail :: ConnectionString -> Text -> IO (Maybe (Entity User))
-dbgGetUserByEmail connString email =
+dbGetUserByEmail :: ConnectionString -> Text -> IO (Maybe (Entity User))
+dbGetUserByEmail connString email =
   runAction connString (selectFirst [UserEmail ==. email] [])
 
 dbAddUser :: ConnectionString -> User -> IO Int64

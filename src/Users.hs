@@ -61,7 +61,10 @@ fetchUserProfileHandler :: ConnectionString -> User -> Handler UserProfile
 fetchUserProfileHandler connString User {..} =
   return
     UserProfile
-      {proEmail = userEmail, proChips = userChips, proUsername = userUsername}
+      { proEmail = userEmail
+      , proChips = userChips
+      , proUsername = Username userUsername
+      }
 
 ------------------------------------------------------------------------
 -- | Handlers
@@ -80,9 +83,10 @@ registerUserHandler :: ConnectionString -> Register -> Handler ReturnToken
 registerUserHandler connString Register {..} = do
   liftIO $ print "register handler"
   let hashedPassword = hashPassword newUserPassword
+  let (Username username) = newUsername
   let newUser =
         User
-          { userUsername = newUsername
+          { userUsername = username
           , userEmail = newUserEmail
           , userPassword = hashedPassword
           , userChips = 3000

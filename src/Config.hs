@@ -23,10 +23,18 @@ getDBConnStrFromEnv = do
     Nothing -> error "Missing dbConnStr in env"
     (Just conn) -> return $ C.pack conn
 
--- get the port from the port env variable
-getPortFromEnv :: Int -> IO Int
-getPortFromEnv defaultPort = do
-  maybeEnvPort <- lookupEnv "port"
+-- get the port from the userAPIPort env variable
+getUserAPIPort :: Int -> IO Int
+getUserAPIPort defaultPort = do
+  maybeEnvPort <- lookupEnv "userAPIPort"
+  case maybeEnvPort of
+    Nothing -> return defaultPort
+    (Just port) -> maybe (return defaultPort) return (readMaybe port)
+
+-- get the port from the socketAPIPort env variable
+getSocketAPIPort :: Int -> IO Int
+getSocketAPIPort defaultPort = do
+  maybeEnvPort <- lookupEnv "socketPort"
   case maybeEnvPort of
     Nothing -> return defaultPort
     (Just port) -> maybe (return defaultPort) return (readMaybe port)

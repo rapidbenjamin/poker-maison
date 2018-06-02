@@ -8,6 +8,7 @@
 module Auth
   ( authHandler
   , signToken
+  , checkToken'
   ) where
 
 import Control.Monad.Except (liftIO)
@@ -16,6 +17,7 @@ import Data.Aeson (Result(..), fromJSON, toJSON)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as C
 import Data.Char (isAlphaNum)
+import Data.Either
 import Data.Int (Int64)
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
@@ -53,7 +55,7 @@ authHandler connString =
               (err401 {errBody = "Missing Token in 'Authorization' header"})
           Just token -> do
             email <- checkToken (Token (decodeUtf8 token))
-            maybeUser <- liftIO $ dbgGetUserByEmail connString (email)
+            maybeUser <- liftIO $ dbGetUserByEmail connString (email)
             case maybeUser of
               Nothing ->
                 throwError
@@ -121,4 +123,17 @@ checkToken (Token t) = do
                  throwError (err401 {errBody = "No issuer in token claims"})
                (Just issuer) -> return $ J.stringOrURIToText issuer
         else throwError (err401 {errBody = "Token Expired"})
+      where tokenClaims = J.claims verifiedToken
+
+checkToken' :: Token -> IO (Either Text Text)
+checkToken' (Token t) = do
+  case J.decodeAndVerifySignature getSecret t of
+    Nothing -> return $ Left "Could Not Verify Token Signature"
+    (Just verifiedToken) -> do
+      isValid <- checkExpValid tokenClaims
+      if isValid
+        then case J.iss tokenClaims of
+               Nothing -> return $ Left "No issuer in token claims"
+               (Just issuer) -> return $ Right $ J.stringOrURIToText issuer
+        else return $ Left "Token Expired"
       where tokenClaims = J.claims verifiedToken

@@ -40,6 +40,9 @@ dependencies:
 - random
 - text
 - wai
+- websockets
+- pretty-simple
+- wuss
 - warp
 - servant-docs
 - jwt
@@ -51,6 +54,7 @@ library:
     - Database
     - Schema
     - Config
+    - Socket
 
 
 

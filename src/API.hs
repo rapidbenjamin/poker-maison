@@ -33,7 +33,6 @@ import Auth (authHandler)
 import Lobby
 import Servant.API
 import Servant.Client
-import qualified Servant.Docs as Docs
 import Servant.Server
 import Servant.Server.Experimental.Auth
 import Users
@@ -51,7 +50,6 @@ loginRequiredAPI = Proxy :: Proxy LoginRequiredAPI
 api :: Proxy API
 api = Proxy :: Proxy API
 
---lobbyApiDocs = Docs.markdown $ Docs.docs loginRequiredAPI
 server :: ConnectionString -> Server API
 server connString =
   (usersServer connString) :<|> (loginRequiredServer connString)

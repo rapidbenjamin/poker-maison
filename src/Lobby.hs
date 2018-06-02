@@ -56,4 +56,7 @@ h :: ConnectionString -> User -> Handler UserProfile
 h connString User {..} =
   return
     UserProfile
-      {proEmail = userEmail, proChips = userChips, proUsername = userUsername}
+      { proEmail = userEmail
+      , proChips = userChips
+      , proUsername = Username userUsername
+      }
