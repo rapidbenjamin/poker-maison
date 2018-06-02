@@ -46,6 +46,7 @@ dependencies:
 - warp
 - servant-docs
 - jwt
+- async
 
 library:
   source-dirs: src
