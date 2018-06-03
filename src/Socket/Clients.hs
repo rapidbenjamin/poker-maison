@@ -49,28 +49,27 @@ authClient secretKey state dbConn conn token = do
   authResult <- runExceptT $ verifyToken secretKey dbConn token
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
-    (Right User {..}) ->
-      let username = Username userUsername
-          msgHandlerConfig =
-            MsgHandlerConfig
-              { serverState = state
-              , username = username
-              , dbConn = dbConn
-              , clientConn = conn
-              }
-       in do sendMsg conn AuthSuccess
-             ServerState {..} <- liftIO $ readMVar state
-             updateServerState state $
-               ServerState
-                 { clients =
-                     addClient
-                       Client
-                         {conn = conn, email = userEmail, chips = userChips}
-                       username
-                       clients
-                 , ..
-                 }
-             runReaderT (addClientMsgListener msgHandler) msgHandlerConfig
+    (Right User {..}) -> do
+      sendMsg conn AuthSuccess
+      ServerState {..} <- liftIO $ readMVar state
+      updateServerState state $
+        ServerState
+          { clients =
+              addClient
+                Client {conn = conn, email = userEmail, chips = userChips}
+                username
+                clients
+          , ..
+          }
+      runReaderT (addClientMsgListener msgHandler) msgHandlerConfig
+      where username = Username userUsername
+            msgHandlerConfig =
+              MsgHandlerConfig
+                { serverState = state
+                , username = username
+                , dbConn = dbConn
+                , clientConn = conn
+                }
 
 clientExists :: Username -> Map Username Client -> Bool
 clientExists = M.member

@@ -6,9 +6,10 @@
 
 module Users where
 
-import Control.Monad.Except (liftIO)
+import Control.Monad.Except
 import qualified Crypto.Hash.SHA256 as H
 import qualified Data.ByteString.Char8 as C
+import qualified Data.ByteString.Lazy.Char8 as CL
 import Data.Proxy
 import qualified Data.Text as T
 import Data.Text (Text)
@@ -58,6 +59,8 @@ loginHandler secretKey conn Login {..} = do
     createToken (Entity _ User {..}) = signToken secretKey userEmail
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
 
+-- when we register new user we check to see if email and username are already taken
+-- if they are then the exception will be propagated to the client
 registerUserHandler ::
      Secret -> ConnectionString -> Register -> Handler ReturnToken
 registerUserHandler secretKey connString Register {..} = do
@@ -70,8 +73,7 @@ registerUserHandler secretKey connString Register {..} = do
           , userPassword = hashedPassword
           , userChips = 3000
           }
-  dbResult <- liftIO $ runAction connString $ insertBy newUser
-  case dbResult -- when unique constraints conflict on entities then throw  duplicate error
-        of
-    Left _ -> throwError (err401 {errBody = "Email Already Taken"})
+  registrationResult <- liftIO $ runExceptT $ dbRegisterUser connString newUser
+  case registrationResult of
+    Left err -> throwError $ err401 {errBody = CL.pack $ T.unpack err}
     _ -> signToken secretKey newUserEmail

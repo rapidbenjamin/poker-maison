@@ -3,9 +3,11 @@
 
 module Database where
 
+import Control.Monad.Except
 import Control.Monad.Logger (LoggingT, runStdoutLoggingT)
 import Control.Monad.Reader (runReaderT)
 import Data.Int (Int64)
+import Data.Maybe
 import Data.Text (Text)
 import Database.Persist
 import Database.Persist.Postgresql
@@ -37,8 +39,23 @@ dbGetUserByEmail :: ConnectionString -> Text -> IO (Maybe (Entity User))
 dbGetUserByEmail connString email =
   runAction connString (selectFirst [UserEmail ==. email] [])
 
-dbAddUser :: ConnectionString -> User -> IO Int64
-dbAddUser conn user = fromSqlKey <$> runAction conn (insert user)
+dbGetUserByUsername :: ConnectionString -> Text -> IO (Maybe (Entity User))
+dbGetUserByUsername connString username =
+  runAction connString (selectFirst [UserUsername ==. username] [])
+
+dbRegisterUser :: ConnectionString -> User -> ExceptT Text IO Int64
+dbRegisterUser connString user@User {..} = do
+  emailAvailable <- liftIO $ dbGetUserByEmail connString userEmail
+  case isJust emailAvailable of
+    True -> throwError "Email is Already Taken"
+    False -> do
+      usernameAvailable <- liftIO $ dbGetUserByUsername connString userUsername
+      case isJust usernameAvailable of
+        True -> throwError "Username is Already Taken"
+        False -> do
+          newUserSQLKey <-
+            liftIO $ fromSqlKey <$> runAction connString (insert user)
+          return $ newUserSQLKey
 
 dbGetUserByLogin :: ConnectionString -> Login -> IO (Maybe (Entity User))
 dbGetUserByLogin connString Login {..} =

@@ -26,6 +26,7 @@ PTH.share
     password Text
     chips Int
     UniqueEmail email
+    UniqueUsername username
     deriving Show Read
 |]
 
