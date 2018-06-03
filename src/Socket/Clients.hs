@@ -18,6 +18,7 @@ import Data.Text (Text)
 import Database.Persist.Postgresql (ConnectionString, entityVal)
 import qualified Network.WebSockets as WS
 import Prelude
+import Web.JWT (Secret)
 
 import Auth
 import Database
@@ -38,9 +39,14 @@ addClientMsgListener msgCallback = do
       return $ for_ (parseMsg msg) $ \parsedMsg -> msgCallback parsedMsg
 
 authClient ::
-     MVar ServerState -> ConnectionString -> WS.Connection -> Token -> IO ()
-authClient state dbConn conn token = do
-  authResult <- runExceptT $ verifyToken dbConn token
+     Secret
+  -> MVar ServerState
+  -> ConnectionString
+  -> WS.Connection
+  -> Token
+  -> IO ()
+authClient secretKey state dbConn conn token = do
+  authResult <- runExceptT $ verifyToken secretKey dbConn token
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
     (Right User {..}) ->

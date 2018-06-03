@@ -16,8 +16,9 @@ main = do
   dbConnString <- getDBConnStrFromEnv
   userAPIPort <- getUserAPIPort defaultUserAPIPort
   socketAPIPort <- getSocketAPIPort defaultSocketAPIPort
-  let runSocketAPI = runSocketServer socketAPIPort dbConnString
-  let runUserAPI = run userAPIPort (app dbConnString)
+  secretKey <- getSecretKey
+  let runSocketAPI = runSocketServer secretKey socketAPIPort dbConnString
+  let runUserAPI = run userAPIPort (app secretKey dbConnString)
   migrateDB dbConnString
   concurrently runUserAPI runSocketAPI
   where

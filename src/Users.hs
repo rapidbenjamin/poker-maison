@@ -18,6 +18,7 @@ import Database.Persist
 import Database.Persist.Postgresql
 import Servant
 import Servant.Server.Experimental.Auth
+import Web.JWT (Secret)
 
 import Auth (signToken)
 import Schema
@@ -32,10 +33,10 @@ type instance AuthServerData (AuthProtect "JWT") = User
 usersAPI :: Proxy UsersAPI
 usersAPI = Proxy :: Proxy UsersAPI
 
-usersServer :: ConnectionString -> Server UsersAPI
-usersServer connString =
-  fetchUserProfileHandler :<|> loginHandler connString :<|>
-  registerUserHandler connString
+usersServer :: Secret -> ConnectionString -> Server UsersAPI
+usersServer secretKey connString =
+  fetchUserProfileHandler :<|> loginHandler secretKey connString :<|>
+  registerUserHandler secretKey connString
 
 fetchUserProfileHandler :: User -> Handler UserProfile
 fetchUserProfileHandler User {..} =
@@ -48,20 +49,21 @@ fetchUserProfileHandler User {..} =
 
 ------------------------------------------------------------------------
 -- | Handlers
-loginHandler :: ConnectionString -> Login -> Handler ReturnToken
-loginHandler conn Login {..} = do
+loginHandler :: Secret -> ConnectionString -> Login -> Handler ReturnToken
+loginHandler secretKey conn Login {..} = do
   maybeUser <- liftIO $ dbGetUserByLogin conn loginWithHashedPswd
   maybe (throwError unAuthErr) createToken maybeUser
   where
     unAuthErr = err401 {errBody = "Incorrect email or password"}
-    createToken (Entity _ User {..}) = signToken userEmail
+    createToken (Entity _ User {..}) = signToken secretKey userEmail
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
 
 hashPassword :: Text -> Text
 hashPassword password = T.pack $ C.unpack $ H.hash $ encodeUtf8 password
 
-registerUserHandler :: ConnectionString -> Register -> Handler ReturnToken
-registerUserHandler connString Register {..} = do
+registerUserHandler ::
+     Secret -> ConnectionString -> Register -> Handler ReturnToken
+registerUserHandler secretKey connString Register {..} = do
   let hashedPassword = hashPassword newUserPassword
   let (Username username) = newUsername
   let newUser =
@@ -75,4 +77,4 @@ registerUserHandler connString Register {..} = do
   case dbResult -- when unique constraints conflict on entities then throw  duplicate error
         of
     Left _ -> throwError (err401 {errBody = "Email Already Taken"})
-    _ -> signToken newUserEmail
+    _ -> signToken secretKey newUserEmail

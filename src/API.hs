@@ -15,6 +15,7 @@ import Database.Persist.Postgresql
 import Network.Wai
 import Servant.Server
 import Servant.Server.Experimental.Auth
+import Web.JWT (Secret)
 
 import Auth (authHandler)
 import Schema
@@ -25,11 +26,12 @@ type API = UsersAPI
 api :: Proxy API
 api = Proxy :: Proxy API
 
-server :: ConnectionString -> Server API
+server :: Secret -> ConnectionString -> Server API
 server = usersServer
 
-app :: ConnectionString -> Application
-app connString = serveWithContext api serverAuthContext (server connString)
+app :: Secret -> ConnectionString -> Application
+app secretKey connString =
+  serveWithContext api serverAuthContext (server secretKey connString)
   where
     serverAuthContext :: Context (AuthHandler Request User ': '[])
-    serverAuthContext = authHandler connString :. EmptyContext
+    serverAuthContext = authHandler secretKey connString :. EmptyContext

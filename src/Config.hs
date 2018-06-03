@@ -4,9 +4,11 @@ module Config where
 
 import qualified Data.ByteString.Char8 as C
 import Data.Maybe
+import Data.Text (pack)
 import Prelude
 import System.Environment (lookupEnv)
 import Text.Read
+import Web.JWT (secret)
 
 -- get the postgres connection string from dbConnStr env variable
 getDBConnStrFromEnv :: IO C.ByteString
@@ -31,3 +33,10 @@ getSocketAPIPort defaultPort = do
   case maybeEnvPort of
     Nothing -> return defaultPort
     (Just port) -> maybe (return defaultPort) return (readMaybe port)
+
+-- get the secret key for signing JWT authentication tokens
+getSecretKey = do
+  maybeSecretKey <- lookupEnv "secret"
+  case maybeSecretKey of
+    Nothing -> error "Missing dbConnStr in env"
+    (Just s) -> return $ secret $ pack s

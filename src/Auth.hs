@@ -33,8 +33,8 @@ import Database
 import Schema
 import Types
 
-authHandler :: ConnectionString -> AuthHandler Request User
-authHandler connString =
+authHandler :: J.Secret -> ConnectionString -> AuthHandler Request User
+authHandler secretKey connString =
   let handler req =
         case lookup "Authorization" (requestHeaders req) of
           Nothing ->
@@ -43,32 +43,30 @@ authHandler connString =
           Just token -> do
             authResult <-
               liftIO $
-              runExceptT $ verifyToken connString $ Token $ decodeUtf8 token
+              runExceptT $
+              verifyToken secretKey connString $ Token $ decodeUtf8 token
             case authResult of
               (Left err) ->
                 throwError $ err401 {errBody = CL.pack $ T.unpack err}
               (Right user) -> return user
    in mkAuthHandler handler
 
-verifyToken :: ConnectionString -> Token -> ExceptT Text IO User
-verifyToken connString token = do
-  (Username email) <- verifyJWTToken token
+verifyToken :: J.Secret -> ConnectionString -> Token -> ExceptT Text IO User
+verifyToken secretKey connString token = do
+  (Username email) <- verifyJWTToken secretKey token
   maybeUser <- liftIO $ dbGetUserByEmail connString email
   case maybeUser of
     Nothing -> throwError "No User with Given Email Exists in DB"
     Just userEntity -> return $ entityVal userEntity
 
-getSecret :: J.Secret
-getSecret = J.secret "wwaaifidsa9109f0dasfda-=2-13"
-
 getAlgorithm :: J.Algorithm
 getAlgorithm = J.HS256
 
-getNewToken :: User -> Password -> Handler ReturnToken
-getNewToken User {..} password
+getNewToken :: J.Secret -> User -> Password -> Handler ReturnToken
+getNewToken secretKey User {..} password
   | password /= decodeUtf8 hashedPassword =
     throwError (err401 {errBody = "Password Invalid"})
-  | otherwise = signToken userEmail
+  | otherwise = signToken secretKey userEmail
   where
     hashedPassword = H.hash $ encodeUtf8 password
 
@@ -78,15 +76,14 @@ randomText = do
   let s = T.pack . take 128 $ filter isAlphaNum $ randomRs ('A', 'z') gen
   return s
 
-signToken :: Text -> Handler ReturnToken
-signToken userId = do
+signToken :: J.Secret -> Text -> Handler ReturnToken
+signToken secretKey userId = do
   expTime <- liftIO $ createExpTime 60 -- expire at 1 hour
   let jwtClaimsSet =
         J.def {J.iss = J.stringOrURI userId, J.exp = J.numericDate expTime} -- iss is the issuer (username)
-      s = getSecret
       alg = getAlgorithm
-      token = J.encodeSigned alg s jwtClaimsSet
-  randomText <- liftIO $ randomText
+      token = J.encodeSigned alg secretKey jwtClaimsSet
+  randomText <- liftIO randomText
   return $
     ReturnToken
       {access_token = token, refresh_token = randomText, expiration = 60 * 60}
@@ -104,9 +101,9 @@ checkExpValid' (Just d) = do
   cur <- getPOSIXTime
   return (J.secondsSinceEpoch d > cur)
 
-verifyJWTToken :: Token -> ExceptT Text IO Username
-verifyJWTToken (Token token) =
-  case J.decodeAndVerifySignature getSecret token of
+verifyJWTToken :: J.Secret -> Token -> ExceptT Text IO Username
+verifyJWTToken secretKey (Token token) =
+  case J.decodeAndVerifySignature secretKey token of
     Nothing -> throwError "Could Not Verify Token Signature"
     (Just verifiedToken) -> do
       isValid <- liftIO $ checkExpValid tokenClaims
