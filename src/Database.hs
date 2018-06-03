@@ -46,16 +46,13 @@ dbGetUserByUsername connString username =
 dbRegisterUser :: ConnectionString -> User -> ExceptT Text IO Int64
 dbRegisterUser connString user@User {..} = do
   emailAvailable <- liftIO $ dbGetUserByEmail connString userEmail
-  case isJust emailAvailable of
-    True -> throwError "Email is Already Taken"
-    False -> do
+  if isJust emailAvailable
+    then throwError "Email is Already Taken"
+    else do
       usernameAvailable <- liftIO $ dbGetUserByUsername connString userUsername
-      case isJust usernameAvailable of
-        True -> throwError "Username is Already Taken"
-        False -> do
-          newUserSQLKey <-
-            liftIO $ fromSqlKey <$> runAction connString (insert user)
-          return $ newUserSQLKey
+      if isJust usernameAvailable
+        then throwError "Username is Already Taken"
+        else liftIO $ fromSqlKey <$> runAction connString (insert user)
 
 dbGetUserByLogin :: ConnectionString -> Login -> IO (Maybe (Entity User))
 dbGetUserByLogin connString Login {..} =
