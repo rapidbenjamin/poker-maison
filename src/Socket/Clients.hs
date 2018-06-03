@@ -64,7 +64,8 @@ authClient secretKey state dbConn conn token = do
                ServerState
                  { clients =
                      addClient
-                       Client {conn = conn, email = userEmail}
+                       Client
+                         {conn = conn, email = userEmail, chips = userChips}
                        username
                        clients
                  , ..

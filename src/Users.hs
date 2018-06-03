@@ -20,7 +20,7 @@ import Servant
 import Servant.Server.Experimental.Auth
 import Web.JWT (Secret)
 
-import Auth (signToken)
+import Auth (hashPassword, signToken)
 import Schema
 import Types
 
@@ -57,9 +57,6 @@ loginHandler secretKey conn Login {..} = do
     unAuthErr = err401 {errBody = "Incorrect email or password"}
     createToken (Entity _ User {..}) = signToken secretKey userEmail
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
-
-hashPassword :: Text -> Text
-hashPassword password = T.pack $ C.unpack $ H.hash $ encodeUtf8 password
 
 registerUserHandler ::
      Secret -> ConnectionString -> Register -> Handler ReturnToken

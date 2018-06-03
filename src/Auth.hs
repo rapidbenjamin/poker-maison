@@ -8,10 +8,12 @@ module Auth
   ( authHandler
   , signToken
   , verifyToken
+  , hashPassword
   ) where
 
 import Control.Monad.Except
 import qualified Crypto.Hash.SHA256 as H
+import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy.Char8 as CL
 import Data.Char (isAlphaNum)
 import Data.Either
@@ -50,6 +52,9 @@ authHandler secretKey connString =
                 throwError $ err401 {errBody = CL.pack $ T.unpack err}
               (Right user) -> return user
    in mkAuthHandler handler
+
+hashPassword :: Text -> Text
+hashPassword password = T.pack $ C.unpack $ H.hash $ encodeUtf8 password
 
 verifyToken :: J.Secret -> ConnectionString -> Token -> ExceptT Text IO User
 verifyToken secretKey connString token = do
