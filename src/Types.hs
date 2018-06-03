@@ -7,8 +7,11 @@ module Types where
 import Data.Aeson.Types
 import qualified Data.Text as T
 import Data.Text (Text)
+import Database.Redis (ConnectInfo)
 import GHC.Generics (Generic)
 import Servant
+
+type RedisConfig = ConnectInfo
 
 type Password = Text
 

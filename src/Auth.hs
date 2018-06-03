@@ -35,8 +35,9 @@ import Database
 import Schema
 import Types
 
-authHandler :: J.Secret -> ConnectionString -> AuthHandler Request User
-authHandler secretKey connString =
+authHandler ::
+     J.Secret -> ConnectionString -> RedisConfig -> AuthHandler Request User
+authHandler secretKey connString redisConfig =
   let handler req =
         case lookup "Authorization" (requestHeaders req) of
           Nothing ->
@@ -46,7 +47,8 @@ authHandler secretKey connString =
             authResult <-
               liftIO $
               runExceptT $
-              verifyToken secretKey connString $ Token $ decodeUtf8 token
+              verifyToken secretKey connString redisConfig $
+              Token $ decodeUtf8 token
             case authResult of
               (Left err) ->
                 throwError $ err401 {errBody = CL.pack $ T.unpack err}
@@ -56,13 +58,18 @@ authHandler secretKey connString =
 hashPassword :: Text -> Text
 hashPassword password = T.pack $ C.unpack $ H.hash $ encodeUtf8 password
 
-verifyToken :: J.Secret -> ConnectionString -> Token -> ExceptT Text IO User
-verifyToken secretKey connString token = do
+verifyToken ::
+     J.Secret
+  -> ConnectionString
+  -> RedisConfig
+  -> Token
+  -> ExceptT Text IO User
+verifyToken secretKey connString redisConfig token = do
   (Username email) <- verifyJWTToken secretKey token
-  maybeUser <- liftIO $ dbGetUserByEmail connString email
+  maybeUser <- liftIO $ fetchUserByEmail connString redisConfig email
   case maybeUser of
     Nothing -> throwError "No User with Given Email Exists in DB"
-    Just userEntity -> return $ entityVal userEntity
+    Just user -> return user
 
 getAlgorithm :: J.Algorithm
 getAlgorithm = J.HS256

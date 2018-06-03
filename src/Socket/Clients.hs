@@ -42,11 +42,12 @@ authClient ::
      Secret
   -> MVar ServerState
   -> ConnectionString
+  -> RedisConfig
   -> WS.Connection
   -> Token
   -> IO ()
-authClient secretKey state dbConn conn token = do
-  authResult <- runExceptT $ verifyToken secretKey dbConn token
+authClient secretKey state dbConn redisConfig conn token = do
+  authResult <- runExceptT $ verifyToken secretKey dbConn redisConfig token
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
     (Right User {..}) -> do

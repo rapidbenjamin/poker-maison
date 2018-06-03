@@ -19,6 +19,7 @@ import Web.JWT (Secret)
 
 import Auth (authHandler)
 import Schema
+import Types (RedisConfig)
 import Users
 
 type API = UsersAPI
@@ -26,12 +27,16 @@ type API = UsersAPI
 api :: Proxy API
 api = Proxy :: Proxy API
 
-server :: Secret -> ConnectionString -> Server API
+server :: Secret -> ConnectionString -> RedisConfig -> Server API
 server = usersServer
 
-app :: Secret -> ConnectionString -> Application
-app secretKey connString =
-  serveWithContext api serverAuthContext (server secretKey connString)
+app :: Secret -> ConnectionString -> RedisConfig -> Application
+app secretKey connString redisConfig =
+  serveWithContext
+    api
+    serverAuthContext
+    (server secretKey connString redisConfig)
   where
     serverAuthContext :: Context (AuthHandler Request User ': '[])
-    serverAuthContext = authHandler secretKey connString :. EmptyContext
+    serverAuthContext =
+      authHandler secretKey connString redisConfig :. EmptyContext

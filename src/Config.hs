@@ -5,10 +5,23 @@ module Config where
 import qualified Data.ByteString.Char8 as C
 import Data.Maybe
 import Data.Text (pack)
+import Database.Redis
+  ( ConnectInfo
+  , Redis
+  , connect
+  , connectPort
+  , defaultConnectInfo
+  , runRedis
+  , setex
+  )
 import Prelude
 import System.Environment (lookupEnv)
 import Text.Read
+import Types
 import Web.JWT (secret)
+
+redisConnectInfo :: RedisConfig
+redisConnectInfo = defaultConnectInfo
 
 -- get the postgres connection string from dbConnStr env variable
 getDBConnStrFromEnv :: IO C.ByteString

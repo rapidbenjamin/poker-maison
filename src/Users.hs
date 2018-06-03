@@ -34,10 +34,10 @@ type instance AuthServerData (AuthProtect "JWT") = User
 usersAPI :: Proxy UsersAPI
 usersAPI = Proxy :: Proxy UsersAPI
 
-usersServer :: Secret -> ConnectionString -> Server UsersAPI
-usersServer secretKey connString =
+usersServer :: Secret -> ConnectionString -> RedisConfig -> Server UsersAPI
+usersServer secretKey connString redisConfig =
   fetchUserProfileHandler :<|> loginHandler secretKey connString :<|>
-  registerUserHandler secretKey connString
+  registerUserHandler secretKey connString redisConfig
 
 fetchUserProfileHandler :: User -> Handler UserProfile
 fetchUserProfileHandler User {..} =
@@ -51,8 +51,8 @@ fetchUserProfileHandler User {..} =
 ------------------------------------------------------------------------
 -- | Handlers
 loginHandler :: Secret -> ConnectionString -> Login -> Handler ReturnToken
-loginHandler secretKey conn Login {..} = do
-  maybeUser <- liftIO $ dbGetUserByLogin conn loginWithHashedPswd
+loginHandler secretKey connString Login {..} = do
+  maybeUser <- liftIO $ dbGetUserByLogin connString loginWithHashedPswd
   maybe (throwError unAuthErr) createToken maybeUser
   where
     unAuthErr = err401 {errBody = "Incorrect email or password"}
@@ -62,8 +62,12 @@ loginHandler secretKey conn Login {..} = do
 -- when we register new user we check to see if email and username are already taken
 -- if they are then the exception will be propagated to the client
 registerUserHandler ::
-     Secret -> ConnectionString -> Register -> Handler ReturnToken
-registerUserHandler secretKey connString Register {..} = do
+     Secret
+  -> ConnectionString
+  -> RedisConfig
+  -> Register
+  -> Handler ReturnToken
+registerUserHandler secretKey connString redisConfig Register {..} = do
   let hashedPassword = hashPassword newUserPassword
   let (Username username) = newUsername
   let newUser =
@@ -73,7 +77,8 @@ registerUserHandler secretKey connString Register {..} = do
           , userPassword = hashedPassword
           , userChips = 3000
           }
-  registrationResult <- liftIO $ runExceptT $ dbRegisterUser connString newUser
+  registrationResult <-
+    liftIO $ runExceptT $ dbRegisterUser connString redisConfig newUser
   case registrationResult of
     Left err -> throwError $ err401 {errBody = CL.pack $ T.unpack err}
     _ -> signToken secretKey newUserEmail
