@@ -1,35 +1,47 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Socket.Types where
 
 import Control.Concurrent (MVar)
+import Data.Aeson
 import Data.Aeson.Types
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
-import Data.Text (Text)
+import Data.Text
 import Data.Time.Clock
 import Database.Persist.Postgresql (ConnectionString)
 import GHC.Generics
 import qualified Network.WebSockets as WS
 
-import Types (Username)
+import Types (RedisConfig, Username)
 
 data MsgHandlerConfig = MsgHandlerConfig
   { dbConn :: ConnectionString
   , serverState :: MVar ServerState
   , username :: Username
   , clientConn :: WS.Connection
+  , redisConfig :: RedisConfig
   }
 
-data Game = Game
-  { id :: Text
-  } deriving (Show)
+type TableName = Text
+
+newtype Lobby =
+  Lobby (Map TableName Table)
+  deriving (Show, Ord, Read, Eq, Generic, ToJSON, FromJSON)
+
+data Table = Table
+  { observers :: [Username] -- not sat at table or on waitlist but subscribed to updates
+  , waitList :: [Username] -- waiting to join a full table  and subscribed to updates
+  , game :: Int
+  } deriving (Show, Read, Ord, Eq, Generic, ToJSON, FromJSON)
 
 data Client = Client
   { email :: Text
-  , chips :: Int
   , conn :: WS.Connection
   }
 
@@ -38,12 +50,8 @@ instance Show Client where
 
 data ServerState = ServerState
   { clients :: Map Username Client
-  , games :: Map Text Game
-  }
-
-instance Show ServerState where
-  show ServerState {..} =
-    show games ++ show (M.map (\Client {..} -> email) clients)
+  , lobby :: Lobby
+  } deriving (Show)
 
 instance Eq Client where
   Client {email = email1} == Client {email = email2} = email1 == email2

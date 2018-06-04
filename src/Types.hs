@@ -1,9 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Types where
 
+import Data.Aeson
 import Data.Aeson.Types
 import qualified Data.Text as T
 import Data.Text (Text)
@@ -18,23 +21,21 @@ type Password = Text
 data Login = Login
   { loginEmail :: Text
   , loginPassword :: Text
-  } deriving (Eq, Show, Generic)
-
-instance FromJSON Login where
-  parseJSON = genericParseJSON defaultOptions
+  } deriving (Eq, Show, Generic, FromJSON)
 
 data Register = Register
   { newUserEmail :: Text
   , newUsername :: Username
   , newUserPassword :: Text
-  } deriving (Eq, Show, Generic)
+  } deriving (Eq, Show, Generic, FromJSON)
 
 newtype Username =
   Username Text
-  deriving (Generic, FromJSON, ToJSON, Show, Eq, Ord)
+  deriving (Generic, Show, Read, Eq, Ord)
 
-instance FromJSON Register where
-  parseJSON = genericParseJSON defaultOptions
+instance ToJSON Username
+
+instance FromJSON Username
 
 type UserID = Text
 
@@ -42,18 +43,13 @@ data UserProfile = UserProfile
   { proUsername :: Username
   , proEmail :: Text
   , proChips :: Int
-  } deriving (Eq, Show, Generic)
-
-instance ToJSON UserProfile where
-  toJSON = genericToJSON defaultOptions
+  } deriving (Eq, Show, Generic, ToJSON)
 
 data ReturnToken = ReturnToken
   { access_token :: Text
   , refresh_token :: Text
   , expiration :: Int --seconds to expire
-  } deriving (Generic)
-
-instance ToJSON ReturnToken
+  } deriving (Generic, ToJSON)
 
 newtype Token =
   Token Text

@@ -56,10 +56,7 @@ authClient secretKey state dbConn redisConfig conn token = do
       updateServerState state $
         ServerState
           { clients =
-              addClient
-                Client {conn = conn, email = userEmail, chips = userChips}
-                username
-                clients
+              addClient Client {conn = conn, email = userEmail} username clients
           , ..
           }
       runReaderT (addClientMsgListener msgHandler) msgHandlerConfig
@@ -70,6 +67,7 @@ authClient secretKey state dbConn redisConfig conn token = do
                 , username = username
                 , dbConn = dbConn
                 , clientConn = conn
+                , redisConfig = redisConfig
                 }
 
 clientExists :: Username -> Map Username Client -> Bool

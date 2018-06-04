@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Socket.Lobby where
+module Socket.Setup where
 
 import Control.Monad (void)
 import Control.Monad.Except
@@ -24,15 +24,20 @@ import Schema
 import Socket.Clients
 import Socket.Types
 import Types
-  {-
-addNewTableToLobby lobby table = do
-    let newLobby = M.insert table lobby
-    res <- runRedis $ multiExec $ do
-        res1 <- set "lobby" (show newLobby)
-        res2 <- set "c" "d"
-        return (res1, res2, ...)
 
+-- lobby inlcuding all game state is stored in redis to allow for horizontal scaling
+initialLobby =
+  Lobby $ M.fromList [("Black", initialTable), ("White", initialTable)]
+  where
+    initialTable = Table {observers = [], waitList = [], game = 0}
 
-(check res, and then all r1, r2 ... for errors)
+setInitialLobby :: RedisConfig -> Lobby -> IO ()
+setInitialLobby redisConfig lobby = do
+  res <-
+    liftIO $
+    runRedisAction redisConfig $
+    void $ Redis.hsetnx "gamesState" "lobby" (pack $ show initialLobby)
+  return res
 
--}
+intialiseGameStateInRedis :: RedisConfig -> IO ()
+intialiseGameStateInRedis redisConfig = setInitialLobby redisConfig initialLobby
