@@ -22,22 +22,16 @@ import qualified Database.Redis as Redis
 import Database
 import Schema
 import Socket.Clients
+import Socket.Lobby
 import Socket.Types
 import Types
 
 -- lobby inlcuding all game state is stored in redis to allow for horizontal scaling
-initialLobby =
-  Lobby $ M.fromList [("Black", initialTable), ("White", initialTable)]
-  where
-    initialTable = Table {observers = [], waitList = [], game = 0}
-
 setInitialLobby :: RedisConfig -> Lobby -> IO ()
-setInitialLobby redisConfig lobby = do
-  res <-
-    liftIO $
-    runRedisAction redisConfig $
-    void $ Redis.hsetnx "gamesState" "lobby" (pack $ show initialLobby)
-  return res
+setInitialLobby redisConfig lobby =
+  liftIO $
+  runRedisAction redisConfig $
+  void $ Redis.hsetnx "gamesState" "lobby" (pack $ show initialLobby)
 
 intialiseGameStateInRedis :: RedisConfig -> IO ()
 intialiseGameStateInRedis redisConfig = setInitialLobby redisConfig initialLobby

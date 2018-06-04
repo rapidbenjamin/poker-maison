@@ -13,18 +13,26 @@ import Web.JWT (Secret)
 
 import Socket.Clients
 import Socket.Lobby
+import Socket.Msg
 import Socket.Setup
 import Socket.Types
 import Types
 
+import Data.Aeson
+import qualified Data.ByteString.Lazy.Char8 as C
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Lazy as X
+import qualified Data.Text.Lazy.Encoding as D
+
 initialServerState :: ServerState
-initialServerState = ServerState {clients = M.empty, lobby = Lobby M.empty}
+initialServerState = ServerState {clients = M.empty, lobby = initialLobby}
 
 runSocketServer :: Secret -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port dbConnString redisConfig = do
   serverState <- newMVar initialServerState
   print $ "Socket server listening on " ++ (show port :: String)
-  intialiseGameStateInRedis redisConfig -- use of Redis for game state permits multi-server architecture and thus horizontal scaling
+  putStrLn $ T.unpack $ X.toStrict $ D.decodeUtf8 $ encode GetTables
   WS.runServer "127.0.0.1" port $
     application secretKey dbConnString redisConfig serverState
 
@@ -41,4 +49,5 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
-  authClient secretKey serverState dbConnString redisConfig newConn $ Token msg
+  authClient secretKey serverState dbConnString redisConfig msgHandler newConn $
+    Token msg

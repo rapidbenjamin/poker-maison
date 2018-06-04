@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Socket.Clients
-  ( authClient
-  ) where
+module Socket.Clients where
 
 import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
 import Control.Monad
@@ -15,6 +13,7 @@ import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Maybe
 import Data.Text (Text)
+import qualified Data.Text as T
 import Database.Persist.Postgresql (ConnectionString, entityVal)
 import qualified Network.WebSockets as WS
 import Prelude
@@ -23,30 +22,35 @@ import Web.JWT (Secret)
 import Auth
 import Database
 import Schema
-import Socket.Msg
 import Socket.Types
 import Socket.Utils
 import Types
 
 -- call handler function for all decodable JSON Messages with client and Msg
 addClientMsgListener ::
-     (Msg -> ReaderT MsgHandlerConfig IO a) -> ReaderT MsgHandlerConfig IO b
+     (MsgIn -> ReaderT MsgHandlerConfig IO ()) -> ReaderT MsgHandlerConfig IO ()
 addClientMsgListener msgCallback = do
-  MsgHandlerConfig {..} <- ask
+  msgHandlerConfig@MsgHandlerConfig {..} <- ask
   liftIO $
     forever $ do
       msg <- WS.receiveData clientConn
-      return $ for_ (parseMsg msg) $ \parsedMsg -> msgCallback parsedMsg
+      print $ "raw msg: " ++ T.unpack msg
+      print $ parseMsg msg
+      for_ (parseMsg msg) $ \parsedMsg -> do
+        print $ "parsed msg: " ++ show parsedMsg
+        runReaderT (msgCallback parsedMsg) msgHandlerConfig
+        return ()
 
 authClient ::
      Secret
   -> MVar ServerState
   -> ConnectionString
   -> RedisConfig
+  -> (MsgIn -> ReaderT MsgHandlerConfig IO ())
   -> WS.Connection
   -> Token
   -> IO ()
-authClient secretKey state dbConn redisConfig conn token = do
+authClient secretKey state dbConn redisConfig msgHandler conn token = do
   authResult <- runExceptT $ verifyToken secretKey dbConn redisConfig token
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
@@ -82,11 +86,14 @@ removeClient clients username = M.delete username clients
 getClient :: Map Username Client -> Username -> Maybe Client
 getClient clients username = M.lookup username clients
 
-sendMsgs :: [WS.Connection] -> Msg -> IO ()
+sendMsgs :: [WS.Connection] -> MsgOut -> IO ()
 sendMsgs conns msg = forM_ conns $ \conn -> sendMsg conn msg
 
-sendMsg :: WS.Connection -> Msg -> IO ()
+sendMsg :: WS.Connection -> MsgOut -> IO ()
 sendMsg conn msg = WS.sendTextData conn (encodeMsg msg)
+
+sendMsgX :: WS.Connection -> MsgIn -> IO ()
+sendMsgX conn msg = WS.sendTextData conn (encodeMsgX msg)
 
 getClientConn :: Client -> WS.Connection
 getClientConn Client {..} = conn

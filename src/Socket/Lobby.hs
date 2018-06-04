@@ -14,25 +14,15 @@ import Data.List (unfoldr)
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Maybe
-import Data.Maybe
 import Data.Text (Text)
 import Database.Redis (Redis, connect, runRedis, setex)
 import qualified Database.Redis as Redis
 
-import Database
-import Schema
-import Socket.Clients
 import Socket.Types
+import Socket.Utils
 import Types
-  {-
-addNewTableToLobby lobby table = do
-    let newLobby = M.insert table lobby
-    res <- runRedis $ multiExec $ do
-        res1 <- set "lobby" (show newLobby)
-        res2 <- set "c" "d"
-        return (res1, res2, ...)
 
-
-(check res, and then all r1, r2 ... for errors)
-
--}
+initialLobby =
+  Lobby $ M.fromList [("Black", initialTable), ("White", initialTable)]
+  where
+    initialTable = Table {observers = [], waitList = [], game = 0}

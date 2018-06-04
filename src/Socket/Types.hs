@@ -56,11 +56,18 @@ data ServerState = ServerState
 instance Eq Client where
   Client {email = email1} == Client {email = email2} = email1 == email2
 
-data Msg
-  = JoinTable -- incoming
-  | LeaveTable -- incoming
+-- incoming messages from a ws client
+data MsgIn
+  = GetTables
+  | JoinTable
+  | LeaveTable
   | SitAtTable
-  | PlayerLeft -- outgoing
+  deriving (Show, Generic, FromJSON, ToJSON)
+
+-- outgoing messages for ws client(s)
+data MsgOut
+  = TableList Lobby
+  | PlayerLeft
   | PlayerJoined
   | ErrMsg Err
   | AuthSuccess
