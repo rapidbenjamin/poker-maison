@@ -32,7 +32,6 @@ runSocketServer :: Secret -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port dbConnString redisConfig = do
   serverState <- newMVar initialServerState
   print $ "Socket server listening on " ++ (show port :: String)
-  putStrLn $ T.unpack $ X.toStrict $ D.decodeUtf8 $ encode GetTables
   WS.runServer "127.0.0.1" port $
     application secretKey dbConnString redisConfig serverState
 

@@ -21,7 +21,7 @@ import Socket.Types
 import Types
 
 msgHandler :: MsgIn -> ReaderT MsgHandlerConfig IO ()
-msgHandler msg@GetTables = getTablesHandler
+msgHandler msg@GetTables = undefined -- getTablesHandler
 
 getTablesHandler :: ReaderT MsgHandlerConfig IO ()
 getTablesHandler = do

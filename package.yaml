@@ -44,6 +44,12 @@ dependencies:
 - wai
 - websockets
 - pretty-simple
+- random-shuffle
+- split
+- monad-loops
+- MonadRandom
+- derive
+- mtl
 - wuss
 - warp
 - servant-docs
@@ -57,6 +63,7 @@ library:
     - Database
     - Schema
     - Config
+    - Poker
     - Socket
 
 

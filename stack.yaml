@@ -1,5 +1,6 @@
 flags: {}
 packages:
 - .
-resolver: lts-11.10
 allow-newer: true
+extra-deps:
+resolver: lts-10.2

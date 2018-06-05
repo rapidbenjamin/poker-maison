@@ -15,14 +15,14 @@ import Prelude
 import Socket.Types
 import Text.Pretty.Simple (pPrint)
 
-encodeMsg :: MsgOut -> Text
-encodeMsg a = T.pack $ show $ X.toStrict $ D.decodeUtf8 $ encode a
+encodeMsgToJSON :: MsgOut -> Text
+encodeMsgToJSON a = T.pack $ show $ X.toStrict $ D.decodeUtf8 $ encode a
 
 encodeMsgX :: MsgIn -> Text
 encodeMsgX a = T.pack $ show $ X.toStrict $ D.decodeUtf8 $ encode a
 
-parseMsg :: Text -> Maybe MsgIn
-parseMsg jsonTxt = decode $ C.pack $ T.unpack jsonTxt
+parseMsgFromJSON :: Text -> Maybe MsgIn
+parseMsgFromJSON jsonTxt = decode $ C.pack $ T.unpack jsonTxt
 
 getTimestamp :: UTCTime
 getTimestamp = UTCTime (ModifiedJulianDay 0) (secondsToDiffTime 0)
