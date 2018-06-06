@@ -19,7 +19,7 @@ import Database.Persist.Postgresql (ConnectionString)
 import GHC.Generics
 import qualified Network.WebSockets as WS
 
-import Poker.Types (Game, GameErr)
+import Poker.Types (Game, GameErr, PlayerAction)
 import Types (RedisConfig, Username)
 
 data MsgHandlerConfig = MsgHandlerConfig
@@ -65,24 +65,18 @@ data MsgIn
   | LeaveTable
   | TakeSeat
   | LeaveSeat
-  | GameAction TableName
-               GameAction
-  deriving (Show, Eq, Generic, FromJSON, ToJSON)
-
-data GameAction
-  = Fold
-  | Call
-  | Raise Int
-  | Check
-  | Bet Int
+  | GameMove TableName
+             PlayerAction
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- outgoing messages for ws client(s)
 data MsgOut
-  = TableList Lobby
+  = TableList Lobby -- TODO only broadcast public table info
+  | NewTableList Lobby -- TODO only broadcast public table info
   | PlayerLeft
   | PlayerJoined
-  | NewGameState Int
+  | NewGameState TableName
+                 Game
   | ErrMsg Err
   | AuthSuccess
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
@@ -90,7 +84,9 @@ data MsgOut
 data Err
   = TableFull TableName
   | TableDoesNotExist TableName
+  | NotSatAtTable TableName
   | NotEnoughChips
+  | GameErr GameErr
   | InvalidGameAction
   | AuthFailed Text
   deriving (Show, Eq, Generic, FromJSON, ToJSON)

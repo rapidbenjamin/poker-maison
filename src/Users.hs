@@ -13,7 +13,6 @@ import qualified Data.ByteString.Lazy.Char8 as CL
 import Data.Proxy
 import qualified Data.Text as T
 import Data.Text (Text)
-import Data.Text.Encoding (encodeUtf8)
 import Database
 import Database.Persist
 import Database.Persist.Postgresql

@@ -103,7 +103,7 @@ data Out
   deriving (Eq, Show, Ord, Read, Generic, ToJSON, FromJSON)
 
 data PlayerState
-  = None
+  = None -- none denotes a player that will not be dealt cards unless they send a postblinds action to the server
   | Out Out
   | In
   deriving (Eq, Show, Ord, Read, Generic, ToJSON, FromJSON)
@@ -114,6 +114,7 @@ data Street
   | Flop
   | Turn
   | River
+  | Showdown
   deriving (Eq, Ord, Show, Read, Bounded, Enum, Generic, ToJSON, FromJSON)
 
 data Player = Player
@@ -129,30 +130,51 @@ data Game = Game
   { players :: [Player]
   , maxPlayers :: Int
   , community :: [Card]
+  , waitlist :: [Text] --playernames
   , deck :: [Card]
+  , smallBlind :: Int
+  , bigBlind :: Int
   , street :: Street
   , pot :: Int
   , maxBet :: Bet
+  , dealer :: Int
+  , currentPosToAct :: Int -- position here refes to the zero indexed set of active users
   } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 type PlayerName = Text
 
-data PlayerAction
-  = TakeSeat PlayerName
-  | LeaveSeat PlayerName
-  deriving (Show, Eq, Read)
+data Blind
+  = Small
+  | Big
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
-data PlayerMove
-  = Fold PlayerName
-  | Call PlayerName
-  | Raise PlayerName
-          Int
-  | Check PlayerName
-  | Bet PlayerName
-        Int
-  deriving (Show, Eq, Read)
+data PlayerAction
+  = TakeSeat Player
+  | LeaveSeat
+  | PostBlind Blind
+  | Fold
+  | Call
+  | Raise Int
+  | Check
+  | Bet Int
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 data GameErr
-  = NotEnoughChips
-  | OutOfTurn
+  = NotEnoughChips PlayerName
+  | PlayerNotAtTable PlayerName
+  | NotAtTable PlayerName
+  | OutOfTurn PlayerName
+              CurrentPlayerToActErr
+  | InvalidMove PlayerName
+                InvalidMoveErr
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+-- if player takes an invalid move we need to inform the client and include the reason why
+data InvalidMoveErr
+  = BlindNotRequired
+  | BlindRequired Blind
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+data CurrentPlayerToActErr =
+  CurrentPlayerToActErr PlayerName
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)

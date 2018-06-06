@@ -21,6 +21,7 @@ import Prelude
 import Web.JWT (Secret)
 
 import Auth
+import qualified Data.Set as Set
 import Database
 import Schema
 import Socket.Types
@@ -29,13 +30,15 @@ import Types
 
 -- call handler function for all decodable JSON Messages with client and Msg
 addClientMsgListener ::
-     (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()) -> MsgHandlerConfig -> IO ()
-addClientMsgListener msgCallback msgHandlerConfig@MsgHandlerConfig{..} = do
-    finally
-      (forever $ do
-         msg <- WS.receiveData clientConn
-         parseMsg msg msgHandlerConfig msgCallback)
-      (removeClient username serverState)
+     (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
+  -> MsgHandlerConfig
+  -> IO ()
+addClientMsgListener msgCallback msgHandlerConfig@MsgHandlerConfig {..} = do
+  finally
+    (forever $ do
+       msg <- WS.receiveData clientConn
+       parseMsg msg msgHandlerConfig msgCallback)
+    (removeClient username serverState)
 
 -- if msg is successfully parsed fromJSON then we run our msg handler with the config consisting of
 -- our apps configuration such as db connection and server state. When processing the client's msg
@@ -46,16 +49,16 @@ parseMsg ::
   -> MsgHandlerConfig
   -> (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
   -> IO ()
-parseMsg msg config@MsgHandlerConfig{..} msgCallback = do
+parseMsg msg config@MsgHandlerConfig {..} msgCallback = do
   print $ "raw msg: " ++ T.unpack msg
   print $ parseMsgFromJSON msg
   for_ (parseMsgFromJSON msg) $ \parsedMsg -> do
     print $ "parsed msg: " ++ show parsedMsg
---    runReaderT (msgCallback parsedMsg) msgHandlerConfig
     result <- runExceptT $ runReaderT (msgCallback parsedMsg) config
     either (\err -> sendMsg clientConn $ ErrMsg err) return result
   return ()
 
+--    runReaderT (msgCallback parsedMsg) msgHandlerConfig
 authClient ::
      Secret
   -> MVar ServerState
@@ -105,6 +108,10 @@ addClient client username = M.insert username client
 getClient :: Map Username Client -> Username -> Maybe Client
 getClient clients username = M.lookup username clients
 
+broadcastAllClients :: Map Username Client -> MsgOut -> IO ()
+broadcastAllClients clients msg =
+  forM_ (M.elems clients) (\Client {..} -> sendMsg conn msg)
+
 sendMsgs :: [WS.Connection] -> MsgOut -> IO ()
 sendMsgs conns msg = forM_ conns $ \conn -> sendMsg conn msg
 
@@ -116,3 +123,9 @@ sendMsgX conn msg = WS.sendTextData conn (encodeMsgX msg)
 
 getClientConn :: Client -> WS.Connection
 getClientConn Client {..} = conn
+
+broadcastMsg :: Map Username Client -> [Username] -> MsgOut -> IO ()
+broadcastMsg clients usernames msg =
+  forM_ conns (\Client {..} -> sendMsg conn msg)
+  where
+    conns = clients `M.restrictKeys` Set.fromList usernames
