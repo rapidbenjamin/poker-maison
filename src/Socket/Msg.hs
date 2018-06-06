@@ -20,10 +20,10 @@ import Socket.Lobby
 import Socket.Types
 import Types
 
-msgHandler :: MsgIn -> ReaderT MsgHandlerConfig IO ()
+msgHandler :: MsgIn ->  ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 msgHandler msg@GetTables = undefined -- getTablesHandler
 
-getTablesHandler :: ReaderT MsgHandlerConfig IO ()
+getTablesHandler ::  ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 getTablesHandler = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readMVar serverState

@@ -5,6 +5,7 @@ module Socket.Lobby where
 
 import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
 import Control.Monad (void)
+import Data.Monoid
 import Control.Monad.Except
 import Control.Monad.Logger (LoggingT, runStdoutLoggingT)
 import Control.Monad.Reader
@@ -29,7 +30,7 @@ initialLobby =
   Lobby $ M.fromList [("Black", initialTable), ("White", initialTable)]
   where
     initialTable =
-      Table {observers = [], waitList = [], game = initialGameState}
+      Table {observers = [], waitlist = [], game = initialGameState}
 
 unLobby (Lobby lobby) = lobby
 
@@ -42,25 +43,22 @@ joinTable tableName = do
   let maybeRoom = M.lookup tableName $ unLobby lobby
   case maybeRoom of
     Nothing -> throwError $ TableDoesNotExist tableName
-    Just Table {..} ->
+    Just table@Table {..} ->
       if canJoinGame game
-        then if getGameStage game == Predeal
-               then joinGame
-               else joinGameWaitlist
-        else throwError TableFull tableName
-      where joinGame = joinGame username game
-            joinGameWaitlist = lobby username tableName
+        then if gameStage == PreDeal
+               then  return $ Table {game= joinGame username chipAmount game, ..}
+               else return $  joinTableWaitlist username table 
+        else throwError $ TableFull tableName
+      where gameStage = getGameStage game
+            chipAmount = 2500
   return ()
 
-getGameStage Game {..} = street
+joinGame :: Username -> Int -> Game -> Game
+joinGame (Username username) chips Game {..} = Game {players = players <> [player], ..}
+  where player = initialPlayer username chips
 
-joinGame :: Username -> Game -> Game
-joinGame (Username username) Game {..} = Game {players = players : username, ..}
-
-joinTableWaitlist :: Username -> TableName -> Lobby -> Lobby
-joinTableWaitlist username tableName lobby = updateTable lobby tableName
-  where
-    newTable = Game {}
+joinTableWaitlist :: Username -> Table -> Table 
+joinTableWaitlist username  Table{..}= Table { waitlist = waitlist <> [username] , ..}
 
 updateTable :: TableName -> Table -> Lobby -> Lobby
 updateTable tableName newTable (Lobby lobby) =

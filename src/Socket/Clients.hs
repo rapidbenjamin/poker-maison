@@ -29,35 +29,39 @@ import Types
 
 -- call handler function for all decodable JSON Messages with client and Msg
 addClientMsgListener ::
-     (MsgIn -> ReaderT MsgHandlerConfig IO ()) -> ReaderT MsgHandlerConfig IO ()
-addClientMsgListener msgCallback = do
-  msgHandlerConfig@MsgHandlerConfig {..} <- ask
-  liftIO $
+     (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()) -> MsgHandlerConfig -> IO ()
+addClientMsgListener msgCallback msgHandlerConfig@MsgHandlerConfig{..} = do
     finally
       (forever $ do
          msg <- WS.receiveData clientConn
          parseMsg msg msgHandlerConfig msgCallback)
       (removeClient username serverState)
 
+-- if msg is successfully parsed fromJSON then we run our msg handler with the config consisting of
+-- our apps configuration such as db connection and server state. When processing the client's msg
+-- any errors will be thrown and thus propagated to the client in our Left handling logic here whereby
+-- the error msg will be sent to the client
 parseMsg ::
      Text
   -> MsgHandlerConfig
-  -> (MsgIn -> ReaderT MsgHandlerConfig IO ())
+  -> (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
   -> IO ()
-parseMsg msg msgHandlerConfig msgCallback = do
+parseMsg msg config@MsgHandlerConfig{..} msgCallback = do
   print $ "raw msg: " ++ T.unpack msg
   print $ parseMsgFromJSON msg
   for_ (parseMsgFromJSON msg) $ \parsedMsg -> do
     print $ "parsed msg: " ++ show parsedMsg
-    runReaderT (msgCallback parsedMsg) msgHandlerConfig
-    return ()
+--    runReaderT (msgCallback parsedMsg) msgHandlerConfig
+    result <- runExceptT $ runReaderT (msgCallback parsedMsg) config
+    either (\err -> sendMsg clientConn $ ErrMsg err) return result
+  return ()
 
 authClient ::
      Secret
   -> MVar ServerState
   -> ConnectionString
   -> RedisConfig
-  -> (MsgIn -> ReaderT MsgHandlerConfig IO ())
+  -> (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
   -> WS.Connection
   -> Token
   -> IO ()
@@ -74,7 +78,7 @@ authClient secretKey state dbConn redisConfig msgHandler conn token = do
               addClient Client {conn = conn, email = userEmail} username clients
           , ..
           }
-      runReaderT (addClientMsgListener msgHandler) msgHandlerConfig
+      addClientMsgListener msgHandler msgHandlerConfig
       where username = Username userUsername
             msgHandlerConfig =
               MsgHandlerConfig

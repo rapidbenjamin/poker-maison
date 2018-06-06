@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Poker where
 
@@ -27,6 +28,9 @@ initialGameState =
     , maxBet = 0
     }
 
+initialPlayer :: Text -> Int -> Player 
+initialPlayer playerName chips = Player { pockets = [], bet = 0, playerState=None, playerName=playerName, committed=0}
+
 newGame :: Game -> State Game (Maybe GameErr)
 newGame initState = state $ \_ -> (Nothing, initialGameState)
 
@@ -36,6 +40,8 @@ progress move =
     case makePlayerMove currGameState move of
       Left err -> (Just err, currGameState)
       Right newGameState -> (Nothing, newGameState)
+
+getGameStage Game{..} = street
 
 makePlayerMove :: Game -> PlayerMove -> Either GameErr Game
 makePlayerMove game (Fold playerName) = undefined

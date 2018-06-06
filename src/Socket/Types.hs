@@ -38,7 +38,7 @@ newtype Lobby =
 
 data Table = Table
   { observers :: [Username] -- not sat at table or on waitlist but subscribed to updates
-  , waitList :: [Username] -- waiting to join a full table  and subscribed to updates
+  , waitlist :: [Username] -- waiting to join a full table  and subscribed to updates
   , game :: Game
   } deriving (Show, Ord, Eq, Read, Generic, ToJSON, FromJSON)
 
