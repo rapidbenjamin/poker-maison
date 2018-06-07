@@ -17,6 +17,7 @@ import Poker.Betting
 import Poker.Game
 import Poker.Hands
 import Poker.Types
+import Poker.Utils
 
 newGame :: Game -> State Game (Maybe GameErr)
 newGame initState = state $ \_ -> (Nothing, initialGameState)
@@ -24,16 +25,22 @@ newGame initState = state $ \_ -> (Nothing, initialGameState)
 -- this is public api of the poker module 
 -- the function takes a player action and returns either a new game for a valid 
 -- player action or an err signifying an invalid player action with the reason why
+-- if the current game stage is showdown then the next game state will have a newly shuffled
+-- deck and pocket cards/ bets reset
 progressGame :: PlayerName -> PlayerAction -> StateT Game IO (Maybe GameErr)
 progressGame playerName action =
-  StateT $ \currGameState ->
-    case isPlayerActingOutofTurn currGameState playerName of
-      Just err -> return (Just $ OutOfTurn playerName err, currGameState)
+  StateT $ \currGame@Game {..} ->
+    case isPlayerActingOutofTurn currGame playerName of
+      Just err -> return (Just $ OutOfTurn playerName err, currGame)
       Nothing ->
-        case handlePlayerAction currGameState playerName action of
-          Left err -> return (Just err, currGameState)
+        case handlePlayerAction currGame playerName action of
+          Left err -> return (Just err, currGame)
           Right newGameState ->
-            return (Nothing, nextHandIfShowdown newGameState)
+            if street == Showdown
+              then do
+                nextGameState <- liftIO $ getNextHand currGame
+                return (Nothing, nextGameState)
+              else return (Nothing, currGame)
 
 ------------------------------------------------------------------------------
 initialGameState :: Game
@@ -45,7 +52,7 @@ initialGameState =
     , dealer = 0
     , currentPosToAct = 0 -- position here refes to the zero indexed set of active users
     , community = []
-    , deck = initialDeck
+    , deck = []
     , smallBlind = 25
     , bigBlind = 50
     , pot = 0
@@ -64,11 +71,6 @@ getPlayer playerName chips =
     , committed = 0
     , chips = chips
     }
-
-nextHandIfShowdown :: Game -> Game
-nextHandIfShowdown game@Game {..}
-  | street == Showdown = getNextHand game
-  | otherwise = game
 
 getGameStage :: Game -> Street
 getGameStage Game {..} = street
@@ -191,18 +193,21 @@ handleBlindAction game@Game {..} playerName blind =
 -- new players can of course post their blinds early. In the case of an early posting the initial
 -- blind must be the big blind. After this 'early' blind or the posting of a normal blind in turn the 
 -- new player will be removed from the newBlindNeeded field and can play normally.
-getNextHand :: Game -> Game
-getNextHand Game {..} =
-  Game
-    { waitlist = newWaitlist
-    , maxBet = 0
-    , players = newPlayers
-    , community = []
-    , street = PreDeal
-    , dealer = newDealer
-    , currentPosToAct = nextPlayerToAct
-    , ..
-    }
+getNextHand :: Game -> IO Game
+getNextHand Game {..} = do
+  shuffledDeck <- shuffle initialDeck
+  return
+    Game
+      { waitlist = newWaitlist
+      , maxBet = 0
+      , players = newPlayers
+      , community = []
+      , deck = shuffledDeck
+      , street = PreDeal
+      , dealer = newDealer
+      , currentPosToAct = nextPlayerToAct
+      , ..
+      }
   where
     newDealer = dealer `modInc` length (getPlayersSatIn players)
     freeSeatsNo = maxPlayers - length players
