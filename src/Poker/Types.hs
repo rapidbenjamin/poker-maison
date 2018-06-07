@@ -175,6 +175,6 @@ data InvalidMoveErr
   | BlindRequired Blind
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
-data CurrentPlayerToActErr =
+newtype CurrentPlayerToActErr =
   CurrentPlayerToActErr PlayerName
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)

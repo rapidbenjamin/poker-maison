@@ -26,6 +26,7 @@ dependencies:
 - time
 - monad-logger
 - mtl
+- array
 - ekg
 - containers
 - cryptohash

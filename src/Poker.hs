@@ -6,7 +6,7 @@
 module Poker where
 
 ------------------------------------------------------------------------------
-import Control.Monad.State
+import Control.Monad.State.Lazy
 import Data.List
 import Data.Maybe
 import Data.Monoid
@@ -24,15 +24,16 @@ newGame initState = state $ \_ -> (Nothing, initialGameState)
 -- this is public api of the poker module 
 -- the function takes a player action and returns either a new game for a valid 
 -- player action or an err signifying an invalid player action with the reason why
-progressGame :: PlayerName -> PlayerAction -> State Game (Maybe GameErr)
+progressGame :: PlayerName -> PlayerAction -> StateT Game IO (Maybe GameErr)
 progressGame playerName action =
-  state $ \currGameState ->
+  StateT $ \currGameState ->
     case isPlayerActingOutofTurn currGameState playerName of
-      Just err -> (Just $ OutOfTurn playerName err, currGameState)
+      Just err -> return (Just $ OutOfTurn playerName err, currGameState)
       Nothing ->
         case handlePlayerAction currGameState playerName action of
-          Left err -> (Just err, currGameState)
-          Right newGameState -> (Nothing, nextHandIfShowdown newGameState)
+          Left err -> return (Just err, currGameState)
+          Right newGameState ->
+            return (Nothing, nextHandIfShowdown newGameState)
 
 ------------------------------------------------------------------------------
 initialGameState :: Game

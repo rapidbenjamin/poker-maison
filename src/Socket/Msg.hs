@@ -9,7 +9,7 @@ import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
-import Control.Monad.Trans.State.Lazy
+import Control.Monad.State.Lazy
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Text (Text)
@@ -52,24 +52,27 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
     Just table@Table {..} ->
       if not satAtTable
         then throwError $ NotSatAtTable tableName
-        else case updateGameWithMove gameMove username game of
-               Left gameErr -> throwError $ GameErr gameErr
-               Right updatedGame -> do
-                 liftIO $
-                   broadcastMsg clients tableSubscribers $
-                   NewGameState tableName updatedGame -- propagate this new game state to clients
-                 let updatedLobby = updateTableGame tableName lobby updatedGame
-                 liftIO $
-                   updateServerState
-                     serverState
-                     ServerState {lobby = updatedLobby, ..}
+        else do
+          playerActionResult <-
+            liftIO $ updateGameWithMove gameMove username game
+          case playerActionResult of
+            Left gameErr -> throwError $ GameErr gameErr
+            Right updatedGame -> do
+              liftIO $
+                broadcastMsg clients tableSubscribers $
+                NewGameState tableName updatedGame -- propagate this new game state to clients
+              let updatedLobby = updateTableGame tableName lobby updatedGame
+              liftIO $
+                updateServerState
+                  serverState
+                  ServerState {lobby = updatedLobby, ..}
       where satAtTable = unUsername username `elem` getGamePlayerNames game
             tableSubscribers = getTableSubscribers table
 
 -- get either the new game state or an error when an in-game move is taken by a player 
-updateGameWithMove :: MsgIn -> Username -> Game -> Either GameErr Game
+updateGameWithMove :: MsgIn -> Username -> Game -> IO (Either GameErr Game)
 updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
-  let (maybeErr, gameState) = runState (progressGame username playerAction) game
+  (maybeErr, gameState) <- runStateT (progressGame username playerAction) game
   case maybeErr of
-    Nothing -> Right gameState
-    Just gameErr -> Left gameErr
+    Nothing -> return $ Right gameState
+    Just gameErr -> return $ Left gameErr

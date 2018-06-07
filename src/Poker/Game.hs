@@ -3,6 +3,8 @@
 
 module Poker.Game where
 
+import Control.Arrow
+
 ------------------------------------------------------------------------------
 import Control.Monad.Random.Class
 import Control.Monad.State hiding (state)
