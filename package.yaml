@@ -67,8 +67,6 @@ library:
     - Poker
     - Socket
 
-
-
 executables:
   poker-server-exe:
     main:                Main.hs

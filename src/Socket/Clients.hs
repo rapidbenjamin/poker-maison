@@ -18,6 +18,7 @@ import qualified Data.Text as T
 import Database.Persist.Postgresql (ConnectionString, entityVal)
 import qualified Network.WebSockets as WS
 import Prelude
+import Text.Pretty.Simple (pPrint)
 import Web.JWT (Secret)
 
 import Auth
@@ -37,6 +38,8 @@ addClientMsgListener msgCallback msgHandlerConfig@MsgHandlerConfig {..} = do
   finally
     (forever $ do
        msg <- WS.receiveData clientConn
+       s@ServerState {..} <- liftIO $ readMVar serverState
+       pPrint s
        parseMsg msg msgHandlerConfig msgCallback)
     (removeClient username serverState)
 
@@ -82,7 +85,6 @@ authClient secretKey state dbConn redisConfig msgHandler conn token = do
           , ..
           }
       addClientMsgListener msgHandler msgHandlerConfig
-      print $ encodeMsgToJSON $ JoinTable "Black"
       where username = Username userUsername
             msgHandlerConfig =
               MsgHandlerConfig

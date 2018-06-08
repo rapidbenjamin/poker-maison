@@ -19,8 +19,8 @@ import qualified Network.WebSockets as WS
 import Prelude
 import Text.Pretty.Simple (pPrint)
 
-import Poker (getGamePlayerNames, getGamePlayers, progressGame)
-import Poker.Types (Game, GameErr, PlayerAction)
+import Poker (getGamePlayerNames, getGamePlayers, getPlayer, progressGame)
+import Poker.Types
 import Socket.Clients
 import Socket.Lobby
 import Socket.Types
@@ -68,11 +68,18 @@ takeSeatHandler move@(TakeSeat tableName) = do
       if (unUsername username) `elem` getGamePlayerNames game
         then throwError $ AlreadySatInGame tableName
         else do
-          playerActionResult <- liftIO $ updateGameWithMove move username game
+          let chips_Hardcoded = 2000
+          let player = getPlayer (unUsername username) chips_Hardcoded
+          let playerAction = GameMove tableName $ SitDown player
+          playerActionResult <-
+            liftIO $ updateGameWithMove playerAction username game
           case playerActionResult of
             Left gameErr -> throwError $ GameErr gameErr
             Right updatedGame -> do
-              let newTableSubscribers = tableSubscribers <> [username]
+              let newTableSubscribers =
+                    if username `notElem` tableSubscribers
+                      then tableSubscribers <> [username]
+                      else tableSubscribers
               let updatedTable =
                     Table
                       { subscribers = newTableSubscribers
@@ -81,9 +88,7 @@ takeSeatHandler move@(TakeSeat tableName) = do
                       }
               liftIO $
                 broadcastMsg clients newTableSubscribers $
-                NewGameState
-                  tableName
-                  updatedGame -- propagate this new game state to clients
+                NewGameState tableName updatedGame
               let updatedLobby = updateTable tableName updatedTable lobby
               liftIO $
                 updateServerState
@@ -116,7 +121,7 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
             Right updatedGame -> do
               liftIO $
                 broadcastMsg clients tableSubscribers $
-                NewGameState tableName updatedGame -- propagate this new game state to clients
+                NewGameState tableName updatedGame
               let updatedLobby = updateTableGame tableName updatedGame lobby
               liftIO $
                 updateServerState
@@ -129,6 +134,9 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
 updateGameWithMove :: MsgIn -> Username -> Game -> IO (Either GameErr Game)
 updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
   (maybeErr, gameState) <- runStateT (progressGame username playerAction) game
+  print "next game state"
+  pPrint gameState
+  pPrint maybeErr
   case maybeErr of
     Nothing -> return $ Right gameState
     Just gameErr -> return $ Left gameErr

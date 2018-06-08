@@ -30,17 +30,14 @@ newGame initState = state $ \_ -> (Nothing, initialGameState)
 progressGame :: PlayerName -> PlayerAction -> StateT Game IO (Maybe GameErr)
 progressGame playerName action =
   StateT $ \currGame@Game {..} ->
-    case isPlayerActingOutofTurn currGame playerName of
-      Just err -> return (Just $ OutOfTurn playerName err, currGame)
-      Nothing ->
-        case handlePlayerAction currGame playerName action of
-          Left err -> return (Just err, currGame)
-          Right newGameState ->
-            if street == Showdown
-              then do
-                nextGameState <- liftIO $ getNextHand currGame
-                return (Nothing, nextGameState)
-              else return (Nothing, currGame)
+    case handlePlayerAction currGame playerName action of
+      Left err -> return (Just err, currGame)
+      Right newGameState ->
+        if street == Showdown
+          then do
+            nextGameState <- liftIO $ getNextHand currGame
+            return (Nothing, nextGameState)
+          else return (Nothing, newGameState)
 
 ------------------------------------------------------------------------------
 initialGameState :: Game
@@ -89,8 +86,7 @@ getPlayerNames :: Functor f => f Player -> f Text
 getPlayerNames players = (\Player {..} -> playerName) <$> players
 
 handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
-handlePlayerAction game _ action@(TakeSeat player) =
-  Right $ takeSeat game player
+handlePlayerAction game _ action@(SitDown player) = seatPlayer game player
 handlePlayerAction game playerName action@LeaveSeat {} = undefined
 handlePlayerAction game playerName action@PostBlind {} = undefined
 handlePlayerAction game playerName action@Fold {} = undefined
@@ -111,10 +107,12 @@ isPlayerActingOutofTurn Game {..} playerName =
     currentPlayerToAct = activePlayers !! currentPosToAct
 
 -- TODO should be able to choose seat
-takeSeat :: Game -> Player -> Game
-takeSeat Game {..} player@Player {..}
-  | length players < maxPlayers = Game {players = players <> [player], ..}
-  | otherwise = Game {waitlist = waitlist <> [playerName], ..}
+seatPlayer :: Game -> Player -> Either GameErr Game
+seatPlayer Game {..} player@Player {..}
+  | playerName `elem` getPlayerNames players =
+    Left $ AlreadySatAtTable playerName
+  | length players < maxPlayers = Right Game {players = players <> [player], ..}
+  | otherwise = Right $ Game {waitlist = waitlist <> [playerName], ..}
 
 -- if a player does not post their blind at the appropriate time then their state will be changed to 
 --None signifying that they have a seat but are now sat out

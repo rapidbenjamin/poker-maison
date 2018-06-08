@@ -149,7 +149,7 @@ data Blind
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 data PlayerAction
-  = TakeSeat Player
+  = SitDown Player
   | LeaveSeat
   | PostBlind Blind
   | Fold
@@ -162,6 +162,7 @@ data PlayerAction
 data GameErr
   = NotEnoughChips PlayerName
   | PlayerNotAtTable PlayerName
+  | AlreadySatAtTable PlayerName
   | NotAtTable PlayerName
   | OutOfTurn PlayerName
               CurrentPlayerToActErr
