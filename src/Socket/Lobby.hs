@@ -27,7 +27,7 @@ initialLobby =
   Lobby $ M.fromList [("Black", initialTable), ("White", initialTable)]
   where
     initialTable =
-      Table {observers = [], waitlist = [], game = initialGameState}
+      Table {subscribers = [], waitlist = [], game = initialGameState}
 
 unLobby :: Lobby -> Map TableName Table
 unLobby (Lobby lobby) = lobby
@@ -86,14 +86,14 @@ lookupTableSubscribers tableName (Lobby lobby) =
   case M.lookup tableName lobby of
     Nothing -> []
     Just Table {..} ->
-      (fmap Username $ getGamePlayerNames game) ++ waitlist ++ observers
+      (fmap Username $ getGamePlayerNames game) ++ waitlist ++ subscribers
 
-updateTableGame :: TableName -> Lobby -> Game -> Lobby
-updateTableGame tableName (Lobby lobby) newGame =
+updateTableGame :: TableName -> Game -> Lobby -> Lobby
+updateTableGame tableName newGame (Lobby lobby) =
   Lobby $ M.adjust updateTable tableName lobby
   where
     updateTable Table {..} = Table {game = newGame, ..}
 
 -- returns playernames of all observers , players in game and on waitlist
 getTableSubscribers Table {..} =
-  (Username <$> getGamePlayerNames game) ++ waitlist ++ observers
+  (Username <$> getGamePlayerNames game) ++ waitlist ++ subscribers

@@ -37,7 +37,7 @@ newtype Lobby =
   deriving (Show, Ord, Eq, Read, Generic, ToJSON, FromJSON)
 
 data Table = Table
-  { observers :: [Username] -- not sat at table or on waitlist but subscribed to updates
+  { subscribers :: [Username] -- not sat at table or on waitlist but observing game state
   , waitlist :: [Username] -- waiting to join a full table  and subscribed to updates
   , game :: Game
   } deriving (Show, Ord, Eq, Read, Generic, ToJSON, FromJSON)
@@ -50,6 +50,7 @@ data Client = Client
 instance Show Client where
   show Client {..} = show email
 
+-- TODO wrap clients Map in a newtype
 data ServerState = ServerState
   { clients :: Map Username Client
   , lobby :: Lobby
@@ -61,9 +62,9 @@ instance Eq Client where
 -- incoming messages from a ws client
 data MsgIn
   = GetTables
-  | JoinTable
+  | JoinTable TableName
   | LeaveTable
-  | TakeSeat
+  | TakeSeat TableName
   | LeaveSeat
   | GameMove TableName
              PlayerAction
@@ -85,6 +86,9 @@ data Err
   = TableFull TableName
   | TableDoesNotExist TableName
   | NotSatAtTable TableName
+  | AlreadySatInGame TableName
+  | AlreadySatAtTable TableName
+  | AlreadySubscribedToTable TableName
   | NotEnoughChips
   | GameErr GameErr
   | InvalidGameAction

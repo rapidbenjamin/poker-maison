@@ -15,7 +15,7 @@ import Prelude
 import Socket.Types
 import Text.Pretty.Simple (pPrint)
 
-encodeMsgToJSON :: MsgOut -> Text
+--encodeMsgToJSON :: MsgOut -> Text
 encodeMsgToJSON a = T.pack $ show $ X.toStrict $ D.decodeUtf8 $ encode a
 
 encodeMsgX :: MsgIn -> Text

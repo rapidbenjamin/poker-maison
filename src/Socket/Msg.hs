@@ -12,6 +12,7 @@ import Control.Monad.Reader
 import Control.Monad.State.Lazy
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
+import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Network.WebSockets as WS
@@ -28,6 +29,8 @@ import Types
 
 msgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 msgHandler GetTables {} = getTablesHandler
+msgHandler msg@JoinTable {} = joinTableHandler msg
+msgHandler msg@TakeSeat {} = takeSeatHandler msg
 msgHandler msg@GameMove {} = gameMoveHandler msg
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
@@ -35,6 +38,59 @@ getTablesHandler = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readMVar serverState
   liftIO $ sendMsg clientConn $ TableList lobby
+
+-- simply adds client to the list of subscribers
+joinTableHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
+joinTableHandler (JoinTable tableName) = do
+  MsgHandlerConfig {..} <- ask
+  ServerState {..} <- liftIO $ readMVar serverState
+  case M.lookup tableName $ unLobby lobby of
+    Nothing -> throwError $ TableDoesNotExist tableName
+    Just table@Table {..} ->
+      if username `elem` tableSubscribers
+        then throwError $ AlreadySubscribedToTable tableName
+        else do
+          let updatedTable =
+                Table {subscribers = tableSubscribers <> [username], ..}
+          let updatedLobby = updateTable tableName updatedTable lobby
+          liftIO $
+            updateServerState serverState ServerState {lobby = updatedLobby, ..}
+      where satAtTable = unUsername username `elem` getGamePlayerNames game
+            tableSubscribers = getTableSubscribers table
+
+takeSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
+takeSeatHandler move@(TakeSeat tableName) = do
+  MsgHandlerConfig {..} <- ask
+  ServerState {..} <- liftIO $ readMVar serverState
+  case M.lookup tableName $ unLobby lobby of
+    Nothing -> throwError $ TableDoesNotExist tableName
+    Just table@Table {..} ->
+      if (unUsername username) `elem` getGamePlayerNames game
+        then throwError $ AlreadySatInGame tableName
+        else do
+          playerActionResult <- liftIO $ updateGameWithMove move username game
+          case playerActionResult of
+            Left gameErr -> throwError $ GameErr gameErr
+            Right updatedGame -> do
+              let newTableSubscribers = tableSubscribers <> [username]
+              let updatedTable =
+                    Table
+                      { subscribers = newTableSubscribers
+                      , game = updatedGame
+                      , ..
+                      }
+              liftIO $
+                broadcastMsg clients newTableSubscribers $
+                NewGameState
+                  tableName
+                  updatedGame -- propagate this new game state to clients
+              let updatedLobby = updateTable tableName updatedTable lobby
+              liftIO $
+                updateServerState
+                  serverState
+                  ServerState {lobby = updatedLobby, ..}
+      where satInGame = unUsername username `elem` getGamePlayerNames game
+            tableSubscribers = getTableSubscribers table
 
 unUsername :: Username -> Text
 unUsername (Username username) = username
@@ -61,7 +117,7 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
               liftIO $
                 broadcastMsg clients tableSubscribers $
                 NewGameState tableName updatedGame -- propagate this new game state to clients
-              let updatedLobby = updateTableGame tableName lobby updatedGame
+              let updatedLobby = updateTableGame tableName updatedGame lobby
               liftIO $
                 updateServerState
                   serverState

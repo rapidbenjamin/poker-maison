@@ -82,6 +82,7 @@ authClient secretKey state dbConn redisConfig msgHandler conn token = do
           , ..
           }
       addClientMsgListener msgHandler msgHandlerConfig
+      print $ encodeMsgToJSON $ JoinTable "Black"
       where username = Username userUsername
             msgHandlerConfig =
               MsgHandlerConfig
@@ -111,6 +112,12 @@ getClient clients username = M.lookup username clients
 broadcastAllClients :: Map Username Client -> MsgOut -> IO ()
 broadcastAllClients clients msg =
   forM_ (M.elems clients) (\Client {..} -> sendMsg conn msg)
+
+broadcastTableSubscribers :: Table -> Map Username Client -> MsgOut -> IO ()
+broadcastTableSubscribers Table {..} clients msg =
+  forM_ subscriberConns (\Client {..} -> sendMsg conn msg)
+  where
+    subscriberConns = clients `M.restrictKeys` Set.fromList subscribers
 
 sendMsgs :: [WS.Connection] -> MsgOut -> IO ()
 sendMsgs conns msg = forM_ conns $ \conn -> sendMsg conn msg
