@@ -164,8 +164,6 @@ data GameErr
   | PlayerNotAtTable PlayerName
   | AlreadySatAtTable PlayerName
   | NotAtTable PlayerName
-  | OutOfTurn PlayerName
-              CurrentPlayerToActErr
   | InvalidMove PlayerName
                 InvalidMoveErr
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
@@ -174,6 +172,7 @@ data GameErr
 data InvalidMoveErr
   = BlindNotRequired
   | BlindRequired Blind
+  | OutOfTurn CurrentPlayerToActErr
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =

@@ -12,6 +12,8 @@ import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
 
+import Poker.ActionValidation
+
 ------------------------------------------------------------------------------
 import Poker.Betting
 import Poker.Game
@@ -69,42 +71,19 @@ getPlayer playerName chips =
     , chips = chips
     }
 
-getGameStage :: Game -> Street
-getGameStage Game {..} = street
-
-getGamePlayers :: Game -> [Player]
-getGamePlayers Game {..} = players
-
-getGamePlayer :: Game -> PlayerName -> Maybe Player
-getGamePlayer Game {..} playerName =
-  find (\Player {..} -> playerName == playerName) players
-
-getGamePlayerNames :: Game -> [Text]
-getGamePlayerNames Game {..} = (\Player {..} -> playerName) <$> players
-
-getPlayerNames :: Functor f => f Player -> f Text
-getPlayerNames players = (\Player {..} -> playerName) <$> players
-
 handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
 handlePlayerAction game _ action@(SitDown player) = seatPlayer game player
 handlePlayerAction game playerName action@LeaveSeat {} = undefined
-handlePlayerAction game playerName action@PostBlind {} = undefined
+handlePlayerAction game playerName action@(PostBlind blind) =
+  maybe
+    (postBlind game playerName blind)
+    Left
+    (validateAction game playerName action)
 handlePlayerAction game playerName action@Fold {} = undefined
 handlePlayerAction game playerName action@Call {} = undefined
 handlePlayerAction game playerName action@Raise {} = undefined
 handlePlayerAction game playerName action@Check {} = undefined
 handlePlayerAction game playerName action@Bet {} = undefined
-
--- if player taking the action is not the current player to act then send back an err wrapped in Just
--- otherwise if the player is making an action in turn then return Nothing to signify the absence of error
-isPlayerActingOutofTurn :: Game -> PlayerName -> Maybe CurrentPlayerToActErr
-isPlayerActingOutofTurn Game {..} playerName =
-  if currentPlayerToAct == playerName
-    then Nothing
-    else Just $ CurrentPlayerToActErr currentPlayerToAct
-  where
-    activePlayers = getPlayerNames $ getActivePlayers players
-    currentPlayerToAct = activePlayers !! currentPosToAct
 
 -- TODO should be able to choose seat
 seatPlayer :: Game -> Player -> Either GameErr Game
@@ -113,74 +92,6 @@ seatPlayer Game {..} player@Player {..}
     Left $ AlreadySatAtTable playerName
   | length players < maxPlayers = Right Game {players = players <> [player], ..}
   | otherwise = Right $ Game {waitlist = waitlist <> [playerName], ..}
-
--- if a player does not post their blind at the appropriate time then their state will be changed to 
---None signifying that they have a seat but are now sat out
--- blind is required either if player is sitting in bigBlind or smallBlind position relative to dealer
--- or if their current playerState is set to Out 
--- If no blind is required for the player to remain In for the next hand then we will return Nothing
-blindRequiredByPlayer :: Game -> Text -> Maybe Blind
-blindRequiredByPlayer game@Game {..} playerName = do
-  Player {..} <- getGamePlayer game playerName
-  case playerState of
-    None -> Just Big
-    _ -> do
-      playerPosition <- getPlayerPosition (getPlayerNames players) playerName
-      let playersSatIn = getPlayerNames $ getPlayersSatIn players
-      let smallBlindPos = getSmallBlindPosition playersSatIn dealer
-      let bigBlindPos = smallBlindPos `modInc` length playersSatIn
-      if playerPosition == smallBlindPos
-        then Just Small
-        else if playerPosition == bigBlindPos
-               then Just Big
-               else Nothing
-
--- return players which have the ability to make further moves i.e not all in or folded
--- the distinction between sat in and active is important
--- if a player is sat out then there has been no historical participation in this hand 
--- as there can be no future participation in this hand 
--- whereas sat in means that the player has at the very least had some historical participation
--- in the current hand
-getActivePlayers :: [Player] -> [Player]
-getActivePlayers = filter (\Player {..} -> playerState == In)
-
--- get all players who are not currently sat out
-getPlayersSatIn :: [Player] -> [Player]
-getPlayersSatIn = filter (\Player {..} -> playerState /= None)
-
--- player position is the order of a given player in the set of all players with a 
--- playerState of In or in other words the players that are both sat at the table and active 
--- return Nothing if the given playerName is not sat at table
-getPlayerPosition :: [PlayerName] -> PlayerName -> Maybe Int
-getPlayerPosition playersSatIn playerName = playerName `elemIndex` playersSatIn
-
-getSmallBlindPosition :: [Text] -> Int -> Int
-getSmallBlindPosition playersSatIn dealerPos =
-  modInc dealerPos (length playersSatIn)
-
--- the posting of a blind by a player 
--- will ensure that their player state is set to In and they will be dealt the next hand
-handleBlindAction :: Game -> PlayerName -> Blind -> Either GameErr Game
-handleBlindAction game@Game {..} playerName _
-  | not atTable = Left $ NotAtTable playerName
-  where
-    playerNames = getGamePlayerNames game
-    atTable = playerName `elem` playerNames
-handleBlindAction game@Game {..} playerName _
-  | isNothing $ blindRequiredByPlayer game playerName =
-    Left $ InvalidMove playerName BlindNotRequired
-handleBlindAction game@Game {..} playerName blind =
-  case fromJust blindRequired of
-    Small ->
-      if blind == Small
-        then postBlind game playerName blind
-        else Left $ InvalidMove playerName $ BlindRequired Small
-    Big ->
-      if blind == Big
-        then postBlind game playerName blind
-        else Left $ InvalidMove playerName $ BlindRequired Big
-  where
-    blindRequired = blindRequiredByPlayer game playerName
 
 -- reset hand related state
 -- TODO move players from waitlist to players list
@@ -212,14 +123,6 @@ getNextHand Game {..} = do
     newPlayers = resetPlayerCardsAndBets <$> players
     newWaitlist = drop freeSeatsNo waitlist
     nextPlayerToAct = currentPosToAct `modInc` length newPlayers
-
-modInc :: Integral p => p -> p -> p
-modInc num modulo
-  | incNum == 0 = modInc
-  | otherwise = incNum
-  where
-    incNum = num + 1
-    modInc = incNum `mod` modulo
 
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =

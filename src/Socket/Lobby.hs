@@ -17,6 +17,7 @@ import Data.Monoid
 import Data.Text (Text)
 import Poker
 import Poker.Types
+import Poker.Utils
 import Socket.Clients
 import Socket.Types
 import Socket.Utils

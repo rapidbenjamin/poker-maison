@@ -19,8 +19,9 @@ import qualified Network.WebSockets as WS
 import Prelude
 import Text.Pretty.Simple (pPrint)
 
-import Poker (getGamePlayerNames, getGamePlayers, getPlayer, progressGame)
+import Poker
 import Poker.Types
+import Poker.Utils
 import Socket.Clients
 import Socket.Lobby
 import Socket.Types
