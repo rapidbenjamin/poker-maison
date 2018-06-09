@@ -33,15 +33,14 @@ validateAction game@Game {..} playerName action@(PostBlind blind) =
             Nothing -> Nothing
 
 isPlayerActingOutOfTurn :: Game -> PlayerName -> Maybe GameErr
-isPlayerActingOutOfTurn Game {..} playerName =
+isPlayerActingOutOfTurn game playerName =
   if currentPlayerToAct == playerName
     then Nothing
     else Just $
          InvalidMove playerName $
          OutOfTurn $ CurrentPlayerToActErr currentPlayerToAct
   where
-    activePlayers = getPlayerNames $ getActivePlayers players
-    currentPlayerToAct = activePlayers !! currentPosToAct
+    currentPlayerToAct = (getGamePlayerNames game) !! _currentPosToAct game
 
 checkPlayerSatAtTable :: Game -> PlayerName -> Maybe GameErr
 checkPlayerSatAtTable game@Game {..} playerName
@@ -71,14 +70,14 @@ validateBlindAction game@Game {..} playerName blind =
 -- or if their current playerState is set to Out 
 -- If no blind is required for the player to remain In for the next hand then we will return Nothing
 blindRequiredByPlayer :: Game -> Text -> Maybe Blind
-blindRequiredByPlayer game@Game {..} playerName = do
-  Player {..} <- getGamePlayer game playerName
-  case playerState of
+blindRequiredByPlayer game playerName = do
+  player <- getGamePlayer game playerName
+  case _playerState player of
     None -> Just Big
     _ -> do
-      playerPosition <- getPlayerPosition (getPlayerNames players) playerName
-      let playersSatIn = getPlayerNames $ getPlayersSatIn players
-      let smallBlindPos = getSmallBlindPosition playersSatIn dealer
+      playerPosition <- getPlayerPosition (getGamePlayerNames game) playerName
+      let playersSatIn = getPlayerNames $ getPlayersSatIn (_players game)
+      let smallBlindPos = getSmallBlindPosition playersSatIn (_dealer game)
       let bigBlindPos = smallBlindPos `modInc` length playersSatIn
       if playerPosition == smallBlindPos
         then Just Small

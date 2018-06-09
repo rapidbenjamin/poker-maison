@@ -6,6 +6,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -18,8 +19,8 @@ import Data.Aeson.Types
 import Data.Text
 import GHC.Generics
 
+import Control.Lens
 import Control.Monad.State hiding (state)
-import Data.DeriveTH
 import Data.Function
 import Data.Text
 
@@ -118,27 +119,27 @@ data Street
   deriving (Eq, Ord, Show, Read, Bounded, Enum, Generic, ToJSON, FromJSON)
 
 data Player = Player
-  { pockets :: [Card]
-  , chips :: Int
-  , bet :: Bet
-  , playerState :: PlayerState
-  , playerName :: Text
-  , committed :: Bet
+  { _pockets :: [Card]
+  , _chips :: Int
+  , _bet :: Bet
+  , _playerState :: PlayerState
+  , _playerName :: Text
+  , _committed :: Bet
   } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 data Game = Game
-  { players :: [Player]
-  , maxPlayers :: Int
-  , community :: [Card]
-  , waitlist :: [Text] --playernames
-  , deck :: [Card]
-  , smallBlind :: Int
-  , bigBlind :: Int
-  , street :: Street
-  , pot :: Int
-  , maxBet :: Bet
-  , dealer :: Int
-  , currentPosToAct :: Int -- position here refes to the zero indexed set of active users
+  { _players :: [Player]
+  , _maxPlayers :: Int
+  , _community :: [Card]
+  , _waitlist :: [Text] --playernames
+  , _deck :: [Card]
+  , _smallBlind :: Int
+  , _bigBlind :: Int
+  , _street :: Street
+  , _pot :: Int
+  , _maxBet :: Bet
+  , _dealer :: Int
+  , _currentPosToAct :: Int -- position here refes to the zero indexed set of active users
   } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 type PlayerName = Text
@@ -178,3 +179,7 @@ data InvalidMoveErr
 newtype CurrentPlayerToActErr =
   CurrentPlayerToActErr PlayerName
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+makeLenses ''Player
+
+makeLenses ''Game

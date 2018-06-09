@@ -35,7 +35,7 @@ progressGame playerName action =
     case handlePlayerAction currGame playerName action of
       Left err -> return (Just err, currGame)
       Right newGameState ->
-        if street == Showdown
+        if _street == Showdown
           then do
             nextGameState <- liftIO $ getNextHand currGame
             return (Nothing, nextGameState)
@@ -45,30 +45,30 @@ progressGame playerName action =
 initialGameState :: Game
 initialGameState =
   Game
-    { players = []
-    , waitlist = []
-    , maxPlayers = 5
-    , dealer = 0
-    , currentPosToAct = 0 -- position here refes to the zero indexed set of active users
-    , community = []
-    , deck = []
-    , smallBlind = 25
-    , bigBlind = 50
-    , pot = 0
-    , street = PreDeal
-    , maxBet = 0
+    { _players = []
+    , _waitlist = []
+    , _maxPlayers = 5
+    , _dealer = 0
+    , _currentPosToAct = 0 -- position here refes to the zero indexed set of active users
+    , _community = []
+    , _deck = []
+    , _smallBlind = 25
+    , _bigBlind = 50
+    , _pot = 0
+    , _street = PreDeal
+    , _maxBet = 0
     }
 
 -- initially a players state is set to None to denote that they havent posted their blinds yet
 getPlayer :: Text -> Int -> Player
 getPlayer playerName chips =
   Player
-    { pockets = []
-    , bet = 0
-    , playerState = None
-    , playerName = playerName
-    , committed = 0
-    , chips = chips
+    { _pockets = []
+    , _bet = 0
+    , _playerState = None
+    , _playerName = playerName
+    , _committed = 0
+    , _chips = chips
     }
 
 handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
@@ -88,10 +88,11 @@ handlePlayerAction game playerName action@Bet {} = undefined
 -- TODO should be able to choose seat
 seatPlayer :: Game -> Player -> Either GameErr Game
 seatPlayer Game {..} player@Player {..}
-  | playerName `elem` getPlayerNames players =
-    Left $ AlreadySatAtTable playerName
-  | length players < maxPlayers = Right Game {players = players <> [player], ..}
-  | otherwise = Right $ Game {waitlist = waitlist <> [playerName], ..}
+  | _playerName `elem` getPlayerNames _players =
+    Left $ AlreadySatAtTable _playerName
+  | length _players < _maxPlayers =
+    Right Game {_players = _players <> [player], ..}
+  | otherwise = Right $ Game {_waitlist = _waitlist <> [_playerName], ..}
 
 -- reset hand related state
 -- TODO move players from waitlist to players list
@@ -107,23 +108,23 @@ getNextHand Game {..} = do
   shuffledDeck <- shuffle initialDeck
   return
     Game
-      { waitlist = newWaitlist
-      , maxBet = 0
-      , players = newPlayers
-      , community = []
-      , deck = shuffledDeck
-      , street = PreDeal
-      , dealer = newDealer
-      , currentPosToAct = nextPlayerToAct
+      { _waitlist = newWaitlist
+      , _maxBet = 0
+      , _players = newPlayers
+      , _community = []
+      , _deck = shuffledDeck
+      , _street = PreDeal
+      , _dealer = newDealer
+      , _currentPosToAct = nextPlayerToAct
       , ..
       }
   where
-    newDealer = dealer `modInc` length (getPlayersSatIn players)
-    freeSeatsNo = maxPlayers - length players
-    newPlayers = resetPlayerCardsAndBets <$> players
-    newWaitlist = drop freeSeatsNo waitlist
-    nextPlayerToAct = currentPosToAct `modInc` length newPlayers
+    newDealer = _dealer `modInc` length (getPlayersSatIn _players)
+    freeSeatsNo = _maxPlayers - length _players
+    newPlayers = resetPlayerCardsAndBets <$> _players
+    newWaitlist = drop freeSeatsNo _waitlist
+    nextPlayerToAct = _currentPosToAct `modInc` length newPlayers
 
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =
-  Player {pockets = [], bet = 0, committed = 0, ..}
+  Player {_pockets = [], _bet = 0, _committed = 0, ..}

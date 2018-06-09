@@ -55,6 +55,7 @@ dependencies:
 - warp
 - servant-docs
 - jwt
+- lens
 - async
 
 library:

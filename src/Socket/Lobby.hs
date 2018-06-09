@@ -66,7 +66,7 @@ joinTable tableName = do
 
 joinGame :: Username -> Int -> Game -> Game
 joinGame (Username username) chips Game {..} =
-  Game {players = players <> [player], ..}
+  Game {_players = _players <> [player], ..}
   where
     player = getPlayer username chips
 
@@ -80,7 +80,7 @@ updateTable tableName newTable (Lobby lobby) =
 
 -- to do - return an either as there are multiple errs for why plyr cant join game ie no chips
 canJoinGame :: Game -> Bool
-canJoinGame Game {..} = length players < maxPlayers
+canJoinGame Game {..} = length _players < _maxPlayers
 
 lookupTableSubscribers :: TableName -> Lobby -> [Username]
 lookupTableSubscribers tableName (Lobby lobby) =

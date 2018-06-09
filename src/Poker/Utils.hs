@@ -13,6 +13,8 @@ import Data.Functor
 import Data.List
 import Data.Maybe
 
+import Control.Lens
+
 ------------------------------------------------------------------------------
 import Poker.Types
 import Poker.Types
@@ -51,11 +53,11 @@ modInc num modulo
 -- whereas sat in means that the player has at the very least had some historical participation
 -- in the current hand
 getActivePlayers :: [Player] -> [Player]
-getActivePlayers = filter (\Player {..} -> playerState == In)
+getActivePlayers = filter (\player -> _playerState player == In)
 
 -- get all players who are not currently sat out
 getPlayersSatIn :: [Player] -> [Player]
-getPlayersSatIn = filter (\Player {..} -> playerState /= None)
+getPlayersSatIn = filter (\player -> _playerState player /= None)
 
 -- player position is the order of a given player in the set of all players with a 
 -- playerState of In or in other words the players that are both sat at the table and active 
@@ -68,17 +70,17 @@ getSmallBlindPosition playersSatIn dealerPos =
   modInc dealerPos (length playersSatIn)
 
 getGameStage :: Game -> Street
-getGameStage Game {..} = street
+getGameStage game = game ^. street
 
 getGamePlayers :: Game -> [Player]
-getGamePlayers Game {..} = players
+getGamePlayers game = game ^. players
 
 getGamePlayer :: Game -> PlayerName -> Maybe Player
-getGamePlayer Game {..} playerName =
-  find (\Player {..} -> playerName == playerName) players
+getGamePlayer game playerName =
+  find (\Player {..} -> playerName == playerName) $ _players game
 
 getGamePlayerNames :: Game -> [Text]
-getGamePlayerNames Game {..} = (\Player {..} -> playerName) <$> players
+getGamePlayerNames game = _playerName <$> _players game
 
-getPlayerNames :: Functor f => f Player -> f Text
-getPlayerNames players = (\Player {..} -> playerName) <$> players
+getPlayerNames :: [Player] -> [Text]
+getPlayerNames players = (^. playerName) <$> players
