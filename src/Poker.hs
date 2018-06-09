@@ -74,9 +74,9 @@ getPlayer playerName chips =
 handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
 handlePlayerAction game _ action@(SitDown player) = seatPlayer game player
 handlePlayerAction game playerName action@LeaveSeat {} = undefined
-handlePlayerAction game playerName action@(PostBlind blind) =
+handlePlayerAction game@Game {..} playerName action@(PostBlind blind) =
   maybe
-    (postBlind game playerName blind)
+    (Right $ postBlind game playerName blind)
     Left
     (validateAction game playerName action)
 handlePlayerAction game playerName action@Fold {} = undefined
