@@ -173,6 +173,7 @@ data GameErr
 data InvalidMoveErr
   = BlindNotRequired
   | BlindRequired Blind
+  | NoBlindRequired
   | OutOfTurn CurrentPlayerToActErr
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 

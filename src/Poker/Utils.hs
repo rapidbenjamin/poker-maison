@@ -84,3 +84,24 @@ getGamePlayerNames game = _playerName <$> _players game
 
 getPlayerNames :: [Player] -> [Text]
 getPlayerNames players = (^. playerName) <$> players
+
+-- if a player does not post their blind at the appropriate time then their state will be changed to 
+--None signifying that they have a seat but are now sat out
+-- blind is required either if player is sitting in bigBlind or smallBlind position relative to dealer
+-- or if their current playerState is set to Out 
+-- If no blind is required for the player to remain In for the next hand then we will return Nothing
+blindRequiredByPlayer :: Game -> Text -> Maybe Blind
+blindRequiredByPlayer game playerName = do
+  player <- getGamePlayer game playerName
+  case _playerState player of
+    None -> Just Big
+    _ -> do
+      playerPosition <- getPlayerPosition (getGamePlayerNames game) playerName
+      let playersSatIn = getPlayerNames $ getPlayersSatIn (_players game)
+      let smallBlindPos = getSmallBlindPosition playersSatIn (_dealer game)
+      let bigBlindPos = smallBlindPos `modInc` length playersSatIn
+      if playerPosition == smallBlindPos
+        then Just Small
+        else if playerPosition == bigBlindPos
+               then Just Big
+               else Nothing

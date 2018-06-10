@@ -52,35 +52,15 @@ checkPlayerSatAtTable game@Game {..} playerName
 
 validateBlindAction :: Game -> PlayerName -> Blind -> Maybe GameErr
 validateBlindAction game@Game {..} playerName blind =
-  case fromJust blindRequired of
-    Small ->
+  case blindRequired of
+    Just Small ->
       if blind == Small
         then Nothing
         else Just $ InvalidMove playerName $ BlindRequired Small
-    Big ->
+    Just Big ->
       if blind == Big
         then Nothing
         else Just $ InvalidMove playerName $ BlindRequired Big
+    Nothing -> Just $ InvalidMove playerName $ NoBlindRequired
   where
     blindRequired = blindRequiredByPlayer game playerName
-
--- if a player does not post their blind at the appropriate time then their state will be changed to 
---None signifying that they have a seat but are now sat out
--- blind is required either if player is sitting in bigBlind or smallBlind position relative to dealer
--- or if their current playerState is set to Out 
--- If no blind is required for the player to remain In for the next hand then we will return Nothing
-blindRequiredByPlayer :: Game -> Text -> Maybe Blind
-blindRequiredByPlayer game playerName = do
-  player <- getGamePlayer game playerName
-  case _playerState player of
-    None -> Just Big
-    _ -> do
-      playerPosition <- getPlayerPosition (getGamePlayerNames game) playerName
-      let playersSatIn = getPlayerNames $ getPlayersSatIn (_players game)
-      let smallBlindPos = getSmallBlindPosition playersSatIn (_dealer game)
-      let bigBlindPos = smallBlindPos `modInc` length playersSatIn
-      if playerPosition == smallBlindPos
-        then Just Small
-        else if playerPosition == bigBlindPos
-               then Just Big
-               else Nothing
