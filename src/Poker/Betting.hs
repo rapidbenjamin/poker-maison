@@ -45,7 +45,7 @@ postBlind game@Game {..} pName blind =
                  then newPlayer
                  else p) <$>
             _players
-       in Game {_players = newPlayers, ..}
+       in progressBlindBetting Game {_players = newPlayers, ..}
 
 -- after a player posts his blind if there are blinds left to post we increment the current player to act position
 -- Alternatively if all blinds have been posted we move the game to the next stage (PreFlop)
