@@ -16,6 +16,7 @@ import Poker.ActionValidation
 
 ------------------------------------------------------------------------------
 import Poker.Betting
+import Poker.Blinds
 import Poker.Game
 import Poker.Hands
 import Poker.Types
@@ -49,7 +50,7 @@ initialGameState =
     , _waitlist = []
     , _maxPlayers = 5
     , _dealer = 0
-    , _currentPosToAct = 0 -- position here refes to the zero indexed set of active users
+    , _currentPosToAct = 1 -- position here refes to the zero indexed set of active users
     , _community = []
     , _deck = []
     , _smallBlind = 25
@@ -123,7 +124,7 @@ getNextHand Game {..} = do
     freeSeatsNo = _maxPlayers - length _players
     newPlayers = resetPlayerCardsAndBets <$> _players
     newWaitlist = drop freeSeatsNo _waitlist
-    nextPlayerToAct = _currentPosToAct `modInc` length newPlayers
+    nextPlayerToAct = _dealer `modInc` (length newPlayers - 1)
 
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =

@@ -38,7 +38,7 @@ shuffle xs = do
     newArray :: Int -> [a] -> IO (IOArray Int a)
     newArray n xs = newListArray (1, n) xs
 
-modInc :: Integral p => p -> p -> p
+modInc :: Int -> Int -> Int
 modInc num modulo
   | incNum == 0 = modInc
   | otherwise = incNum
@@ -65,7 +65,6 @@ getPlayersSatIn = filter (\player -> _playerState player /= None)
 getPlayerPosition :: [PlayerName] -> PlayerName -> Maybe Int
 getPlayerPosition playersSatIn playerName = playerName `elemIndex` playersSatIn
 
-
 getGameStage :: Game -> Street
 getGameStage game = game ^. street
 
@@ -81,4 +80,3 @@ getGamePlayerNames game = _playerName <$> _players game
 
 getPlayerNames :: [Player] -> [Text]
 getPlayerNames players = (^. playerName) <$> players
-

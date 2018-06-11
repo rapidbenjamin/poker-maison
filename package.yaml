@@ -69,8 +69,11 @@ library:
     - Schema
     - Config
     - Poker
+    - Poker.Betting
     - Poker.ActionValidation
     - Poker.Types
+    - Poker.Blinds
+    - Poker.Utils
     - Socket
 
 executables:

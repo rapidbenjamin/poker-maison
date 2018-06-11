@@ -174,6 +174,7 @@ data InvalidMoveErr
   = BlindNotRequired
   | BlindRequired Blind
   | NoBlindRequired
+  | BlindAlreadyPosted Blind
   | OutOfTurn CurrentPlayerToActErr
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
