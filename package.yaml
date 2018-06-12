@@ -51,7 +51,6 @@ dependencies:
 - monad-loops
 - generic-arbitrary
 - MonadRandom
-- derive
 - mtl
 - wuss
 - warp
@@ -73,6 +72,7 @@ library:
     - Poker.ActionValidation
     - Poker.Types
     - Poker.Blinds
+    - Poker.Game
     - Poker.Utils
     - Socket
 

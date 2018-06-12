@@ -1,6 +1,7 @@
 flags: {}
 packages:
 - .
-allow-newer: true
 extra-deps:
-resolver: lts-10.8
+ - hspec-core-2.5.1
+ - hspec-discover-2.5.1
+resolver: lts-11.13

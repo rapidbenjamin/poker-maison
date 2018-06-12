@@ -19,3 +19,8 @@ import Poker.Utils
 ------------------------------------------------------------------------------
 initialDeck :: [Card]
 initialDeck = Card <$> [minBound ..] <*> [minBound ..]
+
+takePocketCards :: [Card] -> Int -> ([[Card]], [Card])
+takePocketCards deck n =
+  let splitDeck = splitAt (n * 2) deck
+   in (chunksOf 2 $ fst $ splitDeck, snd splitDeck)

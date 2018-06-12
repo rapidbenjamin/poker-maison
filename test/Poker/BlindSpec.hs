@@ -250,5 +250,4 @@ main =
         "should update state of players that dont require blinds to In when move to PreFlop stage " $ do
         let Game {..} = progressBlindBetting threePlayerGameAllBlindsPosted
         let playerStates = (\Player {..} -> _playerState) <$> _players
-        traceM (show playerStates)
         all (== In) playerStates `shouldBe` True
