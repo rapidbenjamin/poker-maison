@@ -59,26 +59,30 @@ checkPlayerSatAtTable game@Game {..} playerName
     atTable = playerName `elem` playerNames
 
 validateBlindAction :: Game -> PlayerName -> Blind -> Maybe GameErr
-validateBlindAction game@Game {..} playerName blind =
-  case getGamePlayer game playerName of
-    Nothing -> Just $ PlayerNotAtTable playerName
-    Just p@Player {..} ->
-      case blindRequired of
-        Just Small ->
-          if blind == Small
-            then if _committed >= _smallBlind
-                   then Just $ InvalidMove playerName $ BlindAlreadyPosted Small
-                   else Nothing
-            else Just $ InvalidMove playerName $ BlindRequired Small
-        Just Big ->
-          if blind == Big
-            then if _committed >= bigBlindValue
-                   then Just $ InvalidMove playerName $ BlindAlreadyPosted Big
-                   else Nothing
-            else Just $ InvalidMove playerName $ BlindRequired Big
-        Nothing -> Just $ InvalidMove playerName $ NoBlindRequired
-      where blindRequired = blindRequiredByPlayer game playerName
-            bigBlindValue = _smallBlind * 2
+validateBlindAction game@Game {..} playerName blind
+  | _street /= PreDeal =
+    Just $ InvalidMove playerName $ CannotPostBlindOutsidePreDeal
+  | otherwise =
+    case getGamePlayer game playerName of
+      Nothing -> Just $ PlayerNotAtTable playerName
+      Just p@Player {..} ->
+        case blindRequired of
+          Just Small ->
+            if blind == Small
+              then if _committed >= _smallBlind
+                     then Just $
+                          InvalidMove playerName $ BlindAlreadyPosted Small
+                     else Nothing
+              else Just $ InvalidMove playerName $ BlindRequired Small
+          Just Big ->
+            if blind == Big
+              then if _committed >= bigBlindValue
+                     then Just $ InvalidMove playerName $ BlindAlreadyPosted Big
+                     else Nothing
+              else Just $ InvalidMove playerName $ BlindRequired Big
+          Nothing -> Just $ InvalidMove playerName $ NoBlindRequired
+        where blindRequired = blindRequiredByPlayer game playerName
+              bigBlindValue = _smallBlind * 2
 
 -- if a player does not post their blind at the appropriate time then their state will be changed to 
 --None signifying that they have a seat but are now sat out

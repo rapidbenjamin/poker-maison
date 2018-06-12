@@ -176,6 +176,7 @@ data InvalidMoveErr
   | NoBlindRequired
   | BlindAlreadyPosted Blind
   | OutOfTurn CurrentPlayerToActErr
+  | CannotPostBlindOutsidePreDeal
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =
