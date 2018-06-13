@@ -77,7 +77,7 @@ instance Arbitrary Player where
     _committed <- suchThat chooseAny (>= 0)
     _bet <-
       suchThat chooseAny (\x -> (x >= 0) && x <= _chips && x <= _committed)
-    _playerName <- suchThat arbitrary (not . null . show)
+    _playerName <- suchThat arbitrary (\n -> T.length n > 0)
     _pockets <- suchThat arbitrary (\cards -> (null cards || length cards == 2))
     _playerState <-
       suchThat arbitrary (\s -> (s == None && (_committed > 0)) || s /= None)

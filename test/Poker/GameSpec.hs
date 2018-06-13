@@ -23,8 +23,10 @@ import Poker.Game
 import Poker.Types
 
 import Control.Lens
+import Control.Monad
 import Control.Monad.State hiding (state)
 import Data.List.Lens
+import Data.List.Split
 import Data.Text (Text)
 import qualified Data.Text as T
 import Debug.Trace
@@ -78,7 +80,7 @@ instance Arbitrary Player where
     _committed <- suchThat chooseAny (>= 0)
     _bet <-
       suchThat chooseAny (\x -> (x >= 0) && x <= _chips && x <= _committed)
-    _playerName <- suchThat arbitrary (not . null . show)
+    _playerName <- suchThat arbitrary (\n -> T.length n > 0)
     _pockets <- suchThat arbitrary (\cards -> (null cards || length cards == 2))
     _playerState <-
       suchThat arbitrary (\s -> (s == None && (_committed > 0)) || s /= None)
@@ -88,25 +90,62 @@ instance Arbitrary Text where
   arbitrary = T.pack <$> arbitrary
   shrink xs = T.pack <$> shrink (T.unpack xs)
 
+player1 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = In
+    , _playerName = "player1"
+    , _committed = 50
+    }
+
+player2 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = Out AllIn
+    , _playerName = "player2"
+    , _committed = 50
+    }
+
+player3 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = In
+    , _playerName = "player3"
+    , _committed = 50
+    }
+
+initPlayers = [player1, player2, player3]
+
 main :: IO ()
 main =
-  hspec $
-  describe "Poker.Game" $
-  context "takePocketCards" $ do
-    it "should take two cards for correct number of players" $
-      property $ \deck numPlayers ->
-        length deck == 52 &&
-        numPlayers >= 2 &&
-        numPlayers <=
-        10 ==> do
-          let (pocketCardsList, newDeck) = takePocketCards deck numPlayers
-          length pocketCardsList == numPlayers &&
-            all (\cs -> length cs == 2) pocketCardsList
-    it "dealt cards should be removed from deck" $
-      property $ \deck numPlayers ->
-        length deck == 52 &&
-        numPlayers >= 2 &&
-        numPlayers <=
-        10 ==> do
-          let (pocketCardsList, newDeck) = takePocketCards deck numPlayers
-          (length newDeck) == (52 - (2 * numPlayers))
+  hspec $ describe "Poker.Game" $ do
+    let deck = initialDeck
+    describe "Deal" $ do
+      it "should deal correct number of cards to players" $ do
+        let (_, newPlayers) = deal deck initPlayers
+        (all
+           (\Player {..} ->
+              if _playerState == In
+                then length _pockets == 2
+                else null _pockets)
+           newPlayers)
+      it "should preserve ordering of players" $ do
+        property $ \(players) -> do
+          length players <= 21 ==> do
+            let players' = players :: [Player]
+            let (remainingDeck, players) = deal deck players'
+            (_playerName <$> players) == (_playerName <$> players')
+      it "the resulting set of cards should contain no duplicates" $ do
+        property $ \(players) -> do
+          length players <= 21 ==> do
+            let players' -- deal to players that have no pocket cards already
+                 = (players :: [Player]) & traverse . pockets .~ ([] :: [Card])
+            let (remainingDeck, players) = deal deck players'
+            let playerCards = concat $ _pockets <$> players
+            null $ playerCards `intersect` remainingDeck
