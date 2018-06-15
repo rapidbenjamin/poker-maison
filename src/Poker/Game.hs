@@ -16,6 +16,8 @@ import Poker.Hands
 import Poker.Types
 import Poker.Utils
 
+import Control.Lens
+
 ------------------------------------------------------------------------------
 initialDeck :: [Card]
 initialDeck = Card <$> [minBound ..] <*> [minBound ..]
@@ -25,10 +27,10 @@ initialDeck = Card <$> [minBound ..] <*> [minBound ..]
 deal :: [Card] -> [Player] -> ([Card], [Player])
 deal deck players =
   mapAccumL
-    (\cards p@Player {..} ->
-       if _playerState == In
-         then (drop 2 cards, Player {_pockets = take 2 cards, ..})
-         else (cards, p))
+    (\cards player ->
+       if player ^. playerState == In
+         then (drop 2 cards, (pockets .~ (take 2 cards)) player)
+         else (cards, player))
     deck
     players
 
