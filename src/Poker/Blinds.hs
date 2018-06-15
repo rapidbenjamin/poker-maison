@@ -17,6 +17,8 @@ import Text.Read (readMaybe)
 
 import Poker.ActionValidation
 
+import Poker.Game
+
 ------------------------------------------------------------------------------
 import Poker.Types
 import Poker.Utils
@@ -56,21 +58,10 @@ postBlind game@Game {..} pName blind =
 progressBlindBetting :: Game -> Game
 progressBlindBetting game@Game {..} =
   if haveRequiredBlindsBeenPosted requiredBlinds _players _smallBlind
-    then let newPlayers = zipWith updatePlayer requiredBlinds _players
-          in Game {_street = PreFlop, _players = newPlayers, ..}
+    then progressToPreFlop game requiredBlinds
     else game
   where
     requiredBlinds = getRequiredBlinds game
-    updatePlayer blindReq Player {..} =
-      Player
-        { _playerState =
-            if isNothing blindReq
-              then In
-              else _playerState
-        , _bet = 0
-        , _committed = 0
-        , ..
-        }
 
 haveRequiredBlindsBeenPosted requiredBlinds players smallBlindValue =
   all (== True) $

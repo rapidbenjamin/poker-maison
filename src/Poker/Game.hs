@@ -9,6 +9,7 @@ import Control.Monad.Random.Class
 import Control.Monad.State hiding (state)
 import Data.List
 import Data.List.Split
+import Data.Maybe
 import System.Random.Shuffle (shuffleM)
 
 ------------------------------------------------------------------------------
@@ -18,12 +19,13 @@ import Poker.Utils
 
 import Control.Lens
 
-------------------------------------------------------------------------------
+-- | Returns a standard deck of cards.
 initialDeck :: [Card]
 initialDeck = Card <$> [minBound ..] <*> [minBound ..]
 
--- | returns both the dealt players and remaining cards left in deck for
---   dealing future community cards.
+-- | Returns both the dealt players and remaining cards left in deck.
+-- We need to have the remaining cards in the deck for dealing
+-- community cards over the next stages.
 deal :: [Card] -> [Player] -> ([Card], [Player])
 deal deck players =
   mapAccumL
@@ -34,5 +36,26 @@ deal deck players =
     deck
     players
 
-progressToPreFlop :: Game -> Game
-progressToPreFlop Game {..} = undefined
+-- | Move game from the PreDeal (blinds betting) stage to the PreFlop stage
+-- First we determine the players that are then we deal them their hands 
+-- and reset all bets.
+--
+-- We use the list of required blinds to calculate if a player has posted 
+-- chips sufficient to be "In" for this hand.
+progressToPreFlop :: Game -> [Maybe Blind] -> Game
+progressToPreFlop game@Game {..} requiredBlinds =
+  let newPlayers = zipWith updatePlayer requiredBlinds _players
+      (remainingDeck, dealtPlayers) = deal _deck newPlayers
+   in Game
+        {_street = PreDeal, _players = dealtPlayers, _deck = remainingDeck, ..}
+  where
+    updatePlayer blindReq Player {..} =
+      Player
+        { _playerState =
+            if isNothing blindReq
+              then In
+              else _playerState
+        , _bet = 0
+        , _committed = 0
+        , ..
+        }

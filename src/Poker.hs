@@ -36,11 +36,11 @@ progressGame playerName action =
     case handlePlayerAction currGame playerName action of
       Left err -> return (Just err, currGame)
       Right newGameState ->
-        if _street == Showdown
-          then do
+        case _street of
+          Showdown -> do
             nextGameState <- liftIO $ getNextHand currGame
             return (Nothing, nextGameState)
-          else return (Nothing, newGameState)
+          _ -> return (Nothing, newGameState)
 
 ------------------------------------------------------------------------------
 initialGameState :: Game
@@ -50,7 +50,7 @@ initialGameState =
     , _waitlist = []
     , _maxPlayers = 5
     , _dealer = 0
-    , _currentPosToAct = 1 -- position here refes to the zero indexed set of active users
+    , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
     , _community = []
     , _deck = []
     , _smallBlind = 25
