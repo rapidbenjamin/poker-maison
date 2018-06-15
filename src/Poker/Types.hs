@@ -130,7 +130,7 @@ data Player = Player
 data Game = Game
   { _players :: [Player]
   , _maxPlayers :: Int
-  , _community :: [Card]
+  , _board :: [Card]
   , _waitlist :: [Text] --playernames
   , _deck :: [Card]
   , _smallBlind :: Int

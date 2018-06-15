@@ -60,7 +60,7 @@ instance Arbitrary Game where
     _waitlist <- arbitrary
     commSize <- choose ((0, 5) :: (Integer, Integer))
     let y = fromInteger commSize
-    _community <- resize y arbitrary
+    _board <- resize y arbitrary
     _deck <- resize 52 arbitrary
     _currentPosToAct <- arbitrary
     _dealer <- choose (0, length _players)

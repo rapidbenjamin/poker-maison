@@ -25,7 +25,7 @@ initialDeck = Card <$> [minBound ..] <*> [minBound ..]
 
 -- | Returns both the dealt players and remaining cards left in deck.
 -- We need to have the remaining cards in the deck for dealing
--- community cards over the next stages.
+-- board cards over the next stages.
 deal :: [Card] -> [Player] -> ([Card], [Player])
 deal deck players =
   mapAccumL
@@ -56,6 +56,5 @@ progressToPreFlop game@Game {..} requiredBlinds =
               then In
               else _playerState
         , _bet = 0
-        , _committed = 0
         , ..
         }

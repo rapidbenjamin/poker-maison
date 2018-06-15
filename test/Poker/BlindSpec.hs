@@ -49,7 +49,7 @@ twoPlayerGame =
             }
         ]
     , _maxPlayers = 5
-    , _community = []
+    , _board = []
     , _waitlist = []
     , _deck = []
     , _smallBlind = 25
@@ -82,7 +82,7 @@ twoPlayerGameAllBlindsPosted =
             }
         ]
     , _maxPlayers = 5
-    , _community = []
+    , _board = []
     , _waitlist = []
     , _deck = []
     , _smallBlind = 25
@@ -123,7 +123,7 @@ threePlayerGame =
             }
         ]
     , _maxPlayers = 5
-    , _community = []
+    , _board = []
     , _waitlist = []
     , _deck = []
     , _smallBlind = 25
@@ -164,7 +164,7 @@ threePlayerGameAllBlindsPosted =
             }
         ]
     , _maxPlayers = 5
-    , _community = []
+    , _board = []
     , _waitlist = []
     , _deck = []
     , _smallBlind = 25
@@ -243,9 +243,9 @@ main =
       it "should progress game to next stage if all blinds posted" $ do
         let Game {..} = progressBlindBetting threePlayerGameAllBlindsPosted
         let chipsCommittedReset =
-              (sum $ (\Player {..} -> _committed) <$> _players) == 0
+              (sum $ (\Player {..} -> _bet) <$> _players) == 0
         _street `shouldBe` PreFlop
-        chipsCommittedReset `shouldBe` True
+        chipsBetReset `shouldBe` True
       it
         "should update state of players that dont require blinds to In when move to PreFlop stage " $ do
         let Game {..} = progressBlindBetting threePlayerGameAllBlindsPosted

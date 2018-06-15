@@ -5,7 +5,6 @@
 
 module Poker where
 
-------------------------------------------------------------------------------
 import Control.Monad.State.Lazy
 import Data.List
 import Data.Maybe
@@ -13,8 +12,6 @@ import Data.Monoid
 import Data.Text (Text)
 
 import Poker.ActionValidation
-
-------------------------------------------------------------------------------
 import Poker.Betting
 import Poker.Blinds
 import Poker.Game
@@ -51,7 +48,7 @@ initialGameState =
     , _maxPlayers = 5
     , _dealer = 0
     , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
-    , _community = []
+    , _board = []
     , _deck = []
     , _smallBlind = 25
     , _bigBlind = 50
@@ -112,7 +109,7 @@ getNextHand Game {..} = do
       { _waitlist = newWaitlist
       , _maxBet = 0
       , _players = newPlayers
-      , _community = []
+      , _board = []
       , _deck = shuffledDeck
       , _street = PreDeal
       , _dealer = newDealer

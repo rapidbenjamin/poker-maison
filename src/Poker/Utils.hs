@@ -53,11 +53,11 @@ modInc num modulo
 -- whereas sat in means that the player has at the very least had some historical participation
 -- in the current hand
 getActivePlayers :: [Player] -> [Player]
-getActivePlayers = filter (\player -> _playerState player == In)
+getActivePlayers = filter ((== In) . (^. playerState))
 
 -- get all players who are not currently sat out
 getPlayersSatIn :: [Player] -> [Player]
-getPlayersSatIn = filter (\player -> _playerState player /= None)
+getPlayersSatIn = filter ((/= None) . (^. playerState))
 
 -- player position is the order of a given player in the set of all players with a 
 -- playerState of In or in other words the players that are both sat at the table and active 
