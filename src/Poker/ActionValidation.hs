@@ -5,6 +5,8 @@
 
 module Poker.ActionValidation where
 
+import Control.Lens
+
 ------------------------------------------------------------------------------
 import Control.Monad.State.Lazy
 import Data.List
@@ -12,6 +14,8 @@ import qualified Data.List.Safe as Safe
 import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
+
+import qualified Data.Text as T
 import Debug.Trace
 
 ------------------------------------------------------------------------------
@@ -33,22 +37,26 @@ validateAction game@Game {..} playerName action@(PostBlind blind) =
             err@(Just _) -> err
             Nothing -> Nothing
 
--- An important exception  is the first move of Predeal state (initial posting of blinds)
--- which can be made from any position
+-- | The first player to post their blinds in the predeal stage  can do it from any position
+-- Therefore the acting in turn rule wont apply for that first move.
 isPlayerActingOutOfTurn :: Game -> PlayerName -> Maybe GameErr
 isPlayerActingOutOfTurn game@Game {..} playerName =
-  if _street == PreDeal
+  if _street == PreDeal && not haveBetsBeenMade -- first predeal blind bet exempt
     then Nothing
     else do
-      currentPlayerToAct <- gamePlayers Safe.!! _currentPosToAct
-      if currentPlayerToAct == playerName
-        then Nothing
-        else Just $
-             InvalidMove playerName $
-             OutOfTurn $ CurrentPlayerToActErr currentPlayerToAct
+      let playerPosition = playerName `elemIndex` gamePlayerNames
+      case playerPosition of
+        Nothing -> Just $ NotAtTable playerName
+        Just pos ->
+          if _currentPosToAct == pos
+            then Nothing
+            else Just $
+                 InvalidMove playerName $
+                 OutOfTurn $
+                 CurrentPlayerToActErr $ gamePlayerNames !! _currentPosToAct
   where
-    haveBetsBeenMade ps = (sum $ (\Player {..} -> _committed) <$> ps) == 0
-    gamePlayers = getGamePlayerNames game
+    haveBetsBeenMade = (sum $ (\Player {..} -> _bet) <$> _players) == 0
+    gamePlayerNames = (\Player {..} -> _playerName) <$> _players
 
 checkPlayerSatAtTable :: Game -> PlayerName -> Maybe GameErr
 checkPlayerSatAtTable game@Game {..} playerName

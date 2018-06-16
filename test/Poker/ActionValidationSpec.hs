@@ -87,91 +87,126 @@ instance Arbitrary Text where
   arbitrary = T.pack <$> arbitrary
   shrink xs = T.pack <$> shrink (T.unpack xs)
 
+player1 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 50
+    , _playerState = In
+    , _playerName = "player1"
+    , _committed = 100
+    }
+
+player2 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = Out Folded
+    , _playerName = "player2"
+    , _committed = 50
+    }
+
+player3 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = In
+    , _playerName = "player3"
+    , _committed = 50
+    }
+
+player4 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = None
+    , _playerName = "player3"
+    , _committed = 0
+    }
+
+playerFixtures = [player1, player2, player3, player4]
+
 main :: IO ()
 main =
   hspec $
   describe "ActionValidation" $ do
-    describe "getSmallBlindPosition" $ do
-      it "returns correct small blind position in three player game" $ do
-        let dealerPos = 0
-        getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
-          1
-      it "returns correct small blind position in two player game" $ do
-        let dealerPos = 0
-        getSmallBlindPosition ["Player1", "Player2"] dealerPos `shouldBe` 0
-    describe "IsPlayerActingOutOfTurn" $ do
-      let testPlayers =
-            getPlayer <$> ["Player1", "Player2", "Player3"] <*> replicate 3 100
-      let game = players .~ testPlayers $ initialGameState
+    describe "Player Acting in Turn Validation" $ do
+      let game =
+            (currentPosToAct .~ 0) .
+            (street .~ PreFlop) . (players .~ playerFixtures) $
+            initialGameState
       it
         "returns Just OutOfTurn Error if given player is not in current position to act" $ do
         let expectedErr =
               Just $
-              InvalidMove "Player2" $
-              OutOfTurn $ CurrentPlayerToActErr "Player1"
-        isPlayerActingOutOfTurn game "Player2" `shouldBe` expectedErr
-      let testPlayers =
-            getPlayer <$> ["Player1", "Player2", "Player3"] <*> replicate 3 100
-      let game = players .~ testPlayers $ initialGameState
-      it
-        "returns Just OutOfTurn Error if given player is not in current position to act" $ do
-        let expectedErr =
-              Just $
-              InvalidMove "Player2" $
-              OutOfTurn $ CurrentPlayerToActErr "Player1"
-        isPlayerActingOutOfTurn game "Player2" `shouldBe` expectedErr
-      it "returns Nothing if playerName is current player to act" $ do
-        isPlayerActingOutOfTurn game "Player1" `shouldBe` Nothing
+              InvalidMove "player3" $
+              OutOfTurn $ CurrentPlayerToActErr "player1"
+        isPlayerActingOutOfTurn game "player3" `shouldBe` expectedErr
+      it "return no Error if player is acting in turn" $ do
+        isPlayerActingOutOfTurn game "player1" `shouldBe` Nothing
       it
         "returns Just MissingPlayer Error if no player with playerName is sat at table" $ do
-        let expectedErr =
-              Just $
-              InvalidMove "MissingPlayer" $
-              OutOfTurn $ CurrentPlayerToActErr "Player1"
-        isPlayerActingOutOfTurn game "MissingPlayer" `shouldBe` expectedErr
-    describe "blindRequiredByPlayer" $ do
-      it "returns Just Small if player position is dealer + 1 for three players" $ do
-        let testPlayers =
-              (playerState .~ In) <$>
-              (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player2" `shouldBe` Just Small
-      it "returns Just Big if player position is dealer + 2 for three players" $ do
-        let testPlayers =
-              (playerState .~ In) <$>
-              (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player3" `shouldBe` Just Big
-      it
-        "returns Nothing if player position is dealer for three players and playerState is In" $ do
-        let testPlayers =
-              (playerState .~ In) <$>
-              (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player1" `shouldBe` Nothing
-      it
-        "returns Just Big if player position is dealer for three players and playerState is None" $ do
-        let testPlayers =
-              (playerState .~ None) <$>
-              (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player1" `shouldBe` Just Big
-      it "returns Just Small if player position is dealer for two players" $ do
-        let testPlayers =
-              (playerState .~ In) <$>
-              (getPlayer <$> ["Player1", "Player2"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player1" `shouldBe` Just Small
-      it "returns Just Big if player position is dealer + 1 for two players" $ do
-        let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
-        let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player2" `shouldBe` Just Big
-    context "Players with PlayerState set to None" $
-      it "should always require bigBlind" $
-      property $ \game@Game {..} playerName -> do
-        let player = (\Player {..} -> _playerName == playerName) `find` _players
-        case player of
-          Just Player {..} -> do
-            let result = blindRequiredByPlayer game playerName
-            (_playerState == None && result == Just Big) || _playerState /= None
-          Nothing -> True
+        let expectedErr = Just $ NotAtTable "MissingPlayer"
+        checkPlayerSatAtTable game "MissingPlayer" `shouldBe` expectedErr
+    describe "blinds" $ do
+      describe "blindRequiredByPlayer" $ do
+        describe "getSmallBlindPosition" $ do
+          it "returns correct small blind position in three player game" $ do
+            let dealerPos = 0
+            getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
+              1
+          it "returns correct small blind position in two player game" $ do
+            let dealerPos = 0
+            getSmallBlindPosition ["Player1", "Player2"] dealerPos `shouldBe` 0
+          it
+            "returns Just Small if player position is dealer + 1 for three players" $ do
+            let testPlayers =
+                  (playerState .~ In) <$>
+                  (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+            let game = players .~ testPlayers $ initialGameState
+            blindRequiredByPlayer game "Player2" `shouldBe` Just Small
+          it
+            "returns Just Big if player position is dealer + 2 for three players" $ do
+            let testPlayers =
+                  (playerState .~ In) <$>
+                  (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+            let game = players .~ testPlayers $ initialGameState
+            blindRequiredByPlayer game "Player3" `shouldBe` Just Big
+          it
+            "returns Nothing if player position is dealer for three players and playerState is In" $ do
+            let testPlayers =
+                  (playerState .~ In) <$>
+                  (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+            let game = players .~ testPlayers $ initialGameState
+            blindRequiredByPlayer game "Player1" `shouldBe` Nothing
+          it
+            "returns Just Big if player position is dealer for three players and playerState is None" $ do
+            let testPlayers =
+                  (playerState .~ None) <$>
+                  (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+            let game = players .~ testPlayers $ initialGameState
+            blindRequiredByPlayer game "Player1" `shouldBe` Nothing
+          it "returns Just Small if player position is dealer for two players" $ do
+            let testPlayers =
+                  (playerState .~ In) <$>
+                  (getPlayer <$> ["Player1", "Player2"] <*> [100])
+            let game = players .~ testPlayers $ initialGameState
+            blindRequiredByPlayer game "Player1" `shouldBe` Just Small
+          it "returns Just Big if player position is dealer + 1 for two players" $ do
+            let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
+            let game = players .~ testPlayers $ initialGameState
+            blindRequiredByPlayer game "Player2" `shouldBe` Just Big
+        context "Players with PlayerState set to None" $
+          it "should always require bigBlind" $
+          property $ \game@Game {..} playerName -> do
+            let player =
+                  (\Player {..} -> _playerName == playerName) `find` _players
+            case player of
+              Just Player {..} -> do
+                let result = blindRequiredByPlayer game playerName
+                (_playerState == None && result == Just Big) ||
+                  _playerState /= None
+              Nothing -> True
