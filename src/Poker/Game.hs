@@ -10,6 +10,7 @@ import Control.Monad.State hiding (state)
 import Data.List
 import Data.List.Split
 import Data.Maybe
+import Debug.Trace
 import System.Random.Shuffle (shuffleM)
 
 ------------------------------------------------------------------------------
@@ -26,8 +27,8 @@ initialDeck = Card <$> [minBound ..] <*> [minBound ..]
 -- | Returns both the dealt players and remaining cards left in deck.
 -- We need to have the remaining cards in the deck for dealing
 -- board cards over the next stages.
-deal :: [Card] -> [Player] -> ([Card], [Player])
-deal deck players =
+dealToPlayers :: [Card] -> [Player] -> ([Card], [Player])
+dealToPlayers deck players =
   mapAccumL
     (\cards player ->
        if player ^. playerState == In
@@ -35,6 +36,12 @@ deal deck players =
          else (cards, player))
     deck
     players
+
+dealBoardCards :: Int -> Game -> Game
+dealBoardCards n game@Game {..} =
+  Game {_board = boardCards, _deck = newDeck, ..}
+  where
+    (boardCards, newDeck) = splitAt n _deck
 
 -- | Move game from the PreDeal (blinds betting) stage to the PreFlop stage
 -- First we determine the players that are then we deal them their hands 
@@ -45,7 +52,7 @@ deal deck players =
 progressToPreFlop :: Game -> [Maybe Blind] -> Game
 progressToPreFlop game@Game {..} requiredBlinds =
   let newPlayers = zipWith updatePlayer requiredBlinds _players
-      (remainingDeck, dealtPlayers) = deal _deck newPlayers
+      (remainingDeck, dealtPlayers) = dealToPlayers _deck newPlayers
    in Game
         {_street = PreDeal, _players = dealtPlayers, _deck = remainingDeck, ..}
   where

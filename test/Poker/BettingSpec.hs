@@ -142,7 +142,6 @@ main :: IO ()
 main =
   hspec $
   describe "Poker.Betting" $ do
-    let deck = initialDeck
     describe "hasBettingFinished" $ do
       it "should return True when no additional player action is valid" $ do
         hasBettingFinished bettingFinishedGame `shouldBe` True

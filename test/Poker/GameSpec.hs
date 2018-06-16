@@ -125,10 +125,9 @@ initPlayers = [player1, player2, player3]
 main :: IO ()
 main =
   hspec $ describe "Poker.Game" $ do
-    let deck = initialDeck
-    describe "Deal" $ do
-      it "should deal correct number of cards to players" $ do
-        let (_, newPlayers) = deal deck initPlayers
+    describe "dealToPlayers" $ do
+      it "should deal correct number of cards" $ do
+        let (_, newPlayers) = dealToPlayers initialDeck initPlayers
         (all
            (\Player {..} ->
               if _playerState == In
@@ -139,13 +138,24 @@ main =
         property $ \(players) -> do
           length players <= 21 ==> do
             let players' = players :: [Player]
-            let (remainingDeck, players) = deal deck players'
+            let (remainingDeck, players) = dealToPlayers initialDeck players'
             (_playerName <$> players) == (_playerName <$> players')
       it "the resulting set of cards should contain no duplicates" $ do
         property $ \(players) -> do
           length players <= 21 ==> do
             let players' -- deal to players that have no pocket cards already
                  = (players :: [Player]) & traverse . pockets .~ ([] :: [Card])
-            let (remainingDeck, players) = deal deck players'
+            let (remainingDeck, players) = dealToPlayers initialDeck players'
             let playerCards = concat $ _pockets <$> players
             null $ playerCards `intersect` remainingDeck
+    describe "dealBoardCards" $ do
+      it "should deal correct number of cards to board" $ do
+        property $ \(Positive n) -> do
+          n < 52 ==> do
+            let newGame = dealBoardCards n initialGameState
+            length (newGame ^. board) `shouldBe` n
+      it "should remove dealt cards from deck" $ do
+        property $ \(Positive n) -> do
+          n < 52 ==> do
+            let newGame = dealBoardCards n initialGameState
+            length (newGame ^. deck) `shouldBe` (length initialDeck - n)
