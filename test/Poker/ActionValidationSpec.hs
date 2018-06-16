@@ -232,24 +232,6 @@ main =
         let expectedErr = NotEnoughChipsForAction
         canBet playerName amount game2 `shouldBe` Just expectedErr
       it
-        "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
-        let preDealGame =
-              (street .~ PreDeal) . (players .~ playerFixtures2) $
-              initialGameState
-        let playerName = "player3"
-        let amount = 100
-        let expectedErr = InvalidActionForStreet
-        canBet playerName amount preDealGame `shouldBe` Just expectedErr
-      it
-        "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
-        let showdownGame =
-              (street .~ Showdown) . (players .~ playerFixtures2) $
-              initialGameState
-        let playerName = "player3"
-        let amount = 100
-        let expectedErr = InvalidActionForStreet
-        canBet playerName amount showdownGame `shouldBe` Just expectedErr
-      it
         "should return CannotBetShouldRaiseInstead InvalidMoveErr if players have already bet or raised already" $ do
         let game2 =
               (players .~ playerFixtures) . (street .~ PreFlop) $
@@ -274,6 +256,24 @@ main =
         let playerName = "player3"
         let amount = 100
         canBet playerName amount game2 `shouldBe` Nothing
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
+        let preDealGame =
+              (street .~ PreDeal) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canBet playerName amount preDealGame `shouldBe` Just expectedErr
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
+        let showdownGame =
+              (street .~ Showdown) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canBet playerName amount showdownGame `shouldBe` Just expectedErr
     describe "canRaise" $ do
       it
         "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
@@ -302,3 +302,67 @@ main =
         let playerName = "player3"
         let amount = 300
         canRaise playerName amount game `shouldBe` Nothing
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
+        let preDealGame =
+              (street .~ PreDeal) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canRaise playerName amount preDealGame `shouldBe` Just expectedErr
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
+        let showdownGame =
+              (street .~ Showdown) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canRaise playerName amount showdownGame `shouldBe` Just expectedErr
+    describe "canCheck" $ do
+      it
+        "should return CannotCheckMustCallOrFold InvalidMoveErr if maxBet is greater than zero" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ playerFixtures) $
+              initialGameState
+        let playerName = "player5"
+        let expectedErr = CannotCheckMustCallOrFold
+        canCheck playerName game `shouldBe` Just expectedErr
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
+        let preDealGame =
+              (street .~ PreDeal) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canCheck playerName preDealGame `shouldBe` Just expectedErr
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
+        let showdownGame =
+              (street .~ Showdown) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canCheck playerName showdownGame `shouldBe` Just expectedErr
+    describe "canFold" $ do
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
+        let preDealGame =
+              (street .~ PreDeal) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canFold playerName preDealGame `shouldBe` Just expectedErr
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
+        let showdownGame =
+              (street .~ Showdown) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canFold playerName showdownGame `shouldBe` Just expectedErr

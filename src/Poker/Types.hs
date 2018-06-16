@@ -189,6 +189,7 @@ data InvalidMoveErr
   | PlayerToActNotAtTable
   | CannotRaiseShouldBetInstead
   | RaiseAmountBelowMinRaise Int
+  | CannotCheckMustCallOrFold
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =
