@@ -9,7 +9,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-module BettingSpec where
+module ActionSpec where
 
 import Control.Lens
 import Data.List
@@ -19,7 +19,7 @@ import Test.QuickCheck hiding (Big, Small)
 
 import Poker
 import Poker.ActionValidation
-import Poker.Betting
+import Poker.Actions
 import Poker.Game
 import Poker.Types
 
@@ -141,9 +141,4 @@ bettingNotFinishedGame =
 main :: IO ()
 main =
   hspec $
-  describe "Poker.Betting" $ do
-    describe "hasBettingFinished" $ do
-      it "should return True when no additional player action is valid" $ do
-        hasBettingFinished bettingFinishedGame `shouldBe` True
-      it "should return False when further valid player actions are possible" $ do
-        hasBettingFinished bettingNotFinishedGame `shouldBe` False
+  describe "Poker.Actions" $ do

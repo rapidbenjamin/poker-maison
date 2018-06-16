@@ -12,7 +12,7 @@ import Data.Monoid
 import Data.Text (Text)
 
 import Poker.ActionValidation
-import Poker.Betting
+import Poker.Actions
 import Poker.Blinds
 import Poker.Game
 import Poker.Hands
@@ -63,6 +63,7 @@ getPlayer playerName chips =
     , _playerState = None
     , _playerName = playerName
     , _committed = 0
+    , _actedThisTurn = False
     , _chips = chips
     }
 

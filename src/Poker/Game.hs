@@ -70,7 +70,10 @@ getNextStreet :: Street -> Street
 getNextStreet River = minBound
 getNextStreet _street = succ _street
 
-clearBets game = game . players . traversed . bet .= 0
+clearBets :: Game -> Game
+clearBets Game {..} = Game {_players = newPlayers, ..}
+  where
+    newPlayers = (\Player {..} -> Player {_bet = 0, ..}) <$> _players
 
 setWinners :: Game -> Game
 setWinners game@Game {..} = game
@@ -82,11 +85,11 @@ progressGame game@Game {..} =
   if not $ hasBettingFinished game
     then return game
     else case getNextStreet _street of
-           PreFlop -> return $ dealBoardCards 3 game
-           Flop -> return $ dealBoardCards 1 game
-           Turn -> return $ dealBoardCards 1 game
-           Showdown -> return $ setWinners game
-           PreDeal -> getNextHand game
+           PreFlop -> return $ dealBoardCards 3 (clearBets game)
+           Flop -> return $ dealBoardCards 1 (clearBets game)
+           Turn -> return $ dealBoardCards 1 (clearBets game)
+           Showdown -> return $ setWinners (clearBets game)
+           PreDeal -> getNextHand (clearBets game)
 
 -- TODO move players from waitlist to players list
 -- TODO need to send msg to players on waitlist when a seat frees up to inform them 
@@ -128,7 +131,9 @@ hasBettingFinished Game {..} =
     activePlayers = getActivePlayers _players
     maxBet = maximum $ flip (^.) bet <$> activePlayers
     awaitingPlayerAction =
-      any (\Player {..} -> _playerState == In || _bet /= maxBet) activePlayers
+      any
+        (\Player {..} -> _actedThisTurn == False || _bet /= maxBet)
+        activePlayers
 
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =

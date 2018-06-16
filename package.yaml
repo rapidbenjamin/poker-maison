@@ -68,7 +68,7 @@ library:
     - Schema
     - Config
     - Poker
-    - Poker.Betting
+    - Poker.Actions
     - Poker.ActionValidation
     - Poker.Types
     - Poker.Blinds

@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Poker.Betting where
+module Poker.Actions where
 
 import Control.Lens
 
@@ -23,14 +23,17 @@ import Poker.Types
 import Poker.Utils
 import Prelude
 
--- | Betting has concluded is there is only one or less active players remaining
--- or if the all active player have posted a bet equal to the max bet or dont have 
--- an In state
-hasBettingFinished :: Game -> Bool
-hasBettingFinished Game {..} =
-  length activePlayers <= 1 || not awaitingPlayerAction
-  where
-    activePlayers = getActivePlayers _players
-    maxBet = maximum $ flip (^.) bet <$> activePlayers
-    awaitingPlayerAction =
-      any (\Player {..} -> _playerState == In || _bet /= maxBet) activePlayers
+placeBet :: Int -> Player -> Player
+placeBet value = (chips -~ value) . (bet +~ value) . (committed +~ value)
+
+makeBet :: Int -> PlayerName -> Game -> Game
+makeBet = undefined
+
+raise :: Int -> PlayerName -> Game -> Game
+raise = undefined
+
+fold :: PlayerName -> Game
+fold = undefined
+
+call :: PlayerName -> Game
+call = undefined

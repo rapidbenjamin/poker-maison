@@ -94,10 +94,11 @@ player1 =
   Player
     { _pockets = []
     , _chips = 2000
-    , _bet = 0
+    , _bet = 50
     , _playerState = In
     , _playerName = "player1"
     , _committed = 50
+    , _actedThisTurn = False
     }
 
 player2 =
@@ -108,6 +109,7 @@ player2 =
     , _playerState = Out AllIn
     , _playerName = "player2"
     , _committed = 50
+    , _actedThisTurn = False
     }
 
 player3 =
@@ -118,6 +120,7 @@ player3 =
     , _playerState = In
     , _playerName = "player3"
     , _committed = 50
+    , _actedThisTurn = False
     }
 
 initPlayers = [player1, player2, player3]
@@ -159,3 +162,10 @@ main =
           n < 52 ==> do
             let newGame = dealBoardCards n initialGameState
             length (newGame ^. deck) `shouldBe` (length initialDeck - n)
+    describe "hasBettingFinished" $ do
+      let game =
+            (street .~ PreFlop) . (players .~ initPlayers) $ initialGameState
+      it "should return True when no additional player action is valid" $ do
+        hasBettingFinished game `shouldBe` True
+      it "should return False when further valid player actions are possible" $ do
+        hasBettingFinished game `shouldBe` False

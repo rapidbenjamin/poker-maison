@@ -13,7 +13,7 @@ import Test.QuickCheck hiding (Big, Small)
 
 import Poker
 import Poker.ActionValidation
-import Poker.Betting
+import Poker.Actions
 import Poker.Blinds
 import Poker.Types
 import Poker.Utils
@@ -38,6 +38,7 @@ twoPlayerGame =
             , _playerState = In
             , _playerName = "player1"
             , _committed = 50
+            , _actedThisTurn = False
             }
         , Player
             { _pockets = []
@@ -46,6 +47,7 @@ twoPlayerGame =
             , _playerState = None
             , _playerName = "player2"
             , _committed = 0
+            , _actedThisTurn = False
             }
         ]
     , _maxPlayers = 5
@@ -71,6 +73,7 @@ twoPlayerGameAllBlindsPosted =
             , _playerState = In
             , _playerName = "player1"
             , _committed = 25
+            , _actedThisTurn = False
             }
         , Player
             { _pockets = []
@@ -79,6 +82,7 @@ twoPlayerGameAllBlindsPosted =
             , _playerState = None
             , _playerName = "player2"
             , _committed = 50
+            , _actedThisTurn = False
             }
         ]
     , _maxPlayers = 5
@@ -104,6 +108,7 @@ threePlayerGame =
             , _playerState = None
             , _playerName = "player1"
             , _committed = 0
+            , _actedThisTurn = False
             }
         , Player
             { _pockets = []
@@ -112,6 +117,7 @@ threePlayerGame =
             , _playerState = None
             , _playerName = "player2"
             , _committed = 0
+            , _actedThisTurn = False
             }
         , Player
             { _pockets = []
@@ -120,6 +126,7 @@ threePlayerGame =
             , _playerState = None
             , _playerName = "player3"
             , _committed = 0
+            , _actedThisTurn = False
             }
         ]
     , _maxPlayers = 5
@@ -145,6 +152,7 @@ threePlayerGameAllBlindsPosted =
             , _playerState = None
             , _playerName = "player1"
             , _committed = 0
+            , _actedThisTurn = False
             }
         , Player
             { _pockets = []
@@ -153,6 +161,7 @@ threePlayerGameAllBlindsPosted =
             , _playerState = In
             , _playerName = "player2"
             , _committed = 25
+            , _actedThisTurn = False
             }
         , Player
             { _pockets = []
@@ -161,6 +170,7 @@ threePlayerGameAllBlindsPosted =
             , _playerState = In
             , _playerName = "player3"
             , _committed = 50
+            , _actedThisTurn = False
             }
         ]
     , _maxPlayers = 5

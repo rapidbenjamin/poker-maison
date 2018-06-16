@@ -125,6 +125,7 @@ data Player = Player
   , _playerState :: PlayerState
   , _playerName :: Text
   , _committed :: Bet
+  , _actedThisTurn :: Bool
   } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 data Game = Game

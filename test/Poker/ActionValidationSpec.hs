@@ -95,6 +95,7 @@ player1 =
     , _playerState = In
     , _playerName = "player1"
     , _committed = 250
+    , _actedThisTurn = False
     }
 
 player2 =
@@ -105,6 +106,7 @@ player2 =
     , _playerState = Out Folded
     , _playerName = "player2"
     , _committed = 50
+    , _actedThisTurn = False
     }
 
 player3 =
@@ -115,6 +117,7 @@ player3 =
     , _playerState = In
     , _playerName = "player3"
     , _committed = 50
+    , _actedThisTurn = False
     }
 
 player4 =
@@ -125,6 +128,7 @@ player4 =
     , _playerState = None
     , _playerName = "player4"
     , _committed = 0
+    , _actedThisTurn = False
     }
 
 player5 =
@@ -135,6 +139,7 @@ player5 =
     , _playerState = In
     , _playerName = "player5"
     , _committed = 50
+    , _actedThisTurn = False
     }
 
 playerFixtures = [player1, player2, player3, player4]

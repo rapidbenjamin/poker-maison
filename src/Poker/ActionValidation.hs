@@ -5,7 +5,7 @@
 
 module Poker.ActionValidation where
 
-import Control.Lens
+import Control.Lens hiding (Fold)
 
 ------------------------------------------------------------------------------
 import Control.Monad.State.Lazy
@@ -36,6 +36,18 @@ validateAction game@Game {..} playerName action@(PostBlind blind) =
           case validateBlindAction game playerName blind of
             err@(Just _) -> err
             Nothing -> Nothing
+validateAction game@Game {..} playerName action@(Check) = do
+  err <- canCheck playerName game
+  return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@(Fold) = do
+  err <- canFold playerName game
+  return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@(Bet amount) = do
+  err <- canBet playerName amount game
+  return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@(Raise amount) = do
+  err <- canRaise playerName amount game
+  return $ InvalidMove playerName err
 
 -- | The first player to post their blinds in the predeal stage  can do it from any position
 -- Therefore the acting in turn rule wont apply for that first move.
