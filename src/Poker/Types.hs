@@ -155,7 +155,7 @@ data PlayerAction
   | PostBlind Blind
   | Fold
   | Call
-  | Raise Int
+  | Raise Int -- a raise is a bet that follows a previous bet
   | Check
   | Bet Int
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
@@ -177,6 +177,9 @@ data InvalidMoveErr
   | BlindAlreadyPosted Blind
   | OutOfTurn CurrentPlayerToActErr
   | CannotPostBlindOutsidePreDeal
+  | InvalidActionForStreet
+  | BetLessThanBigBlind
+  | NotEnoughChipsForAction PlayerAction
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =

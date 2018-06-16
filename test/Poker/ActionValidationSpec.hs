@@ -91,10 +91,10 @@ player1 =
   Player
     { _pockets = []
     , _chips = 2000
-    , _bet = 50
+    , _bet = 200
     , _playerState = In
     , _playerName = "player1"
-    , _committed = 100
+    , _committed = 250
     }
 
 player2 =
@@ -123,11 +123,23 @@ player4 =
     , _chips = 2000
     , _bet = 0
     , _playerState = None
-    , _playerName = "player3"
+    , _playerName = "player4"
     , _committed = 0
     }
 
+player5 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = In
+    , _playerName = "player5"
+    , _committed = 50
+    }
+
 playerFixtures = [player1, player2, player3, player4]
+
+playerFixtures2 = [player3, player5]
 
 main :: IO ()
 main =
@@ -210,3 +222,33 @@ main =
                 (_playerState == None && result == Just Big) ||
                   _playerState /= None
               Nothing -> True
+    describe "canBet" $ do
+      it
+        "should return correct error if raise value is greater than remaining chips" $ do
+        let dealerPos = 0
+        getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
+          1
+      it "should return correct error if game stage is PreDeal" $ do
+        let preDealGame = street .~ PreDeal $ initialGameState
+        let playerName = "player1"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canBet playerName amount preDealGame `shouldBe` Just expectedErr
+      it "should return correct error if game stage is Showdown" $ do
+        let showdownGame = street .~ Showdown $ initialGameState
+        let playerName = "player1"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canBet playerName amount showdownGame `shouldBe` Just expectedErr
+      it "should return correct error if bet is less than the current big blind" $ do
+        let game2 = (players .~ playerFixtures2) $ initialGameState
+        let playerName = "player3"
+        let amount = 2
+        let expectedErr = BetLessThanBigBlind
+        canBet playerName amount game2 `shouldBe` Just expectedErr
+      it "should not return an error if player can bet" $ do
+        let game2 = (players .~ playerFixtures2) $ initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = BetLessThanBigBlind
+        canBet playerName amount game2 `shouldBe` Just expectedErr

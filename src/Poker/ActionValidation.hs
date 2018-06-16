@@ -115,3 +115,6 @@ getSmallBlindPosition playersSatIn dealerPos =
   if length playersSatIn == 2
     then dealerPos
     else modInc dealerPos (length playersSatIn)
+
+canBet :: PlayerName -> Int -> Game -> Maybe InvalidMoveErr
+canBet pName amount game@Game {..} = Nothing
