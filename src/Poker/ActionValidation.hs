@@ -117,4 +117,13 @@ getSmallBlindPosition playersSatIn dealerPos =
     else modInc dealerPos (length playersSatIn)
 
 canBet :: PlayerName -> Int -> Game -> Maybe InvalidMoveErr
-canBet pName amount game@Game {..} = Nothing
+canBet pName amount game@Game {..} =
+  if amount < _bigBlind
+    then Just BetLessThanBigBlind
+    else if maxBet > 0
+           then Just CannotBetShouldRaiseInstead
+           else if (_street == Showdown) || (_street == PreDeal)
+                  then Just InvalidActionForStreet
+                  else Nothing
+  where
+    maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)

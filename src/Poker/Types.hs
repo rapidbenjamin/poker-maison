@@ -180,6 +180,7 @@ data InvalidMoveErr
   | InvalidActionForStreet
   | BetLessThanBigBlind
   | NotEnoughChipsForAction PlayerAction
+  | CannotBetShouldRaiseInstead
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =
