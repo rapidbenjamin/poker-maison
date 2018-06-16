@@ -224,10 +224,14 @@ main =
               Nothing -> True
     describe "canBet" $ do
       it
-        "should return correct error if raise value is greater than remaining chips" $ do
-        let dealerPos = 0
-        getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
-          1
+        "should return NotEnoughChipsForAction InvalidMoveError if raise value is greater than remaining chips" $ do
+        let game2 =
+              (players .~ playerFixtures2) . (street .~ PreFlop) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 10000
+        let expectedErr = NotEnoughChipsForAction
+        canBet playerName amount game2 `shouldBe` Just expectedErr
       it
         "should return InvalidActionForStreet InvalidMoveError if game stage is PreDeal" $ do
         let preDealGame =
@@ -271,3 +275,9 @@ main =
         let playerName = "player3"
         let amount = 100
         canBet playerName amount game2 `shouldBe` Nothing
+    describe "canRaise" $ do
+      it
+        "should return correct error if raise value is greater than remaining chips" $ do
+        let dealerPos = 0
+        getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
+          1

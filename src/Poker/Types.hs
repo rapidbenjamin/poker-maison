@@ -179,8 +179,9 @@ data InvalidMoveErr
   | CannotPostBlindOutsidePreDeal
   | InvalidActionForStreet
   | BetLessThanBigBlind
-  | NotEnoughChipsForAction PlayerAction
+  | NotEnoughChipsForAction
   | CannotBetShouldRaiseInstead
+  | PlayerNotAtTable
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =

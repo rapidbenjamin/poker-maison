@@ -122,8 +122,11 @@ canBet pName amount game@Game {..} =
     then Just BetLessThanBigBlind
     else if maxBet > 0
            then Just CannotBetShouldRaiseInstead
-           else if (_street == Showdown) || (_street == PreDeal)
-                  then Just InvalidActionForStreet
-                  else Nothing
+           else if amount > chipCount
+                  then Just NotEnoughChipsForAction
+                  else if (_street == Showdown) || (_street == PreDeal)
+                         then Just InvalidActionForStreet
+                         else Nothing
   where
     maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
+    chipCount = _chips $ fromJust (getGamePlayer game pName)
