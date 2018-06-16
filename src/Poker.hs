@@ -27,17 +27,14 @@ newGame initState = state $ \_ -> (Nothing, initialGameState)
 -- player action or an err signifying an invalid player action with the reason why
 -- if the current game stage is showdown then the next game state will have a newly shuffled
 -- deck and pocket cards/ bets reset
-progressGame :: PlayerName -> PlayerAction -> StateT Game IO (Maybe GameErr)
-progressGame playerName action =
+runPlayerAction :: PlayerName -> PlayerAction -> StateT Game IO (Maybe GameErr)
+runPlayerAction playerName action =
   StateT $ \currGame@Game {..} ->
     case handlePlayerAction currGame playerName action of
       Left err -> return (Just err, currGame)
-      Right newGameState ->
-        case _street of
-          Showdown -> do
-            nextGameState <- liftIO $ getNextHand currGame
-            return (Nothing, nextGameState)
-          _ -> return (Nothing, newGameState)
+      Right newGameState -> do
+        game' <- progressGame newGameState
+        return (Nothing, game')
 
 ------------------------------------------------------------------------------
 initialGameState :: Game
@@ -91,38 +88,3 @@ seatPlayer Game {..} player@Player {..}
   | length _players < _maxPlayers =
     Right Game {_players = _players <> [player], ..}
   | otherwise = Right $ Game {_waitlist = _waitlist <> [_playerName], ..}
-
--- reset hand related state
--- TODO move players from waitlist to players list
--- TODO need to send msg to players on waitlist when a seat frees up to inform them 
--- to choose a seat and set limit for them t pick one
--- TODO - have newBlindNeeded field which new players will initially be put into in order to 
--- ensure they cant play without posting a blind before the blind position comes round to them
--- new players can of course post their blinds early. In the case of an early posting the initial
--- blind must be the big blind. After this 'early' blind or the posting of a normal blind in turn the 
--- new player will be removed from the newBlindNeeded field and can play normally.
-getNextHand :: Game -> IO Game
-getNextHand Game {..} = do
-  shuffledDeck <- shuffle initialDeck
-  return
-    Game
-      { _waitlist = newWaitlist
-      , _maxBet = 0
-      , _players = newPlayers
-      , _board = []
-      , _deck = shuffledDeck
-      , _street = PreDeal
-      , _dealer = newDealer
-      , _currentPosToAct = nextPlayerToAct
-      , ..
-      }
-  where
-    newDealer = _dealer `modInc` length (getPlayersSatIn _players)
-    freeSeatsNo = _maxPlayers - length _players
-    newPlayers = resetPlayerCardsAndBets <$> _players
-    newWaitlist = drop freeSeatsNo _waitlist
-    nextPlayerToAct = _dealer `modInc` (length newPlayers - 1)
-
-resetPlayerCardsAndBets :: Player -> Player
-resetPlayerCardsAndBets Player {..} =
-  Player {_pockets = [], _bet = 0, _committed = 0, ..}

@@ -134,7 +134,8 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
 -- get either the new game state or an error when an in-game move is taken by a player 
 updateGameWithMove :: MsgIn -> Username -> Game -> IO (Either GameErr Game)
 updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
-  (maybeErr, gameState) <- runStateT (progressGame username playerAction) game
+  (maybeErr, gameState) <-
+    runStateT (runPlayerAction username playerAction) game
   print "next game state"
   pPrint gameState
   pPrint maybeErr
