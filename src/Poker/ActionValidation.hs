@@ -130,3 +130,22 @@ canBet pName amount game@Game {..} =
   where
     maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
     chipCount = _chips $ fromJust (getGamePlayer game pName)
+
+-- Keep in mind that a player can always raise all in,
+-- even if their total chip count is less than what 
+-- a min-bet or min-raise would be. 
+canRaise :: PlayerName -> Int -> Game -> Maybe InvalidMoveErr
+canRaise pName amount game@Game {..} =
+  if (_street == Showdown) || (_street == PreDeal)
+    then Just InvalidActionForStreet
+    else if maxBet == 0
+           then Just CannotRaiseShouldBetInstead
+           else if (amount < minRaise) && (amount /= chipCount)
+                  then Just $ RaiseAmountBelowMinRaise minRaise
+                  else if amount > chipCount
+                         then Just NotEnoughChipsForAction
+                         else Nothing
+  where
+    maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
+    minRaise = 2 * maxBet
+    chipCount = _chips $ fromJust (getGamePlayer game pName)

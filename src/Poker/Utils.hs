@@ -73,7 +73,7 @@ getGamePlayers game = game ^. players
 
 getGamePlayer :: Game -> PlayerName -> Maybe Player
 getGamePlayer game playerName =
-  find (\Player {..} -> playerName == playerName) $ _players game
+  find (\Player {..} -> _playerName == playerName) $ _players game
 
 getGamePlayerNames :: Game -> [Text]
 getGamePlayerNames game = _playerName <$> _players game

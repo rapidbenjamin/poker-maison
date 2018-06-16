@@ -149,13 +149,18 @@ data Blind
   | Big
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
+-- If you can check, that is you aren't facing an amount you have to call, 
+-- then when you put in chips it is called a bet. If you have to put in
+-- some amount of chips to continue with the hand, and you want to 
+-- increase the pot, it's called a raise. If it is confusing, just remember 
+-- this old poker adage: "You can't raise yourself."
 data PlayerAction
   = SitDown Player
   | LeaveSeat
   | PostBlind Blind
   | Fold
   | Call
-  | Raise Int -- a raise is a bet that follows a previous bet
+  | Raise Int
   | Check
   | Bet Int
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
@@ -181,7 +186,9 @@ data InvalidMoveErr
   | BetLessThanBigBlind
   | NotEnoughChipsForAction
   | CannotBetShouldRaiseInstead
-  | PlayerNotAtTable
+  | PlayerToActNotAtTable
+  | CannotRaiseShouldBetInstead
+  | RaiseAmountBelowMinRaise Int
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =

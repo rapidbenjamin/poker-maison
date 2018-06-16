@@ -110,7 +110,7 @@ player2 =
 player3 =
   Player
     { _pockets = []
-    , _chips = 2000
+    , _chips = 300
     , _bet = 0
     , _playerState = In
     , _playerName = "player3"
@@ -160,7 +160,7 @@ main =
       it "return no Error if player is acting in turn" $ do
         isPlayerActingOutOfTurn game "player1" `shouldBe` Nothing
       it
-        "returns Just MissingPlayer Error if no player with playerName is sat at table" $ do
+        "returns Just NotAtTable Error if no player with playerName is sat at table" $ do
         let expectedErr = Just $ NotAtTable "MissingPlayer"
         checkPlayerSatAtTable game "MissingPlayer" `shouldBe` expectedErr
     describe "blinds" $ do
@@ -259,7 +259,7 @@ main =
         let expectedErr = CannotBetShouldRaiseInstead
         canBet playerName amount game2 `shouldBe` Just expectedErr
       it
-        "should returnBetLessThanBigBlind InvalidMoveErr if bet is less than the current big blind" $ do
+        "should return BetLessThanBigBlind InvalidMoveErr if bet is less than the current big blind" $ do
         let game2 =
               (players .~ playerFixtures2) . (street .~ PreFlop) $
               initialGameState
@@ -276,7 +276,29 @@ main =
         canBet playerName amount game2 `shouldBe` Nothing
     describe "canRaise" $ do
       it
-        "should return correct error if raise value is greater than remaining chips" $ do
-        let dealerPos = 0
-        getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
-          1
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
+        let preDealGame =
+              (street .~ PreDeal) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 100
+        let expectedErr = InvalidActionForStreet
+        canBet playerName amount preDealGame `shouldBe` Just expectedErr
+      it
+        "should return RaiseAmountBelowMinRaise InvalidMoveErr if game stage is PreDeal" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ playerFixtures) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 50
+        let minRaise = 400
+        let expectedErr = RaiseAmountBelowMinRaise minRaise
+        canRaise playerName amount game `shouldBe` Just expectedErr
+      it
+        "should be able to raise all in when chip count is less than minimum raise amount" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ playerFixtures) $
+              initialGameState
+        let playerName = "player3"
+        let amount = 300
+        canRaise playerName amount game `shouldBe` Nothing
