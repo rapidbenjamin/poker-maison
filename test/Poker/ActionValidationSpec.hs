@@ -164,67 +164,66 @@ main =
         let expectedErr = Just $ NotAtTable "MissingPlayer"
         checkPlayerSatAtTable game "MissingPlayer" `shouldBe` expectedErr
     describe "blinds" $ do
+      describe "getSmallBlindPosition" $ do
+        it "returns correct small blind position in three player game" $ do
+          let dealerPos = 0
+          getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
+            1
+        it "returns correct small blind position in two player game" $ do
+          let dealerPos = 0
+          getSmallBlindPosition ["Player1", "Player2"] dealerPos `shouldBe` 0
       describe "blindRequiredByPlayer" $ do
-        describe "getSmallBlindPosition" $ do
-          it "returns correct small blind position in three player game" $ do
-            let dealerPos = 0
-            getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
-              1
-          it "returns correct small blind position in two player game" $ do
-            let dealerPos = 0
-            getSmallBlindPosition ["Player1", "Player2"] dealerPos `shouldBe` 0
-          it
-            "returns Just Small if player position is dealer + 1 for three players" $ do
-            let testPlayers =
-                  (playerState .~ In) <$>
-                  (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-            let game = players .~ testPlayers $ initialGameState
-            blindRequiredByPlayer game "Player2" `shouldBe` Just Small
-          it
-            "returns Just Big if player position is dealer + 2 for three players" $ do
-            let testPlayers =
-                  (playerState .~ In) <$>
-                  (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-            let game = players .~ testPlayers $ initialGameState
-            blindRequiredByPlayer game "Player3" `shouldBe` Just Big
-          it
-            "returns Nothing if player position is dealer for three players and playerState is In" $ do
-            let testPlayers =
-                  (playerState .~ In) <$>
-                  (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-            let game = players .~ testPlayers $ initialGameState
-            blindRequiredByPlayer game "Player1" `shouldBe` Nothing
-          it
-            "returns Just Big if player position is dealer for three players and playerState is None" $ do
-            let testPlayers =
-                  (playerState .~ None) <$>
-                  (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-            let game = players .~ testPlayers $ initialGameState
-            blindRequiredByPlayer game "Player1" `shouldBe` Nothing
-          it "returns Just Small if player position is dealer for two players" $ do
-            let testPlayers =
-                  (playerState .~ In) <$>
-                  (getPlayer <$> ["Player1", "Player2"] <*> [100])
-            let game = players .~ testPlayers $ initialGameState
-            blindRequiredByPlayer game "Player1" `shouldBe` Just Small
-          it "returns Just Big if player position is dealer + 1 for two players" $ do
-            let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
-            let game = players .~ testPlayers $ initialGameState
-            blindRequiredByPlayer game "Player2" `shouldBe` Just Big
-        context "Players with PlayerState set to None" $
-          it "should always require bigBlind" $
-          property $ \game@Game {..} playerName -> do
-            let player =
-                  (\Player {..} -> _playerName == playerName) `find` _players
-            case player of
-              Just Player {..} -> do
-                let result = blindRequiredByPlayer game playerName
-                (_playerState == None && result == Just Big) ||
-                  _playerState /= None
-              Nothing -> True
+        it
+          "returns Just Small if player position is dealer + 1 for three players" $ do
+          let testPlayers =
+                (playerState .~ In) <$>
+                (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+          let game = players .~ testPlayers $ initialGameState
+          blindRequiredByPlayer game "Player2" `shouldBe` Just Small
+        it "returns Just Big if player position is dealer + 2 for three players" $ do
+          let testPlayers =
+                (playerState .~ In) <$>
+                (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+          let game = players .~ testPlayers $ initialGameState
+          blindRequiredByPlayer game "Player3" `shouldBe` Just Big
+        it
+          "returns Nothing if player position is dealer for three players and playerState is In" $ do
+          let testPlayers =
+                (playerState .~ In) <$>
+                (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+          let game = players .~ testPlayers $ initialGameState
+          blindRequiredByPlayer game "Player1" `shouldBe` Nothing
+        it
+          "returns Just Big if player position is dealer for three players and playerState is None" $ do
+          let testPlayers =
+                (playerState .~ None) <$>
+                (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+          let game = players .~ testPlayers $ initialGameState
+          blindRequiredByPlayer game "Player1" `shouldBe` Nothing
+        it "returns Just Small if player position is dealer for two players" $ do
+          let testPlayers =
+                (playerState .~ In) <$>
+                (getPlayer <$> ["Player1", "Player2"] <*> [100])
+          let game = players .~ testPlayers $ initialGameState
+          blindRequiredByPlayer game "Player1" `shouldBe` Just Small
+        it "returns Just Big if player position is dealer + 1 for two players" $ do
+          let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
+          let game = players .~ testPlayers $ initialGameState
+          blindRequiredByPlayer game "Player2" `shouldBe` Just Big
+      context "Players with PlayerState set to None" $
+        it "should always require bigBlind" $
+        property $ \game@Game {..} playerName -> do
+          let player =
+                (\Player {..} -> _playerName == playerName) `find` _players
+          case player of
+            Just Player {..} -> do
+              let result = blindRequiredByPlayer game playerName
+              (_playerState == None && result == Just Big) ||
+                _playerState /= None
+            Nothing -> True
     describe "canBet" $ do
       it
-        "should return NotEnoughChipsForAction InvalidMoveError if raise value is greater than remaining chips" $ do
+        "should return NotEnoughChipsForAction InvalidMoveErr if raise value is greater than remaining chips" $ do
         let game2 =
               (players .~ playerFixtures2) . (street .~ PreFlop) $
               initialGameState
@@ -233,7 +232,7 @@ main =
         let expectedErr = NotEnoughChipsForAction
         canBet playerName amount game2 `shouldBe` Just expectedErr
       it
-        "should return InvalidActionForStreet InvalidMoveError if game stage is PreDeal" $ do
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
         let preDealGame =
               (street .~ PreDeal) . (players .~ playerFixtures2) $
               initialGameState
@@ -242,7 +241,7 @@ main =
         let expectedErr = InvalidActionForStreet
         canBet playerName amount preDealGame `shouldBe` Just expectedErr
       it
-        "should return InvalidActionForStreet InvalidMoveError if game stage is Showdown" $ do
+        "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
         let showdownGame =
               (street .~ Showdown) . (players .~ playerFixtures2) $
               initialGameState
@@ -251,7 +250,7 @@ main =
         let expectedErr = InvalidActionForStreet
         canBet playerName amount showdownGame `shouldBe` Just expectedErr
       it
-        "should return CannotBetShouldRaiseInstead InvalidMoveError if players have already bet or raised already" $ do
+        "should return CannotBetShouldRaiseInstead InvalidMoveErr if players have already bet or raised already" $ do
         let game2 =
               (players .~ playerFixtures) . (street .~ PreFlop) $
               initialGameState
@@ -260,7 +259,7 @@ main =
         let expectedErr = CannotBetShouldRaiseInstead
         canBet playerName amount game2 `shouldBe` Just expectedErr
       it
-        "should returnBetLessThanBigBlind InvalidMoveError if bet is less than the current big blind" $ do
+        "should returnBetLessThanBigBlind InvalidMoveErr if bet is less than the current big blind" $ do
         let game2 =
               (players .~ playerFixtures2) . (street .~ PreFlop) $
               initialGameState
