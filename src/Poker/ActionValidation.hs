@@ -165,3 +165,17 @@ canFold pName game@Game {..} =
   if (_street == Showdown) || (_street == PreDeal)
     then Just InvalidActionForStreet
     else Nothing
+
+canCall :: PlayerName -> Game -> Maybe InvalidMoveErr
+canCall pName game@Game {..} =
+  if (_street == Showdown) || (_street == PreDeal)
+    then Just InvalidActionForStreet
+    else if maxBet == 0
+           then Just CannotCallZeroAmountCheckOrBetInstead
+           else Nothing
+  where
+    maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
+    minRaise = 2 * maxBet
+    p = fromJust (getGamePlayer game pName)
+    chipCount = _chips p
+    amountNeededToCall = maxBet - (_bet p)
