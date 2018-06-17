@@ -19,7 +19,6 @@ import qualified Data.Text as T
 import Debug.Trace
 
 ------------------------------------------------------------------------------
-import Poker.Game
 import Poker.Hands
 import Poker.Types
 import Poker.Utils

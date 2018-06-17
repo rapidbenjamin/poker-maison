@@ -24,8 +24,7 @@ import Socket.Utils
 import Types
 
 initialLobby :: Lobby
-initialLobby =
-  Lobby $ M.fromList [("Black", initialTable), ("White", initialTable)]
+initialLobby = Lobby $ M.fromList [("Black", initialTable)]
   where
     initialTable =
       Table {subscribers = [], waitlist = [], game = initialGameState}

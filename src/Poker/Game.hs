@@ -13,6 +13,8 @@ import Data.Maybe
 import Debug.Trace
 import System.Random.Shuffle (shuffleM)
 
+import Poker.Blinds
+
 ------------------------------------------------------------------------------
 import Poker.Hands
 import Poker.Types
@@ -43,28 +45,10 @@ dealBoardCards n game@Game {..} =
   where
     (boardCards, newDeck) = splitAt n _deck
 
--- | Move game from the PreDeal (blinds betting) stage to the PreFlop stage
--- First we determine the players that are then we deal them their hands 
--- and reset all bets.
---
--- We use the list of required blinds to calculate if a player has posted 
--- chips sufficient to be "In" for this hand.
-progressToPreFlop :: Game -> [Maybe Blind] -> Game
-progressToPreFlop game@Game {..} requiredBlinds =
-  let newPlayers = zipWith updatePlayer requiredBlinds _players
-      (remainingDeck, dealtPlayers) = dealToPlayers _deck newPlayers
-   in Game
-        {_street = PreDeal, _players = dealtPlayers, _deck = remainingDeck, ..}
+deal :: Game -> Game
+deal game@Game {..} = Game {_players = dealtPlayers, _deck = remainingDeck, ..}
   where
-    updatePlayer blindReq Player {..} =
-      Player
-        { _playerState =
-            if isNothing blindReq
-              then In
-              else _playerState
-        , _bet = 0
-        , ..
-        }
+    (remainingDeck, dealtPlayers) = dealToPlayers _deck _players
 
 getNextStreet :: Street -> Street
 getNextStreet River = minBound
@@ -80,6 +64,19 @@ resetPlayers Game {..} = Game {_players = newPlayers, ..}
 setWinners :: Game -> Game
 setWinners game@Game {..} = game
 
+progressToPreDeal = getNextHand
+
+progressToPreFlop =
+  (street .~ PreFlop) . resetPlayers . deal . determineWhichPlayersAreInHand
+
+progressToFlop = (street .~ Flop) . (dealBoardCards 3) . resetPlayers
+
+progressToTurn = (street .~ Turn) . (dealBoardCards 1) . resetPlayers
+
+progressToRiver = (street .~ River) . (dealBoardCards 1) . resetPlayers
+
+progressToShowdown = (street .~ Showdown) . resetPlayers
+
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 progressGame :: Game -> IO Game
@@ -87,11 +84,12 @@ progressGame game@Game {..} =
   if not $ hasBettingFinished game
     then return game
     else case getNextStreet _street of
-           PreFlop -> return $ dealBoardCards 3 (resetPlayers game)
-           Flop -> return $ dealBoardCards 1 (resetPlayers game)
-           Turn -> return $ dealBoardCards 1 (resetPlayers game)
-           Showdown -> return $ setWinners (resetPlayers game)
-           PreDeal -> getNextHand (game)
+           PreFlop -> return $ progressToPreFlop game
+           Flop -> return $ progressToFlop game
+           Turn -> return $ progressToTurn game
+           River -> return $ progressToRiver game
+           Showdown -> return $ progressToShowdown game
+           PreDeal -> progressToPreDeal game
 
 -- TODO move players from waitlist to players list
 -- TODO need to send msg to players on waitlist when a seat frees up to inform them 
@@ -127,15 +125,17 @@ getNextHand Game {..} = do
 -- or if the all active player have posted a bet equal to the max bet or dont have 
 -- an In state
 hasBettingFinished :: Game -> Bool
-hasBettingFinished Game {..} =
-  length activePlayers <= 1 || not awaitingPlayerAction
+hasBettingFinished game@Game {..} =
+  if _street == PreDeal
+    then haveRequiredBlindsBeenPosted game
+    else (length activePlayers <= 1) || not awaitingPlayerAction
   where
     activePlayers = getActivePlayers _players
     maxBet = maximum $ flip (^.) bet <$> activePlayers
     awaitingPlayerAction =
       any
         (\Player {..} ->
-           _playerState /= In || _actedThisTurn == False || _bet /= maxBet)
+           _actedThisTurn == False || (_playerState == In && _bet /= maxBet))
         activePlayers
 
 resetPlayerCardsAndBets :: Player -> Player

@@ -34,7 +34,13 @@ type TableName = Text
 
 newtype Lobby =
   Lobby (Map TableName Table)
-  deriving (Show, Ord, Eq, Read, Generic, ToJSON, FromJSON)
+  deriving (Ord, Eq, Read, Generic, ToJSON, FromJSON)
+
+instance Show Lobby where
+  show _ = "lobby show overriden"
+
+instance Show ServerState where
+  show _ = "aerverState show overriden"
 
 data Table = Table
   { subscribers :: [Username] -- not sat at table or on waitlist but observing game state
@@ -54,7 +60,7 @@ instance Show Client where
 data ServerState = ServerState
   { clients :: Map Username Client
   , lobby :: Lobby
-  } deriving (Show)
+  }
 
 instance Eq Client where
   Client {email = email1} == Client {email = email2} = email1 == email2

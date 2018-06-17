@@ -17,13 +17,12 @@ import Text.Read (readMaybe)
 
 import Poker.ActionValidation
 
-import Poker.Game
-
 ------------------------------------------------------------------------------
 import Poker.Types
 import Poker.Utils
 import Prelude
 
+{-
 --sets PlayerState To In When No Blind is Required for a given player
 progressBlindBetting :: Game -> Game
 progressBlindBetting game@Game {..} =
@@ -33,18 +32,45 @@ progressBlindBetting game@Game {..} =
   where
     requiredBlinds = getRequiredBlinds game
 
-haveRequiredBlindsBeenPosted requiredBlinds players smallBlindValue =
+
+    DELETE
+-}
+haveRequiredBlindsBeenPosted game@Game {..} =
   all (== True) $
   zipWith
     (\requiredBlind Player {..} ->
        case requiredBlind of
          Nothing -> True
-         Just Big -> _committed == 2 * smallBlindValue
-         Just Small -> _committed == smallBlindValue)
+         Just Big -> _committed == _bigBlind
+         Just Small -> _committed == _smallBlind)
     requiredBlinds
-    players
+    _players
+  where
+    requiredBlinds = getRequiredBlinds game
 
 getRequiredBlinds :: Game -> [Maybe Blind]
 getRequiredBlinds game@Game {..}
   | _street /= PreDeal = []
   | otherwise = blindRequiredByPlayer game <$> getPlayerNames _players
+
+-- We use the list of required blinds to calculate if a player has posted 
+-- chips sufficient to be "In" for this hand.
+activatePlayersWhenNoBlindNeeded :: [Player] -> [Maybe Blind] -> [Player]
+activatePlayersWhenNoBlindNeeded plyrs requiredBlinds =
+  zipWith updatePlayer requiredBlinds plyrs
+  where
+    updatePlayer blindReq Player {..} =
+      Player
+        { _playerState =
+            if isNothing blindReq
+              then In
+              else _playerState
+        , _bet = 0
+        , ..
+        }
+
+determineWhichPlayersAreInHand :: Game -> Game
+determineWhichPlayersAreInHand game@Game {..} =
+  Game {_players = activatePlayersWhenNoBlindNeeded _players requiredBlinds, ..}
+  where
+    requiredBlinds = getRequiredBlinds game

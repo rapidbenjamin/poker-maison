@@ -33,8 +33,13 @@ runPlayerAction playerName action =
     case handlePlayerAction currGame playerName action of
       Left err -> return (Just err, currGame)
       Right newGameState -> do
-        game' <- progressGame newGameState
-        return (Nothing, game')
+        liftIO $ print $ hasBettingFinished newGameState
+        case action of
+          SitDown _ -> return (Nothing, newGameState)
+          LeaveSeat -> return (Nothing, newGameState)
+          _ -> do
+            game' <- progressGame newGameState
+            return (Nothing, game')
 
 ------------------------------------------------------------------------------
 initialGameState :: Game
@@ -72,14 +77,9 @@ handlePlayerAction game _ action@(SitDown player) = seatPlayer game player
 handlePlayerAction game playerName action@LeaveSeat {} = undefined
 handlePlayerAction game@Game {..} playerName action@(PostBlind blind) =
   maybe
-    (Right $ makeBet blindValue playerName game)
+    (Right $ postBlind blind playerName game)
     Left
     (validateAction game playerName action)
-  where
-    blindValue =
-      if blind == Small
-        then _smallBlind
-        else _bigBlind
 handlePlayerAction game playerName action@Fold {} = undefined
 handlePlayerAction game playerName action@Call {} = undefined
 handlePlayerAction game playerName action@Raise {} = undefined

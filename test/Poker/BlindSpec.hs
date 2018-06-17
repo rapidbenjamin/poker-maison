@@ -213,51 +213,15 @@ main =
     describe "haveRequiredBlindsBeenPosted" $ do
       it
         "should return False when not all players have posted blinds in 2 player game" $ do
-        let players = _players twoPlayerGame
-        let reqBs = getRequiredBlinds twoPlayerGame
-        let smallBlindValue = 25
-        haveRequiredBlindsBeenPosted reqBs players smallBlindValue `shouldBe`
-          False
+        haveRequiredBlindsBeenPosted twoPlayerGame `shouldBe` False
       it
         "should return True when all players have posted blinds in 2 player game" $ do
-        let players = _players twoPlayerGameAllBlindsPosted
-        let requiredBlindValues = getRequiredBlinds twoPlayerGameAllBlindsPosted
-        let smallBlindValue = 25
-        haveRequiredBlindsBeenPosted
-          requiredBlindValues
-          (_players twoPlayerGameAllBlindsPosted)
-          smallBlindValue `shouldBe`
+        haveRequiredBlindsBeenPosted twoPlayerGameAllBlindsPosted `shouldBe`
           True
       it
         "should return False when not all players have posted blinds in 3 player game" $ do
-        let requiredBlindValues = getRequiredBlinds threePlayerGame
-        let smallBlindValue = 25
-        haveRequiredBlindsBeenPosted
-          requiredBlindValues
-          threePlayers
-          smallBlindValue `shouldBe`
-          False
+        haveRequiredBlindsBeenPosted threePlayerGame `shouldBe` False
       it
         "should  return True when all players have posted blinds in 3 player game" $ do
-        let requiredBlindValues = getRequiredBlinds threePlayerGame
-        let smallBlindValue = 25
-        haveRequiredBlindsBeenPosted
-          requiredBlindValues
-          (_players threePlayerGameAllBlindsPosted)
-          smallBlindValue `shouldBe`
+        haveRequiredBlindsBeenPosted threePlayerGameAllBlindsPosted `shouldBe`
           True
-    describe "progressBlindBetting" $ do
-      it "should return next same game if not all blinds posted" $ do
-        let Game {..} = progressBlindBetting threePlayerGame
-        _street `shouldBe` PreDeal
-      it "should progress game to next stage if all blinds posted" $ do
-        let Game {..} = progressBlindBetting threePlayerGameAllBlindsPosted
-        let chipsCommittedReset =
-              (sum $ (\Player {..} -> _bet) <$> _players) == 0
-        _street `shouldBe` PreFlop
-        chipsBetReset `shouldBe` True
-      it
-        "should update state of players that dont require blinds to In when move to PreFlop stage " $ do
-        let Game {..} = progressBlindBetting threePlayerGameAllBlindsPosted
-        let playerStates = (\Player {..} -> _playerState) <$> _players
-        all (== In) playerStates `shouldBe` True

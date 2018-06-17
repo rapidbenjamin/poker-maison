@@ -22,6 +22,7 @@ import GHC.Generics
 import Control.Lens
 import Control.Monad.State hiding (state)
 import Data.Function
+import Data.Monoid
 import Data.Text
 
 ------------------------------------------------------------------------------
@@ -141,7 +142,15 @@ data Game = Game
   , _maxBet :: Bet
   , _dealer :: Int
   , _currentPosToAct :: Int -- position here refes to the zero indexed set of active users
-  } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+instance Show Game where
+  show Game {..} =
+    show _players <> show _board <> "\n dealer: " <> show _dealer <>
+    "\n _currentPosToAct: " <>
+    show _currentPosToAct <>
+    "\n _street: " <>
+    show _street
 
 type PlayerName = Text
 
@@ -156,8 +165,8 @@ data Blind
 -- increase the pot, it's called a raise. If it is confusing, just remember 
 -- this old poker adage: "You can't raise yourself."
 data PlayerAction
-  = SitDown Player
-  | LeaveSeat
+  = SitDown Player -- doesnt progress the game
+  | LeaveSeat -- doesnt progress the game
   | PostBlind Blind
   | Fold
   | Call

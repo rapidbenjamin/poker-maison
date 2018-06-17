@@ -124,6 +124,17 @@ player3 =
     , _actedThisTurn = False
     }
 
+player4 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = None
+    , _playerName = "player4"
+    , _committed = 0
+    , _actedThisTurn = False
+    }
+
 initPlayers = [player1, player2, player3]
 
 main :: IO ()
@@ -170,7 +181,7 @@ main =
               initialGameState
         hasBettingFinished game `shouldBe` True
       it "should return False when further valid player actions are possible" $ do
-        let game =
-              (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
+        let unfinishedBlindsGame =
+              (street .~ PreDeal) . (players .~ [player1, player4]) $
               initialGameState
-        hasBettingFinished game `shouldBe` False
+        hasBettingFinished unfinishedBlindsGame `shouldBe` False
