@@ -331,5 +331,11 @@ main =
         let pName = "player1"
         let newGame = check pName game
         let newPositionToAct = newGame ^. currentPosToAct
-        let expectedNewPositionToAct = 1
+        let expectedNewPositionToAct = 0
         newPositionToAct `shouldBe` expectedNewPositionToAct
+    describe "incPosToAct" $ do
+      it "should modulo increment position" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2]) $
+              initialGameState
+        incPosToAct game `shouldBe` 0

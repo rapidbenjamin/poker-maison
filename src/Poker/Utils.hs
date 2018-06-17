@@ -40,7 +40,7 @@ shuffle xs = do
 
 modInc :: Int -> Int -> Int
 modInc num modulo
-  | incNum == 0 = modInc
+  | incNum > modulo = 0
   | otherwise = incNum
   where
     incNum = num + 1
