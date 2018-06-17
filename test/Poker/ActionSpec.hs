@@ -175,7 +175,6 @@ main =
               initialGameState
         let betValue = 200
         let pName = "player1"
-        let expectedPlayers = [player1, player2, player3]
         let newGame = makeBet betValue pName game
         let playerWhoBet = newGame ^? players . ix 0
         let expectedPlayer =
@@ -195,7 +194,6 @@ main =
               initialGameState
         let betValue = player1 ^. chips
         let pName = "player1"
-        let expectedPlayers = [player1, player2, player3]
         let newGame = makeBet betValue pName game
         let playerWhoBet = newGame ^? players . ix 0
         let expectedPlayer =
@@ -216,7 +214,6 @@ main =
               initialGameState
         let betValue = 200
         let pName = "player1"
-        let expectedPlayers = [player1, player2, player3]
         let newGame = makeBet betValue pName game
         let newPositionToAct = newGame ^. currentPosToAct
         let expectedNewPositionToAct = 1
@@ -227,7 +224,6 @@ main =
               (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
               initialGameState
         let pName = "player1"
-        let expectedPlayers = [player1, player2, player3]
         let newGame = foldCards pName game
         let playerWhoFolded = newGame ^? players . ix 0
         let expectedPlayer =
@@ -247,7 +243,6 @@ main =
               (players .~ [player1, player2, player3]) $
               initialGameState
         let pName = "player1"
-        let expectedPlayers = [player1, player2, player3]
         let newGame = foldCards pName game
         let newPositionToAct = newGame ^. currentPosToAct
         let expectedNewPositionToAct = 1
@@ -257,7 +252,6 @@ main =
         let game =
               (street .~ PreFlop) . (players .~ [player6, player1]) $
               initialGameState
-        let betValue = 200
         let pName = "player1"
         let expectedPlayers = [player1, player2, player3]
         let newGame = call pName game
@@ -277,7 +271,6 @@ main =
         let game =
               (street .~ PreFlop) . (players .~ [player5, player1]) $
               initialGameState
-        let betValue = 200
         let pName = "player1"
         let expectedPlayers = [player1, player2, player3]
         let newGame = call pName game
@@ -298,10 +291,30 @@ main =
               (street .~ PreFlop) . (currentPosToAct .~ 0) .
               (players .~ [player1, player2, player3]) $
               initialGameState
-        let betValue = 200
         let pName = "player1"
         let expectedPlayers = [player1, player2, player3]
         let newGame = call pName game
+        let newPositionToAct = newGame ^. currentPosToAct
+        let expectedNewPositionToAct = 1
+        newPositionToAct `shouldBe` expectedNewPositionToAct
+    describe "check" $ do
+      it "should update player attributes correctly" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2]) $
+              initialGameState
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = check pName game
+        let playerWhoChecked = newGame ^? players . ix 0
+        let expectedPlayer = (actedThisTurn .~ True) player1
+        playerWhoChecked `shouldBe` Just expectedPlayer
+      it "should increment position to act" $ do
+        let game =
+              (street .~ PreFlop) . (currentPosToAct .~ 0) .
+              (players .~ [player1, player2]) $
+              initialGameState
+        let pName = "player1"
+        let newGame = check pName game
         let newPositionToAct = newGame ^. currentPosToAct
         let expectedNewPositionToAct = 1
         newPositionToAct `shouldBe` expectedNewPositionToAct

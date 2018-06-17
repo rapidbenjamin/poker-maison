@@ -79,6 +79,18 @@ call pName game@Game {..} =
       _players
     nextPosToAct = incPosToAct game
 
+check :: PlayerName -> Game -> Game
+check pName game@Game {..} =
+  ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)) game
+  where
+    newPlayers =
+      (\p@Player {..} ->
+         if _playerName == pName
+           then markActed p
+           else p) <$>
+      _players
+    nextPosToAct = incPosToAct game
+
 incPosToAct :: Game -> Int
 incPosToAct Game {..} = _currentPosToAct `modInc` numActivePlayers
   where
