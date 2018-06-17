@@ -327,12 +327,20 @@ main =
         canRaise playerName amount showdownGame `shouldBe` Just expectedErr
     describe "canCheck" $ do
       it
-        "should return CannotCheckMustCallOrFold InvalidMoveErr if maxBet is greater than zero" $ do
+        "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if maxBet is greater than zero" $ do
         let game =
               (street .~ PreFlop) . (players .~ playerFixtures) $
               initialGameState
-        let playerName = "player5"
-        let expectedErr = CannotCheckMustCallOrFold
+        let playerName = "player3"
+        let expectedErr = CannotCheckShouldCallRaiseOrFold
+        canCheck playerName game `shouldBe` Just expectedErr
+      it
+        "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if maxBet is greater than zero" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ playerFixtures) $
+              initialGameState
+        let playerName = "player3"
+        let expectedErr = CannotCheckShouldCallRaiseOrFold
         canCheck playerName game `shouldBe` Just expectedErr
       it
         "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
@@ -372,13 +380,19 @@ main =
         let expectedErr = InvalidActionForStreet
         canCall playerName showdownGame `shouldBe` Just expectedErr
       it
-        "should return CannotCallZeroAmountCheckOrBetInstead InvalidMoveErr if game stage is Showdown" $ do
+        "should return CannotCallZeroAmountCheckOrBetInstead InvalidMoveErr if game stage is not Preflop" $ do
+        let game =
+              (street .~ Flop) . (players .~ playerFixtures2) $ initialGameState
+        let playerName = "player5"
+        let expectedErr = CannotCallZeroAmountCheckOrBetInstead
+        canCall playerName game `shouldBe` Just expectedErr
+      it "should not return error if call bigBlind during Preflop" $ do
         let game =
               (street .~ PreFlop) . (players .~ playerFixtures2) $
               initialGameState
         let playerName = "player5"
         let expectedErr = CannotCallZeroAmountCheckOrBetInstead
-        canCall playerName game `shouldBe` Just expectedErr
+        canCall playerName game `shouldBe` Nothing
     describe "canFold" $ do
       it
         "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do

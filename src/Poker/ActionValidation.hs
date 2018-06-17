@@ -172,7 +172,7 @@ canCheck pName game@Game {..} =
     else if (_street == Showdown) || (_street == PreDeal)
            then Just InvalidActionForStreet
            else if maxBet /= 0
-                  then Just CannotCheckMustCallOrFold
+                  then Just CannotCheckShouldCallRaiseOrFold
                   else Nothing
   where
     maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)

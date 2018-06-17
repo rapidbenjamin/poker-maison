@@ -199,7 +199,6 @@ data InvalidMoveErr
   | PlayerToActNotAtTable
   | CannotRaiseShouldBetInstead
   | RaiseAmountBelowMinRaise Int
-  | CannotCheckMustCallOrFold
   | CannotCheckShouldCallRaiseOrFold
   | CannotCallZeroAmountCheckOrBetInstead
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
