@@ -81,6 +81,7 @@ instance Arbitrary Player where
     _pockets <- suchThat arbitrary (\cards -> (null cards || length cards == 2))
     _playerState <-
       suchThat arbitrary (\s -> (s == None && (_committed > 0)) || s /= None)
+    _actedThisTurn <- arbitrary
     return Player {..}
 
 instance Arbitrary Text where

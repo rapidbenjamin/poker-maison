@@ -36,21 +36,36 @@ validateAction game@Game {..} playerName action@(PostBlind blind) =
       case validateBlindAction game playerName blind of
         err@(Just _) -> err
         Nothing -> Nothing
-validateAction game@Game {..} playerName action@(Check) = do
-  err <- canCheck playerName game
-  return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@(Fold) = do
-  err <- canFold playerName game
-  return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@(Bet amount) = do
-  err <- canBet playerName amount game
-  return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@(Raise amount) = do
-  err <- canRaise playerName amount game
-  return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@call = do
-  err <- canCall playerName game
-  return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@(Check) =
+  case isPlayerActingOutOfTurn game playerName of
+    err@(Just _) -> err
+    Nothing -> do
+      err <- canCheck playerName game
+      return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@(Fold) =
+  case isPlayerActingOutOfTurn game playerName of
+    err@(Just _) -> err
+    Nothing -> do
+      err <- canFold playerName game
+      return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@(Bet amount) =
+  case isPlayerActingOutOfTurn game playerName of
+    err@(Just _) -> err
+    Nothing -> do
+      err <- canBet playerName amount game
+      return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@(Raise amount) =
+  case isPlayerActingOutOfTurn game playerName of
+    err@(Just _) -> err
+    Nothing -> do
+      err <- canRaise playerName amount game
+      return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@call =
+  case isPlayerActingOutOfTurn game playerName of
+    err@(Just _) -> err
+    Nothing -> do
+      err <- canCall playerName game
+      return $ InvalidMove playerName err
 
 -- | The first player to post their blinds in the predeal stage  can do it from any position
 -- Therefore the acting in turn rule wont apply for that first move.
