@@ -48,6 +48,9 @@ validateAction game@Game {..} playerName action@(Bet amount) = do
 validateAction game@Game {..} playerName action@(Raise amount) = do
   err <- canRaise playerName amount game
   return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@call = do
+  err <- canCall playerName game
+  return $ InvalidMove playerName err
 
 -- | The first player to post their blinds in the predeal stage  can do it from any position
 -- Therefore the acting in turn rule wont apply for that first move.
@@ -164,13 +167,17 @@ canRaise pName amount game@Game {..} =
 
 canCheck :: PlayerName -> Game -> Maybe InvalidMoveErr
 canCheck pName game@Game {..} =
-  if (_street == Showdown) || (_street == PreDeal)
-    then Just InvalidActionForStreet
-    else if maxBet /= 0
-           then Just CannotCheckMustCallOrFold
-           else Nothing
+  if (_street == PreFlop && _committed < _bigBlind)
+    then Just CannotCheckShouldCallRaiseOrFold
+    else if (_street == Showdown) || (_street == PreDeal)
+           then Just InvalidActionForStreet
+           else if maxBet /= 0
+                  then Just CannotCheckMustCallOrFold
+                  else Nothing
   where
     maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
+    Player {..} =
+      fromJust $ find (\Player {..} -> _playerName == pName) _players
 
 canFold :: PlayerName -> Game -> Maybe InvalidMoveErr
 canFold pName game@Game {..} =
@@ -182,7 +189,7 @@ canCall :: PlayerName -> Game -> Maybe InvalidMoveErr
 canCall pName game@Game {..} =
   if (_street == Showdown) || (_street == PreDeal)
     then Just InvalidActionForStreet
-    else if maxBet == 0
+    else if (maxBet == 0 && _street /= PreFlop)
            then Just CannotCallZeroAmountCheckOrBetInstead
            else Nothing
   where
