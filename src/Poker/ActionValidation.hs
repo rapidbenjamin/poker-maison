@@ -29,13 +29,14 @@ validateAction :: Game -> PlayerName -> PlayerAction -> Maybe GameErr
 validateAction game@Game {..} playerName action@(PostBlind blind) =
   case checkPlayerSatAtTable game playerName of
     err@(Just _) -> err
-    Nothing ->
-      case isPlayerActingOutOfTurn game playerName of
+    Nothing
+     -- case isPlayerActingOutOfTurn game playerName of
+      --  err@(Just _) -> err
+       -- Nothing ->
+     ->
+      case validateBlindAction game playerName blind of
         err@(Just _) -> err
-        Nothing ->
-          case validateBlindAction game playerName blind of
-            err@(Just _) -> err
-            Nothing -> Nothing
+        Nothing -> Nothing
 validateAction game@Game {..} playerName action@(Check) = do
   err <- canCheck playerName game
   return $ InvalidMove playerName err

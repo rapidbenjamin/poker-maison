@@ -72,9 +72,14 @@ handlePlayerAction game _ action@(SitDown player) = seatPlayer game player
 handlePlayerAction game playerName action@LeaveSeat {} = undefined
 handlePlayerAction game@Game {..} playerName action@(PostBlind blind) =
   maybe
-    (Right $ postBlind game playerName blind)
+    (Right $ makeBet blindValue playerName game)
     Left
     (validateAction game playerName action)
+  where
+    blindValue =
+      if blind == Small
+        then _smallBlind
+        else _bigBlind
 handlePlayerAction game playerName action@Fold {} = undefined
 handlePlayerAction game playerName action@Call {} = undefined
 handlePlayerAction game playerName action@Raise {} = undefined
