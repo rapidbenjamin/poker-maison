@@ -2,6 +2,6 @@ flags: {}
 packages:
 - .
 extra-deps:
- - hspec-core-2.5.1
- - hspec-discover-2.5.1
+- hspec-core-2.4.8
+- hspec-discover-2.4.8
 resolver: lts-11.13

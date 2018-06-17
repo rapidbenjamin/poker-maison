@@ -98,7 +98,7 @@ player1 =
     , _playerState = In
     , _playerName = "player1"
     , _committed = 50
-    , _actedThisTurn = False
+    , _actedThisTurn = True
     }
 
 player2 =
@@ -163,9 +163,13 @@ main =
             let newGame = dealBoardCards n initialGameState
             length (newGame ^. deck) `shouldBe` (length initialDeck - n)
     describe "hasBettingFinished" $ do
-      let game =
-            (street .~ PreFlop) . (players .~ initPlayers) $ initialGameState
       it "should return True when no additional player action is valid" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2]) $
+              initialGameState
         hasBettingFinished game `shouldBe` True
       it "should return False when further valid player actions are possible" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
+              initialGameState
         hasBettingFinished game `shouldBe` False

@@ -132,7 +132,8 @@ hasBettingFinished Game {..} =
     maxBet = maximum $ flip (^.) bet <$> activePlayers
     awaitingPlayerAction =
       any
-        (\Player {..} -> _actedThisTurn == False || _bet /= maxBet)
+        (\Player {..} ->
+           _playerState /= In || _actedThisTurn == False || _bet /= maxBet)
         activePlayers
 
 resetPlayerCardsAndBets :: Player -> Player
