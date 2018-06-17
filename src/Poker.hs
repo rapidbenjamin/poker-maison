@@ -74,17 +74,37 @@ getPlayer playerName chips =
 
 handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
 handlePlayerAction game _ action@(SitDown player) = seatPlayer game player
-handlePlayerAction game playerName action@LeaveSeat {} = undefined
+handlePlayerAction game playerName action@LeaveSeat = undefined
 handlePlayerAction game@Game {..} playerName action@(PostBlind blind) =
   maybe
     (Right $ postBlind blind playerName game)
     Left
     (validateAction game playerName action)
-handlePlayerAction game playerName action@Fold {} = undefined
-handlePlayerAction game playerName action@Call {} = undefined
-handlePlayerAction game playerName action@Raise {} = undefined
-handlePlayerAction game playerName action@Check {} = undefined
-handlePlayerAction game playerName action@Bet {} = undefined
+handlePlayerAction game playerName action@Fold =
+  maybe
+    (Right $ foldCards playerName game)
+    Left
+    (validateAction game playerName action)
+handlePlayerAction game playerName action@Call =
+  maybe
+    (Right $ call playerName game)
+    Left
+    (validateAction game playerName action)
+handlePlayerAction game playerName action@(Raise amount) =
+  maybe
+    (Right $ makeBet amount playerName game)
+    Left
+    (validateAction game playerName action)
+handlePlayerAction game playerName action@Check =
+  maybe
+    (Right $ check playerName game)
+    Left
+    (validateAction game playerName action)
+handlePlayerAction game playerName action@(Bet amount) =
+  maybe
+    (Right $ makeBet amount playerName game)
+    Left
+    (validateAction game playerName action)
 
 -- TODO should be able to choose seat
 seatPlayer :: Game -> Player -> Either GameErr Game

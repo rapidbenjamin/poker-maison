@@ -10,6 +10,7 @@ import Control.Monad.State hiding (state)
 import Data.List
 import Data.List.Split
 import Data.Maybe
+import Data.Monoid
 import Debug.Trace
 import System.Random.Shuffle (shuffleM)
 
@@ -41,7 +42,7 @@ dealToPlayers deck players =
 
 dealBoardCards :: Int -> Game -> Game
 dealBoardCards n game@Game {..} =
-  Game {_board = boardCards, _deck = newDeck, ..}
+  Game {_board = _board <> boardCards, _deck = newDeck, ..}
   where
     (boardCards, newDeck) = splitAt n _deck
 
