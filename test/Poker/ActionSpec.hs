@@ -188,6 +188,14 @@ main =
                 , _actedThisTurn = True
                 }
         playerWhoBet `shouldBe` Just expectedPlayer
+      it "should add bet amount to pot" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
+              initialGameState
+        let betValue = 200
+        let pName = "player1"
+        let newGame = makeBet betValue pName game
+        (newGame ^. pot) `shouldBe` betValue
       it "should update player attributes correctly when bet all in" $ do
         let game =
               (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
@@ -248,6 +256,13 @@ main =
         let expectedNewPositionToAct = 1
         newPositionToAct `shouldBe` expectedNewPositionToAct
     describe "call" $ do
+      it "should add call amount to pot" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player5, player6]) $
+              initialGameState
+        let pName = "player6"
+        let newGame = call pName game
+        (newGame ^. pot) `shouldBe` 2000
       it "should update player attributes correctly" $ do
         let game =
               (street .~ PreFlop) . (players .~ [player6, player1]) $
@@ -259,11 +274,11 @@ main =
         let expectedPlayer =
               Player
                 { _pockets = []
-                , _chips = 1900
-                , _bet = 100
+                , _chips = 1800
+                , _bet = 200
                 , _playerState = In
                 , _playerName = "player1"
-                , _committed = 200
+                , _committed = 300
                 , _actedThisTurn = True
                 }
         playerWhoCalled `shouldBe` Just expectedPlayer

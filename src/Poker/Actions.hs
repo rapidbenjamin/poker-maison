@@ -62,7 +62,8 @@ postBlind blind pName game@Game {..} =
 
 makeBet :: Int -> PlayerName -> Game -> Game
 makeBet amount pName game@Game {..} =
-  ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)) game
+  ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct) . (pot +~ amount))
+    game
   where
     newPlayers =
       (\p@Player {..} ->
@@ -89,18 +90,22 @@ foldCards pName game@Game {..} =
 
 call :: PlayerName -> Game -> Game
 call pName game@Game {..} =
-  ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)) game
+  ((players .~ newPlayers) .
+   (currentPosToAct .~ nextPosToAct) . (pot +~ callAmount))
+    game
   where
     maxBet = getMaxBet _players
+    player = fromJust $ find (\Player {..} -> _playerName == pName) _players --horrible performance use map for players
+    callAmount =
+      let maxBetShortfall = maxBet - (player ^. bet)
+          playerChips = (player ^. chips)
+       in if maxBetShortfall > playerChips
+            then playerChips
+            else maxBetShortfall
     newPlayers =
       (\p@Player {..} ->
          if _playerName == pName
-           then let maxBetShortfall = maxBet - _committed
-                    callAmount =
-                      if _chips > maxBetShortfall
-                        then maxBetShortfall
-                        else _chips
-                    newPlayer = (markActed . placeBet callAmount) p
+           then let newPlayer = (markActed . placeBet callAmount) p
                  in if (newPlayer ^. chips) == 0
                       then markAllIn newPlayer
                       else newPlayer
