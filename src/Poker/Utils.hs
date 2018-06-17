@@ -65,6 +65,8 @@ getPlayersSatIn = filter ((/= None) . (^. playerState))
 getPlayerPosition :: [PlayerName] -> PlayerName -> Maybe Int
 getPlayerPosition playersSatIn playerName = playerName `elemIndex` playersSatIn
 
+getMaxBet plyrs = maximum $ flip (^.) bet <$> (getActivePlayers plyrs)
+
 getGameStage :: Game -> Street
 getGameStage game = game ^. street
 

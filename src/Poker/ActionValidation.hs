@@ -140,7 +140,7 @@ canBet pName amount game@Game {..} =
                          then Just InvalidActionForStreet
                          else Nothing
   where
-    maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
+    maxBet = getMaxBet _players
     chipCount = _chips $ fromJust (getGamePlayer game pName)
 
 -- Keep in mind that a player can always raise all in,
@@ -158,7 +158,7 @@ canRaise pName amount game@Game {..} =
                          then Just NotEnoughChipsForAction
                          else Nothing
   where
-    maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
+    maxBet = getMaxBet _players
     minRaise = 2 * maxBet
     chipCount = _chips $ fromJust (getGamePlayer game pName)
 
@@ -186,7 +186,7 @@ canCall pName game@Game {..} =
            then Just CannotCallZeroAmountCheckOrBetInstead
            else Nothing
   where
-    maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
+    maxBet = getMaxBet _players
     minRaise = 2 * maxBet
     p = fromJust (getGamePlayer game pName)
     chipCount = _chips p

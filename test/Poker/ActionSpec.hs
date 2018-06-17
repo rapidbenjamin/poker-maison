@@ -136,6 +136,28 @@ player4 =
     , _actedThisTurn = False
     }
 
+player5 =
+  Player
+    { _pockets = []
+    , _chips = 4000
+    , _bet = 4000
+    , _playerState = In
+    , _playerName = "player5"
+    , _committed = 4000
+    , _actedThisTurn = True
+    }
+
+player6 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 200
+    , _playerState = In
+    , _playerName = "player6"
+    , _committed = 250
+    , _actedThisTurn = True
+    }
+
 bettingFinishedGame =
   ((players .~ [player1, player2]) . (street .~ PreFlop)) initialGameState
 
@@ -227,6 +249,59 @@ main =
         let pName = "player1"
         let expectedPlayers = [player1, player2, player3]
         let newGame = foldCards pName game
+        let newPositionToAct = newGame ^. currentPosToAct
+        let expectedNewPositionToAct = 1
+        newPositionToAct `shouldBe` expectedNewPositionToAct
+    describe "call" $ do
+      it "should update player attributes correctly" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player6, player1]) $
+              initialGameState
+        let betValue = 200
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = call pName game
+        let playerWhoCalled = newGame ^? players . ix 1
+        let expectedPlayer =
+              Player
+                { _pockets = []
+                , _chips = 1900
+                , _bet = 100
+                , _playerState = In
+                , _playerName = "player1"
+                , _committed = 200
+                , _actedThisTurn = True
+                }
+        playerWhoCalled `shouldBe` Just expectedPlayer
+      it "should update player attributes correctly when called all in" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player5, player1]) $
+              initialGameState
+        let betValue = 200
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = call pName game
+        let playerWhoCalled = newGame ^? players . ix 1
+        let expectedPlayer =
+              Player
+                { _pockets = []
+                , _chips = 0
+                , _bet = 2000
+                , _playerState = Out AllIn
+                , _playerName = "player1"
+                , _committed = 2100
+                , _actedThisTurn = True
+                }
+        playerWhoCalled `shouldBe` Just expectedPlayer
+      it "should increment position to act" $ do
+        let game =
+              (street .~ PreFlop) . (currentPosToAct .~ 0) .
+              (players .~ [player1, player2, player3]) $
+              initialGameState
+        let betValue = 200
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = call pName game
         let newPositionToAct = newGame ^. currentPosToAct
         let expectedNewPositionToAct = 1
         newPositionToAct `shouldBe` expectedNewPositionToAct
