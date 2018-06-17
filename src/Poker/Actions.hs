@@ -35,16 +35,25 @@ makeBet amount pName game@Game {..} =
     newPlayers =
       (\p@Player {..} ->
          if _playerName == pName
-           then (markActed . placeBet amount) p
+           then let newPlayer = (markActed . placeBet amount) p
+                 in if (newPlayer ^. chips) == 0
+                      then (playerState .~ Out AllIn) newPlayer
+                      else newPlayer
            else p) <$>
       _players
     nextPosToAct = incPosToAct game
 
-raise :: Int -> PlayerName -> Game -> Game
-raise amount playerName game@Game {..} = undefined
-
-fold :: PlayerName -> Game
-fold = undefined
+foldCards :: PlayerName -> Game -> Game
+foldCards pName game@Game {..} =
+  ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)) game
+  where
+    newPlayers =
+      (\p@Player {..} ->
+         if _playerName == pName
+           then (markActed . (playerState .~ Out Folded)) p
+           else p) <$>
+      _players
+    nextPosToAct = incPosToAct game
 
 call :: PlayerName -> Game
 call = undefined

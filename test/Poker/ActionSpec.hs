@@ -85,6 +85,7 @@ instance Arbitrary Player where
     _pockets <- suchThat arbitrary (\cards -> (null cards || length cards == 2))
     _playerState <-
       suchThat arbitrary (\s -> (s == None && (_committed > 0)) || s /= None)
+    _actedThisTurn <- arbitrary
     return Player {..}
 
 instance Arbitrary Text where
@@ -95,10 +96,11 @@ player1 =
   Player
     { _pockets = []
     , _chips = 2000
-    , _bet = 50
+    , _bet = 0
     , _playerState = In
     , _playerName = "player1"
     , _committed = 100
+    , _actedThisTurn = False
     }
 
 player2 =
@@ -109,6 +111,7 @@ player2 =
     , _playerState = Out Folded
     , _playerName = "player2"
     , _committed = 50
+    , _actedThisTurn = False
     }
 
 player3 =
@@ -119,6 +122,7 @@ player3 =
     , _playerState = In
     , _playerName = "player3"
     , _committed = 50
+    , _actedThisTurn = False
     }
 
 player4 =
@@ -126,9 +130,10 @@ player4 =
     { _pockets = []
     , _chips = 2000
     , _bet = 0
-    , _playerState = None
+    , _playerState = In
     , _playerName = "player3"
     , _committed = 0
+    , _actedThisTurn = False
     }
 
 bettingFinishedGame =
@@ -140,5 +145,88 @@ bettingNotFinishedGame =
 
 main :: IO ()
 main =
-  hspec $
-  describe "Poker.Actions" $ do
+  hspec $ describe "Poker.Actions" $ do
+    describe "bet" $ do
+      it "should update player attributes correctly" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
+              initialGameState
+        let betValue = 200
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = makeBet betValue pName game
+        let playerWhoBet = newGame ^? players . ix 0
+        let expectedPlayer =
+              Player
+                { _pockets = []
+                , _chips = 2000 - betValue
+                , _bet = betValue
+                , _playerState = In
+                , _playerName = "player1"
+                , _committed = 100 + betValue
+                , _actedThisTurn = True
+                }
+        playerWhoBet `shouldBe` Just expectedPlayer
+      it "should update player attributes correctly when bet all in" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
+              initialGameState
+        let betValue = player1 ^. chips
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = makeBet betValue pName game
+        let playerWhoBet = newGame ^? players . ix 0
+        let expectedPlayer =
+              Player
+                { _pockets = []
+                , _chips = 2000 - betValue
+                , _bet = betValue
+                , _playerState = Out AllIn
+                , _playerName = "player1"
+                , _committed = 100 + betValue
+                , _actedThisTurn = True
+                }
+        playerWhoBet `shouldBe` Just expectedPlayer
+      it "should increment position to act" $ do
+        let game =
+              (street .~ PreFlop) . (currentPosToAct .~ 0) .
+              (players .~ [player1, player2, player3]) $
+              initialGameState
+        let betValue = 200
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = makeBet betValue pName game
+        let newPositionToAct = newGame ^. currentPosToAct
+        let expectedNewPositionToAct = 1
+        newPositionToAct `shouldBe` expectedNewPositionToAct
+    describe "foldCards" $ do
+      it "should update player attributes correctly" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
+              initialGameState
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = foldCards pName game
+        let playerWhoFolded = newGame ^? players . ix 0
+        let expectedPlayer =
+              Player
+                { _pockets = []
+                , _chips = 2000
+                , _bet = 0
+                , _playerState = Out Folded
+                , _playerName = "player1"
+                , _committed = 100
+                , _actedThisTurn = True
+                }
+        playerWhoFolded `shouldBe` Just expectedPlayer
+      it "should increment position to act" $ do
+        let game =
+              (street .~ PreFlop) . (currentPosToAct .~ 0) .
+              (players .~ [player1, player2, player3]) $
+              initialGameState
+        let pName = "player1"
+        let expectedPlayers = [player1, player2, player3]
+        let newGame = foldCards pName game
+        let newPositionToAct = newGame ^. currentPosToAct
+        let expectedNewPositionToAct = 1
+        newPositionToAct `shouldBe` expectedNewPositionToAct
