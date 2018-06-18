@@ -36,9 +36,7 @@ runPlayerAction playerName action =
         liftIO $
           print $
           "\n haveAllPlayersActed: " <> show (haveAllPlayersActed newGameState)
-        liftIO $
-          print $
-          "\n everyPlayerFolded: " <> show (everyPlayerFolded newGameState)
+        liftIO $ print $ "\n isRoundOver: " <> show (isRoundOver newGameState)
         case action of
           SitDown _ -> return (Nothing, newGameState)
           LeaveSeat -> return (Nothing, newGameState)

@@ -95,7 +95,7 @@ progressGame game@Game {..} =
            River -> return $ progressToRiver game
            Showdown -> return $ progressToShowdown game
            PreDeal -> progressToPreDeal game
-    else if everyPlayerFolded game
+    else if isRoundOver game
            then return $ progressToShowdown game
            else return game
 
@@ -134,8 +134,8 @@ getNextHand Game {..} = do
 -- Note that an all in player is still active they just don't have any more chips
 -- to bet so if all players go all in then the rounds will still progress as normal 
 -- until the final showdown stage.
-everyPlayerFolded :: Game -> Bool
-everyPlayerFolded game@Game {..} = (length playersInHand) <= 1
+isRoundOver :: Game -> Bool
+isRoundOver game@Game {..} = (length playersInHand) <= 1
   where
     playersInHand =
       filter

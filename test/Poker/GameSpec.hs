@@ -185,3 +185,14 @@ main =
               (street .~ PreDeal) . (players .~ [player1, player4]) $
               initialGameState
         haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
+    describe "isRoundOver" $ do
+      it "should return True when all but one player " $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2]) $
+              initialGameState
+        haveAllPlayersActed game `shouldBe` True
+      it "should return False when not all players acted" $ do
+        let unfinishedBlindsGame =
+              (street .~ PreDeal) . (players .~ [player1, player4]) $
+              initialGameState
+        haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
