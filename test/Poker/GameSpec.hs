@@ -205,6 +205,12 @@ main =
         allButOneFolded game `shouldBe` True
       it "should return False when not all players acted" $ do
         let unfinishedBlindsGame =
-              (street .~ PreDeal) . (players .~ [player1, player3]) $
+              (street .~ PreFlop) . (players .~ [player1, player3]) $
+              initialGameState
+        allButOneFolded unfinishedBlindsGame `shouldBe` False
+      it "should always return False for PreDeal (blinds) stage" $ do
+        let unfinishedBlindsGame =
+              (street .~ PreDeal) .
+              (players .~ [((playerState .~ (Out Folded)) player1), player2]) $
               initialGameState
         allButOneFolded unfinishedBlindsGame `shouldBe` False

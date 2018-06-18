@@ -135,7 +135,10 @@ getNextHand Game {..} = do
 -- to bet so if all players go all in then the rounds will still progress as normal 
 -- until the final showdown stage.
 allButOneFolded :: Game -> Bool
-allButOneFolded game@Game {..} = (length playersInHand) <= 1
+allButOneFolded game@Game {..} =
+  if _street == PreDeal
+    then False
+    else (length playersInHand) <= 1
   where
     playersInHand =
       filter
