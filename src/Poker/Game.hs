@@ -79,21 +79,25 @@ progressToTurn = (street .~ Turn) . (dealBoardCards 1) . resetPlayers
 
 progressToRiver = (street .~ River) . (dealBoardCards 1) . resetPlayers
 
-progressToShowdown = (street .~ Showdown) . resetPlayers
+-- need to give players the chips they are due and split pot if necessary
+progressToShowdown game@Game {..} =
+  Game {_street = Showdown, _winners = getHandRankings game, ..}
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 progressGame :: Game -> IO Game
 progressGame game@Game {..} =
-  if not $ hasBettingFinished game
-    then return game
-    else case getNextStreet _street of
+  if haveAllPlayersActed game
+    then case getNextStreet _street of
            PreFlop -> return $ progressToPreFlop game
            Flop -> return $ progressToFlop game
            Turn -> return $ progressToTurn game
            River -> return $ progressToRiver game
            Showdown -> return $ progressToShowdown game
            PreDeal -> progressToPreDeal game
+    else if everyPlayerFolded game
+           then return $ progressToShowdown game
+           else return game
 
 -- TODO move players from waitlist to players list
 -- TODO need to send msg to players on waitlist when a seat frees up to inform them 
@@ -113,6 +117,7 @@ getNextHand Game {..} = do
       , _players = newPlayers
       , _board = []
       , _deck = shuffledDeck
+      , _winners = []
       , _street = PreDeal
       , _dealer = newDealer
       , _currentPosToAct = nextPlayerToAct
@@ -125,25 +130,36 @@ getNextHand Game {..} = do
     newWaitlist = drop freeSeatsNo _waitlist
     nextPlayerToAct = _dealer `modInc` (length newPlayers - 1)
 
--- | Betting has concluded is there is only one or less active players remaining
--- or if the all active player have posted a bet equal to the max bet or dont have 
--- an In state
-hasBettingFinished :: Game -> Bool
-hasBettingFinished game@Game {..} =
+-- | Betting has concluded is there is only one or less players not either Out AllIn or In.
+-- Note that an all in player is still active they just don't have any more chips
+-- to bet so if all players go all in then the rounds will still progress as normal 
+-- until the final showdown stage.
+everyPlayerFolded :: Game -> Bool
+everyPlayerFolded game@Game {..} = (length playersInHand) <= 1
+  where
+    playersInHand =
+      filter
+        (\Player {..} -> (_playerState == In) || (_playerState == Out AllIn))
+        _players
+
+-- | If all players have acted and their bets are equal 
+-- to the max bet then we can move to the next stage
+haveAllPlayersActed :: Game -> Bool
+haveAllPlayersActed game@Game {..} =
   if _street == PreDeal
     then haveRequiredBlindsBeenPosted game
-    else (length activePlayers <= 1) || not awaitingPlayerAction
+    else not awaitingPlayerAction
   where
     activePlayers = getActivePlayers _players
     maxBet = maximum $ flip (^.) bet <$> activePlayers
     awaitingPlayerAction =
       any
         (\Player {..} ->
-           _actedThisTurn == False || (_playerState == In && _bet /= maxBet))
+           (_actedThisTurn == False) || (_playerState == In && _bet /= maxBet))
         activePlayers
 
-winners :: Game -> [((HandRank, [Card]), Player)]
-winners Game {..} =
+getHandRankings :: Game -> [((HandRank, [Card]), Player)]
+getHandRankings Game {..} =
   maximums $ map (value . (++ _board) . view pockets &&& id) ps
   where
     ps =

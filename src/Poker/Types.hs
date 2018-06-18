@@ -133,6 +133,7 @@ data Game = Game
   { _players :: [Player]
   , _maxPlayers :: Int
   , _board :: [Card]
+  , _winners :: [((HandRank, [Card]), Player)]
   , _waitlist :: [Text] --playernames
   , _deck :: [Card]
   , _smallBlind :: Int

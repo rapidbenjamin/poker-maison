@@ -174,14 +174,14 @@ main =
           n < 52 ==> do
             let newGame = dealBoardCards n initialGameState
             length (newGame ^. deck) `shouldBe` (length initialDeck - n)
-    describe "hasBettingFinished" $ do
-      it "should return True when no additional player action is valid" $ do
+    describe "haveAllPlayersActed" $ do
+      it "should return True when all players have acted" $ do
         let game =
               (street .~ PreFlop) . (players .~ [player1, player2]) $
               initialGameState
-        hasBettingFinished game `shouldBe` True
-      it "should return False when further valid player actions are possible" $ do
+        haveAllPlayersActed game `shouldBe` True
+      it "should return False when not all players acted" $ do
         let unfinishedBlindsGame =
               (street .~ PreDeal) . (players .~ [player1, player4]) $
               initialGameState
-        hasBettingFinished unfinishedBlindsGame `shouldBe` False
+        haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
