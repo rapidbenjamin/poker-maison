@@ -9,6 +9,7 @@ module Poker.Utils where
 import Control.Monad.State hiding (state)
 import Data.Text (Text)
 
+import Data.Foldable
 import Data.Functor
 import Data.List
 import Data.Maybe
@@ -82,3 +83,13 @@ getGamePlayerNames game = _playerName <$> _players game
 
 getPlayerNames :: [Player] -> [Text]
 getPlayerNames players = (^. playerName) <$> players
+
+maximums :: Ord a => [(a, b)] -> [(a, b)]
+maximums [] = []
+maximums (x:xs) = foldl f [x] xs
+  where
+    f ys y =
+      case fst (head ys) `compare` fst y of
+        GT -> ys
+        EQ -> y : ys
+        LT -> [y]

@@ -4,12 +4,15 @@
 
 module Poker.Game where
 
+import Control.Arrow
+
 ------------------------------------------------------------------------------
 import Control.Monad.Random.Class
 import Control.Monad.State hiding (state)
 import Data.List
 import Data.List.Split
 import Data.Maybe
+
 import Data.Monoid
 import Debug.Trace
 import System.Random.Shuffle (shuffleM)
@@ -138,6 +141,15 @@ hasBettingFinished game@Game {..} =
         (\Player {..} ->
            _actedThisTurn == False || (_playerState == In && _bet /= maxBet))
         activePlayers
+
+winners :: Game -> [((HandRank, [Card]), Player)]
+winners Game {..} =
+  maximums $ map (value . (++ _board) . view pockets &&& id) ps
+  where
+    ps =
+      filter
+        (\Player {..} -> (_playerState /= Out Folded) || (_playerState /= None))
+        _players
 
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =
