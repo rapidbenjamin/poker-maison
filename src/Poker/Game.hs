@@ -55,7 +55,7 @@ deal game@Game {..} = Game {_players = dealtPlayers, _deck = remainingDeck, ..}
     (remainingDeck, dealtPlayers) = dealToPlayers _deck _players
 
 getNextStreet :: Street -> Street
-getNextStreet River = minBound
+getNextStreet Showdown = minBound
 getNextStreet _street = succ _street
 
 resetPlayers :: Game -> Game
@@ -81,7 +81,21 @@ progressToRiver = (street .~ River) . (dealBoardCards 1) . resetPlayers
 
 -- need to give players the chips they are due and split pot if necessary
 progressToShowdown game@Game {..} =
-  Game {_street = Showdown, _winners = getHandRankings game, ..}
+  Game
+    { _street = Showdown
+    , _winners = winners
+    , _players = awardWinners _players _pot
+    , ..
+    }
+  where
+    winners = getHandRankings game
+    chipsPerPlayer = _pot `div` (length winners)
+    awardWinners _players chipsPerPlayer =
+      (\p@Player {..} ->
+         if p `elem` (snd <$> winners)
+           then Player {_chips = _chips + chipsPerPlayer, ..}
+           else p) <$>
+      _players
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.

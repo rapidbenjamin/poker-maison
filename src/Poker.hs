@@ -5,6 +5,7 @@
 
 module Poker where
 
+import Control.Lens hiding (Fold)
 import Control.Monad.State.Lazy
 import Data.List
 import Data.Maybe
@@ -43,7 +44,12 @@ runPlayerAction playerName action =
           LeaveSeat -> return (Nothing, newGameState)
           _ -> do
             game' <- progressGame newGameState
-            return (Nothing, game')
+            if (game' ^. street) == Showdown
+                      -- get next hand if next street is showdown
+              then do
+                nextHandGame <- progressGame game'
+                return (Nothing, nextHandGame)
+              else return (Nothing, game')
 
 ------------------------------------------------------------------------------
 initialGameState :: Game

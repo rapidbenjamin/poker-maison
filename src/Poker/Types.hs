@@ -151,7 +151,9 @@ instance Show Game where
     "\n _currentPosToAct: " <>
     show _currentPosToAct <>
     "\n _street: " <>
-    show _street
+    show _street <>
+    "\n _winners: " <>
+    show _winners
 
 type PlayerName = Text
 
