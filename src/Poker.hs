@@ -44,12 +44,14 @@ runPlayerAction playerName action =
           LeaveSeat -> return (Nothing, newGameState)
           _ -> do
             game' <- progressGame newGameState
-            if (game' ^. street) == Showdown
-                      -- get next hand if next street is showdown
-              then do
-                nextHandGame <- progressGame game'
-                return (Nothing, nextHandGame)
-              else return (Nothing, game')
+            return (Nothing, game')
+
+nextHand :: StateT Game IO (Maybe GameErr)
+nextHand = do
+  StateT $ \currGame@Game {..} -- should give error if not showdown as progress wont lead to new hand
+   -> do
+    game' <- progressGame currGame
+    return (Nothing, game')
 
 ------------------------------------------------------------------------------
 initialGameState :: Game

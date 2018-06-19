@@ -71,9 +71,9 @@ takeSeatHandler move@(TakeSeat tableName) = do
         else do
           let chips_Hardcoded = 2000
           let player = getPlayer (unUsername username) chips_Hardcoded
-          let playerAction = GameMove tableName $ SitDown player
+          let takeSeatAction = GameMove tableName $ SitDown player
           playerActionResult <-
-            liftIO $ updateGameWithMove playerAction username game
+            liftIO $ updateGameWithMove takeSeatAction username game
           case playerActionResult of
             Left gameErr -> throwError $ GameErr gameErr
             Right updatedGame -> do
@@ -112,31 +112,62 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
   case M.lookup tableName $ unLobby lobby of
     Nothing -> throwError $ TableDoesNotExist tableName
     Just table@Table {..} ->
-      if not satAtTable
-        then throwError $ NotSatAtTable tableName
-        else do
-          playerActionResult <-
-            liftIO $ updateGameWithMove gameMove username game
-          case playerActionResult of
-            Left gameErr -> throwError $ GameErr gameErr
-            Right updatedGame -> do
-              liftIO $
-                broadcastMsg clients tableSubscribers $
-                NewGameState tableName updatedGame
-              let updatedLobby = updateTableGame tableName updatedGame lobby
-              liftIO $
-                updateServerState
-                  serverState
-                  ServerState {lobby = updatedLobby, ..}
-      where satAtTable = unUsername username `elem` getGamePlayerNames game
-            tableSubscribers = getTableSubscribers table
+      let satAtTable = unUsername username `elem` getGamePlayerNames game
+          tableSubscribers = getTableSubscribers table
+       in if not satAtTable
+            then throwError $ NotSatAtTable tableName
+            else do
+              playerActionResult <-
+                liftIO $ updateGameWithMove gameMove username game
+              case playerActionResult of
+                Left gameErr -> throwError $ GameErr gameErr
+                Right updatedGame@Game {..} -> do
+                  liftIO $
+                    broadcastMsg clients tableSubscribers $
+                    NewGameState tableName updatedGame
+                  let updatedLobby = updateTableGame tableName updatedGame lobby
+                  liftIO $
+                    updateServerState
+                      serverState
+                      ServerState {lobby = updatedLobby, ..}
+                  if _street == Showdown
+                    then do
+                      nextHand <- liftIO $ getNextHand updatedGame
+                      case playerActionResult of
+                        Left gameErr -> throwError $ GameErr gameErr
+                        Right nextHandGame
+                  --copy pasted
+                         -> do
+                          liftIO $
+                            broadcastMsg clients tableSubscribers $
+                            NewGameState tableName nextHandGame
+                          let updatedLobby =
+                                updateTableGame tableName nextHandGame lobby
+                          liftIO $
+                            updateServerState
+                              serverState
+                              ServerState {lobby = updatedLobby, ..}
+                    else return ()
 
+-- TODO MOVE THE BELOW TO POKER MODULE
 -- get either the new game state or an error when an in-game move is taken by a player 
 updateGameWithMove :: MsgIn -> Username -> Game -> IO (Either GameErr Game)
 updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
   (maybeErr, gameState) <-
     runStateT (runPlayerAction username playerAction) game
   print "next game state"
+  pPrint gameState
+  pPrint maybeErr
+  case maybeErr of
+    Nothing -> return $ Right gameState
+    Just gameErr -> return $ Left gameErr
+
+-- 
+-- TODO MOVE THE BELOW TO POKER MODULE
+getNextHand :: Game -> IO (Either GameErr Game)
+getNextHand game = do
+  (maybeErr, gameState) <- runStateT nextHand game
+  print "\n new hand"
   pPrint gameState
   pPrint maybeErr
   case maybeErr of
