@@ -20,6 +20,8 @@ import Poker.Hands
 import Poker.Types
 import Poker.Utils
 
+import Debug.Trace
+
 newGame :: Game -> State Game (Maybe GameErr)
 newGame initState = state $ \_ -> (Nothing, initialGameState)
 

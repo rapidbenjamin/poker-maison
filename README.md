@@ -9,7 +9,10 @@ Skill Ratings Generated for Players bb Won ratio over x hands
 TODOs
 
 ***
+- Use the State Monad to hold game state so that we can
 - Use a map as data structure for players in poker games
+- remove usage of FromJust from canBet, canRaise, canCall etc instead use find
+  and throw player not at table err if Nothing
 
 **
 - Lensify use of maps

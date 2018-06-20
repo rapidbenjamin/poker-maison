@@ -101,7 +101,7 @@ progressToShowdown game@Game {..} =
 -- the function necessary to progress the game to the next stage.
 progressGame :: Game -> IO Game
 progressGame game@Game {..} =
-  if haveAllPlayersActed game
+  if haveAllPlayersActed game || _street == Showdown
     then case getNextStreet _street of
            PreFlop -> return $ progressToPreFlop game
            Flop -> return $ progressToFlop game
