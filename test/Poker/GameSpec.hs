@@ -8,6 +8,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module GameSpec where
 
@@ -16,6 +17,7 @@ import Data.List
 import Data.Text (Text)
 import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
+import Test.QuickCheck.Modifiers
 
 import Poker
 import Poker.ActionValidation
@@ -50,6 +52,9 @@ instance Arbitrary Rank where
   arbitrary = genericArbitrary
 
 instance Arbitrary Suit where
+  arbitrary = genericArbitrary
+
+instance Arbitrary HandRank where
   arbitrary = genericArbitrary
 
 -- this instance allows us to create random game values that can be used for property based testing
@@ -93,7 +98,10 @@ instance Arbitrary Text where
 
 player1 =
   Player
-    { _pockets = []
+    { _pockets =
+        [ Card {rank = Three, suit = Diamonds}
+        , Card {rank = Four, suit = Spades}
+        ]
     , _chips = 2000
     , _bet = 50
     , _playerState = In
@@ -104,7 +112,8 @@ player1 =
 
 player2 =
   Player
-    { _pockets = []
+    { _pockets =
+        [Card {rank = Three, suit = Clubs}, Card {rank = Four, suit = Hearts}]
     , _chips = 2000
     , _bet = 0
     , _playerState = Out AllIn
@@ -133,6 +142,18 @@ player4 =
     , _playerName = "player4"
     , _committed = 0
     , _actedThisTurn = False
+    }
+
+player5 =
+  Player
+    { _pockets =
+        [Card {rank = King, suit = Diamonds}, Card {rank = Four, suit = Spades}]
+    , _chips = 2000
+    , _bet = 50
+    , _playerState = In
+    , _playerName = "player1"
+    , _committed = 50
+    , _actedThisTurn = True
     }
 
 initPlayers = [player1, player2, player3]
@@ -214,3 +235,22 @@ main =
               (players .~ [((playerState .~ (Out Folded)) player1), player2]) $
               initialGameState
         allButOneFolded unfinishedBlindsGame `shouldBe` False
+    describe "progressToShowdown" $ do
+      it "should award pot chips to winner of hand" $ do
+        let riverGame =
+              (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let showdownGame = progressToShowdown riverGame
+        let playerChipCounts =
+              (\Player {..} -> _chips) <$> (_players showdownGame)
+        playerChipCounts `shouldBe` [2000, 1000]
+      it "should split pot correctly if more than one player wins a pot" $ do
+        let riverGame =
+              (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player1), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let showdownGame = progressToShowdown riverGame
+        let playerChipCounts =
+              (\Player {..} -> _chips) <$> (_players showdownGame)
+        playerChipCounts `shouldBe` [1500, 1500]

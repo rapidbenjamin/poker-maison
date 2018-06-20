@@ -21,3 +21,8 @@ as out means that a player cannot win the hand however an all in player still ha
 the possibility of winning. Will need to update actions to mark to new state as well
 as any time a new player is set.
 - Rename PreDeal stage to Blinds
+
+*
+- Delay of 3 seconds between each game stage for UX
+- Use System.Timeout to wrap player actions in timeout, will need to add a new msg signalling
+  to all table subscribes that the player has timed out

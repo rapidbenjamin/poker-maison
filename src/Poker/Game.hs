@@ -84,16 +84,17 @@ progressToShowdown game@Game {..} =
   Game
     { _street = Showdown
     , _winners = winners
-    , _players = awardWinners _players _pot
+    , _players = awardWinners _players chipsPerPlayer
     , ..
     }
   where
-    winners = getHandRankings game
-    chipsPerPlayer = _pot `div` (length winners)
-    awardWinners _players chipsPerPlayer =
+    winners = getWinners game
+    winningPlayers = snd <$> winners
+    chipsPerPlayer = _pot `div` (length winningPlayers)
+    awardWinners _players chipsToAward =
       (\p@Player {..} ->
-         if p `elem` (snd <$> winners)
-           then Player {_chips = _chips + chipsPerPlayer, ..}
+         if p `elem` winningPlayers
+           then Player {_chips = _chips + chipsToAward, ..}
            else p) <$>
       _players
 
@@ -175,14 +176,20 @@ haveAllPlayersActed game@Game {..} =
            (_actedThisTurn == False) || (_playerState == In && _bet /= maxBet))
         activePlayers
 
-getHandRankings :: Game -> [((HandRank, [Card]), Player)]
-getHandRankings Game {..} =
-  maximums $ map (value . (++ _board) . view pockets &&& id) ps
+-- | If more than one plays holds the same winning hand then a list will be returned of length
+-- equal to winning players
+getWinners :: Game -> [((HandRank, [Card]), Player)]
+getWinners Game {..} = maximums $ getHandRankings _players _board
+
+getHandRankings plyrs boardCards =
+  map (value . (++ boardCards) . view pockets &&& id) filteredPlyrs
   where
-    ps =
+    filteredPlyrs =
       filter
-        (\Player {..} -> (_playerState /= Out Folded) || (_playerState /= None))
-        _players
+        (\Player {..} ->
+           (_playerState /= Out Folded) ||
+           (_playerState /= None) || (_pockets == []))
+        plyrs
 
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =
