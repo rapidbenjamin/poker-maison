@@ -77,6 +77,7 @@ instance Arbitrary Game where
     let _bigBlind = _smallBlind * 2
     _pot <- suchThat chooseAny (\x -> x >= 0 && x >= _bigBlind)
     _maxBet <- suchThat chooseAny (>= 0)
+    let _winners = []
     return Game {_maxPlayers = fromInteger x, ..}
 
 instance Arbitrary Player where
@@ -163,13 +164,14 @@ main =
   hspec $ describe "Poker.Game" $ do
     describe "dealToPlayers" $ do
       it "should deal correct number of cards" $ do
-        let (_, newPlayers) = dealToPlayers initialDeck initPlayers
+        let (_, newPlayers) = dealToPlayers initialDeck [player1, player3]
         (all
            (\Player {..} ->
               if _playerState == In
                 then length _pockets == 2
                 else null _pockets)
-           newPlayers)
+           newPlayers) `shouldBe`
+          True
       it "should preserve ordering of players" $ do
         property $ \(players) -> do
           length players <= 21 ==> do
