@@ -101,6 +101,8 @@ takeSeatHandler move@(TakeSeat tableName) = do
 unUsername :: Username -> Text
 unUsername (Username username) = username
 
+--TODO!!! The game move next game progress calls should be 
+--decoupled from the handling of the player action msg
 -- first we check that table exists and player is sat the game at table otherwise we throw an error
 -- then the player move is applied to the table which results in either a new game state which is 
 -- broadcast to all table subscribers or an error is returned which is then only sent to the
@@ -144,7 +146,26 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
                         updateServerState
                           serverState
                           ServerState {lobby = updatedLobby, ..}
-                else return ()
+                else if everyoneAllIn updatedGame
+                          -- such copy paste from above
+                       then do
+                         nextHand <- liftIO $ getNextStage updatedGame
+                         case nextHand of
+                           Left gameErr -> throwError $ GameErr gameErr
+                           Right gameWithNextHand -> do
+                             liftIO $
+                               broadcastMsg clients tableSubscribers $
+                               NewGameState tableName gameWithNextHand
+                             let updatedLobby =
+                                   updateTableGame
+                                     tableName
+                                     gameWithNextHand
+                                     lobby
+                             liftIO $
+                               updateServerState
+                                 serverState
+                                 ServerState {lobby = updatedLobby, ..}
+                       else return ()
       where satAtTable = unUsername username `elem` getGamePlayerNames game
             tableSubscribers = getTableSubscribers table
 
