@@ -164,7 +164,7 @@ main =
   hspec $
   describe "Poker" $ do
     describe "everyoneAllIn" $ do
-      it "should return False when all players are All In" $ do
+      it "should return True when all players are All In" $ do
         let flopGame =
               (street .~ Flop) .
               (pot .~ 1000) .
@@ -174,13 +174,16 @@ main =
                , ((playerState .~ Out AllIn) player2)
                ]) $
               initialGameState
-        everyoneAllIn flopGame `shouldBe` False
-      it "should return True when at least two players are In" $ do
+        everyoneAllIn flopGame `shouldBe` True
+      it "should return False when more than one player is not AllIn" $ do
         let flopGame =
               (street .~ Flop) .
               (pot .~ 1000) .
               (deck .~ initialDeck) .
               (players .~
-               [((playerState .~ In) player1), ((playerState .~ In) player2)]) $
+               [ ((playerState .~ In) player1)
+               , ((playerState .~ In) player2)
+               , ((playerState .~ Out AllIn) player3)
+               ]) $
               initialGameState
         everyoneAllIn flopGame `shouldBe` False

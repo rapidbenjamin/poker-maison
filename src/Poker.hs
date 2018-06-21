@@ -146,7 +146,8 @@ everyoneAllIn :: Game -> Bool
 everyoneAllIn game@Game {..} =
   if _street == PreDeal || _street == Showdown
     then False
-    else (length playersIn) <= 1 && (length playersAllIn > 0)
+    else numPlayersIn <= 1 && numPlayersAllIn > 0
   where
-    playersAllIn = filter (\Player {..} -> _playerState == Out AllIn) _players
-    playersIn = filter (\Player {..} -> _playerState == In) _players
+    numPlayersAllIn =
+      length $ filter (\Player {..} -> _playerState == Out AllIn) _players
+    numPlayersIn = length $ filter (\Player {..} -> _playerState == In) _players
