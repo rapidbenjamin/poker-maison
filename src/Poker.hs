@@ -41,6 +41,8 @@ runPlayerAction playerName action =
           "\n haveAllPlayersActed: " <> show (haveAllPlayersActed newGameState)
         liftIO $
           print $ "\n allButOneFolded: " <> show (allButOneFolded newGameState)
+        liftIO $
+          print $ "\n everyoneAllIn: " <> show (everyoneAllIn newGameState)
         case action of
           SitDown _ -> return (Nothing, newGameState)
           LeaveSeat -> return (Nothing, newGameState)
@@ -48,8 +50,14 @@ runPlayerAction playerName action =
             game' <- progressGame newGameState
             return (Nothing, game')
 
-nextHand :: StateT Game IO (Maybe GameErr)
-nextHand = do
+-- when no player action is possible we can can call this function to get the game 
+-- to the next stage.
+-- When the stage is showdown there are no possible player actions so this function is called
+-- to progress the game to the next hand.
+-- A similar situation occurs when no further player action is possible but  the game is not over
+-- - in other words more than one players are active and all or all but one are all in
+nextStage :: StateT Game IO (Maybe GameErr)
+nextStage = do
   StateT $ \currGame@Game {..} -- should give error if not showdown as progress wont lead to new hand
    -> do
     game' <- progressGame currGame
@@ -129,3 +137,16 @@ seatPlayer Game {..} player@Player {..}
   | length _players < _maxPlayers =
     Right Game {_players = _players <> [player], ..}
   | otherwise = Right $ Game {_waitlist = _waitlist <> [_playerName], ..}
+
+-- | Betting is over if only one players or no player can bet.
+-- Note that an all in player is still active they just don't have any more chips
+-- to bet so if all players go all in then the rounds will still progress as normal 
+-- until the final showdown stage.
+everyoneAllIn :: Game -> Bool
+everyoneAllIn game@Game {..} =
+  if _street == PreDeal || _street == Showdown
+    then False
+    else (length playersIn) <= 1 && (length playersAllIn > 0)
+  where
+    playersAllIn = filter (\Player {..} -> _playerState == Out AllIn) _players
+    playersIn = filter (\Player {..} -> _playerState == In) _players

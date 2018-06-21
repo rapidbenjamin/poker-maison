@@ -131,7 +131,7 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
               liftIO $ print ("curr street is" ++ show _street)
               if _street == Showdown
                 then do
-                  nextHand <- liftIO $ getNextHand updatedGame
+                  nextHand <- liftIO $ getNextStage updatedGame
                   case nextHand of
                     Left gameErr -> throwError $ GameErr gameErr
                     Right gameWithNextHand -> do
@@ -162,9 +162,9 @@ updateGameWithMove (GameMove tableName playerAction) (Username username) game = 
     Just gameErr -> return $ Left gameErr
 
 -- 
-getNextHand :: Game -> IO (Either GameErr Game)
-getNextHand game = do
-  (maybeErr, gameState) <- runStateT nextHand game
+getNextStage :: Game -> IO (Either GameErr Game)
+getNextStage game = do
+  (maybeErr, gameState) <- runStateT nextStage game
   print "\n new hand"
   pPrint gameState
   pPrint maybeErr

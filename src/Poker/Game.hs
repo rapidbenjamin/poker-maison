@@ -80,6 +80,8 @@ progressToTurn = (street .~ Turn) . (dealBoardCards 1) . resetPlayers
 progressToRiver = (street .~ River) . (dealBoardCards 1) . resetPlayers
 
 -- need to give players the chips they are due and split pot if necessary
+-- if only one active player then this is a result of everyone else folding 
+-- and they are awarded the entire pot
 progressToShowdown game@Game {..} =
   Game
     { _street = Showdown
@@ -145,21 +147,6 @@ getNextHand Game {..} = do
     newWaitlist = drop freeSeatsNo _waitlist
     nextPlayerToAct = _dealer `modInc` (length newPlayers - 1)
 
--- | Betting has concluded is there is only one or less players not either Out AllIn or In.
--- Note that an all in player is still active they just don't have any more chips
--- to bet so if all players go all in then the rounds will still progress as normal 
--- until the final showdown stage.
-allButOneFolded :: Game -> Bool
-allButOneFolded game@Game {..} =
-  if _street == PreDeal
-    then False
-    else (length playersInHand) <= 1
-  where
-    playersInHand =
-      filter
-        (\Player {..} -> (_playerState == In) || (_playerState == Out AllIn))
-        _players
-
 -- | If all players have acted and their bets are equal 
 -- to the max bet then we can move to the next stage
 haveAllPlayersActed :: Game -> Bool
@@ -176,11 +163,12 @@ haveAllPlayersActed game@Game {..} =
            (_actedThisTurn == False) || (_playerState == In && _bet /= maxBet))
         activePlayers
 
--- | If more than one plays holds the same winning hand then a list will be returned of length
--- equal to winning players
+-- | If more than one plays holds the same winning hand then the second part of the tuple
+-- will consist of all the players holding the hand
 getWinners :: Game -> [((HandRank, [Card]), Player)]
 getWinners Game {..} = maximums $ getHandRankings _players _board
 
+-- Get the best hand for each active player (AllIn or In)
 getHandRankings plyrs boardCards =
   map (value . (++ boardCards) . view pockets &&& id) filteredPlyrs
   where
@@ -194,3 +182,14 @@ getHandRankings plyrs boardCards =
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =
   Player {_pockets = [], _bet = 0, _committed = 0, _actedThisTurn = False, ..}
+
+allButOneFolded :: Game -> Bool
+allButOneFolded game@Game {..} =
+  if _street == PreDeal
+    then False
+    else (length playersInHand) <= 1
+  where
+    playersInHand =
+      filter
+        (\Player {..} -> (_playerState == In) || (_playerState == Out AllIn))
+        _players
