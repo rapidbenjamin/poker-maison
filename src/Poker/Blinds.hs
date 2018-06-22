@@ -22,19 +22,6 @@ import Poker.Types
 import Poker.Utils
 import Prelude
 
-{-
---sets PlayerState To In When No Blind is Required for a given player
-progressBlindBetting :: Game -> Game
-progressBlindBetting game@Game {..} =
-  if haveRequiredBlindsBeenPosted requiredBlinds _players _smallBlind
-    then progressToPreFlop game requiredBlinds
-    else game
-  where
-    requiredBlinds = getRequiredBlinds game
-
-
-    DELETE
--}
 haveRequiredBlindsBeenPosted game@Game {..} =
   all (== True) $
   zipWith
@@ -69,8 +56,9 @@ activatePlayersWhenNoBlindNeeded plyrs requiredBlinds =
         , ..
         }
 
-determineWhichPlayersAreInHand :: Game -> Game
-determineWhichPlayersAreInHand game@Game {..} =
-  Game {_players = activatePlayersWhenNoBlindNeeded _players requiredBlinds, ..}
+-- Sets player state to in if they don't need to
+updatePlayersInHand :: Game -> Game
+updatePlayersInHand game =
+  (players %~ flip activatePlayersWhenNoBlindNeeded requiredBlinds) game
   where
     requiredBlinds = getRequiredBlinds game

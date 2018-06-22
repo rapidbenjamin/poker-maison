@@ -71,13 +71,16 @@ setWinners game@Game {..} = game
 progressToPreDeal = getNextHand
 
 progressToPreFlop =
-  (street .~ PreFlop) . resetPlayers . deal . determineWhichPlayersAreInHand
+  (street .~ PreFlop) . resetPlayers . deal . updatePlayersInHand
 
-progressToFlop = (street .~ Flop) . (dealBoardCards 3) . resetPlayers
+progressToFlop =
+  (street .~ Flop) . (maxBet .~ 0) . (dealBoardCards 3) . resetPlayers
 
-progressToTurn = (street .~ Turn) . (dealBoardCards 1) . resetPlayers
+progressToTurn =
+  (street .~ Turn) . (maxBet .~ 0) . (dealBoardCards 1) . resetPlayers
 
-progressToRiver = (street .~ River) . (dealBoardCards 1) . resetPlayers
+progressToRiver =
+  (street .~ River) . (maxBet .~ 0) . (dealBoardCards 1) . resetPlayers
 
 -- need to give players the chips they are due and split pot if necessary
 -- if only one active player then this is a result of everyone else folding 
@@ -156,11 +159,10 @@ haveAllPlayersActed game@Game {..} =
     else not awaitingPlayerAction
   where
     activePlayers = getActivePlayers _players
-    maxBet = maximum $ flip (^.) bet <$> activePlayers
     awaitingPlayerAction =
       any
         (\Player {..} ->
-           (_actedThisTurn == False) || (_playerState == In && _bet /= maxBet))
+           (_actedThisTurn == False) || (_playerState == In && _bet < _maxBet))
         activePlayers
 
 -- | If more than one plays holds the same winning hand then the second part of the tuple

@@ -54,7 +54,8 @@ modInc num modulo
 -- whereas sat in means that the player has at the very least had some historical participation
 -- in the current hand
 getActivePlayers :: [Player] -> [Player]
-getActivePlayers = filter ((== In) . (^. playerState))
+getActivePlayers =
+  filter (\Player {..} -> _playerState == In || _playerState == Out AllIn)
 
 -- get all players who are not currently sat out
 getPlayersSatIn :: [Player] -> [Player]
@@ -65,8 +66,6 @@ getPlayersSatIn = filter ((/= None) . (^. playerState))
 -- return Nothing if the given playerName is not sat at table
 getPlayerPosition :: [PlayerName] -> PlayerName -> Maybe Int
 getPlayerPosition playersSatIn playerName = playerName `elemIndex` playersSatIn
-
-getMaxBet plyrs = maximum $ flip (^.) bet <$> (getActivePlayers plyrs)
 
 getGameStage :: Game -> Street
 getGameStage game = game ^. street

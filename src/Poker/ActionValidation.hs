@@ -146,7 +146,7 @@ canBet :: PlayerName -> Int -> Game -> Maybe InvalidMoveErr
 canBet pName amount game@Game {..} =
   if amount < _bigBlind
     then Just BetLessThanBigBlind
-    else if maxBet > 0
+    else if _maxBet > 0
            then Just CannotBetShouldRaiseInstead
            else if amount > chipCount
                   then Just NotEnoughChipsForAction
@@ -154,7 +154,6 @@ canBet pName amount game@Game {..} =
                          then Just InvalidActionForStreet
                          else Nothing
   where
-    maxBet = getMaxBet _players
     chipCount = _chips $ fromJust (getGamePlayer game pName)
 
 -- Keep in mind that a player can always raise all in,
@@ -164,7 +163,7 @@ canRaise :: PlayerName -> Int -> Game -> Maybe InvalidMoveErr
 canRaise pName amount game@Game {..} =
   if (_street == Showdown) || (_street == PreDeal)
     then Just InvalidActionForStreet
-    else if maxBet == 0
+    else if _maxBet == 0
            then Just CannotRaiseShouldBetInstead
            else if (amount < minRaise) && (amount /= chipCount)
                   then Just $ RaiseAmountBelowMinRaise minRaise
@@ -172,8 +171,7 @@ canRaise pName amount game@Game {..} =
                          then Just NotEnoughChipsForAction
                          else Nothing
   where
-    maxBet = getMaxBet _players
-    minRaise = 2 * maxBet
+    minRaise = 2 * _maxBet
     chipCount = _chips $ fromJust (getGamePlayer game pName)
 
 canCheck :: PlayerName -> Game -> Maybe InvalidMoveErr
@@ -182,11 +180,10 @@ canCheck pName game@Game {..} =
     then Just CannotCheckShouldCallRaiseOrFold
     else if (_street == Showdown) || (_street == PreDeal)
            then Just InvalidActionForStreet
-           else if maxBet /= 0
+           else if _maxBet /= 0
                   then Just CannotCheckShouldCallRaiseOrFold
                   else Nothing
   where
-    maxBet = maximum $ flip (^.) bet <$> (getActivePlayers _players)
     Player {..} =
       fromJust $ find (\Player {..} -> _playerName == pName) _players
 
@@ -200,12 +197,11 @@ canCall :: PlayerName -> Game -> Maybe InvalidMoveErr
 canCall pName game@Game {..} =
   if (_street == Showdown) || (_street == PreDeal)
     then Just InvalidActionForStreet
-    else if (maxBet == 0 && _street /= PreFlop)
+    else if (_maxBet == 0 && _street /= PreFlop)
            then Just CannotCallZeroAmountCheckOrBetInstead
            else Nothing
   where
-    maxBet = getMaxBet _players
-    minRaise = 2 * maxBet
+    minRaise = 2 * _maxBet
     p = fromJust (getGamePlayer game pName)
     chipCount = _chips p
-    amountNeededToCall = maxBet - (_bet p)
+    amountNeededToCall = _maxBet - (_bet p)

@@ -32,6 +32,9 @@ markAllIn = (playerState .~ Out AllIn)
 
 markActed = (actedThisTurn .~ True)
 
+updateMaxBet :: Int -> Game -> Game
+updateMaxBet amount = maxBet %~ max amount
+
 markInForHand = (playerState .~ In)
 
 postBlind blind pName game@Game {..} =
@@ -63,7 +66,7 @@ postBlind blind pName game@Game {..} =
 makeBet :: Int -> PlayerName -> Game -> Game
 makeBet amount pName game@Game {..} =
   ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct) . (pot +~ amount))
-    game
+    (updateMaxBet amount game)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -94,10 +97,9 @@ call pName game@Game {..} =
    (currentPosToAct .~ nextPosToAct) . (pot +~ callAmount))
     game
   where
-    maxBet = getMaxBet _players
     player = fromJust $ find (\Player {..} -> _playerName == pName) _players --horrible performance use map for players
     callAmount =
-      let maxBetShortfall = maxBet - (player ^. bet)
+      let maxBetShortfall = _maxBet - (player ^. bet)
           playerChips = (player ^. chips)
        in if maxBetShortfall > playerChips
             then playerChips

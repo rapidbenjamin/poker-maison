@@ -336,7 +336,7 @@ main =
         let expectedErr = CannotCheckShouldCallRaiseOrFold
         canCheck playerName game `shouldBe` Just expectedErr
       it
-        "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if maxBet is greater than zero" $ do
+        "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if preceding player has bet" $ do
         let game =
               (street .~ PreFlop) . (players .~ playerFixtures) $
               initialGameState

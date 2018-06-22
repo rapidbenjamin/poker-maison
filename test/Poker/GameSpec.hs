@@ -200,18 +200,13 @@ main =
     describe "haveAllPlayersActed" $ do
       it "should return True when all players have acted" $ do
         let game =
-              (street .~ PreFlop) . (players .~ [player1, player2]) $
-              initialGameState
-        haveAllPlayersActed game `shouldBe` True
-      it "should return False when not all players acted" $ do
-        let unfinishedBlindsGame =
-              (street .~ PreDeal) . (players .~ [player1, player4]) $
-              initialGameState
-        haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
-    describe "haveAllPlayersActed" $ do
-      it "should return True when all but one player " $ do
-        let game =
-              (street .~ PreFlop) . (players .~ [player1, player2]) $
+              (street .~ PreFlop) . (maxBet .~ 0) .
+              (players .~
+               [ ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 0))
+                   player1
+               , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 0))
+                   player2
+               ]) $
               initialGameState
         haveAllPlayersActed game `shouldBe` True
       it "should return False when not all players acted" $ do
@@ -237,6 +232,59 @@ main =
               (players .~ [((playerState .~ (Out Folded)) player1), player2]) $
               initialGameState
         allButOneFolded unfinishedBlindsGame `shouldBe` False
+    describe "progressToFlop" $ do
+      it "should reset maxBet" $ do
+        let preflopGame =
+              (street .~ PreFlop) . (maxBet .~ 1000) . (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let flopGame = progressToFlop preflopGame
+        flopGame ^. maxBet `shouldBe` 0
+      it "should reset all player bets" $ do
+        let preflopGame =
+              (street .~ PreFlop) . (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let flopGame = progressToFlop preflopGame
+        let playerBets = (\Player {..} -> _bet) <$> (_players flopGame)
+        playerBets `shouldBe` [0, 0]
+    describe "progressToTurn" $ do
+      it "should reset maxBet" $ do
+        let flopGame =
+              (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let turnGame = progressToTurn flopGame
+        turnGame ^. maxBet `shouldBe` 0
+      it "should reset all player bets" $ do
+        let flopGame =
+              (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let turnGame = progressToTurn flopGame
+        let playerBets = (\Player {..} -> _bet) <$> (_players turnGame)
+        playerBets `shouldBe` [0, 0]
+    describe "progressToRiver" $ do
+      it "should reset maxBet" $ do
+        let turnGame =
+              (street .~ Turn) . (maxBet .~ 1000) . (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let riverGame = progressToTurn turnGame
+        riverGame ^. maxBet `shouldBe` 0
+      it "should reset all player bets" $ do
+        let turnGame =
+              (street .~ Turn) . (maxBet .~ 1000) . (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let riverGame = progressToRiver turnGame
+        let playerBets = (\Player {..} -> _bet) <$> (_players riverGame)
+        playerBets `shouldBe` [0, 0]
     describe "progressToShowdown" $ do
       it "should award pot chips to winner of hand" $ do
         let riverGame =

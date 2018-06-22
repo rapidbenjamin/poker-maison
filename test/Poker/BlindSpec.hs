@@ -225,3 +225,8 @@ main =
         "should  return True when all players have posted blinds in 3 player game" $ do
         haveRequiredBlindsBeenPosted threePlayerGameAllBlindsPosted `shouldBe`
           True
+    describe "updatePlayersInHand" $ do
+      it "should set players that are not in blind position to In" $ do
+        let newGame = updatePlayersInHand threePlayerGameAllBlindsPosted
+        let playerStates = (\Player {..} -> _playerState) <$> (_players newGame)
+        playerStates `shouldBe` [In, In, In]

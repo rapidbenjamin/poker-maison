@@ -196,6 +196,14 @@ main =
         let pName = "player1"
         let newGame = makeBet betValue pName game
         (newGame ^. pot) `shouldBe` betValue
+      it "should update maxBet if amount greater than current maxBet" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
+              initialGameState
+        let betValue = 200
+        let pName = "player1"
+        let newGame = makeBet betValue pName game
+        (newGame ^. maxBet) `shouldBe` betValue
       it "should update player attributes correctly when bet all in" $ do
         let game =
               (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
@@ -256,19 +264,12 @@ main =
         let expectedNewPositionToAct = 1
         newPositionToAct `shouldBe` expectedNewPositionToAct
     describe "call" $ do
-      it "should add call amount to pot" $ do
-        let game =
-              (street .~ PreFlop) . (players .~ [player5, player6]) $
-              initialGameState
-        let pName = "player6"
-        let newGame = call pName game
-        (newGame ^. pot) `shouldBe` 2000
       it "should update player attributes correctly" $ do
         let game =
-              (street .~ PreFlop) . (players .~ [player6, player1]) $
+              (street .~ PreFlop) . (maxBet .~ 200) .
+              (players .~ [player6, player1]) $
               initialGameState
         let pName = "player1"
-        let expectedPlayers = [player1, player2, player3]
         let newGame = call pName game
         let playerWhoCalled = newGame ^? players . ix 1
         let expectedPlayer =
@@ -282,12 +283,20 @@ main =
                 , _actedThisTurn = True
                 }
         playerWhoCalled `shouldBe` Just expectedPlayer
+      it "should add call amount to pot" $ do
+        let game =
+              (street .~ PreFlop) . (maxBet .~ 4000) .
+              (players .~ [player5, player6]) $
+              initialGameState
+        let pName = "player6"
+        let newGame = call pName game
+        (newGame ^. pot) `shouldBe` 2000
       it "should update player attributes correctly when called all in" $ do
         let game =
-              (street .~ PreFlop) . (players .~ [player5, player1]) $
+              (street .~ PreFlop) . (maxBet .~ 4000) .
+              (players .~ [player5, player1]) $
               initialGameState
         let pName = "player1"
-        let expectedPlayers = [player1, player2, player3]
         let newGame = call pName game
         let playerWhoCalled = newGame ^? players . ix 1
         let expectedPlayer =
@@ -307,7 +316,6 @@ main =
               (players .~ [player1, player2, player3]) $
               initialGameState
         let pName = "player1"
-        let expectedPlayers = [player1, player2, player3]
         let newGame = call pName game
         let newPositionToAct = newGame ^. currentPosToAct
         let expectedNewPositionToAct = 1
