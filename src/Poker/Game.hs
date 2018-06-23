@@ -120,21 +120,35 @@ progressToShowdown game@Game {..} =
     , ..
     }
   where
-    winners = getWinners game
+    winners =
+      if allButOneFolded game
+        then []
+        else getWinners game
     winningPlayers = snd <$> winners
-    chipsPerPlayer = _pot `div` (length winningPlayers)
+    chipsPerPlayer =
+      _pot `div`
+      if (length winningPlayers) == 0
+        then 1 -- this just fixes divide by zero err if all folded where we hardcode winners to []
+        else (length winningPlayers)
     awardWinners _players chipsToAward =
-      (\p@Player {..} ->
-         if p `elem` winningPlayers
-           then Player {_chips = _chips + chipsToAward, ..}
-           else p) <$>
-      _players
+      if allButOneFolded game
+        then (\p@Player {..} ->
+                if p `elem` (getActivePlayers _players)
+                  then Player {_chips = _chips + chipsToAward, ..}
+                  else p) <$>
+             _players
+        else (\p@Player {..} ->
+                if p `elem` winningPlayers
+                  then Player {_chips = _chips + chipsToAward, ..}
+                  else p) <$>
+             _players
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 progressGame :: Game -> IO Game
 progressGame game@Game {..} =
-  if haveAllPlayersActed game || _street == Showdown
+  if (haveAllPlayersActed game && not (allButOneFolded game)) ||
+     _street == Showdown
     then case getNextStreet _street of
            PreFlop -> return $ progressToPreFlop game
            Flop -> return $ progressToFlop game
@@ -142,8 +156,10 @@ progressGame game@Game {..} =
            River -> return $ progressToRiver game
            Showdown -> return $ progressToShowdown game
            PreDeal -> progressToPreDeal game
-    else if allButOneFolded game
-           then return $ progressToShowdown game
+    else if allButOneFolded game && (_street /= PreDeal || _street /= Showdown)
+           then do
+             print "ALL BUT ONE FOLDED IS TRUE"
+             return $ progressToShowdown game
            else return game
 
 -- TODO move players from waitlist to players list
