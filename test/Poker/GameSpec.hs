@@ -304,3 +304,34 @@ main =
         let playerChipCounts =
               (\Player {..} -> _chips) <$> (_players showdownGame)
         playerChipCounts `shouldBe` [1500, 1500]
+    describe "hasBettingFinished" $ do
+      it
+        "should return True when all players are All In and all players have acted" $ do
+        let flopGame =
+              (street .~ Flop) . (pot .~ 1000) . (deck .~ initialDeck) .
+              (players .~
+               [ (((playerState .~ In) . (actedThisTurn .~ True)) player1)
+               , (((playerState .~ Out AllIn) . (actedThisTurn .~ True)) player2)
+               ]) $
+              initialGameState
+        hasBettingFinished flopGame `shouldBe` True
+      it
+        "should return False when all players are All In and not all players have acted" $ do
+        let flopGame =
+              (street .~ Flop) . (pot .~ 1000) . (deck .~ initialDeck) .
+              (players .~
+               [ (((playerState .~ Out AllIn) . (actedThisTurn .~ True)) player1)
+               , (((playerState .~ In) . (actedThisTurn .~ False)) player2)
+               ]) $
+              initialGameState
+        hasBettingFinished flopGame `shouldBe` False
+      it "should return False when more than one player is not AllIn" $ do
+        let flopGame =
+              (street .~ Flop) . (pot .~ 1000) . (deck .~ initialDeck) .
+              (players .~
+               [ (((playerState .~ In) . (actedThisTurn .~ True)) player1)
+               , (((playerState .~ Out AllIn) . (actedThisTurn .~ True)) player2)
+               , (((playerState .~ In) . (actedThisTurn .~ True)) player3)
+               ]) $
+              initialGameState
+        hasBettingFinished flopGame `shouldBe` False

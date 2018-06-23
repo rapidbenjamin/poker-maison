@@ -20,6 +20,7 @@ import Prelude
 import Text.Pretty.Simple (pPrint)
 
 import Poker
+import Poker.Game
 import Poker.Types
 import Poker.Utils
 import Socket.Clients
@@ -72,11 +73,15 @@ takeSeatHandler move@(TakeSeat tableName) = do
           let chips_Hardcoded = 2000
           let player = getPlayer (unUsername username) chips_Hardcoded
           let takeSeatAction = GameMove tableName $ SitDown player
-          playerActionResult <-
-            liftIO $ updateGameWithMove takeSeatAction username game
-          case playerActionResult of
-            Left gameErr -> throwError $ GameErr gameErr
-            Right updatedGame -> do
+          (maybeErr, updatedGame) <-
+            liftIO $
+            runStateT
+              (runPlayerAction (unUsername username) (SitDown player))
+              game
+          case maybeErr of
+            Just gameErr -> throwError $ GameErr gameErr
+            Nothing -> do
+              let tableSubscribers = getTableSubscribers table
               let newTableSubscribers =
                     if username `notElem` tableSubscribers
                       then tableSubscribers <> [username]
@@ -96,13 +101,10 @@ takeSeatHandler move@(TakeSeat tableName) = do
                   serverState
                   ServerState {lobby = updatedLobby, ..}
       where satInGame = unUsername username `elem` getGamePlayerNames game
-            tableSubscribers = getTableSubscribers table
 
 unUsername :: Username -> Text
 unUsername (Username username) = username
 
---TODO!!! The game move next game progress calls should be 
---decoupled from the handling of the player action msg
 -- first we check that table exists and player is sat the game at table otherwise we throw an error
 -- then the player move is applied to the table which results in either a new game state which is 
 -- broadcast to all table subscribers or an error is returned which is then only sent to the
@@ -114,81 +116,63 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
   case M.lookup tableName $ unLobby lobby of
     Nothing -> throwError $ TableDoesNotExist tableName
     Just table@Table {..} ->
-      if not satAtTable
-        then throwError $ NotSatAtTable tableName
-        else do
-          playerActionResult <-
-            liftIO $ updateGameWithMove gameMove username game
-          case playerActionResult of
-            Left gameErr -> throwError $ GameErr gameErr
-            Right updatedGame@Game {..} -> do
-              liftIO $
-                broadcastMsg clients tableSubscribers $
-                NewGameState tableName updatedGame
-              let updatedLobby = updateTableGame tableName updatedGame lobby
-              liftIO $
-                updateServerState
-                  serverState
-                  ServerState {lobby = updatedLobby, ..}
-              liftIO $ print ("curr street is" ++ show _street)
-              if _street == Showdown
-                then do
-                  nextHand <- liftIO $ getNextStage updatedGame
-                  case nextHand of
-                    Left gameErr -> throwError $ GameErr gameErr
-                    Right gameWithNextHand -> do
-                      liftIO $
-                        broadcastMsg clients tableSubscribers $
-                        NewGameState tableName gameWithNextHand
-                      let updatedLobby =
-                            updateTableGame tableName gameWithNextHand lobby
-                      liftIO $
-                        updateServerState
-                          serverState
-                          ServerState {lobby = updatedLobby, ..}
-                else if everyoneAllIn updatedGame
-                          -- such copy paste from above
-                       then do
-                         nextHand <- liftIO $ getNextStage updatedGame
-                         case nextHand of
-                           Left gameErr -> throwError $ GameErr gameErr
-                           Right gameWithNextHand -> do
-                             liftIO $
-                               broadcastMsg clients tableSubscribers $
-                               NewGameState tableName gameWithNextHand
-                             let updatedLobby =
-                                   updateTableGame
-                                     tableName
-                                     gameWithNextHand
-                                     lobby
-                             liftIO $
-                               updateServerState
-                                 serverState
-                                 ServerState {lobby = updatedLobby, ..}
-                       else return ()
-      where satAtTable = unUsername username `elem` getGamePlayerNames game
-            tableSubscribers = getTableSubscribers table
+      let satAtTable = unUsername username `elem` getGamePlayerNames game
+       in if not satAtTable
+            then throwError $ NotSatAtTable tableName
+            else updateGameWithMove gameMove username game
 
 -- TODO MOVE THE BELOW TO POKER MODUYLE
 -- get either the new game state or an error when an in-game move is taken by a player 
-updateGameWithMove :: MsgIn -> Username -> Game -> IO (Either GameErr Game)
+updateGameWithMove ::
+     MsgIn -> Username -> Game -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
-  (maybeErr, gameState) <-
-    runStateT (runPlayerAction username playerAction) game
-  print "next game state"
-  pPrint gameState
-  pPrint maybeErr
+  (maybeErr, newGame) <-
+    liftIO $ runStateT (runPlayerAction username playerAction) game
+  liftIO $ print "next game state"
+  liftIO $ pPrint newGame
+  liftIO $ pPrint maybeErr
   case maybeErr of
-    Nothing -> return $ Right gameState
-    Just gameErr -> return $ Left gameErr
+    Just gameErr -> throwError $ GameErr gameErr
+    Nothing -> updateGameAndBroadcast tableName newGame
 
 -- 
-getNextStage :: Game -> IO (Either GameErr Game)
-getNextStage game = do
-  (maybeErr, gameState) <- runStateT nextStage game
-  print "\n new hand"
-  pPrint gameState
-  pPrint maybeErr
+getNextStage ::
+     TableName -> Game -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
+getNextStage tableName game = do
+  (maybeErr, newGame) <- liftIO $ runStateT nextStage game
+  liftIO $ print "\n new hand"
+  liftIO $ pPrint newGame
+  liftIO $ pPrint maybeErr
   case maybeErr of
-    Nothing -> return $ Right gameState
-    Just gameErr -> return $ Left gameErr
+    Just gameErr -> throwError $ GameErr gameErr
+    Nothing -> updateGameAndBroadcast tableName newGame
+
+--- If the game gets to a state where no player action is possible 
+--  then we need to recursively progress the game to a state where an action 
+--  is possible. The game states which would lead to this scenario where the game 
+--  needs to be manually progressed are:
+--   
+--  1. everyone is all in.
+--  1. All but one player has folded or the game. 
+--  3. Game is in the Showdown stage.
+--
+updateGameAndBroadcast ::
+     TableName -> Game -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
+updateGameAndBroadcast tableName newGame = do
+  MsgHandlerConfig {..} <- ask
+  ServerState {..} <- liftIO $ readMVar serverState
+  case M.lookup tableName $ unLobby lobby of
+    Nothing -> throwError $ TableDoesNotExist tableName
+    Just table@Table {..} -> do
+      let tableSubscribers = getTableSubscribers table
+      liftIO $
+        broadcastMsg clients tableSubscribers $ NewGameState tableName newGame
+      let updatedLobby = updateTableGame tableName newGame lobby
+      liftIO $
+        updateServerState serverState ServerState {lobby = updatedLobby, ..}
+      liftIO $ pPrint ("everyone all in? " ++ show (hasBettingFinished game))
+      liftIO $ pPrint ("showdown? " ++ show (_street game == Showdown))
+      if (_street newGame == Showdown) ||
+         ((hasBettingFinished newGame) && (_street newGame /= Showdown))
+        then getNextStage tableName newGame
+        else return ()

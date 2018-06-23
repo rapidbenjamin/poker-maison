@@ -42,7 +42,8 @@ runPlayerAction playerName action =
         liftIO $
           print $ "\n allButOneFolded: " <> show (allButOneFolded newGameState)
         liftIO $
-          print $ "\n everyoneAllIn: " <> show (everyoneAllIn newGameState)
+          print $
+          "\n hasBettingFinished: " <> show (hasBettingFinished newGameState)
         case action of
           SitDown _ -> return (Nothing, newGameState)
           LeaveSeat -> return (Nothing, newGameState)
@@ -137,17 +138,3 @@ seatPlayer Game {..} player@Player {..}
   | length _players < _maxPlayers =
     Right Game {_players = _players <> [player], ..}
   | otherwise = Right $ Game {_waitlist = _waitlist <> [_playerName], ..}
-
--- | Betting is over if only one players or no player can bet.
--- Note that an all in player is still active they just don't have any more chips
--- to bet so if all players go all in then the rounds will still progress as normal 
--- until the final showdown stage.
-everyoneAllIn :: Game -> Bool
-everyoneAllIn game@Game {..} =
-  if _street == PreDeal || _street == Showdown
-    then False
-    else numPlayersIn <= 1 && numPlayersAllIn > 0
-  where
-    numPlayersAllIn =
-      length $ filter (\Player {..} -> _playerState == Out AllIn) _players
-    numPlayersIn = length $ filter (\Player {..} -> _playerState == In) _players

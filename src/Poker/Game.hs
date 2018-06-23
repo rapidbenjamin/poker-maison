@@ -58,11 +58,38 @@ getNextStreet :: Street -> Street
 getNextStreet Showdown = minBound
 getNextStreet _street = succ _street
 
-resetPlayers :: Game -> Game
-resetPlayers Game {..} = Game {_players = newPlayers, ..}
+-- | Betting is over if only one players or no player can bet.
+-- Note that an all in player is still active they just don't have any more chips
+-- to bet so if all players go all in then the rounds will still progress as normal 
+-- until the final showdown stage.
+hasBettingFinished :: Game -> Bool
+hasBettingFinished game@Game {..} =
+  if _street == PreDeal || _street == Showdown
+    then False
+    else if not allPlayersActed
+           then False
+           else numPlayersIn <= 1 && numPlayersAllIn > 0
   where
+    numPlayersAllIn =
+      length $ filter (\Player {..} -> _playerState == Out AllIn) _players
+    numPlayersIn = length $ filter (\Player {..} -> _playerState == In) _players
+    allPlayersActed =
+      null $
+      filter
+        (\Player {..} ->
+           (not _actedThisTurn) &&
+           (_playerState == Out AllIn || _playerState == In))
+        _players
+
+-- if no further player actions are possible (i.e betting has finished)
+-- then actedThisTurn should be set to True for all active players in Hand.
+-- This scenario occurs when all players or all but one players are all in. 
+resetPlayers :: Game -> Game
+resetPlayers game@Game {..} = Game {_players = newPlayers, ..}
+  where
+    bettingOver = hasBettingFinished game
     newPlayers =
-      (\Player {..} -> Player {_bet = 0, _actedThisTurn = False, ..}) <$>
+      (\Player {..} -> Player {_bet = 0, _actedThisTurn = bettingOver, ..}) <$>
       _players
 
 setWinners :: Game -> Game
