@@ -17,10 +17,6 @@ import Data.Text (Text)
 import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
 
-import Poker
-import Poker.ActionValidation
-import Poker.Types
-
 import Control.Lens
 import Control.Monad.State hiding (state)
 import Data.List.Lens
@@ -28,6 +24,10 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Debug.Trace
 import GHC.Generics
+import Poker
+import Poker.ActionValidation
+import Poker.Game (initialDeck)
+import Poker.Types
 import Test.QuickCheck.Arbitrary.Generic
 import Test.QuickCheck.Gen
 
@@ -69,6 +69,7 @@ instance Arbitrary Game where
     let _bigBlind = _smallBlind * 2
     _pot <- suchThat chooseAny (\x -> x >= 0 && x >= _bigBlind)
     _maxBet <- suchThat chooseAny (>= 0)
+    let _winners = NoWinners
     return Game {_maxPlayers = fromInteger x, ..}
 
 instance Arbitrary Player where
@@ -169,64 +170,6 @@ main =
         "returns Just NotAtTable Error if no player with playerName is sat at table" $ do
         let expectedErr = Just $ NotAtTable "MissingPlayer"
         checkPlayerSatAtTable game "MissingPlayer" `shouldBe` expectedErr
-    describe "blinds" $ do
-      describe "getSmallBlindPosition" $ do
-        it "returns correct small blind position in three player game" $ do
-          let dealerPos = 0
-          getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
-            1
-        it "returns correct small blind position in two player game" $ do
-          let dealerPos = 0
-          getSmallBlindPosition ["Player1", "Player2"] dealerPos `shouldBe` 0
-      describe "blindRequiredByPlayer" $ do
-        it
-          "returns Just Small if player position is dealer + 1 for three players" $ do
-          let testPlayers =
-                (playerState .~ In) <$>
-                (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-          let game = players .~ testPlayers $ initialGameState
-          blindRequiredByPlayer game "Player2" `shouldBe` Just Small
-        it "returns Just Big if player position is dealer + 2 for three players" $ do
-          let testPlayers =
-                (playerState .~ In) <$>
-                (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-          let game = players .~ testPlayers $ initialGameState
-          blindRequiredByPlayer game "Player3" `shouldBe` Just Big
-        it
-          "returns Nothing if player position is dealer for three players and playerState is In" $ do
-          let testPlayers =
-                (playerState .~ In) <$>
-                (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-          let game = players .~ testPlayers $ initialGameState
-          blindRequiredByPlayer game "Player1" `shouldBe` Nothing
-        it
-          "returns Just Big if player position is dealer for three players and playerState is None" $ do
-          let testPlayers =
-                (playerState .~ None) <$>
-                (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-          let game = players .~ testPlayers $ initialGameState
-          blindRequiredByPlayer game "Player1" `shouldBe` Nothing
-        it "returns Just Small if player position is dealer for two players" $ do
-          let testPlayers =
-                (playerState .~ In) <$>
-                (getPlayer <$> ["Player1", "Player2"] <*> [100])
-          let game = players .~ testPlayers $ initialGameState
-          blindRequiredByPlayer game "Player1" `shouldBe` Just Small
-        it "returns Just Big if player position is dealer + 1 for two players" $ do
-          let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
-          let game = players .~ testPlayers $ initialGameState
-          blindRequiredByPlayer game "Player2" `shouldBe` Just Big
-      context "Players with PlayerState set to None" $
-        it "should always require bigBlind" $
-        property $ \game@Game {..} playerName -> do
-          let player =
-                (\Player {..} -> _playerName == playerName) `find` _players
-          case player of
-            Just Player {..} -> do
-              let result = blindRequiredByPlayer game playerName
-              (_playerState == None && result == Just Big) ||
-                _playerState /= None
-            Nothing -> True
     describe "canBet" $ do
       it
         "should return NotEnoughChipsForAction InvalidMoveErr if raise value is greater than remaining chips" $ do
@@ -401,7 +344,6 @@ main =
               (street .~ PreDeal) . (players .~ playerFixtures2) $
               initialGameState
         let playerName = "player3"
-        let amount = 100
         let expectedErr = InvalidActionForStreet
         canFold playerName preDealGame `shouldBe` Just expectedErr
       it
@@ -410,6 +352,60 @@ main =
               (street .~ Showdown) . (players .~ playerFixtures2) $
               initialGameState
         let playerName = "player3"
-        let amount = 100
         let expectedErr = InvalidActionForStreet
         canFold playerName showdownGame `shouldBe` Just expectedErr
+    describe "canShowOrMuckCards" $ do
+      it "should return InvalidMoveErr if game stage is not Showdown" $ do
+        let preDealGame =
+              (street .~ PreDeal) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let expectedErr = InvalidActionForStreet
+        canShowOrMuckCards playerName preDealGame `shouldBe` Just expectedErr
+      it "should return InvalidMoveErr if hand is not a singlePlayer showdown" $ do
+        let showdownGame =
+              (street .~ Showdown) .
+              (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (winners .~ MultiPlayerShowdown [((Pair, []), "player4")]) .
+              (players .~
+               [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
+               , (((playerState .~ In) . (actedThisTurn .~ True)) player5)
+               ]) $
+              initialGameState
+        let playerName = "player5"
+        let expectedErr =
+              CannotShowCardsOrMuckCards
+                "Can only show or muck cards if winner of single player pot during showdown"
+        canShowOrMuckCards playerName showdownGame `shouldBe` Just expectedErr
+      it
+        "should return InvalidMoveErr if action was not sent by winner of single player showdown" $ do
+        let showdownGame =
+              (street .~ Showdown) .
+              (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (winners .~ SinglePlayerShowdown "player4") .
+              (players .~
+               [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
+               , (((playerState .~ Out Folded) . (actedThisTurn .~ True))
+                    player5)
+               ]) $
+              initialGameState
+        let playerName = "player5"
+        let expectedErr = CannotShowCardsOrMuckCards "Not winner of hand"
+        canShowOrMuckCards playerName showdownGame `shouldBe` Just expectedErr
+      it
+        "should return no InvalidMoveErr if action was sent by winner of single player showdown" $ do
+        let showdownGame =
+              (street .~ Showdown) .
+              (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (winners .~ SinglePlayerShowdown "player4") .
+              (players .~
+               [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
+               , (((playerState .~ Out Folded) . (actedThisTurn .~ True))
+                    player5)
+               ]) $
+              initialGameState
+        let playerName = "player4"
+        canShowOrMuckCards playerName showdownGame `shouldBe` Nothing

@@ -77,7 +77,7 @@ instance Arbitrary Game where
     let _bigBlind = _smallBlind * 2
     _pot <- suchThat chooseAny (\x -> x >= 0 && x >= _bigBlind)
     _maxBet <- suchThat chooseAny (>= 0)
-    let _winners = []
+    let _winners = NoWinners
     return Game {_maxPlayers = fromInteger x, ..}
 
 instance Arbitrary Player where

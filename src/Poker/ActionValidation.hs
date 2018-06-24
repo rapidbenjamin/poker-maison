@@ -162,7 +162,7 @@ canShowOrMuckCards :: PlayerName -> Game -> Maybe InvalidMoveErr
 canShowOrMuckCards pName game@Game {..} =
   if (_street /= Showdown)
     then Just InvalidActionForStreet
-    else case getWinners game of
+    else case _winners of
            SinglePlayerShowdown winningPlayerName ->
              if winningPlayerName == pName
                then Nothing
