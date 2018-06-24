@@ -32,6 +32,10 @@ validateAction game@Game {..} playerName action@(PostBlind blind) =
       case validateBlindAction game playerName blind of
         err@(Just _) -> err
         Nothing -> Nothing
+validateAction game@Game {..} playerName action@ShowHand =
+  validateShowOrMuckHand game playerName action
+validateAction game@Game {..} playerName action@MuckHand =
+  validateShowOrMuckHand game playerName action
 validateAction game@Game {..} playerName action@(Check) =
   case isPlayerActingOutOfTurn game playerName of
     err@(Just _) -> err
@@ -155,6 +159,14 @@ canCall pName game@Game {..} =
     p = fromJust (getGamePlayer game pName)
     chipCount = _chips p
     amountNeededToCall = _maxBet - (_bet p)
+
+validateShowOrMuckHand :: Game -> PlayerName -> PlayerAction -> Maybe GameErr
+validateShowOrMuckHand game@Game {..} pName action =
+  case checkPlayerSatAtTable game pName of
+    err@(Just _) -> err
+    Nothing -> do
+      err <- canShowOrMuckHand pName game
+      return $ InvalidMove pName err
 
 -- Should Tell us if everyone has folded to the given playerName 
 -- and the hand is over
