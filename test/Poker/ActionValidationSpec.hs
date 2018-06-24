@@ -183,7 +183,8 @@ main =
       it
         "should return CannotBetShouldRaiseInstead InvalidMoveErr if players have already bet or raised already" $ do
         let game2 =
-              (players .~ playerFixtures) . (street .~ PreFlop) $
+              (players .~ playerFixtures) .
+              (street .~ PreFlop) . (maxBet .~ 100) $
               initialGameState
         let playerName = "player3"
         let amount = 50
@@ -233,20 +234,20 @@ main =
         let amount = 100
         let expectedErr = InvalidActionForStreet
         canBet playerName amount preDealGame `shouldBe` Just expectedErr
-      it
-        "should return RaiseAmountBelowMinRaise InvalidMoveErr if game stage is PreDeal" $ do
+      it "should return InvalidActionForStreet if game stage is PreDeal" $ do
         let game =
-              (street .~ PreFlop) . (players .~ playerFixtures) $
+              (street .~ PreDeal) . (players .~ playerFixtures) $
               initialGameState
         let playerName = "player3"
         let amount = 50
         let minRaise = 400
-        let expectedErr = RaiseAmountBelowMinRaise minRaise
+        let expectedErr = InvalidActionForStreet
         canRaise playerName amount game `shouldBe` Just expectedErr
       it
         "should be able to raise all in when chip count is less than minimum raise amount" $ do
         let game =
-              (street .~ PreFlop) . (players .~ playerFixtures) $
+              (street .~ PreFlop) .
+              (players .~ playerFixtures) . (maxBet .~ 200) $
               initialGameState
         let playerName = "player3"
         let amount = 300
@@ -273,15 +274,8 @@ main =
       it
         "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if maxBet is greater than zero" $ do
         let game =
-              (street .~ PreFlop) . (players .~ playerFixtures) $
-              initialGameState
-        let playerName = "player3"
-        let expectedErr = CannotCheckShouldCallRaiseOrFold
-        canCheck playerName game `shouldBe` Just expectedErr
-      it
-        "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if preceding player has bet" $ do
-        let game =
-              (street .~ PreFlop) . (players .~ playerFixtures) $
+              (street .~ PreFlop) .
+              (players .~ playerFixtures) . (maxBet .~ 200) $
               initialGameState
         let playerName = "player3"
         let expectedErr = CannotCheckShouldCallRaiseOrFold
