@@ -7,7 +7,6 @@ module Poker.ActionValidation where
 
 import Control.Lens hiding (Fold)
 
-------------------------------------------------------------------------------
 import Control.Monad.State.Lazy
 import Data.List
 import qualified Data.List.Safe as Safe
@@ -18,7 +17,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Debug.Trace
 
-------------------------------------------------------------------------------
+import Poker.Blinds (validateBlindAction)
+import Poker.Game (getWinners)
 import Poker.Hands
 import Poker.Types
 import Poker.Utils
@@ -92,56 +92,6 @@ checkPlayerSatAtTable game@Game {..} playerName
     playerNames = getGamePlayerNames game
     atTable = playerName `elem` playerNames
 
-validateBlindAction :: Game -> PlayerName -> Blind -> Maybe GameErr
-validateBlindAction game@Game {..} playerName blind
-  | _street /= PreDeal =
-    Just $ InvalidMove playerName $ CannotPostBlindOutsidePreDeal
-  | otherwise =
-    case getGamePlayer game playerName of
-      Nothing -> Just $ PlayerNotAtTable playerName
-      Just p@Player {..} ->
-        case blindRequired of
-          Just Small ->
-            if blind == Small
-              then if _committed >= _smallBlind
-                     then Just $
-                          InvalidMove playerName $ BlindAlreadyPosted Small
-                     else Nothing
-              else Just $ InvalidMove playerName $ BlindRequired Small
-          Just Big ->
-            if blind == Big
-              then if _committed >= bigBlindValue
-                     then Just $ InvalidMove playerName $ BlindAlreadyPosted Big
-                     else Nothing
-              else Just $ InvalidMove playerName $ BlindRequired Big
-          Nothing -> Just $ InvalidMove playerName $ NoBlindRequired
-        where blindRequired = blindRequiredByPlayer game playerName
-              bigBlindValue = _smallBlind * 2
-
--- if a player does not post their blind at the appropriate time then their state will be changed to 
---None signifying that they have a seat but are now sat out
--- blind is required either if player is sitting in bigBlind or smallBlind position relative to dealer
--- or if their current playerState is set to Out 
--- If no blind is required for the player to remain In for the next hand then we will return Nothing
-blindRequiredByPlayer :: Game -> Text -> Maybe Blind
-blindRequiredByPlayer game playerName = do
-  let player = fromJust $ getGamePlayer game playerName
-  let playerNames = getPlayerNames (_players game)
-  let playerPosition = fromJust $ getPlayerPosition playerNames playerName
-  let smallBlindPos = getSmallBlindPosition playerNames (_dealer game)
-  let bigBlindPos = smallBlindPos `modInc` (length playerNames - 1)
-  if playerPosition == smallBlindPos
-    then Just Small
-    else if playerPosition == bigBlindPos
-           then Just Big
-           else Nothing
-
-getSmallBlindPosition :: [Text] -> Int -> Int
-getSmallBlindPosition playersSatIn dealerPos =
-  if length playersSatIn == 2
-    then dealerPos
-    else modInc dealerPos (length playersSatIn)
-
 canBet :: PlayerName -> Int -> Game -> Maybe InvalidMoveErr
 canBet pName amount game@Game {..} =
   if amount < _bigBlind
@@ -212,6 +162,12 @@ canShowOrMuckCards :: PlayerName -> Game -> Maybe InvalidMoveErr
 canShowOrMuckCards pName game@Game {..} =
   if (_street /= Showdown)
     then Just InvalidActionForStreet
-    else if True
-           then Just $ CannotShowCardsOrMuckCards "nullvf"
-           else Nothing
+    else case getWinners game of
+           SinglePlayerShowdown winningPlayerName ->
+             if winningPlayerName == pName
+               then Nothing
+               else Just $ CannotShowCardsOrMuckCards "Not winner of hand"
+           MultiPlayerShowdown _ ->
+             Just $
+             CannotShowCardsOrMuckCards
+               "Can only show or muck cards if winner of single player pot during showdown"
