@@ -354,14 +354,14 @@ main =
         let playerName = "player3"
         let expectedErr = InvalidActionForStreet
         canFold playerName showdownGame `shouldBe` Just expectedErr
-    describe "canShowOrMuckCards" $ do
+    describe "canShowOrMuckHand" $ do
       it "should return InvalidMoveErr if game stage is not Showdown" $ do
         let preDealGame =
               (street .~ PreDeal) . (players .~ playerFixtures2) $
               initialGameState
         let playerName = "player3"
         let expectedErr = InvalidActionForStreet
-        canShowOrMuckCards playerName preDealGame `shouldBe` Just expectedErr
+        canShowOrMuckHand playerName preDealGame `shouldBe` Just expectedErr
       it "should return InvalidMoveErr if hand is not a singlePlayer showdown" $ do
         let showdownGame =
               (street .~ Showdown) .
@@ -375,9 +375,9 @@ main =
               initialGameState
         let playerName = "player5"
         let expectedErr =
-              CannotShowCardsOrMuckCards
+              CannotShowHandOrMuckHand
                 "Can only show or muck cards if winner of single player pot during showdown"
-        canShowOrMuckCards playerName showdownGame `shouldBe` Just expectedErr
+        canShowOrMuckHand playerName showdownGame `shouldBe` Just expectedErr
       it
         "should return InvalidMoveErr if action was not sent by winner of single player showdown" $ do
         let showdownGame =
@@ -392,8 +392,8 @@ main =
                ]) $
               initialGameState
         let playerName = "player5"
-        let expectedErr = CannotShowCardsOrMuckCards "Not winner of hand"
-        canShowOrMuckCards playerName showdownGame `shouldBe` Just expectedErr
+        let expectedErr = CannotShowHandOrMuckHand "Not winner of hand"
+        canShowOrMuckHand playerName showdownGame `shouldBe` Just expectedErr
       it
         "should return no InvalidMoveErr if action was sent by winner of single player showdown" $ do
         let showdownGame =
@@ -408,4 +408,4 @@ main =
                ]) $
               initialGameState
         let playerName = "player4"
-        canShowOrMuckCards playerName showdownGame `shouldBe` Nothing
+        canShowOrMuckHand playerName showdownGame `shouldBe` Nothing

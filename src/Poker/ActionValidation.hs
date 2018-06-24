@@ -158,16 +158,16 @@ canCall pName game@Game {..} =
 
 -- Should Tell us if everyone has folded to the given playerName 
 -- and the hand is over
-canShowOrMuckCards :: PlayerName -> Game -> Maybe InvalidMoveErr
-canShowOrMuckCards pName game@Game {..} =
+canShowOrMuckHand :: PlayerName -> Game -> Maybe InvalidMoveErr
+canShowOrMuckHand pName game@Game {..} =
   if (_street /= Showdown)
     then Just InvalidActionForStreet
     else case _winners of
            SinglePlayerShowdown winningPlayerName ->
              if winningPlayerName == pName
                then Nothing
-               else Just $ CannotShowCardsOrMuckCards "Not winner of hand"
+               else Just $ CannotShowHandOrMuckHand "Not winner of hand"
            MultiPlayerShowdown _ ->
              Just $
-             CannotShowCardsOrMuckCards
+             CannotShowHandOrMuckHand
                "Can only show or muck cards if winner of single player pot during showdown"

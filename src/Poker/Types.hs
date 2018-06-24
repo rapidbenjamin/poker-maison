@@ -181,10 +181,10 @@ data Blind
 -- increase the pot, it's called a raise. If it is confusing, just remember 
 -- this old poker adage: "You can't raise yourself."
 --
--- Mucking cards refers to a player choosing not to
+-- Mucking hands refers to a player choosing not to
 -- show his hands after everyone has folded to them. Essentially in
 -- this scenario mucking or showing refers to the decision to
--- show ones cards or not to the table after everyone else has folded.
+-- show ones hand or not to the table after everyone else has folded.
 data PlayerAction
   = SitDown Player -- doesnt progress the game
   | LeaveSeat -- doesnt progress the game
@@ -194,8 +194,8 @@ data PlayerAction
   | Raise Int
   | Check
   | Bet Int
-  | ShowCards
-  | MuckCards
+  | ShowHand
+  | MuckHand
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 data GameErr
@@ -233,7 +233,7 @@ data InvalidMoveErr
   | RaiseAmountBelowMinRaise Int
   | CannotCheckShouldCallRaiseOrFold
   | CannotCallZeroAmountCheckOrBetInstead
-  | CannotShowCardsOrMuckCards Text
+  | CannotShowHandOrMuckHand Text
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =
