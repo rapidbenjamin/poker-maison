@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Poker.Game where
 
@@ -12,6 +13,7 @@ import Control.Monad.State hiding (state)
 import Data.List
 import Data.List.Split
 import Data.Maybe
+import Data.Text (Text)
 
 import Data.Monoid
 import Debug.Trace
@@ -109,39 +111,34 @@ progressToTurn =
 progressToRiver =
   (street .~ River) . (maxBet .~ 0) . (dealBoardCards 1) . resetPlayers
 
+progressToShowdown game@Game {..} =
+  Game {_street = Showdown, _winners = winners', _players = awardedPlayers, ..}
+  where
+    winners' = getWinners game
+    awardedPlayers = awardWinners _players winners' _pot
+
 -- need to give players the chips they are due and split pot if necessary
 -- if only one active player then this is a result of everyone else folding 
 -- and they are awarded the entire pot
-progressToShowdown game@Game {..} =
-  Game
-    { _street = Showdown
-    , _winners = winners
-    , _players = awardWinners _players chipsPerPlayer
-    , ..
-    }
-  where
-    winners =
-      if allButOneFolded game
-        then []
-        else getWinners game
-    winningPlayers = snd <$> winners
-    chipsPerPlayer =
-      _pot `div`
-      if (length winningPlayers) == 0
-        then 1 -- this just fixes divide by zero err if all folded where we hardcode winners to []
-        else (length winningPlayers)
-    awardWinners _players chipsToAward =
-      if allButOneFolded game
-        then (\p@Player {..} ->
-                if p `elem` (getActivePlayers _players)
-                  then Player {_chips = _chips + chipsToAward, ..}
-                  else p) <$>
-             _players
-        else (\p@Player {..} ->
-                if p `elem` winningPlayers
-                  then Player {_chips = _chips + chipsToAward, ..}
-                  else p) <$>
-             _players
+--
+-- If only one player is active during the showdown stage then this means all other players
+-- folded to him. The winning player then has the choice of whether to "muck"
+-- (not show) his cards or not.
+awardWinners :: [Player] -> Winners -> Int -> [Player]
+awardWinners _players (Winners ws) pot' =
+  let chipsPerPlayer = pot' `div` length ws
+      playerNames = (snd <$> ws)
+   in (\p@Player {..} ->
+         if _playerName `elem` playerNames
+           then Player {_chips = _chips + chipsPerPlayer, ..}
+           else p) <$>
+      _players
+awardWinners _players (MuckedCards pName) pot' =
+  (\p@Player {..} ->
+     if p `elem` (getActivePlayers _players)
+       then Player {_chips = _chips + pot', ..}
+       else p) <$>
+  _players
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
@@ -180,7 +177,7 @@ getNextHand Game {..} = do
       , _players = newPlayers
       , _board = []
       , _deck = shuffledDeck
-      , _winners = []
+      , _winners = NoWinners
       , _street = PreDeal
       , _dealer = newDealer
       , _currentPosToAct = nextPlayerToAct
@@ -208,16 +205,32 @@ haveAllPlayersActed game@Game {..} =
            (_actedThisTurn == False) || (_playerState == In && _bet < _maxBet))
         activePlayers
 
--- | If more than one plays holds the same winning hand then the second part of the tuple
--- will consist of all the players holding the hand
-getWinners :: Game -> [((HandRank, [Card]), Player)]
-getWinners Game {..} = maximums $ getHandRankings _players _board
+-- If all players have folded apart from a remaining player then the mucked boolean 
+-- inside the player value will determine if we show the remaining players hand to the 
+-- table. 
+--
+-- Otherwise we just get the handrankings of all active players.
+getWinners :: Game -> Winners
+getWinners game@Game {..} =
+  if allButOneFolded game
+    then MuckedCards $
+         head $
+         flip (^.) playerName <$>
+         filter
+           (\Player {..} -> _playerState == In || _playerState == Out AllIn)
+           _players
+    else Winners $ maximums $ getHandRankings _players _board
 
--- Get the best hand for each active player (AllIn or In)
+-- Get the best hand for each active player (AllIn or In)/
+--
+-- If more than one plays holds the same winning hand then the second part of the tuple
+-- will consist of all the players holding the hand
+getHandRankings :: [Player] -> [Card] -> [((HandRank, [Card]), PlayerName)]
 getHandRankings plyrs boardCards =
-  map (value . (++ boardCards) . view pockets &&& id) filteredPlyrs
+  (\(cs, Player {..}) -> (cs, _playerName)) <$>
+  map (value . (++ boardCards) . view pockets &&& id) remainingPlayersInHand
   where
-    filteredPlyrs =
+    remainingPlayersInHand =
       filter
         (\Player {..} ->
            (_playerState /= Out Folded) ||

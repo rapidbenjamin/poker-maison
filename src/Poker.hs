@@ -80,7 +80,7 @@ initialGameState =
     , _pot = 0
     , _street = PreDeal
     , _maxBet = 0
-    , _winners = []
+    , _winners = NoWinners
     }
 
 -- initially a players state is set to None to denote that they havent posted their blinds yet

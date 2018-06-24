@@ -133,7 +133,7 @@ data Player = Player
 -- show his hands. This happens in the scenario that everyone has
 -- folded to them.
 data Winners
-  = Winners [((HandRank, [Card]), PlayerName)] --to do change to playerName -- TODO!
+  = Winners [((HandRank, [Card]), PlayerName)]
   | MuckedCards PlayerName
   | NoWinners
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
@@ -143,7 +143,7 @@ data Game = Game
   , _maxPlayers :: Int
   , _board :: [Card]
   , _winners :: Winners
-  , _waitlist :: [Text] --playernames
+  , _waitlist :: [PlayerName]
   , _deck :: [Card]
   , _smallBlind :: Int
   , _bigBlind :: Int
@@ -224,3 +224,5 @@ newtype CurrentPlayerToActErr =
 makeLenses ''Player
 
 makeLenses ''Game
+
+makeLenses ''Winners

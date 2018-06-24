@@ -12,7 +12,8 @@ TODOs
 - Use a map as data structure for players in poker games
 - remove usage of FromJust from canBet, canRaise, canCall etc instead use find
   and throw player not at table err if Nothing
-
+- add muck hand or show player action for players that win pot because everyone else folded
+- wrap player moves on two timeout stages first one is 15 secs then 30 second countdown timer starts - notify players when each stage of countdown starts or if a player times out
 **
 - Lensify use of maps
 - For the PlayerState Types Out AllIn doesn't make sense. Change Type to In AllIn
