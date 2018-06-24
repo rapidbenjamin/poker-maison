@@ -125,15 +125,16 @@ progressToShowdown game@Game {..} =
 -- folded to him. The winning player then has the choice of whether to "muck"
 -- (not show) his cards or not.
 awardWinners :: [Player] -> Winners -> Int -> [Player]
-awardWinners _players (Winners ws) pot' =
-  let chipsPerPlayer = pot' `div` length ws
-      playerNames = (snd <$> ws)
+awardWinners _players (MultiPlayerShowdown winners') pot' =
+  let chipsPerPlayer = pot' `div` length winners'
+      playerNames = (snd <$> winners')
    in (\p@Player {..} ->
          if _playerName `elem` playerNames
            then Player {_chips = _chips + chipsPerPlayer, ..}
            else p) <$>
       _players
-awardWinners _players (MuckedCards pName) pot' =
+-- SinglePlayerShowdown occurs when everyone folds to one player
+awardWinners _players (SinglePlayerShowdown pName) pot' =
   (\p@Player {..} ->
      if p `elem` (getActivePlayers _players)
        then Player {_chips = _chips + pot', ..}
@@ -213,13 +214,13 @@ haveAllPlayersActed game@Game {..} =
 getWinners :: Game -> Winners
 getWinners game@Game {..} =
   if allButOneFolded game
-    then MuckedCards $
+    then SinglePlayerShowdown $
          head $
          flip (^.) playerName <$>
          filter
            (\Player {..} -> _playerState == In || _playerState == Out AllIn)
            _players
-    else Winners $ maximums $ getHandRankings _players _board
+    else MultiPlayerShowdown $ maximums $ getHandRankings _players _board
 
 -- Get the best hand for each active player (AllIn or In)/
 --

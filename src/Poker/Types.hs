@@ -129,12 +129,16 @@ data Player = Player
   , _actedThisTurn :: Bool
   } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
--- Mucked means that a player has won a pot but is choosing not to 
--- show his hands. This happens in the scenario that everyone has
--- folded to them.
+-- Folded To Signifies a a single player pot where everyone has
+-- folded to them in this case the hand ranking is irrelevant 
+-- and the winner takes all. Therefore the winner has the choice of showing 
+-- or mucking (hiding) their cards as they are the only player in the pot.
+--
+-- Whereas in a MultiPlayer showdown all players must show their cards
+-- as hand rankings are needed to ascertain the winner of the pot.
 data Winners
-  = Winners [((HandRank, [Card]), PlayerName)]
-  | MuckedCards PlayerName
+  = MultiPlayerShowdown [((HandRank, [Card]), PlayerName)]
+  | SinglePlayerShowdown PlayerName -- occurs when everyone folds to one player
   | NoWinners
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
@@ -176,6 +180,11 @@ data Blind
 -- some amount of chips to continue with the hand, and you want to 
 -- increase the pot, it's called a raise. If it is confusing, just remember 
 -- this old poker adage: "You can't raise yourself."
+--
+-- Mucking cards refers to a player choosing not to
+-- show his hands after everyone has folded to them. Essentially in
+-- this scenario mucking or showing refers to the decision to
+-- show ones cards or not to the table after everyone else has folded.
 data PlayerAction
   = SitDown Player -- doesnt progress the game
   | LeaveSeat -- doesnt progress the game
@@ -198,7 +207,16 @@ data GameErr
                 InvalidMoveErr
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
+-- ToDO
+-- errors for each player action should be defined as follows
+-- cannotBet Text
+-- cannotFold Text
+-- so Text would be the error message giving information
 -- if player takes an invalid move we need to inform the client and include the reason why
+--
+-- Also more generic actions such as InvalidActionForStreet just take a second Text argument
+-- detailing which street would be valid for the action in question - also this error
+-- doesn't tell us which action the error refers to
 data InvalidMoveErr
   = BlindNotRequired
   | BlindRequired Blind
@@ -215,6 +233,7 @@ data InvalidMoveErr
   | RaiseAmountBelowMinRaise Int
   | CannotCheckShouldCallRaiseOrFold
   | CannotCallZeroAmountCheckOrBetInstead
+  | CannotShowCardsOrMuckCards Text
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =

@@ -205,3 +205,13 @@ canCall pName game@Game {..} =
     p = fromJust (getGamePlayer game pName)
     chipCount = _chips p
     amountNeededToCall = _maxBet - (_bet p)
+
+-- Should Tell us if everyone has folded to the given playerName 
+-- and the hand is over
+canShowOrMuckCards :: PlayerName -> Game -> Maybe InvalidMoveErr
+canShowOrMuckCards pName game@Game {..} =
+  if (_street /= Showdown)
+    then Just InvalidActionForStreet
+    else if True
+           then Just $ CannotShowCardsOrMuckCards "nullvf"
+           else Nothing
