@@ -129,11 +129,20 @@ data Player = Player
   , _actedThisTurn :: Bool
   } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
+-- Mucked means that a player has won a pot but is choosing not to 
+-- show his hands. This happens in the scenario that everyone has
+-- folded to them.
+data Winners
+  = Winners [((HandRank, [Card]), PlayerName)] --to do change to playerName -- TODO!
+  | MuckedCards PlayerName
+  | NoWinners
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
 data Game = Game
   { _players :: [Player]
   , _maxPlayers :: Int
   , _board :: [Card]
-  , _winners :: [((HandRank, [Card]), Player)]
+  , _winners :: Winners
   , _waitlist :: [Text] --playernames
   , _deck :: [Card]
   , _smallBlind :: Int
@@ -176,6 +185,8 @@ data PlayerAction
   | Raise Int
   | Check
   | Bet Int
+  | ShowCards
+  | MuckCards
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 data GameErr
