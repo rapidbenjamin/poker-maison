@@ -17,9 +17,9 @@ import Data.Text (Text)
 
 import Data.Monoid
 import Debug.Trace
-import System.Random.Shuffle (shuffleM)
-
 import Poker.Blinds
+import System.Random.Shuffle (shuffleM)
+import System.Timeout
 
 ------------------------------------------------------------------------------
 import Poker.Hands

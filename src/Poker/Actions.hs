@@ -37,8 +37,11 @@ updateMaxBet amount = maxBet %~ max amount
 
 markInForHand = (playerState .~ In)
 
+postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
-  ((players .~ newPlayers) . (currentPosToAct .~ nextPositionToAct)) game
+  ((players .~ newPlayers) .
+   (pot +~ blindValue) . (currentPosToAct .~ nextPositionToAct))
+    game
   where
     newPlayers =
       (\p@Player {..} ->
