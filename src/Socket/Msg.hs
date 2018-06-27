@@ -17,6 +17,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Network.WebSockets as WS
 import Prelude
+import System.Timeout
 import Text.Pretty.Simple (pPrint)
 
 import Poker
@@ -27,13 +28,18 @@ import Socket.Clients
 import Socket.Lobby
 import Socket.Types
 import Socket.Utils
+import System.Timeout
 import Types
+
+-- default action derived from game state 
+defaultMsg = GameMove "black" Fold
 
 msgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 msgHandler GetTables {} = getTablesHandler
 msgHandler msg@JoinTable {} = joinTableHandler msg
 msgHandler msg@TakeSeat {} = takeSeatHandler msg
 msgHandler msg@GameMove {} = gameMoveHandler msg
+msgHandler msg@Timeout {} = gameMoveHandler msg
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 getTablesHandler = do
@@ -110,6 +116,7 @@ unUsername (Username username) = username
 -- broadcast to all table subscribers or an error is returned which is then only sent to the
 -- originator of the invalid in-game move
 gameMoveHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
+gameMoveHandler gameMove@(Timeout) = liftIO $ print gameMove
 gameMoveHandler gameMove@(GameMove tableName move) = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readMVar serverState
@@ -121,7 +128,7 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
             then throwError $ NotSatAtTable tableName
             else updateGameWithMove gameMove username game
 
--- TODO MOVE THE BELOW TO POKER MODUYLE
+-- TODO MOVE THE BELOW TO POKER MODULE
 -- get either the new game state or an error when an in-game move is taken by a player 
 updateGameWithMove ::
      MsgIn -> Username -> Game -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()

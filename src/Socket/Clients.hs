@@ -29,6 +29,10 @@ import Socket.Types
 import Socket.Utils
 import Types
 
+import Data.Maybe
+import System.Timeout
+
+-- eventLoop
 -- call handler function for all decodable JSON Messages with client and Msg
 addClientMsgListener ::
      (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
@@ -36,11 +40,18 @@ addClientMsgListener ::
   -> IO ()
 addClientMsgListener msgCallback msgHandlerConfig@MsgHandlerConfig {..} = do
   finally
-    (forever $ do
-       msg <- WS.receiveData clientConn
+    (forever $
+      -- msg <- WS.receiveData clientConn
+      do
+       maybeMsg <- timeout 100000 (WS.receiveData clientConn) -- returns a maybe
+       let msg = fromMaybe "{\"tag\" : \"Timeout\"}" maybeMsg
        s@ServerState {..} <- liftIO $ readMVar serverState
        pPrint s
        parseMsg msg msgHandlerConfig msgCallback)
+       -- make sure that parse  just returns a maybe msg
+       -- then call the callback with the result
+       -- s
+       -- -- TODO decouple the parsing and the calling of the msg callback
     (removeClient username serverState)
 
 -- if msg is successfully parsed fromJSON then we run our msg handler with the config consisting of
