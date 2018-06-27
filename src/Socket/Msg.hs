@@ -116,7 +116,7 @@ unUsername (Username username) = username
 -- broadcast to all table subscribers or an error is returned which is then only sent to the
 -- originator of the invalid in-game move
 gameMoveHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
-gameMoveHandler gameMove@(Timeout) = liftIO $ print gameMove
+gameMoveHandler gameMove@(Timeout) = throwError $ NotSatAtTable "black"
 gameMoveHandler gameMove@(GameMove tableName move) = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readMVar serverState

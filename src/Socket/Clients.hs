@@ -38,20 +38,30 @@ authenticatedMsgLoop ::
      (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
   -> MsgHandlerConfig
   -> IO ()
-authenticatedMsgLoop msgCallback msgHandlerConfig@MsgHandlerConfig {..} = do
+authenticatedMsgLoop msgCallback msgHandlerConfig@MsgHandlerConfig {..}
+ -- 
+ = do
   finally
-    (forever $ do
-       maybeMsg <- timeout 100000 (WS.receiveData clientConn)
-       print maybeMsg
-       s@ServerState {..} <- liftIO $ readMVar serverState
-       pPrint s
-       let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
-       print parsedMsg
-       for_ parsedMsg $ \parsedMsg -> do
-         print $ "parsed msg: " ++ show parsedMsg
-         result <-
-           runExceptT $ runReaderT (msgCallback parsedMsg) msgHandlerConfig
-         either (\err -> sendMsg clientConn $ ErrMsg err) return result)
+    (catch
+       (forever $ do
+          maybeMsg <- timeout 1000000 (WS.receiveData clientConn)
+          print maybeMsg
+          s@ServerState {..} <- liftIO $ readMVar serverState
+          pPrint s
+          let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
+          print parsedMsg
+          for_ parsedMsg $ \parsedMsg -> do
+            print $ "parsed msg: " ++ show parsedMsg
+            result <-
+              runExceptT $ runReaderT (msgCallback parsedMsg) msgHandlerConfig
+            either (\err -> sendMsg clientConn $ ErrMsg err) return result)
+       (\e -> do
+          let err = show (e :: IOException)
+          print
+            ("Warning: Exception occured in authenticatedMsgLoop for " ++
+             show username ++ ": " ++ err)
+          (removeClient username serverState)
+          return ()))
     (removeClient username serverState)
 
 --    runReaderT (msgCallback parsedMsg) msgHandlerConfig
