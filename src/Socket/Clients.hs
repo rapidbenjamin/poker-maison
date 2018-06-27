@@ -32,45 +32,27 @@ import Types
 import Data.Maybe
 import System.Timeout
 
--- eventLoop
+-- This function will be used to process msgs from authenticated clients
 -- call handler function for all decodable JSON Messages with client and Msg
-addClientMsgListener ::
+authenticatedMsgLoop ::
      (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
   -> MsgHandlerConfig
   -> IO ()
-addClientMsgListener msgCallback msgHandlerConfig@MsgHandlerConfig {..} = do
+authenticatedMsgLoop msgCallback msgHandlerConfig@MsgHandlerConfig {..} = do
   finally
-    (forever $
-      -- msg <- WS.receiveData clientConn
-      do
-       maybeMsg <- timeout 100000 (WS.receiveData clientConn) -- returns a maybe
-       let msg = fromMaybe "{\"tag\" : \"Timeout\"}" maybeMsg
+    (forever $ do
+       maybeMsg <- timeout 100000 (WS.receiveData clientConn)
+       print maybeMsg
        s@ServerState {..} <- liftIO $ readMVar serverState
        pPrint s
-       parseMsg msg msgHandlerConfig msgCallback)
-       -- make sure that parse  just returns a maybe msg
-       -- then call the callback with the result
-       -- s
-       -- -- TODO decouple the parsing and the calling of the msg callback
+       let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
+       print parsedMsg
+       for_ parsedMsg $ \parsedMsg -> do
+         print $ "parsed msg: " ++ show parsedMsg
+         result <-
+           runExceptT $ runReaderT (msgCallback parsedMsg) msgHandlerConfig
+         either (\err -> sendMsg clientConn $ ErrMsg err) return result)
     (removeClient username serverState)
-
--- if msg is successfully parsed fromJSON then we run our msg handler with the config consisting of
--- our apps configuration such as db connection and server state. When processing the client's msg
--- any errors will be thrown and thus propagated to the client in our Left handling logic here whereby
--- the error msg will be sent to the client
-parseMsg ::
-     Text
-  -> MsgHandlerConfig
-  -> (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
-  -> IO ()
-parseMsg msg config@MsgHandlerConfig {..} msgCallback = do
-  print $ "raw msg: " ++ T.unpack msg
-  print $ parseMsgFromJSON msg
-  for_ (parseMsgFromJSON msg) $ \parsedMsg -> do
-    print $ "parsed msg: " ++ show parsedMsg
-    result <- runExceptT $ runReaderT (msgCallback parsedMsg) config
-    either (\err -> sendMsg clientConn $ ErrMsg err) return result
-  return ()
 
 --    runReaderT (msgCallback parsedMsg) msgHandlerConfig
 authClient ::
@@ -95,7 +77,7 @@ authClient secretKey state dbConn redisConfig msgHandler conn token = do
               addClient Client {conn = conn, email = userEmail} username clients
           , ..
           }
-      addClientMsgListener msgHandler msgHandlerConfig
+      authenticatedMsgLoop msgHandler msgHandlerConfig
       where username = Username userUsername
             msgHandlerConfig =
               MsgHandlerConfig
