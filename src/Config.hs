@@ -51,5 +51,5 @@ getSocketAPIPort defaultPort = do
 getSecretKey = do
   maybeSecretKey <- lookupEnv "secret"
   case maybeSecretKey of
-    Nothing -> error "Missing dbConnStr in env"
+    Nothing -> error "Missing secret key in env"
     (Just s) -> return $ secret $ pack s
