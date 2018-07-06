@@ -25,12 +25,13 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as X
 import qualified Data.Text.Lazy.Encoding as D
 
-initialServerState :: ServerState
-initialServerState = ServerState {clients = M.empty, lobby = initialLobby}
+initialServerState :: Lobby -> ServerState
+initialServerState lobby = ServerState {clients = M.empty, lobby = lobby}
 
 runSocketServer :: Secret -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port dbConnString redisConfig = do
-  serverState <- newMVar initialServerState
+  lobby <- initialLobby
+  serverState <- newMVar $ initialServerState lobby
   print $ "Socket server listening on " ++ (show port :: String)
   WS.runServer "127.0.0.1" port $
     application secretKey dbConnString redisConfig serverState
@@ -48,5 +49,11 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
-  authClient secretKey serverState dbConnString redisConfig msgHandler newConn $
+  authClient
+    secretKey
+    serverState
+    dbConnString
+    redisConfig
+    authenticatedMsgLoop
+    newConn $
     Token msg

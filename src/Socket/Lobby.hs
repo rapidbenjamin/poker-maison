@@ -4,6 +4,8 @@
 module Socket.Lobby where
 
 import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
+import Control.Concurrent.Chan
+
 import Control.Monad (void)
 import Control.Monad.Except
 import Control.Monad.Logger (LoggingT, runStdoutLoggingT)
@@ -23,11 +25,20 @@ import Socket.Types
 import Socket.Utils
 import Types
 
-initialLobby :: Lobby
-initialLobby = Lobby $ M.fromList [("Black", initialTable)]
-  where
-    initialTable =
-      Table {subscribers = [], waitlist = [], game = initialGameState}
+initialLobby :: IO Lobby
+initialLobby = do
+  chan <- newChan
+  return $
+    Lobby $
+    M.fromList
+      [ ( "Black"
+        , Table
+            { subscribers = []
+            , waitlist = []
+            , game = initialGameState
+            , channel = chan
+            })
+      ]
 
 unLobby :: Lobby -> Map TableName Table
 unLobby (Lobby lobby) = lobby
@@ -58,7 +69,7 @@ joinTable tableName = do
           let updatedLobby = updateTable tableName updatedTable lobby
           let newServerState = ServerState {lobby = updatedLobby, ..}
           liftIO $ updateServerState serverState newServerState
-          liftIO $ broadcastAllClients clients $ NewTableList updatedLobby
+          liftIO $ broadcastAllClients clients $ NewTableList
       where gameStage = getGameStage game
             chipAmount = 2500
   return ()

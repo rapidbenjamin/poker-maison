@@ -8,11 +8,13 @@
 module Socket.Types where
 
 import Control.Concurrent (MVar)
+import Control.Concurrent.Chan
 import Control.Monad.State
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
+import Data.Monoid
 import Data.Text
 import Data.Time.Clock
 import Database.Persist.Postgresql (ConnectionString)
@@ -34,19 +36,28 @@ type TableName = Text
 
 newtype Lobby =
   Lobby (Map TableName Table)
-  deriving (Ord, Eq, Read, Generic, ToJSON, FromJSON)
+  deriving (Ord, Eq)
 
-instance Show Lobby where
-  show _ = "lobby show overriden"
+instance Show Lobby
 
-instance Show ServerState where
-  show _ = "aerverState show overriden"
+instance Show ServerState
 
 data Table = Table
   { subscribers :: [Username] -- not sat at table or on waitlist but observing game state
   , waitlist :: [Username] -- waiting to join a full table  and subscribed to updates
   , game :: Game
-  } deriving (Show, Ord, Eq, Read, Generic, ToJSON, FromJSON)
+  , channel :: Chan MsgOut
+  }
+
+instance Show Table where
+  show Table {..} =
+    show subscribers <> "\n" <> show waitlist <> "\n" <> show game
+
+instance Eq Table where
+  Table {game = game1} == Table {game = game2} = game1 == game2
+
+instance Ord Table where
+  Table {game = game1} `compare` Table {game = game2} = game1 `compare` game2
 
 data Client = Client
   { email :: Text
@@ -79,14 +90,15 @@ data MsgIn
 
 -- outgoing messages for ws client(s)
 data MsgOut
-  = TableList Lobby -- TODO only broadcast public table info
-  | NewTableList Lobby -- TODO only broadcast public table info
+  = TableList -- TODO only broadcast public table info -- add list of tables to msg
+  | NewTableList -- TODO only broadcast public table info -- add list of tables to msg
   | PlayerLeft
   | PlayerJoined
   | NewGameState TableName
                  Game
   | ErrMsg Err
   | AuthSuccess
+  | Noop
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 data Err

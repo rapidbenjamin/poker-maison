@@ -27,11 +27,11 @@ import Socket.Types
 import Types
 
 -- lobby inlcuding all game state is stored in redis to allow for horizontal scaling
-setInitialLobby :: RedisConfig -> Lobby -> IO ()
-setInitialLobby redisConfig lobby =
-  liftIO $
+setInitialLobby :: RedisConfig -> IO ()
+setInitialLobby redisConfig = do
+  lobby <- initialLobby
   runRedisAction redisConfig $
-  void $ Redis.hsetnx "gamesState" "lobby" (pack $ show initialLobby)
+    void $ Redis.hsetnx "gamesState" "lobby" (pack $ show lobby)
 
 intialiseGameStateInRedis :: RedisConfig -> IO ()
-intialiseGameStateInRedis redisConfig = setInitialLobby redisConfig initialLobby
+intialiseGameStateInRedis redisConfig = setInitialLobby redisConfig

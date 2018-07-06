@@ -3,7 +3,9 @@
 
 module Socket.Clients where
 
-import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
+import Control.Concurrent
+import Control.Concurrent.Async
+import Control.Concurrent.Chan
 import Control.Exception
 import Control.Monad
 import Control.Monad.Except
@@ -32,62 +34,40 @@ import Types
 import Data.Maybe
 import System.Timeout
 
--- This function will be used to process msgs from authenticated clients
--- call handler function for all decodable JSON Messages with client and Msg
-authenticatedMsgLoop ::
-     (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
-  -> MsgHandlerConfig
-  -> IO ()
-authenticatedMsgLoop msgCallback msgHandlerConfig@MsgHandlerConfig {..}
- -- 
- = do
-  finally
-    (catch
-       (forever $ do
-          maybeMsg <- timeout 1000000 (WS.receiveData clientConn)
-          print maybeMsg
-          s@ServerState {..} <- liftIO $ readMVar serverState
-          pPrint s
-          let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
-          print parsedMsg
-          for_ parsedMsg $ \parsedMsg -> do
-            print $ "parsed msg: " ++ show parsedMsg
-            result <-
-              runExceptT $ runReaderT (msgCallback parsedMsg) msgHandlerConfig
-            either (\err -> sendMsg clientConn $ ErrMsg err) return result)
-       (\e -> do
-          let err = show (e :: IOException)
-          print
-            ("Warning: Exception occured in authenticatedMsgLoop for " ++
-             show username ++ ": " ++ err)
-          (removeClient username serverState)
-          return ()))
-    (removeClient username serverState)
-
---    runReaderT (msgCallback parsedMsg) msgHandlerConfig
 authClient ::
      Secret
   -> MVar ServerState
   -> ConnectionString
   -> RedisConfig
-  -> (MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) ())
+  -> (MsgHandlerConfig -> IO ())
   -> WS.Connection
   -> Token
   -> IO ()
-authClient secretKey state dbConn redisConfig msgHandler conn token = do
+authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
   authResult <- runExceptT $ verifyToken secretKey dbConn redisConfig token
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
     (Right User {..}) -> do
       sendMsg conn AuthSuccess
-      ServerState {..} <- liftIO $ readMVar state
-      updateServerState state $
-        ServerState
-          { clients =
-              addClient Client {conn = conn, email = userEmail} username clients
-          , ..
-          }
-      authenticatedMsgLoop msgHandler msgHandlerConfig
+      print "1"
+      bef <- isEmptyMVar state
+      ServerState {..} <- readMVar state
+      aft <- isEmptyMVar state
+      print bef
+      print aft
+      print "2"
+      swapMVar
+        state
+        (ServerState
+           { clients =
+               addClient
+                 Client {conn = conn, email = userEmail}
+                 username
+                 clients
+           , ..
+           })
+      print "3"
+      authMsgLoop msgHandlerConfig
       where username = Username userUsername
             msgHandlerConfig =
               MsgHandlerConfig
