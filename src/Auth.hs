@@ -98,7 +98,10 @@ signToken secretKey userId = do
   randomText <- liftIO randomText
   return $
     ReturnToken
-      {access_token = token, refresh_token = randomText, expiration = 60 * 60}
+      { access_token = token
+      , refresh_token = randomText
+      , expiration = 60 * 60000
+      }
 
 createExpTime :: Int -> IO NominalDiffTime
 createExpTime min = do
