@@ -5,9 +5,11 @@ module Socket.Msg
   ( authenticatedMsgLoop
   ) where
 
+import Control.Concurrent.STM.TChan
+
 import Control.Concurrent
+import Control.Concurrent.Async
 import Control.Concurrent.STM
-import Control.Concurrent.STM.TBChan
 import Control.Exception
 import Control.Monad
 import Control.Monad.Except
@@ -54,9 +56,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
           --pPrint s
           let parsedMsg = parseMsgFromJSON msg
           print parsedMsg
-      --   if parsedMsg == TakeSeat then 
-         -- for messages like takeSeat we must use withAsync to fork a thread which is auto killed
-         -- this thread will run  the game updateloop continously
+          tid <- forkIO (gameUpdateLoop "Black" msgHandlerConfig)
           for_ parsedMsg $ \parsedMsg -> do
             print $ "parsed msg: " ++ show parsedMsg
             msgOutE <-
@@ -66,7 +66,6 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
               (\err -> sendMsg clientConn $ ErrMsg err)
               (handleNewGameState serverStateTVar)
               msgOutE
-            print msgOutE
           return ())
        (\e -> do
           let err = show (e :: IOException)
@@ -80,32 +79,40 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
 --against the game
-gameUpdateLoop :: TableName -> TBChan Game -> MsgHandlerConfig -> IO ()
-gameUpdateLoop tableName chan msgHandlerConfig@MsgHandlerConfig {..} =
-  forever $ do
-    print "gameUpdateLoopCalled"
-    newGame@Game {..} <- atomically $ readTBChan chan -- WE ARE LISTENING TO THE CHANNEL IN A FORKED THREAD AND SEND MSGS TO CLIENT FROM THIS THREAD
-    sendMsg clientConn $ NewGameState tableName newGame
-    if False
-              --use withAsync to ensure child threads are killed on parenbt death
-      then do
-        maybeMsg <- timeout 1000000 (WS.receiveData clientConn) -- only do this is current player is thread player
-        liftIO $ print maybeMsg
-        s@ServerState {..} <- liftIO $ readTVarIO serverStateTVar
-        liftIO $ pPrint s
-        let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
-        liftIO $ print parsedMsg
-        for_ parsedMsg $ \parsedMsg -> do
-          print $ "parsed msg: " ++ show parsedMsg
-          msgOutE <-
-            runExceptT $ runReaderT (gameMsgHandler parsedMsg) msgHandlerConfig
-          either
-            (\err -> sendMsg clientConn $ ErrMsg err)
-            (broadcastChanMsg msgHandlerConfig tableName)
-            msgOutE
-      else do
-        sendMsg clientConn $ NewGameState tableName newGame
-        return ()
+gameUpdateLoop :: TableName -> MsgHandlerConfig -> IO ()
+gameUpdateLoop tableName msgHandlerConfig@MsgHandlerConfig {..} = do
+  print "game upate loop called"
+  ServerState {..} <- readTVarIO serverStateTVar
+  print " aboo"
+  case M.lookup tableName $ unLobby lobby of
+    Nothing -> do
+      print "No tablename found"
+      return ()
+    Just table@Table {..} ->
+      forever $ do
+        print "gameUpdateLoopCalled"
+        dupChan <- atomically $ dupTChan channel
+        chanMsg <- atomically $ readTChan dupChan -- WE ARE LISTENING TO THE CHANNEL IN A FORKED THREAD AND SEND MSGS TO CLIENT FROM THIS THREAD
+        sendMsg clientConn chanMsg
+        if False
+                    --use withAsync to ensure child threads are killed on parenbt death
+          then do
+            maybeMsg <- timeout 1000000 (WS.receiveData clientConn) -- only do this is current player is thread player
+            liftIO $ print maybeMsg
+            s@ServerState {..} <- liftIO $ readTVarIO serverStateTVar
+            liftIO $ pPrint s
+            let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
+            liftIO $ print parsedMsg
+            for_ parsedMsg $ \parsedMsg -> do
+              print $ "parsed msg: " ++ show parsedMsg
+              msgOutE <-
+                runExceptT $
+                runReaderT (gameMsgHandler parsedMsg) msgHandlerConfig
+              either
+                (\err -> sendMsg clientConn $ ErrMsg err)
+                (broadcastChanMsg msgHandlerConfig tableName)
+                msgOutE
+          else return ()
 
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
@@ -116,13 +123,13 @@ gameUpdateLoop tableName chan msgHandlerConfig@MsgHandlerConfig {..} =
 --  1. All but one player has folded or the game. 
 --  3. Game is in the Showdown stage.
 --
-updateGameAndBroadcast :: TVar ServerState -> TableName -> Game -> STM ()
-updateGameAndBroadcast serverStateTVar tableName newGame = do
+updateGameAndBroadcastT :: TVar ServerState -> TableName -> Game -> STM ()
+updateGameAndBroadcastT serverStateTVar tableName newGame = do
   ServerState {..} <- readTVar serverStateTVar
   case M.lookup tableName $ unLobby lobby of
     Nothing -> return ()
     Just table@Table {..} -> do
-      writeTBChan channel $ NewGameState tableName newGame
+      writeTChan channel $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
       swapTVar serverStateTVar ServerState {lobby = updatedLobby, ..}
       return ()
@@ -130,7 +137,7 @@ updateGameAndBroadcast serverStateTVar tableName newGame = do
 handleNewGameState :: TVar ServerState -> MsgOut -> IO ()
 handleNewGameState serverStateTVar (NewGameState tableName newGame) = do
   newServerState <-
-    atomically $ updateGameAndBroadcast serverStateTVar tableName newGame
+    atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
   print newServerState
   if (_street newGame == Showdown) ||
      ((hasBettingFinished newGame) && (_street newGame /= Showdown))
@@ -138,7 +145,7 @@ handleNewGameState serverStateTVar (NewGameState tableName newGame) = do
       (maybeErr, progressedGame) <- runStateT nextStage newGame
       if isNothing maybeErr
         then atomically $
-             updateGameAndBroadcast serverStateTVar tableName progressedGame
+             updateGameAndBroadcastT serverStateTVar tableName progressedGame
         else return ()
     else return ()
 
@@ -148,7 +155,7 @@ broadcastChanMsg MsgHandlerConfig {..} tableName msg = do
   ServerState {..} <- readTVarIO serverStateTVar
   case M.lookup tableName (unLobby lobby) of
     Nothing -> error "couldnt find tableName in lobby in broadcastChanMsg"
-    Just Table {..} -> atomically $ writeTBChan channel msg
+    Just Table {..} -> atomically $ writeTChan channel msg
 
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler GetTables {} = undefined

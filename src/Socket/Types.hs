@@ -9,7 +9,7 @@ module Socket.Types where
 
 import Control.Concurrent (MVar)
 import Control.Concurrent.STM
-import Control.Concurrent.STM.TBChan
+import Control.Concurrent.STM.TChan
 import Control.Monad.State
 import Data.Aeson
 import Data.Aeson.Types
@@ -47,7 +47,7 @@ data Table = Table
   { subscribers :: [Username] -- not sat at table or on waitlist but observing game state
   , waitlist :: [Username] -- waiting to join a full table  and subscribed to updates
   , game :: Game
-  , channel :: TBChan MsgOut
+  , channel :: TChan MsgOut
   }
 
 instance Show Table where
@@ -94,7 +94,8 @@ data MsgOut
   = TableList -- TODO only broadcast public table info -- add list of tables to msg
   | NewTableList -- TODO only broadcast public table info -- add list of tables to msg
   | PlayerLeft
-  | PlayerJoined
+  | PlayerJoined TableName
+                 Text
   | NewGameState TableName
                  Game
   | ErrMsg Err

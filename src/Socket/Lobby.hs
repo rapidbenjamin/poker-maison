@@ -5,7 +5,7 @@ module Socket.Lobby where
 
 import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
 import Control.Concurrent.STM
-import Control.Concurrent.STM.TBChan
+import Control.Concurrent.STM.TChan
 import Control.Monad.STM
 
 import Control.Monad (void)
@@ -29,7 +29,7 @@ import Types
 
 initialLobby :: IO Lobby
 initialLobby = do
-  chan <- atomically $ newTBChan maxChanLength
+  chan <- atomically newTChan
   return $
     Lobby $
     M.fromList
