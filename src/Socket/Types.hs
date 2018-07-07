@@ -10,6 +10,7 @@ module Socket.Types where
 import Control.Concurrent (MVar)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan
+import Control.Exception
 import Control.Monad.State
 import Data.Aeson
 import Data.Aeson.Types
@@ -42,6 +43,12 @@ newtype Lobby =
 instance Show Lobby
 
 instance Show ServerState
+
+newtype TableDoesNotExistEx =
+  TableDoesNotExistEx Text
+  deriving (Show)
+
+instance Exception TableDoesNotExistEx
 
 data Table = Table
   { subscribers :: [Username] -- not sat at table or on waitlist but observing game state

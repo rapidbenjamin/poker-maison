@@ -29,7 +29,7 @@ import Types
 
 initialLobby :: IO Lobby
 initialLobby = do
-  chan <- atomically newTChan
+  chan <- atomically newBroadcastTChan
   return $
     Lobby $
     M.fromList
@@ -46,37 +46,6 @@ initialLobby = do
 
 unLobby :: Lobby -> Map TableName Table
 unLobby (Lobby lobby) = lobby
-
--- If game is in predeal stage then add player to game else add to waitlist
--- the waitlist is a queue awaiting the next predeal stage of the game
-joinTable :: TableName -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
-joinTable tableName = do
-  MsgHandlerConfig {..} <- ask
-  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
-  let maybeRoom = M.lookup tableName $ unLobby lobby
-  case maybeRoom of
-    Nothing -> throwError $ TableDoesNotExist tableName
-    Just table@Table {..} ->
-      if canJoinGame game
-        then do
-          let updatedGame = joinGame username chipAmount game
-          let updatedTable = Table {game = updatedGame, ..}
-          let updatedLobby = updateTable tableName updatedTable lobby
-          let tableSubscribers = getTableSubscribers table
-          let newServerState = ServerState {lobby = updatedLobby, ..}
-          liftIO $ atomically $ swapTVar serverStateTVar newServerState
-          liftIO $
-            broadcastMsg clients tableSubscribers $
-            NewGameState tableName updatedGame
-        else do
-          let updatedTable = joinTableWaitlist username table
-          let updatedLobby = updateTable tableName updatedTable lobby
-          let newServerState = ServerState {lobby = updatedLobby, ..}
-          liftIO $ atomically $ swapTVar serverStateTVar newServerState
-          liftIO $ broadcastAllClients clients $ NewTableList
-      where gameStage = getGameStage game
-            chipAmount = 2500
-  return ()
 
 joinGame :: Username -> Int -> Game -> Game
 joinGame (Username username) chips Game {..} =

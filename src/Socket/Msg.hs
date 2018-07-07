@@ -56,7 +56,6 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
           --pPrint s
           let parsedMsg = parseMsgFromJSON msg
           print parsedMsg
-          tid <- forkIO (gameUpdateLoop "Black" msgHandlerConfig)
           for_ parsedMsg $ \parsedMsg -> do
             print $ "parsed msg: " ++ show parsedMsg
             msgOutE <-
@@ -127,7 +126,7 @@ updateGameAndBroadcastT :: TVar ServerState -> TableName -> Game -> STM ()
 updateGameAndBroadcastT serverStateTVar tableName newGame = do
   ServerState {..} <- readTVar serverStateTVar
   case M.lookup tableName $ unLobby lobby of
-    Nothing -> return ()
+    Nothing -> throwSTM $ TableDoesNotExistEx tableName
     Just table@Table {..} -> do
       writeTChan channel $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
@@ -177,7 +176,7 @@ suscribeToTableChannel (JoinTable tableName) = undefined
 
 takeSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 takeSeatHandler move@(TakeSeat tableName) = do
-  MsgHandlerConfig {..} <- ask
+  msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
     Nothing -> throwError $ TableDoesNotExist tableName
@@ -195,7 +194,37 @@ takeSeatHandler move@(TakeSeat tableName) = do
               game
           case maybeErr of
             Just gameErr -> throwError $ GameErr gameErr
-            Nothing -> return $ NewGameState tableName newGame
+            Nothing -> do
+              liftIO $ atomically $ joinTable tableName msgHandlerConfig
+              threadID <-
+                liftIO $ forkIO (gameUpdateLoop tableName msgHandlerConfig)
+              return $ NewGameState tableName newGame
+
+-- If game is in predeal stage then add player to game else add to waitlist
+-- the waitlist is a queue awaiting the next predeal stage of the game
+joinTable :: TableName -> MsgHandlerConfig -> STM ()
+joinTable tableName MsgHandlerConfig {..} = do
+  ServerState {..} <- readTVar serverStateTVar
+  let maybeRoom = M.lookup tableName $ unLobby lobby
+  case maybeRoom of
+    Nothing -> throwSTM $ TableDoesNotExistEx tableName
+    Just table@Table {..} ->
+      if canJoinGame game
+        then do
+          let updatedGame = joinGame username chipAmount game
+          let updatedTable = Table {game = updatedGame, ..}
+          let updatedLobby = updateTable tableName updatedTable lobby
+          let tableSubscribers = getTableSubscribers table
+          let newServerState = ServerState {lobby = updatedLobby, ..}
+          swapTVar serverStateTVar newServerState
+        else do
+          let updatedTable = joinTableWaitlist username table
+          let updatedLobby = updateTable tableName updatedTable lobby
+          let newServerState = ServerState {lobby = updatedLobby, ..}
+          swapTVar serverStateTVar newServerState
+      where gameStage = getGameStage game
+            chipAmount = 2500
+  return ()
 
 unUsername :: Username -> Text
 unUsername (Username username) = username
