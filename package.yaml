@@ -29,6 +29,7 @@ dependencies:
 - mtl
 - array
 - stm-chans
+- stm
 - generic-random
 - ekg
 - containers
