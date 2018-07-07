@@ -48,6 +48,7 @@ runPlayerAction playerName action =
           SitDown _ -> return (Nothing, newGameState)
           LeaveSeat -> return (Nothing, newGameState)
           _ -> do
+            liftIO $ print $ "action is " <> show action
             game' <- progressGame newGameState
             return (Nothing, game')
 

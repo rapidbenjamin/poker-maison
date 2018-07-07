@@ -166,7 +166,9 @@ instance Show Game where
     "\n _street: " <>
     show _street <>
     "\n _winners: " <>
-    show _winners
+    show _winners <>
+    "\n _board: " <>
+    show _board
 
 type PlayerName = Text
 

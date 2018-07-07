@@ -50,8 +50,8 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
        (forever $ do
           msg <- WS.receiveData clientConn
           print msg
-          s@ServerState {..} <- readTVarIO serverStateTVar
-          pPrint s
+         -- s@ServerState {..} <- readTVarIO serverStateTVar
+          --pPrint s
           let parsedMsg = parseMsgFromJSON msg
           print parsedMsg
       --   if parsedMsg == TakeSeat then 
@@ -60,11 +60,13 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
           for_ parsedMsg $ \parsedMsg -> do
             print $ "parsed msg: " ++ show parsedMsg
             msgOutE <-
-              runExceptT $ runReaderT (msgHandler parsedMsg) msgHandlerConfig
+              runExceptT $
+              runReaderT (gameMsgHandler parsedMsg) msgHandlerConfig
             either
               (\err -> sendMsg clientConn $ ErrMsg err)
-              (sendMsg clientConn)
+              (handleNewGameState serverStateTVar)
               msgOutE
+            print msgOutE
           return ())
        (\e -> do
           let err = show (e :: IOException)
@@ -81,7 +83,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
 gameUpdateLoop :: TableName -> TBChan Game -> MsgHandlerConfig -> IO ()
 gameUpdateLoop tableName chan msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
-    print "djhdjhd"
+    print "gameUpdateLoopCalled"
     newGame@Game {..} <- atomically $ readTBChan chan -- WE ARE LISTENING TO THE CHANNEL IN A FORKED THREAD AND SEND MSGS TO CLIENT FROM THIS THREAD
     sendMsg clientConn $ NewGameState tableName newGame
     if False
@@ -96,7 +98,7 @@ gameUpdateLoop tableName chan msgHandlerConfig@MsgHandlerConfig {..} =
         for_ parsedMsg $ \parsedMsg -> do
           print $ "parsed msg: " ++ show parsedMsg
           msgOutE <-
-            runExceptT $ runReaderT (msgHandler parsedMsg) msgHandlerConfig
+            runExceptT $ runReaderT (gameMsgHandler parsedMsg) msgHandlerConfig
           either
             (\err -> sendMsg clientConn $ ErrMsg err)
             (broadcastChanMsg msgHandlerConfig tableName)
@@ -104,18 +106,6 @@ gameUpdateLoop tableName chan msgHandlerConfig@MsgHandlerConfig {..} =
       else do
         sendMsg clientConn $ NewGameState tableName newGame
         return ()
-
--- 
-getNextStage ::
-     TableName -> Game -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-getNextStage tableName game = do
-  (maybeErr, newGame) <- liftIO $ runStateT nextStage game
-  liftIO $ print "\n new hand"
-  liftIO $ pPrint newGame
-  liftIO $ pPrint maybeErr
-  case maybeErr of
-    Just gameErr -> throwError $ GameErr gameErr
-    Nothing -> updateGameAndBroadcast tableName newGame
 
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
@@ -126,26 +116,31 @@ getNextStage tableName game = do
 --  1. All but one player has folded or the game. 
 --  3. Game is in the Showdown stage.
 --
-updateGameAndBroadcast ::
-     TableName -> Game -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-updateGameAndBroadcast tableName newGame = do
-  msgHandlerConfig@MsgHandlerConfig {..} <- ask
-  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
+updateGameAndBroadcast :: TVar ServerState -> TableName -> Game -> STM ()
+updateGameAndBroadcast serverStateTVar tableName newGame = do
+  ServerState {..} <- readTVar serverStateTVar
   case M.lookup tableName $ unLobby lobby of
-    Nothing -> throwError $ TableDoesNotExist tableName
+    Nothing -> return ()
     Just table@Table {..} -> do
-      let tableSubscribers = getTableSubscribers table
-      liftIO $ atomically $ writeTBChan channel $ NewGameState tableName newGame
+      writeTBChan channel $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
-      liftIO $
-        atomically $
-        swapTVar serverStateTVar ServerState {lobby = updatedLobby, ..}
-      liftIO $ pPrint ("everyone all in? " ++ show (hasBettingFinished game))
-      liftIO $ pPrint ("showdown? " ++ show (_street game == Showdown))
-      if (_street newGame == Showdown) ||
-         ((hasBettingFinished newGame) && (_street newGame /= Showdown))
-        then getNextStage tableName newGame
-        else return Noop
+      swapTVar serverStateTVar ServerState {lobby = updatedLobby, ..}
+      return ()
+
+handleNewGameState :: TVar ServerState -> MsgOut -> IO ()
+handleNewGameState serverStateTVar (NewGameState tableName newGame) = do
+  newServerState <-
+    atomically $ updateGameAndBroadcast serverStateTVar tableName newGame
+  print newServerState
+  if (_street newGame == Showdown) ||
+     ((hasBettingFinished newGame) && (_street newGame /= Showdown))
+    then do
+      (maybeErr, progressedGame) <- runStateT nextStage newGame
+      if isNothing maybeErr
+        then atomically $
+             updateGameAndBroadcast serverStateTVar tableName progressedGame
+        else return ()
+    else return ()
 
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
@@ -155,12 +150,12 @@ broadcastChanMsg MsgHandlerConfig {..} tableName msg = do
     Nothing -> error "couldnt find tableName in lobby in broadcastChanMsg"
     Just Table {..} -> atomically $ writeTBChan channel msg
 
-msgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-msgHandler GetTables {} = undefined
-msgHandler msg@JoinTable {} = undefined
-msgHandler msg@TakeSeat {} = takeSeatHandler msg
-msgHandler msg@GameMove {} = gameMoveHandler msg
-msgHandler msg@Timeout {} = gameMoveHandler msg
+gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+gameMsgHandler GetTables {} = undefined
+gameMsgHandler msg@JoinTable {} = undefined
+gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
+gameMsgHandler msg@GameMove {} = gameMoveHandler msg
+gameMsgHandler msg@Timeout {} = gameMoveHandler msg
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 getTablesHandler = do
@@ -186,14 +181,14 @@ takeSeatHandler move@(TakeSeat tableName) = do
           let chips_Hardcoded = 2000
           let player = getPlayer (unUsername username) chips_Hardcoded
           let takeSeatAction = GameMove tableName $ SitDown player
-          (maybeErr, updatedGame) <-
+          (maybeErr, newGame) <-
             liftIO $
             runStateT
               (runPlayerAction (unUsername username) (SitDown player))
               game
           case maybeErr of
             Just gameErr -> throwError $ GameErr gameErr
-            Nothing -> updateGameAndBroadcast tableName updatedGame
+            Nothing -> return $ NewGameState tableName newGame
 
 unUsername :: Username -> Text
 unUsername (Username username) = username
@@ -223,6 +218,7 @@ updateGameWithMove ::
   -> Game
   -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
+  liftIO $ print "running player action"
   (maybeErr, newGame) <-
     liftIO $ runStateT (runPlayerAction username playerAction) game
   liftIO $ print "next game state"
