@@ -4,7 +4,8 @@
 module Socket.Lobby where
 
 import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
-import Control.Concurrent.Chan
+import Control.Concurrent.STM.TBChan
+import Control.Monad.STM
 
 import Control.Monad (void)
 import Control.Monad.Except
@@ -27,7 +28,7 @@ import Types
 
 initialLobby :: IO Lobby
 initialLobby = do
-  chan <- newChan
+  chan <- atomically $ newTBChan maxChanLength
   return $
     Lobby $
     M.fromList
@@ -39,6 +40,8 @@ initialLobby = do
             , channel = chan
             })
       ]
+  where
+    maxChanLength = 10000
 
 unLobby :: Lobby -> Map TableName Table
 unLobby (Lobby lobby) = lobby

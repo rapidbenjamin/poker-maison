@@ -6,15 +6,17 @@ module Socket.Msg
   ) where
 
 import Control.Concurrent
-import Control.Concurrent.Chan
+import Control.Concurrent.STM.TBChan
 import Control.Exception
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
+import Control.Monad.STM
 import Control.Monad.State.Lazy
 import Data.Foldable
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
+import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -47,8 +49,12 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
        (forever $ do
           msg <- WS.receiveData clientConn
           print msg
-        --  s@ServerState {..} <- takeMVar serverState
-        --  pPrint s
+          f <- isEmptyMVar serverState
+          print f
+          x <- tryReadMVar serverState
+          print x
+          let s@ServerState {..} = fromJust x
+          pPrint s
           let parsedMsg = parseMsgFromJSON msg
           print parsedMsg
       --   if parsedMsg == TakeSeat then 
@@ -75,15 +81,19 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
 --against the game
-gameUpdateLoop :: TableName -> Chan Game -> MsgHandlerConfig -> IO ()
+gameUpdateLoop :: TableName -> TBChan Game -> MsgHandlerConfig -> IO ()
 gameUpdateLoop tableName chan msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
-    newGame@Game {..} <- readChan chan -- WE ARE LISTENING TO THE CHANNEL IN A FORKED THREAD AND SEND MSGS TO CLIENT FROM THIS THREAD
+    print "djhdjhd"
+    newGame@Game {..} <- atomically $ readTBChan chan -- WE ARE LISTENING TO THE CHANNEL IN A FORKED THREAD AND SEND MSGS TO CLIENT FROM THIS THREAD
     sendMsg clientConn $ NewGameState tableName newGame
     if False
+              --use withAsync to ensure child threads are killed on parenbt death
       then do
         maybeMsg <- timeout 1000000 (WS.receiveData clientConn) -- only do this is current player is thread player
         liftIO $ print maybeMsg
+        d <- isEmptyMVar serverState
+        print $ d
         s@ServerState {..} <- liftIO $ readMVar serverState
         liftIO $ pPrint s
         let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
@@ -130,7 +140,7 @@ updateGameAndBroadcast tableName newGame = do
     Nothing -> throwError $ TableDoesNotExist tableName
     Just table@Table {..} -> do
       let tableSubscribers = getTableSubscribers table
-      liftIO $ writeChan channel $ NewGameState tableName newGame
+      liftIO $ atomically $ writeTBChan channel $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
       liftIO $
         updateServerState serverState ServerState {lobby = updatedLobby, ..}
@@ -147,7 +157,7 @@ broadcastChanMsg MsgHandlerConfig {..} tableName msg = do
   ServerState {..} <- readMVar serverState
   case M.lookup tableName (unLobby lobby) of
     Nothing -> error "couldnt find tableName in lobby in broadcastChanMsg"
-    Just Table {..} -> writeChan channel msg
+    Just Table {..} -> atomically $ writeTBChan channel msg
 
 msgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 msgHandler GetTables {} = undefined

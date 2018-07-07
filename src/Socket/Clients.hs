@@ -5,7 +5,6 @@ module Socket.Clients where
 
 import Control.Concurrent
 import Control.Concurrent.Async
-import Control.Concurrent.Chan
 import Control.Exception
 import Control.Monad
 import Control.Monad.Except
@@ -49,13 +48,7 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
     (Right User {..}) -> do
       sendMsg conn AuthSuccess
-      print "1"
-      bef <- isEmptyMVar state
       ServerState {..} <- readMVar state
-      aft <- isEmptyMVar state
-      print bef
-      print aft
-      print "2"
       swapMVar
         state
         (ServerState

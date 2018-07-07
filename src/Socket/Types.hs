@@ -8,7 +8,7 @@
 module Socket.Types where
 
 import Control.Concurrent (MVar)
-import Control.Concurrent.Chan
+import Control.Concurrent.STM.TBChan
 import Control.Monad.State
 import Data.Aeson
 import Data.Aeson.Types
@@ -46,7 +46,7 @@ data Table = Table
   { subscribers :: [Username] -- not sat at table or on waitlist but observing game state
   , waitlist :: [Username] -- waiting to join a full table  and subscribed to updates
   , game :: Game
-  , channel :: Chan MsgOut
+  , channel :: TBChan MsgOut
   }
 
 instance Show Table where
