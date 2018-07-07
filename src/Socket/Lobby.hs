@@ -4,6 +4,7 @@
 module Socket.Lobby where
 
 import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
+import Control.Concurrent.STM
 import Control.Concurrent.STM.TBChan
 import Control.Monad.STM
 
@@ -51,7 +52,7 @@ unLobby (Lobby lobby) = lobby
 joinTable :: TableName -> ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 joinTable tableName = do
   MsgHandlerConfig {..} <- ask
-  ServerState {..} <- liftIO $ readMVar serverState
+  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   let maybeRoom = M.lookup tableName $ unLobby lobby
   case maybeRoom of
     Nothing -> throwError $ TableDoesNotExist tableName
@@ -63,7 +64,7 @@ joinTable tableName = do
           let updatedLobby = updateTable tableName updatedTable lobby
           let tableSubscribers = getTableSubscribers table
           let newServerState = ServerState {lobby = updatedLobby, ..}
-          liftIO $ updateServerState serverState newServerState
+          liftIO $ atomically $ swapTVar serverStateTVar newServerState
           liftIO $
             broadcastMsg clients tableSubscribers $
             NewGameState tableName updatedGame
@@ -71,7 +72,7 @@ joinTable tableName = do
           let updatedTable = joinTableWaitlist username table
           let updatedLobby = updateTable tableName updatedTable lobby
           let newServerState = ServerState {lobby = updatedLobby, ..}
-          liftIO $ updateServerState serverState newServerState
+          liftIO $ atomically $ swapTVar serverStateTVar newServerState
           liftIO $ broadcastAllClients clients $ NewTableList
       where gameStage = getGameStage game
             chipAmount = 2500

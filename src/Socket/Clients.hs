@@ -5,6 +5,7 @@ module Socket.Clients where
 
 import Control.Concurrent
 import Control.Concurrent.Async
+import Control.Concurrent.STM
 import Control.Exception
 import Control.Monad
 import Control.Monad.Except
@@ -35,7 +36,7 @@ import System.Timeout
 
 authClient ::
      Secret
-  -> MVar ServerState
+  -> TVar ServerState
   -> ConnectionString
   -> RedisConfig
   -> (MsgHandlerConfig -> IO ())
@@ -48,35 +49,36 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
     (Right User {..}) -> do
       sendMsg conn AuthSuccess
-      ServerState {..} <- readMVar state
-      swapMVar
-        state
-        (ServerState
-           { clients =
-               addClient
-                 Client {conn = conn, email = userEmail}
-                 username
-                 clients
-           , ..
-           })
+      ServerState {..} <- readTVarIO state
+      atomically $
+        swapTVar
+          state
+          (ServerState
+             { clients =
+                 addClient
+                   Client {conn = conn, email = userEmail}
+                   username
+                   clients
+             , ..
+             })
       print "3"
       authMsgLoop msgHandlerConfig
       where username = Username userUsername
             msgHandlerConfig =
               MsgHandlerConfig
-                { serverState = state
+                { serverStateTVar = state
                 , username = username
                 , dbConn = dbConn
                 , clientConn = conn
                 , redisConfig = redisConfig
                 }
 
-removeClient :: Username -> MVar ServerState -> IO ()
-removeClient username serverStateMVar = do
-  ServerState {..} <- readMVar serverStateMVar
+removeClient :: Username -> TVar ServerState -> IO ServerState
+removeClient username serverStateTVar = do
+  ServerState {..} <- readTVarIO serverStateTVar
   let newClients = M.delete username clients
   let newState = ServerState {clients = newClients, ..}
-  updateServerState serverStateMVar newState
+  atomically $ swapTVar serverStateTVar newState
 
 clientExists :: Username -> Map Username Client -> Bool
 clientExists = M.member

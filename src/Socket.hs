@@ -5,6 +5,7 @@ module Socket
   ) where
 
 import Control.Concurrent (MVar, newMVar)
+import Control.Concurrent.STM
 import qualified Data.Map.Lazy as M
 import Database.Persist.Postgresql (ConnectionString)
 import qualified Network.WebSockets as WS
@@ -31,10 +32,10 @@ initialServerState lobby = ServerState {clients = M.empty, lobby = lobby}
 runSocketServer :: Secret -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port dbConnString redisConfig = do
   lobby <- initialLobby
-  serverState <- newMVar $ initialServerState lobby
+  serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   print $ "Socket server listening on " ++ (show port :: String)
   WS.runServer "127.0.0.1" port $
-    application secretKey dbConnString redisConfig serverState
+    application secretKey dbConnString redisConfig serverStateTVar
 
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
@@ -43,7 +44,7 @@ application ::
      Secret
   -> ConnectionString
   -> RedisConfig
-  -> MVar ServerState
+  -> TVar ServerState
   -> WS.ServerApp
 application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending

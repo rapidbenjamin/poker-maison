@@ -2,7 +2,7 @@
 
 module Socket.Utils where
 
-import Control.Concurrent (MVar, modifyMVar, modifyMVar_, readMVar)
+import Control.Concurrent
 import Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Text (Text)
@@ -26,11 +26,3 @@ parseMsgFromJSON jsonTxt = decode $ C.pack $ T.unpack jsonTxt
 
 getTimestamp :: UTCTime
 getTimestamp = UTCTime (ModifiedJulianDay 0) (secondsToDiffTime 0)
-
-updateServerState :: MVar ServerState -> ServerState -> IO ()
-updateServerState state newServerState =
-  modifyMVar_
-    state
-    (\serverState@ServerState {..} -> do
-       pPrint serverState
-       return newServerState)

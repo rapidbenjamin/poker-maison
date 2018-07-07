@@ -8,6 +8,7 @@
 module Socket.Types where
 
 import Control.Concurrent (MVar)
+import Control.Concurrent.STM
 import Control.Concurrent.STM.TBChan
 import Control.Monad.State
 import Data.Aeson
@@ -26,7 +27,7 @@ import Types (RedisConfig, Username)
 
 data MsgHandlerConfig = MsgHandlerConfig
   { dbConn :: ConnectionString
-  , serverState :: MVar ServerState
+  , serverStateTVar :: TVar ServerState
   , username :: Username
   , clientConn :: WS.Connection
   , redisConfig :: RedisConfig

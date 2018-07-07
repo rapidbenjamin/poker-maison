@@ -6,6 +6,7 @@ module Socket.Msg
   ) where
 
 import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Concurrent.STM.TBChan
 import Control.Exception
 import Control.Monad
@@ -49,11 +50,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
        (forever $ do
           msg <- WS.receiveData clientConn
           print msg
-          f <- isEmptyMVar serverState
-          print f
-          x <- tryReadMVar serverState
-          print x
-          let s@ServerState {..} = fromJust x
+          s@ServerState {..} <- readTVarIO serverStateTVar
           pPrint s
           let parsedMsg = parseMsgFromJSON msg
           print parsedMsg
@@ -74,9 +71,9 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
           print
             ("Warning: Exception occured in authenticatedMsgLoop for " ++
              show username ++ ": " ++ err)
-          (removeClient username serverState)
+          (removeClient username serverStateTVar)
           return ()))
-    (removeClient username serverState)
+    (removeClient username serverStateTVar)
 
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
@@ -92,9 +89,7 @@ gameUpdateLoop tableName chan msgHandlerConfig@MsgHandlerConfig {..} =
       then do
         maybeMsg <- timeout 1000000 (WS.receiveData clientConn) -- only do this is current player is thread player
         liftIO $ print maybeMsg
-        d <- isEmptyMVar serverState
-        print $ d
-        s@ServerState {..} <- liftIO $ readMVar serverState
+        s@ServerState {..} <- liftIO $ readTVarIO serverStateTVar
         liftIO $ pPrint s
         let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
         liftIO $ print parsedMsg
@@ -135,7 +130,7 @@ updateGameAndBroadcast ::
      TableName -> Game -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 updateGameAndBroadcast tableName newGame = do
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
-  ServerState {..} <- liftIO $ readMVar serverState
+  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
     Nothing -> throwError $ TableDoesNotExist tableName
     Just table@Table {..} -> do
@@ -143,7 +138,8 @@ updateGameAndBroadcast tableName newGame = do
       liftIO $ atomically $ writeTBChan channel $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
       liftIO $
-        updateServerState serverState ServerState {lobby = updatedLobby, ..}
+        atomically $
+        swapTVar serverStateTVar ServerState {lobby = updatedLobby, ..}
       liftIO $ pPrint ("everyone all in? " ++ show (hasBettingFinished game))
       liftIO $ pPrint ("showdown? " ++ show (_street game == Showdown))
       if (_street newGame == Showdown) ||
@@ -154,7 +150,7 @@ updateGameAndBroadcast tableName newGame = do
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
 broadcastChanMsg MsgHandlerConfig {..} tableName msg = do
-  ServerState {..} <- readMVar serverState
+  ServerState {..} <- readTVarIO serverStateTVar
   case M.lookup tableName (unLobby lobby) of
     Nothing -> error "couldnt find tableName in lobby in broadcastChanMsg"
     Just Table {..} -> atomically $ writeTBChan channel msg
@@ -169,7 +165,7 @@ msgHandler msg@Timeout {} = gameMoveHandler msg
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 getTablesHandler = do
   MsgHandlerConfig {..} <- ask
-  ServerState {..} <- liftIO $ readMVar serverState
+  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   liftIO $ sendMsg clientConn $ TableList
 
 -- simply adds client to the list of subscribers
@@ -180,7 +176,7 @@ suscribeToTableChannel (JoinTable tableName) = undefined
 takeSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 takeSeatHandler move@(TakeSeat tableName) = do
   MsgHandlerConfig {..} <- ask
-  ServerState {..} <- liftIO $ readMVar serverState
+  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
     Nothing -> throwError $ TableDoesNotExist tableName
     Just table@Table {..} ->
@@ -210,7 +206,7 @@ gameMoveHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMoveHandler gameMove@(Timeout) = throwError $ NotSatAtTable "black"
 gameMoveHandler gameMove@(GameMove tableName move) = do
   MsgHandlerConfig {..} <- ask
-  ServerState {..} <- liftIO $ readMVar serverState
+  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
     Nothing -> throwError $ TableDoesNotExist tableName
     Just table@Table {..} ->
