@@ -101,11 +101,19 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
             in runTimedMsg timeoutDuration msgHandlerConfig tableName timeoutMsg
       else return ()
 
+catchE :: TableName -> WS.ConnectionException -> IO MsgIn
+catchE tableName e = do
+  print e
+  return $ GameMove tableName Timeout
+
 -- Forks a new thread to run the timeout race in and propagates then
 -- updates the game state with either the resulting timeout or player action
 runTimedMsg :: Int -> MsgHandlerConfig -> TableName -> MsgIn -> IO ()
 runTimedMsg duration msgHandlerConfig tableName timeoutMsg =
-  withAsync (awaitTimedMsg duration msgHandlerConfig tableName timeoutMsg) $ \timedAction -> do
+  withAsync
+    (catch
+       (awaitTimedMsg duration msgHandlerConfig tableName timeoutMsg)
+       (catchE tableName)) $ \timedAction -> do
     playerActionE <- waitCatch timedAction
     let playerAction = fromRight timeoutMsg playerActionE
     handleSocketMsg msgHandlerConfig playerAction
