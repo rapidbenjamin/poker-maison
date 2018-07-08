@@ -87,31 +87,19 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
 
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
---against the game
-tableReceiveMsgLoop :: TableName -> MsgHandlerConfig -> IO ()
-tableReceiveMsgLoop tableName msgHandlerConfig@MsgHandlerConfig {..} = do
-  print "game upate loop called"
-  ServerState {..} <- readTVarIO serverStateTVar
-  print " aboo"
-  case M.lookup tableName $ unLobby lobby of
-    Nothing -> do
-      print "No table with tableName found"
-      return ()
-    Just table@Table {..} ->
-      forever $ do
-        print "tableReceiveMsgLoop"
-        dupChan <- atomically $ dupTChan channel
-        chanMsg <- atomically $ readTChan dupChan
-        sendMsg clientConn chanMsg
-        if True
-          then let timeoutMsg = GameMove tableName Timeout
-                   timeoutDuration = 5000000 -- 5 seconds for player to act
-                in runTimedMsg
-                     timeoutDuration
-                     msgHandlerConfig
-                     tableName
-                     timeoutMsg
-          else return ()
+-- against the game
+tableReceiveMsgLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
+tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
+  forever $ do
+    print "tableReceiveMsgLoop"
+    dupChan <- atomically $ dupTChan channel
+    chanMsg <- atomically $ readTChan dupChan
+    sendMsg clientConn chanMsg
+    if True
+      then let timeoutMsg = GameMove tableName Timeout
+               timeoutDuration = 5000000 -- 5 seconds for player to act
+            in runTimedMsg timeoutDuration msgHandlerConfig tableName timeoutMsg
+      else return ()
 
 -- Forks a new thread to run the timeout race in and propagates then
 -- updates the game state with either the resulting timeout or player action
@@ -221,7 +209,8 @@ takeSeatHandler move@(TakeSeat tableName) = do
             Nothing -> do
               liftIO $ atomically $ joinTable tableName msgHandlerConfig
               asyncGameReceiveLoop <-
-                liftIO $ async (tableReceiveMsgLoop tableName msgHandlerConfig)
+                liftIO $
+                async (tableReceiveMsgLoop tableName channel msgHandlerConfig)
               liftIO $ link asyncGameReceiveLoop
               return $ NewGameState tableName newGame
 
