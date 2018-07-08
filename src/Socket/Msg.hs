@@ -16,6 +16,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.STM
 import Control.Monad.State.Lazy
+import Data.Either
 import Data.Foldable
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
@@ -41,8 +42,27 @@ import Socket.Utils
 import System.Timeout
 import Types
 
+-- catches all synchronous exceptions for logging purposes
+tryAny :: IO a -> IO (Either SomeException a)
+tryAny action = do
+  var <- newEmptyMVar
+  uninterruptibleMask_ $
+    forkIOWithUnmask $ \restore -> do
+      res <- try $ restore action
+      putMVar var res
+  takeMVar var
+
 -- default action derived from game state 
 defaultMsg = GameMove "black" Fold
+
+handleSocketMsg :: MsgHandlerConfig -> MsgIn -> IO ()
+handleSocketMsg msgHandlerConfig@MsgHandlerConfig {..} msg = do
+  print $ "parsed msg: " ++ show msg
+  msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
+  either
+    (\err -> sendMsg clientConn $ ErrMsg err)
+    (handleNewGameState serverStateTVar)
+    msgOutE
 
 -- This function processes msgs from authenticated clients 
 authenticatedMsgLoop :: MsgHandlerConfig -> IO ()
@@ -52,19 +72,9 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
        (forever $ do
           msg <- WS.receiveData clientConn
           print msg
-         -- s@ServerState {..} <- readTVarIO serverStateTVar
-          --pPrint s
           let parsedMsg = parseMsgFromJSON msg
           print parsedMsg
-          for_ parsedMsg $ \parsedMsg -> do
-            print $ "parsed msg: " ++ show parsedMsg
-            msgOutE <-
-              runExceptT $
-              runReaderT (gameMsgHandler parsedMsg) msgHandlerConfig
-            either
-              (\err -> sendMsg clientConn $ ErrMsg err)
-              (handleNewGameState serverStateTVar)
-              msgOutE
+          for_ parsedMsg $ handleSocketMsg msgHandlerConfig
           return ())
        (\e -> do
           let err = show (e :: IOException)
@@ -93,26 +103,31 @@ tableReceiveMsgLoop tableName msgHandlerConfig@MsgHandlerConfig {..} = do
         dupChan <- atomically $ dupTChan channel
         chanMsg <- atomically $ readTChan dupChan -- WE ARE LISTENING TO THE CHANNEL IN A FORKED THREAD AND SEND MSGS TO CLIENT FROM THIS THREAD
         sendMsg clientConn chanMsg
-        if False
-                    --use withAsync to ensure child threads are killed on parenbt death
-          then do
-            maybeMsg <- timeout 1000000 (WS.receiveData clientConn) -- only do this is current player is thread player
-            liftIO $ print maybeMsg
-            s@ServerState {..} <- liftIO $ readTVarIO serverStateTVar
-            liftIO $ pPrint s
-            let parsedMsg = maybe (Just Timeout) parseMsgFromJSON maybeMsg
-            liftIO $ print parsedMsg
-            for_ parsedMsg $ \parsedMsg -> do
-              print $ "parsed msg: " ++ show parsedMsg
-              msgOutE <-
-                runExceptT $
-                runReaderT (gameMsgHandler parsedMsg) msgHandlerConfig
-              either
-                (\err -> sendMsg clientConn $ ErrMsg err)
-                (broadcastChanMsg msgHandlerConfig tableName)
-                msgOutE
+        if True
+          then withAsync (timeoutPlayerAction msgHandlerConfig) $ \timedAction -> do
+                 playerActionE <- waitCatch timedAction
+                 let playerAction =
+                       (fromRight (GameMove tableName Timeout) playerActionE)
+                 handleSocketMsg msgHandlerConfig playerAction
+                 return ()
           else return ()
 
+timeoutPlayerAction :: MsgHandlerConfig -> IO (MsgIn)
+timeoutPlayerAction msgHandlerConfig@MsgHandlerConfig {..} = do
+  a <- timeout 5000000 (WS.receiveData clientConn)
+  return $
+    maybe
+      ((GameMove "Black" Timeout))
+      ((fromMaybe (GameMove "Black" Timeout)) . parseMsgFromJSON)
+      a
+  -- print maybeMsg
+ -- (return $ fromMaybe Timeout maybeMsg) :: MsgIn
+ -- --print parsedMsg
+  --for_ parsedMsg $ handleSocketMsg msgHandlerConfig
+
+--return maybeMsg
+--              case maybePlayerAction of
+--    let playerAction =
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
 --  is possible. The game states which would lead to this scenario where the game 
@@ -147,6 +162,9 @@ handleNewGameState serverStateTVar (NewGameState tableName newGame) = do
              updateGameAndBroadcastT serverStateTVar tableName progressedGame
         else return ()
     else return ()
+handleNewGameState serverStateTVar msg = do
+  print msg
+  return ()
 
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
@@ -161,7 +179,6 @@ gameMsgHandler GetTables {} = undefined
 gameMsgHandler msg@JoinTable {} = undefined
 gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
 gameMsgHandler msg@GameMove {} = gameMoveHandler msg
-gameMsgHandler msg@Timeout {} = gameMoveHandler msg
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 getTablesHandler = do
@@ -238,7 +255,9 @@ unUsername (Username username) = username
 -- broadcast to all table subscribers or an error is returned which is then only sent to the
 -- originator of the invalid in-game move
 gameMoveHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameMoveHandler gameMove@(Timeout) = throwError $ NotSatAtTable "black"
+gameMoveHandler gameMove@(GameMove tablename Timeout) = do
+  liftIO $ print gameMove
+  return Noop
 gameMoveHandler gameMove@(GameMove tableName move) = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar

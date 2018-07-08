@@ -198,6 +198,7 @@ data PlayerAction
   | Bet Int
   | ShowHand
   | MuckHand
+  | Timeout
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 data GameErr

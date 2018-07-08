@@ -61,7 +61,6 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
                    clients
              , ..
              })
-      print "3"
       authMsgLoop msgHandlerConfig
       where username = Username userUsername
             msgHandlerConfig =

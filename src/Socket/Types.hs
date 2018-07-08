@@ -93,7 +93,6 @@ data MsgIn
   | LeaveSeat
   | GameMove TableName
              PlayerAction
-  | Timeout
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- outgoing messages for ws client(s)
