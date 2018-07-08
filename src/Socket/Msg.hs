@@ -196,8 +196,9 @@ takeSeatHandler move@(TakeSeat tableName) = do
             Just gameErr -> throwError $ GameErr gameErr
             Nothing -> do
               liftIO $ atomically $ joinTable tableName msgHandlerConfig
-              threadID <-
-                liftIO $ forkIO (gameUpdateLoop tableName msgHandlerConfig)
+              asyncGameReceiveLoop <-
+                liftIO $ async (gameUpdateLoop tableName msgHandlerConfig)
+              liftIO $ link asyncGameReceiveLoop
               return $ NewGameState tableName newGame
 
 -- If game is in predeal stage then add player to game else add to waitlist
