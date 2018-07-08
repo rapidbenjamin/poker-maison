@@ -28,7 +28,6 @@ dependencies:
 - monad-logger
 - mtl
 - array
-- stm-chans
 - stm
 - generic-random
 - ekg
