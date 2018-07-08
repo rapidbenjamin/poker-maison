@@ -78,8 +78,8 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
 --against the game
-gameUpdateLoop :: TableName -> MsgHandlerConfig -> IO ()
-gameUpdateLoop tableName msgHandlerConfig@MsgHandlerConfig {..} = do
+tableReceiveMsgLoop :: TableName -> MsgHandlerConfig -> IO ()
+tableReceiveMsgLoop tableName msgHandlerConfig@MsgHandlerConfig {..} = do
   print "game upate loop called"
   ServerState {..} <- readTVarIO serverStateTVar
   print " aboo"
@@ -89,7 +89,7 @@ gameUpdateLoop tableName msgHandlerConfig@MsgHandlerConfig {..} = do
       return ()
     Just table@Table {..} ->
       forever $ do
-        print "gameUpdateLoopCalled"
+        print "tableReceiveMsgLoop"
         dupChan <- atomically $ dupTChan channel
         chanMsg <- atomically $ readTChan dupChan -- WE ARE LISTENING TO THE CHANNEL IN A FORKED THREAD AND SEND MSGS TO CLIENT FROM THIS THREAD
         sendMsg clientConn chanMsg
@@ -174,6 +174,9 @@ suscribeToTableChannel ::
      MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 suscribeToTableChannel (JoinTable tableName) = undefined
 
+-- We fork a new thread for each game joined to receive game updates and propagate them to the client
+-- We link the new thread to the current thread so on any exception in either then both threads are
+-- killed to prevent memory leaks.
 takeSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 takeSeatHandler move@(TakeSeat tableName) = do
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
@@ -197,7 +200,7 @@ takeSeatHandler move@(TakeSeat tableName) = do
             Nothing -> do
               liftIO $ atomically $ joinTable tableName msgHandlerConfig
               asyncGameReceiveLoop <-
-                liftIO $ async (gameUpdateLoop tableName msgHandlerConfig)
+                liftIO $ async (tableReceiveMsgLoop tableName msgHandlerConfig)
               liftIO $ link asyncGameReceiveLoop
               return $ NewGameState tableName newGame
 
