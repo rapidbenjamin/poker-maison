@@ -95,39 +95,43 @@ tableReceiveMsgLoop tableName msgHandlerConfig@MsgHandlerConfig {..} = do
   print " aboo"
   case M.lookup tableName $ unLobby lobby of
     Nothing -> do
-      print "No tablename found"
+      print "No table with tableName found"
       return ()
     Just table@Table {..} ->
       forever $ do
         print "tableReceiveMsgLoop"
         dupChan <- atomically $ dupTChan channel
-        chanMsg <- atomically $ readTChan dupChan -- WE ARE LISTENING TO THE CHANNEL IN A FORKED THREAD AND SEND MSGS TO CLIENT FROM THIS THREAD
+        chanMsg <- atomically $ readTChan dupChan
         sendMsg clientConn chanMsg
         if True
-          then withAsync (timeoutPlayerAction msgHandlerConfig) $ \timedAction -> do
-                 playerActionE <- waitCatch timedAction
-                 let playerAction =
-                       (fromRight (GameMove tableName Timeout) playerActionE)
-                 handleSocketMsg msgHandlerConfig playerAction
-                 return ()
+          then let timeoutMsg = GameMove tableName Timeout
+                   timeoutDuration = 5000000 -- 5 seconds for player to act
+                in runTimedMsg
+                     timeoutDuration
+                     msgHandlerConfig
+                     tableName
+                     timeoutMsg
           else return ()
 
-timeoutPlayerAction :: MsgHandlerConfig -> IO (MsgIn)
-timeoutPlayerAction msgHandlerConfig@MsgHandlerConfig {..} = do
-  a <- timeout 5000000 (WS.receiveData clientConn)
-  return $
-    maybe
-      ((GameMove "Black" Timeout))
-      ((fromMaybe (GameMove "Black" Timeout)) . parseMsgFromJSON)
-      a
-  -- print maybeMsg
- -- (return $ fromMaybe Timeout maybeMsg) :: MsgIn
- -- --print parsedMsg
-  --for_ parsedMsg $ handleSocketMsg msgHandlerConfig
+-- Forks a new thread to run the timeout race in and propagates then
+-- updates the game state with either the resulting timeout or player action
+runTimedMsg :: Int -> MsgHandlerConfig -> TableName -> MsgIn -> IO ()
+runTimedMsg duration msgHandlerConfig tableName timeoutMsg =
+  withAsync (awaitTimedMsg duration msgHandlerConfig tableName timeoutMsg) $ \timedAction -> do
+    playerActionE <- waitCatch timedAction
+    let playerAction = fromRight timeoutMsg playerActionE
+    handleSocketMsg msgHandlerConfig playerAction
+    return ()
 
---return maybeMsg
---              case maybePlayerAction of
---    let playerAction =
+-- If the timeout occurs then we return the default msg 
+awaitTimedMsg :: Int -> MsgHandlerConfig -> TableName -> MsgIn -> IO MsgIn
+awaitTimedMsg duration msgHandlerConfig@MsgHandlerConfig {..} tableName defaultMsg = do
+  maybeMsg <- timeout duration (WS.receiveData clientConn)
+  return $ maybe defaultMsg parseWithDefaultMsg maybeMsg
+  where
+    timeoutDuration = 5000000
+    parseWithDefaultMsg = (fromMaybe defaultMsg) . parseMsgFromJSON
+
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
 --  is possible. The game states which would lead to this scenario where the game 
