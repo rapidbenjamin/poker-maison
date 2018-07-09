@@ -6,6 +6,7 @@ module Socket.Clients where
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Concurrent.STM
+import Control.Concurrent.STM.TChan
 import Control.Exception
 import Control.Monad
 import Control.Monad.Except
@@ -61,16 +62,18 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
                    clients
              , ..
              })
+      msgReaderChan <- newTChanIO
+      let msgHandlerConfig =
+            MsgHandlerConfig
+              { serverStateTVar = state
+              , username = username
+              , dbConn = dbConn
+              , clientConn = conn
+              , redisConfig = redisConfig
+              , ..
+              }
       authMsgLoop msgHandlerConfig
       where username = Username userUsername
-            msgHandlerConfig =
-              MsgHandlerConfig
-                { serverStateTVar = state
-                , username = username
-                , dbConn = dbConn
-                , clientConn = conn
-                , redisConfig = redisConfig
-                }
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
 removeClient username serverStateTVar = do

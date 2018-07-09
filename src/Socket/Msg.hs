@@ -5,12 +5,13 @@ module Socket.Msg
   ( authenticatedMsgLoop
   ) where
 
-import Control.Concurrent.STM.TChan
-
+import Control.Applicative
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Concurrent.STM
+import Control.Concurrent.STM.TChan
 import Control.Exception
+import Control.Monad
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -55,35 +56,53 @@ tryAny action = do
 -- default action derived from game state 
 defaultMsg = GameMove "black" Fold
 
-handleSocketMsg :: MsgHandlerConfig -> MsgIn -> IO ()
-handleSocketMsg msgHandlerConfig@MsgHandlerConfig {..} msg = do
-  print $ "parsed msg: " ++ show msg
-  msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
-  either
-    (\err -> sendMsg clientConn $ ErrMsg err)
-    (handleNewGameState serverStateTVar)
-    msgOutE
+-- write the msg to the socket threads msg reader channel
+handleSocketMsg :: MsgHandlerConfig -> IO ()
+handleSocketMsg msgHandlerConfig@MsgHandlerConfig {..} =
+  forever $ do
+    msg <- atomically $ readTChan msgReaderChan
+    print $ "reader received msg: " ++ show msg
+    msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
+    either
+      (\err -> sendMsg clientConn $ ErrMsg err)
+      (handleNewGameState serverStateTVar)
+      msgOutE
 
 -- This function processes msgs from authenticated clients 
 authenticatedMsgLoop :: MsgHandlerConfig -> IO ()
 authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
-  finally
-    (catch
-       (forever $ do
-          msg <- WS.receiveData clientConn
-          print msg
-          let parsedMsg = parseMsgFromJSON msg
-          print parsedMsg
-          for_ parsedMsg $ handleSocketMsg msgHandlerConfig
-          return ())
-       (\e -> do
-          let err = show (e :: IOException)
-          print
-            ("Warning: Exception occured in authenticatedMsgLoop for " ++
-             show username ++ ": " ++ err)
-          (removeClient username serverStateTVar)
-          return ()))
-    (removeClient username serverStateTVar)
+  withAsync (handleSocketMsg msgHandlerConfig) $ \sockMsgReaderThread -> do
+    finally
+      (catch
+         (forever $ do
+            msg <- WS.receiveData clientConn
+            print msg
+            let parsedMsg = parseMsgFromJSON msg
+            print parsedMsg
+            for_ parsedMsg (\msg -> atomically $ writeTChan msgReaderChan msg)
+            return ())
+         (\e -> do
+            let err = show (e :: IOException)
+            print
+              ("Warning: Exception occured in authenticatedMsgLoop for " ++
+               show username ++ ": " ++ err)
+            (removeClient username serverStateTVar)
+            return ()))
+      (removeClient username serverStateTVar)
+  {-
+-- Read the next value from a TChan or timeout
+readTChanTimeout :: Int -> TChan a -> IO (Maybe a)
+readTChanTimeout timeoutAfter pktChannel = do
+  delay <- registerDelay timeoutAfter
+  atomically $ Just <$> readTChan pktChannel <|> pure Nothing <* fini delay
+
+-- fork a thread for reading socket msgs for the given game 
+-- into a buffer created specifically for game msgs related to this table
+-- for
+readGameMsgsToBuffer :: WS.Connection -> TChan MsgOut -> STM () 
+readGameMsgsToBuffer = do 
+  maybeMsg <- WS.receiveData clientConn
+-}
 
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
@@ -96,9 +115,15 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
     chanMsg <- atomically $ readTChan dupChan
     sendMsg clientConn chanMsg
     if True
-      then let timeoutMsg = GameMove tableName Timeout
-               timeoutDuration = 5000000 -- 5 seconds for player to act
-            in runTimedMsg timeoutDuration msgHandlerConfig tableName timeoutMsg
+      then do
+        print "1"
+        maybeMsg <- timeMsg msgReaderChan
+        x <- atomically $ isEmptyTChan msgReaderChan
+        print $ "is chan empty " <> show x
+        if isNothing maybeMsg
+          then atomically $
+               writeTChan msgReaderChan (GameMove tableName Timeout)
+          else return ()
       else return ()
 
 catchE :: TableName -> WS.ConnectionException -> IO MsgIn
@@ -106,8 +131,8 @@ catchE tableName e = do
   print e
   return $ GameMove tableName Timeout
 
--- Forks a new thread to run the timeout race in and propagates then
--- updates the game state with either the resulting timeout or player action
+-- Forks a new thread to run the timeout race in and propagates 
+-- updates to the game state with either the resulting timeout or player action
 runTimedMsg :: Int -> MsgHandlerConfig -> TableName -> MsgIn -> IO ()
 runTimedMsg duration msgHandlerConfig tableName timeoutMsg =
   withAsync
@@ -116,7 +141,7 @@ runTimedMsg duration msgHandlerConfig tableName timeoutMsg =
        (catchE tableName)) $ \timedAction -> do
     playerActionE <- waitCatch timedAction
     let playerAction = fromRight timeoutMsg playerActionE
-    handleSocketMsg msgHandlerConfig playerAction
+  --  handleSocketMsg msgHandlerConfig playerAction
     return ()
 
 -- If the timeout occurs then we return the default msg 
@@ -127,6 +152,14 @@ awaitTimedMsg duration msgHandlerConfig@MsgHandlerConfig {..} tableName defaultM
   where
     timeoutDuration = 5000000
     parseWithDefaultMsg = (fromMaybe defaultMsg) . parseMsgFromJSON
+
+timeMsg :: TChan MsgIn -> IO (Maybe MsgIn)
+timeMsg chan = do
+  delayTVar <- registerDelay 5000000
+  print "delay started"
+  atomically $
+    (Just <$> readTChan chan) `orElse`
+    (Nothing <$ (readTVar delayTVar >>= check))
 
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
