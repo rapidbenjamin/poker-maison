@@ -25,8 +25,8 @@ import Poker.Utils
 
 -- a Nothing signifies the absence of an error in which case the action is valid
 validateAction :: Game -> PlayerName -> PlayerAction -> Maybe GameErr
-validateAction game@Game {..} playerName action@(PostBlind blind) = Nothing
-  {- case checkPlayerSatAtTable game playerName of
+validateAction game@Game {..} playerName action@(PostBlind blind) =
+  case checkPlayerSatAtTable game playerName of
     err@(Just _) -> err
     Nothing ->
       case validateBlindAction game playerName blind of
@@ -66,7 +66,6 @@ validateAction game@Game {..} playerName action@call =
     Nothing -> do
       err <- canCall playerName game
       return $ InvalidMove playerName err
--}
 
 -- | The first player to post their blinds in the predeal stage  can do it from any position
 -- Therefore the acting in turn rule wont apply for that first move.

@@ -56,9 +56,9 @@ tryAny action = do
 -- default action derived from game state 
 defaultMsg = GameMove "black" Fold
 
--- write the msg to the socket threads msg reader channel
-handleSocketMsg :: MsgHandlerConfig -> IO ()
-handleSocketMsg msgHandlerConfig@MsgHandlerConfig {..} =
+-- process msgs sent by the client socket
+handleReadChanMsgs :: MsgHandlerConfig -> IO ()
+handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
     msg <- atomically $ readTChan msgReaderChan
     print $ "reader received msg: " ++ show msg
@@ -71,7 +71,7 @@ handleSocketMsg msgHandlerConfig@MsgHandlerConfig {..} =
 -- This function processes msgs from authenticated clients 
 authenticatedMsgLoop :: MsgHandlerConfig -> IO ()
 authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
-  withAsync (handleSocketMsg msgHandlerConfig) $ \sockMsgReaderThread -> do
+  withAsync (handleReadChanMsgs msgHandlerConfig) $ \sockMsgReaderThread -> do
     finally
       (catch
          (forever $ do
@@ -104,6 +104,10 @@ readGameMsgsToBuffer = do
   maybeMsg <- WS.receiveData clientConn
 -}
 
+isPlayerToAct playerName game =
+  (_street game /= PreDeal || _street game /= Showdown) &&
+  ((_playerName (_players game !! _currentPosToAct game)) == playerName)
+
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
 -- against the game
@@ -114,17 +118,21 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
     dupChan <- atomically $ dupTChan channel
     chanMsg <- atomically $ readTChan dupChan
     sendMsg clientConn chanMsg
-    if True
-      then do
-        print "1"
-        maybeMsg <- timeMsg msgReaderChan
-        x <- atomically $ isEmptyTChan msgReaderChan
-        print $ "is chan empty " <> show x
-        if isNothing maybeMsg
-          then atomically $
-               writeTChan msgReaderChan (GameMove tableName Timeout)
+    case chanMsg of
+      NewGameState _ game -> do
+        let isPlayerToAct' = isPlayerToAct (unUsername username) game
+        if isPlayerToAct'
+          then do
+            print $ show username <> " turn to act? " <> show isPlayerToAct'
+            maybeMsg <- timeMsg msgReaderChan
+            x <- atomically $ isEmptyTChan msgReaderChan
+            print $ "is chan empty " <> show x
+            if isNothing maybeMsg
+              then atomically $
+                   writeTChan msgReaderChan (GameMove tableName Timeout)
+              else return ()
           else return ()
-      else return ()
+      _ -> return ()
 
 catchE :: TableName -> WS.ConnectionException -> IO MsgIn
 catchE tableName e = do
