@@ -33,6 +33,7 @@ import Text.Pretty.Simple (pPrint)
 
 import Control.Concurrent.Async
 import Poker
+import Poker.ActionValidation
 import Poker.Game
 import Poker.Types
 import Poker.Utils
@@ -114,10 +115,15 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
       NewGameState _ game -> do
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
         if isPlayerToAct'
-          then let timeoutDuration = 6000000
+          then let timeoutDuration = 1111111111119000000
                 in do print $
                         show username <> " turn to act? " <> show isPlayerToAct'
-                      maybeMsg <- timeMsg timeoutDuration msgReaderChan
+                      maybeMsg <-
+                        timeGameMoveMsg
+                          game
+                          (unUsername username)
+                          timeoutDuration
+                          msgReaderChan
                       x <- atomically $ isEmptyTChan msgReaderChan
                       print $ "is chan empty " <> show x
                       if isNothing maybeMsg
@@ -141,21 +147,28 @@ catchE tableName e = do
 --  atomically $
 --    (Just <$> readTChan chan) `orElse`
 --    (Nothing <$ (readTVar delayTVar >>= check))
-timeMsg :: Int -> TChan MsgIn -> IO (Maybe MsgIn)
-timeMsg duration chan = do
+timeGameMoveMsg :: Game -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
+timeGameMoveMsg game playerName duration chan = do
   delayTVar <- registerDelay duration
-  awaitValidAction delayTVar chan
+  awaitValidAction game playerName delayTVar chan
 
-awaitValidAction :: TVar Bool -> TChan MsgIn -> IO (Maybe MsgIn)
-awaitValidAction delayTVar chan = do
+awaitValidAction ::
+     Game -> PlayerName -> TVar Bool -> TChan MsgIn -> IO (Maybe MsgIn)
+awaitValidAction game playerName delayTVar chan = do
   v <-
     atomically $
     (Just <$> readTChan chan) `orElse`
     (Nothing <$ (readTVar delayTVar >>= check))
   case v of
     Just msg
-      | not ((const False) msg) -> awaitValidAction delayTVar chan
+      | not $ isMsgValidPlayerAction game playerName msg ->
+        awaitValidAction game playerName delayTVar chan
     _ -> return v
+
+isMsgValidPlayerAction :: Game -> PlayerName -> MsgIn -> Bool
+isMsgValidPlayerAction game playerName (GameMove _ action) = True
+  --isNothing $ validateAction game playerName action
+isMsgValidPlayerAction game playerName _ = True
 
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
