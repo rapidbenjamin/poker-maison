@@ -60,12 +60,18 @@ validateAction game@Game {..} playerName action@(Raise amount) =
     Nothing -> do
       err <- canRaise playerName amount game
       return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@call =
+validateAction game@Game {..} playerName action@(Call) =
   case isPlayerActingOutOfTurn game playerName of
     err@(Just _) -> err
     Nothing -> do
       err <- canCall playerName game
       return $ InvalidMove playerName err
+validateAction game@Game {..} playerName action@(Timeout) =
+  if _street == Showdown
+    then Just $ InvalidMove playerName InvalidActionForStreet
+    else case isPlayerActingOutOfTurn game playerName of
+           err@(Just _) -> err
+           Nothing -> Nothing
 
 -- | The first player to post their blinds in the predeal stage  can do it from any position
 -- Therefore the acting in turn rule wont apply for that first move.

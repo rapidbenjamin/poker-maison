@@ -403,3 +403,30 @@ main =
               initialGameState
         let playerName = "player4"
         canShowOrMuckHand playerName showdownGame `shouldBe` Nothing
+    describe "canTimeout" $ do
+      it
+        "should return InvalidActionForStreet InvalidMoveErr for Timeout if player is acting out of turn" $ do
+        let preFlopGame =
+              (street .~ PreFlop) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let expectedErr =
+              Just $
+              InvalidMove "player3" $
+              OutOfTurn $ CurrentPlayerToActErr "player5"
+        validateAction preFlopGame playerName Timeout `shouldBe` expectedErr
+      it "should return no error for Timeout when acting in turn" $ do
+        let preFlopGame =
+              (street .~ PreFlop) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player5"
+        validateAction preFlopGame playerName Timeout `shouldBe` Nothing
+      it
+        "should return InvalidActionForStreet InvalidMoveErr if Timeout action occurs during Showdown" $ do
+        let showDownGame =
+              (street .~ Showdown) . (players .~ playerFixtures2) $
+              initialGameState
+        let playerName = "player3"
+        let expectedErr = InvalidMove playerName InvalidActionForStreet
+        validateAction showDownGame playerName Timeout `shouldBe`
+          Just expectedErr
