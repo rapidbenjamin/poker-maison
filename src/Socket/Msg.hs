@@ -68,7 +68,11 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
       (handleNewGameState serverStateTVar)
       msgOutE
 
--- This function processes msgs from authenticated clients 
+-- This function writes msgs received from the websocket to the socket threads msgReader channel 
+-- then forks a new thread to read msgs from the authenticated client
+-- The use of channels in this way makes it feasible to implement timeouts
+-- if an expected msg in not received in a given time without killing threads.
+-- This is preferable as killing threads inside IO actions is not safe 
 authenticatedMsgLoop :: MsgHandlerConfig -> IO ()
 authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
   withAsync (handleReadChanMsgs msgHandlerConfig) $ \sockMsgReaderThread -> do
@@ -108,15 +112,18 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
       NewGameState _ game -> do
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
         if isPlayerToAct'
-          then do
-            print $ show username <> " turn to act? " <> show isPlayerToAct'
-            maybeMsg <- timeMsg msgReaderChan
-            x <- atomically $ isEmptyTChan msgReaderChan
-            print $ "is chan empty " <> show x
-            if isNothing maybeMsg
-              then atomically $
-                   writeTChan msgReaderChan (GameMove tableName Timeout)
-              else return ()
+          then let timeoutDuration = 5000000
+                in do print $
+                        show username <> " turn to act? " <> show isPlayerToAct'
+                      maybeMsg <- timeMsg timeoutDuration msgReaderChan
+                      x <- atomically $ isEmptyTChan msgReaderChan
+                      print $ "is chan empty " <> show x
+                      if isNothing maybeMsg
+                        then atomically $
+                             writeTChan
+                               msgReaderChan
+                               (GameMove tableName Timeout)
+                        else return ()
           else return ()
       _ -> return ()
 
@@ -125,9 +132,9 @@ catchE tableName e = do
   print e
   return $ GameMove tableName Timeout
 
-timeMsg :: TChan MsgIn -> IO (Maybe MsgIn)
-timeMsg chan = do
-  delayTVar <- registerDelay 5000000
+timeMsg :: Int -> TChan MsgIn -> IO (Maybe MsgIn)
+timeMsg duration chan = do
+  delayTVar <- registerDelay duration
   print "delay started"
   atomically $
     (Just <$> readTChan chan) `orElse`
