@@ -130,6 +130,16 @@ handlePlayerAction game playerName action@(Bet amount) =
     (Right $ makeBet amount playerName game)
     Left
     (validateAction game playerName action)
+handlePlayerAction game playerName action@(Timeout) =
+  if isNothing $ canCheck playerName game
+    then maybe
+           (Right $ check playerName game)
+           Left
+           (validateAction game playerName action)
+    else maybe
+           (Right $ foldCards playerName game)
+           Left
+           (validateAction game playerName action)
 
 -- TODO should be able to choose seat
 seatPlayer :: Game -> Player -> Either GameErr Game

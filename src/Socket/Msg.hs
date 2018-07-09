@@ -63,6 +63,8 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
     msg <- atomically $ readTChan msgReaderChan
     print $ "reader received msg: " ++ show msg
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
+    --print "reader ran msg"
+    --print msgOutE
     either
       (\err -> sendMsg clientConn $ ErrMsg err)
       (handleNewGameState serverStateTVar)
@@ -112,7 +114,7 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
       NewGameState _ game -> do
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
         if isPlayerToAct'
-          then let timeoutDuration = 5000000
+          then let timeoutDuration = 6000000
                 in do print $
                         show username <> " turn to act? " <> show isPlayerToAct'
                       maybeMsg <- timeMsg timeoutDuration msgReaderChan
@@ -268,9 +270,6 @@ unUsername (Username username) = username
 -- broadcast to all table subscribers or an error is returned which is then only sent to the
 -- originator of the invalid in-game move
 gameMoveHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameMoveHandler gameMove@(GameMove tablename Timeout) = do
-  liftIO $ print gameMove
-  return Noop
 gameMoveHandler gameMove@(GameMove tableName move) = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
