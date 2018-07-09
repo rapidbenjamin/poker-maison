@@ -97,8 +97,8 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
       (removeClient username serverStateTVar)
 
 isPlayerToAct playerName game =
-  (_street game /= PreDeal || _street game /= Showdown) &&
-  ((_playerName (_players game !! _currentPosToAct game)) == playerName)
+  (_street game /= PreDeal && _street game /= Showdown) &&
+  ((_playerName (_players game !! _currentPosToAct game)) == (playerName))
 
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
@@ -134,13 +134,28 @@ catchE tableName e = do
   print e
   return $ GameMove tableName Timeout
 
+--timeMsg :: Int -> TChan MsgIn -> IO (Maybe MsgIn)
+--timeMsg duration chan = do
+--  delayTVar <- registerDelay duration
+--  print "delay started"
+--  atomically $
+--    (Just <$> readTChan chan) `orElse`
+--    (Nothing <$ (readTVar delayTVar >>= check))
 timeMsg :: Int -> TChan MsgIn -> IO (Maybe MsgIn)
 timeMsg duration chan = do
   delayTVar <- registerDelay duration
-  print "delay started"
-  atomically $
+  awaitValidAction delayTVar chan
+
+awaitValidAction :: TVar Bool -> TChan MsgIn -> IO (Maybe MsgIn)
+awaitValidAction delayTVar chan = do
+  v <-
+    atomically $
     (Just <$> readTChan chan) `orElse`
     (Nothing <$ (readTVar delayTVar >>= check))
+  case v of
+    Just msg
+      | not ((const False) msg) -> awaitValidAction delayTVar chan
+    _ -> return v
 
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
