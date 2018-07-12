@@ -105,7 +105,8 @@ isPlayerToAct playerName game =
 -- then if no valid game action is received within 30 secs then we run the Timeout action
 -- against the game
 tableReceiveMsgLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
-tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
+tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
+  msgReaderDup <- atomically $ dupTChan msgReaderChan
   forever $ do
     print "tableReceiveMsgLoop"
     dupChan <- atomically $ dupTChan channel
@@ -123,7 +124,7 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
                           game
                           (unUsername username)
                           timeoutDuration
-                          msgReaderChan
+                          msgReaderDup
                       x <- atomically $ isEmptyTChan msgReaderChan
                       print $ "is chan empty " <> show x
                       if isNothing maybeMsg
@@ -131,7 +132,8 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} =
                              writeTChan
                                msgReaderChan
                                (GameMove tableName Timeout)
-                        else return ()
+                        else atomically $
+                             writeTChan msgReaderChan (fromJust maybeMsg)
           else return ()
       _ -> return ()
 
@@ -150,6 +152,7 @@ catchE tableName e = do
 timeGameMoveMsg :: Game -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
 timeGameMoveMsg game playerName duration chan = do
   delayTVar <- registerDelay duration
+  print "delay started"
   awaitValidAction game playerName delayTVar chan
 
 awaitValidAction ::
