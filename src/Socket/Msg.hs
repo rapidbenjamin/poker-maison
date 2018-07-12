@@ -132,8 +132,9 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
                              writeTChan
                                msgReaderChan
                                (GameMove tableName Timeout)
-                        else atomically $
-                             writeTChan msgReaderChan (fromJust maybeMsg)
+                        else return ()
+                          --atomically $
+                           --  writeTChan msgReaderChan (fromJust maybeMsg)
           else return ()
       _ -> return ()
 
