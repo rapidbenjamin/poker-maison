@@ -12,6 +12,7 @@
 module ActionSpec where
 
 import Control.Lens
+import Data.Aeson
 import Data.List
 import Data.Text (Text)
 import Test.Hspec
@@ -28,6 +29,7 @@ import Control.Monad
 import Control.Monad.State hiding (state)
 import Data.List.Lens
 import Data.List.Split
+import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Debug.Trace
@@ -73,6 +75,7 @@ instance Arbitrary Game where
     let _bigBlind = _smallBlind * 2
     _pot <- suchThat chooseAny (\x -> x >= 0 && x >= _bigBlind)
     _maxBet <- suchThat chooseAny (>= 0)
+    let _winners = NoWinners
     return Game {_maxPlayers = fromInteger x, ..}
 
 instance Arbitrary Player where

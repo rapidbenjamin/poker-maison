@@ -13,6 +13,7 @@
 module GameSpec where
 
 import Control.Lens
+import Data.Either
 import Data.List
 import Data.Text (Text)
 import Test.Hspec
@@ -27,8 +28,11 @@ import Poker.Types
 import Control.Lens
 import Control.Monad
 import Control.Monad.State hiding (state)
+import Data.Aeson
+import qualified Data.ByteString.Lazy.Char8 as C
 import Data.List.Lens
 import Data.List.Split
+import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Debug.Trace
@@ -157,6 +161,17 @@ player5 =
     , _actedThisTurn = True
     }
 
+player6 =
+  Player
+    { _pockets = []
+    , _chips = 2000
+    , _bet = 0
+    , _playerState = None
+    , _playerName = "player6"
+    , _committed = 0
+    , _actedThisTurn = False
+    }
+
 initPlayers = [player1, player2, player3]
 
 main :: IO ()
@@ -198,7 +213,31 @@ main =
             let newGame = dealBoardCards n initialGameState
             length (newGame ^. deck) `shouldBe` (length initialDeck - n)
     describe "haveAllPlayersActed" $ do
-      it "should return True when all players have acted" $ do
+      it
+        "should return True when all players have acted during PreDeal for Three Players" $ do
+        let game =
+              (street .~ PreDeal) . (maxBet .~ 0) .
+              (players .~
+               [ ((playerState .~ In) . (actedThisTurn .~ False) . (bet .~ 0) .
+                  (committed .~ 0))
+                   player1
+               , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 0) .
+                  (committed .~ 25))
+                   player2
+               , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 0) .
+                  (committed .~ 50))
+                   player6
+               ]) $
+              initialGameState
+        haveAllPlayersActed game `shouldBe` True
+      it
+        "should return False when not all players acted during PreDeal for Three Players" $ do
+        let unfinishedBlindsGame =
+              (street .~ PreDeal) . (players .~ [player1, player4, player6]) $
+              initialGameState
+        haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
+      it
+        "should return True when all players have acted during preFlop for Two Players" $ do
         let game =
               (street .~ PreFlop) . (maxBet .~ 0) .
               (players .~
@@ -209,7 +248,8 @@ main =
                ]) $
               initialGameState
         haveAllPlayersActed game `shouldBe` True
-      it "should return False when not all players acted" $ do
+      it
+        "should return False when not all players acted during PreFlop for Two Players" $ do
         let unfinishedBlindsGame =
               (street .~ PreDeal) . (players .~ [player1, player4]) $
               initialGameState
@@ -233,6 +273,14 @@ main =
               initialGameState
         allButOneFolded unfinishedBlindsGame `shouldBe` False
     describe "progressToFlop" $ do
+      it "should update street to Turn" $ do
+        let preFlopGame =
+              (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let flopGame = progressToFlop preFlopGame
+        flopGame ^. street `shouldBe` Flop
       it "should reset maxBet" $ do
         let preflopGame =
               (street .~ PreFlop) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -250,6 +298,14 @@ main =
         let playerBets = (\Player {..} -> _bet) <$> (_players flopGame)
         playerBets `shouldBe` [0, 0]
     describe "progressToTurn" $ do
+      it "should update street to Turn" $ do
+        let flopGame =
+              (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+              initialGameState
+        let turnGame = progressToTurn flopGame
+        turnGame ^. street `shouldBe` Turn
       it "should reset maxBet" $ do
         let flopGame =
               (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -268,13 +324,20 @@ main =
         let playerBets = (\Player {..} -> _bet) <$> (_players turnGame)
         playerBets `shouldBe` [0, 0]
     describe "progressToRiver" $ do
+      it "should update street to River" $ do
+        let turnGame =
+              eitherDecode $
+              C.pack
+                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"Turn\",\"_deck\":[{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"Two\"},{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"}],\"_dealer\":1,\"_pot\":150,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":50,\"_pockets\":[{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"}],\"_playerName\":\"1!!!1\",\"_actedThisTurn\":true,\"_chips\":1950},{\"_bet\":0,\"_playerState\":{\"tag\":\"Out\",\"contents\":\"Folded\"},\"_committed\":0,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"}],\"_playerName\":\"2!!!1\",\"_actedThisTurn\":true,\"_chips\":1975},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":25,\"_pockets\":[{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Clubs\",\"rank\":\"Two\"}],\"_playerName\":\"3!!!3\",\"_actedThisTurn\":false,\"_chips\":2000}],\"_currentPosToAct\":1,\"_board\":[{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"}],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":0,\"_bigBlind\":50}"
+        let riverGame = progressToRiver $ fromRight initialGameState turnGame
+        riverGame ^. street `shouldBe` River
       it "should reset maxBet" $ do
         let turnGame =
               (street .~ Turn) . (maxBet .~ 1000) . (pot .~ 1000) .
               (deck .~ initialDeck) .
               (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
               initialGameState
-        let riverGame = progressToTurn turnGame
+        let riverGame = progressToRiver turnGame
         riverGame ^. maxBet `shouldBe` 0
       it "should reset all player bets" $ do
         let turnGame =
@@ -286,16 +349,18 @@ main =
         let playerBets = (\Player {..} -> _bet) <$> (_players riverGame)
         playerBets `shouldBe` [0, 0]
     describe "progressToShowdown" $ do
+      let riverGame =
+            (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
+            (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+            initialGameState
+      let showdownGame = progressToShowdown riverGame
+      it "should update street to Turn" $ do
+        showdownGame ^. street `shouldBe` Showdown
       it "should award pot chips to winner of hand" $ do
-        let riverGame =
-              (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
-              (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
-              initialGameState
-        let showdownGame = progressToShowdown riverGame
         let playerChipCounts =
               (\Player {..} -> _chips) <$> (_players showdownGame)
         playerChipCounts `shouldBe` [2000, 1000]
-      it "should split pot correctly if more than one player wins a pot" $ do
+      it "should split pot if more than one player wins given pot" $ do
         let riverGame =
               (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
               (players .~ [((chips .~ 1000) player1), ((chips .~ 1000) player2)]) $
