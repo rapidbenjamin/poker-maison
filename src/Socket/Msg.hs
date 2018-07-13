@@ -62,19 +62,12 @@ handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
     msg <- atomically $ readTChan msgReaderChan
-    print $ "reader received msg: " ++ show msg
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
-    --print "reader ran msg"
-    --print msgOutE
     either
       (\err -> sendMsg clientConn $ ErrMsg err)
       (handleNewGameState serverStateTVar)
       msgOutE
-    case msgOutE of
-      Right m -> return () --sendMsg clientConn m
-      Left _ -> return ()
-    -- when in timeout mode one msg
-    -- when not in timeout mode two msgs
+    return ()
 
 -- This function writes msgs received from the websocket to the socket threads msgReader channel 
 -- then forks a new thread to read msgs from the authenticated client
@@ -88,10 +81,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
       (catch
          (forever $ do
             msg <- WS.receiveData clientConn
-            print msg
             let parsedMsg = parseMsgFromJSON msg
-            print parsedMsg
-            --peekTChan
             for_ parsedMsg (\msg -> atomically $ writeTChan msgReaderChan msg)
             return ())
          (\e -> do
@@ -116,17 +106,15 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
   dupChan <- atomically $ dupTChan channel
   forever $ do
     chanMsg <- atomically $ readTChan dupChan
-    print $ "tableReceiveMsgLoop :" ++ (show username)
-    pPrint chanMsg
     sendMsg clientConn chanMsg
     case chanMsg of
       NewGameState _ game -> do
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
         if isPlayerToAct'
           then let timeoutDuration = 9000000
-                      --print $
-                      --  show username <> " turn to act? " <> show isPlayerToAct'
-                in do maybeMsg <-
+                in do print $
+                        show username <> " turn to act? " <> show isPlayerToAct'
+                      maybeMsg <-
                         timeGameMoveMsg
                           game
                           (unUsername username)
@@ -148,13 +136,6 @@ catchE tableName e = do
   print e
   return $ GameMove tableName Timeout
 
---timeMsg :: Int -> TChan MsgIn -> IO (Maybe MsgIn)
---timeMsg duration chan = do
---  delayTVar <- registerDelay duration
---  print "delay started"
---  atomically $
---    (Just <$> readTChan chan) `orElse`
---    (Nothing <$ (readTVar delayTVar >>= check))
 timeGameMoveMsg :: Game -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
 timeGameMoveMsg game playerName duration chan = do
   delayTVar <- registerDelay duration
@@ -168,7 +149,6 @@ awaitValidAction game playerName delayTVar chan
  = do
   x <- atomically $ isEmptyTChan chan
   dupChan <- atomically $ dupTChan chan
-  --print $ "is delay CHannel empty " <> show x
   result <-
     atomically $
     (Just <$> readTChan dupChan) `orElse`
@@ -179,6 +159,7 @@ awaitValidAction game playerName delayTVar chan
  --     | not $ isMsgValidPlayerAction game playerName msg ->
  --       awaitValidAction game playerName delayTVar chan
  --   _ -> return v
+ -- TODO only halt timeout on valid actions
 
 --  print $ "result of delay : " ++ show result
 isMsgValidPlayerAction :: Game -> PlayerName -> MsgIn -> Bool
@@ -338,7 +319,7 @@ updateGameWithMove (GameMove tableName playerAction) (Username username) game
   (maybeErr, newGame) <-
     liftIO $ runStateT (runPlayerAction username playerAction) game
  -- liftIO $ print "next game state"
- -- liftIO $ pPrint newGame
+  liftIO $ pPrint newGame
  -- liftIO $ pPrint maybeErr
   case maybeErr of
     Just gameErr -> throwError $ GameErr gameErr

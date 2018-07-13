@@ -68,7 +68,7 @@ hasBettingFinished :: Game -> Bool
 hasBettingFinished game@Game {..} =
   if _street == PreDeal || _street == Showdown
     then False
-    else if not allPlayersActed
+    else if not (traceShow allPlayersActed allPlayersActed)
            then False
            else numPlayersIn <= 1 && numPlayersAllIn > 0
   where
