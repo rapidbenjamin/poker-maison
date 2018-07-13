@@ -100,7 +100,8 @@ setWinners game@Game {..} = game
 progressToPreDeal = getNextHand
 
 progressToPreFlop =
-  (street .~ PreFlop) . resetPlayers . deal . updatePlayersInHand
+  (street .~ PreFlop) .
+  (maxBet .~ 0) . resetPlayers . deal . updatePlayersInHand
 
 progressToFlop =
   (street .~ Flop) . (maxBet .~ 0) . (dealBoardCards 3) . resetPlayers

@@ -40,7 +40,13 @@ markInForHand = (playerState .~ In)
 postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
   ((players .~ newPlayers) .
-   (pot +~ blindValue) . (currentPosToAct .~ nextPositionToAct))
+   (pot +~ blindValue) .
+   (currentPosToAct .~ nextPositionToAct) .
+   (maxBet %~
+    (\currBet ->
+       if blindValue > currBet
+         then blindValue
+         else currBet)))
     game
   where
     newPlayers =

@@ -27,6 +27,7 @@ import Poker.Types
 import Control.Lens
 import Control.Monad
 import Control.Monad.State hiding (state)
+import Data.Either
 import Data.List.Lens
 import Data.List.Split
 import Data.Maybe
@@ -286,6 +287,14 @@ main =
                 , _actedThisTurn = True
                 }
         playerWhoCalled `shouldBe` Just expectedPlayer
+      it "Should add call amount to the player's committed chips field" $ do
+        let g =
+              eitherDecode
+                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"PreDeal\",\"_deck\":[{\"suit\":\"Clubs\",\"rank\":\"Two\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"},{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"},{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"},{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":0,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"None\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"1z\",\"_actedThisTurn\":false,\"_chips\":2000},{\"_bet\":0,\"_playerState\":{\"tag\":\"None\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"2z\",\"_actedThisTurn\":false,\"_chips\":2000},{\"_bet\":0,\"_playerState\":{\"tag\":\"None\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"3z\",\"_actedThisTurn\":false,\"_chips\":2000}],\"_currentPosToAct\":1,\"_board\":[],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":50,\"_bigBlind\":50}"
+        let preDealGame = call "2z" (fromRight initialGameState g)
+        traceShowM preDealGame
+        let playerWhoCalled = preDealGame ^? players . ix 2
+        ((fromJust playerWhoCalled) ^. committed) `shouldBe` 50
       it "should add call amount to pot" $ do
         let game =
               (street .~ PreFlop) . (maxBet .~ 4000) .
