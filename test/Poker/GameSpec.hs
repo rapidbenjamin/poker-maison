@@ -272,6 +272,23 @@ main =
               (players .~ [((playerState .~ (Out Folded)) player1), player2]) $
               initialGameState
         allButOneFolded unfinishedBlindsGame `shouldBe` False
+    describe "progressToPreFlop" $ do
+      let preDealGame =
+            (street .~ PreDeal) . (maxBet .~ 50) . (pot .~ 75) .
+            (deck .~ initialDeck) .
+            (players .~
+             [ (((chips .~ 1000) . (committed .~ 25) . (bet .~ 25)) player5)
+             , (((chips .~ 1000) . (committed .~ 50) . (bet .~ 50)) player2)
+             ]) $
+            initialGameState
+      let preFlopGame = progressToPreFlop preDealGame
+      it "should update street to PreFlop" $ do
+        preFlopGame ^. street `shouldBe` PreFlop
+      it "should reset maxBet" $ do preFlopGame ^. maxBet `shouldBe` 0
+      it "should reset all player bets" $ do
+        let playerBets = (\Player {..} -> _bet) <$> (_players preFlopGame)
+        traceShowM (preFlopGame)
+        playerBets `shouldBe` [0, 0]
     describe "progressToFlop" $ do
       let preFlopGame =
             (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -367,3 +384,9 @@ main =
                ]) $
               initialGameState
         hasBettingFinished flopGame `shouldBe` False
+      it "Should return True in cases where one player has folded" $ do
+        let flopGame =
+              eitherDecode
+                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"Flop\",\"_deck\":[{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":75,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"Out\",\"contents\":\"Folded\"},\"_committed\":0,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Two\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"}],\"_playerName\":\"1!!!!1\",\"_actedThisTurn\":true,\"_chips\":2000},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":25,\"_pockets\":[{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"}],\"_playerName\":\"2!!!!2\",\"_actedThisTurn\":true,\"_chips\":1975},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":50,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"}],\"_playerName\":\"3!!!!3\",\"_actedThisTurn\":false,\"_chips\":1950}],\"_currentPosToAct\":1,\"_board\":[{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"}],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":0,\"_bigBlind\":50}"
+        let turnGame = progressToTurn $ fromRight initialGameState flopGame
+        hasBettingFinished turnGame `shouldBe` True
