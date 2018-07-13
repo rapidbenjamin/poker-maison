@@ -318,9 +318,9 @@ updateGameWithMove (GameMove tableName playerAction) (Username username) game
  = do
   (maybeErr, newGame) <-
     liftIO $ runStateT (runPlayerAction username playerAction) game
- -- liftIO $ print "next game state"
+  liftIO $ print "next game state"
   liftIO $ pPrint newGame
- -- liftIO $ pPrint maybeErr
+  liftIO $ pPrint maybeErr
   case maybeErr of
     Just gameErr -> throwError $ GameErr gameErr
     Nothing -> return $ NewGameState tableName newGame

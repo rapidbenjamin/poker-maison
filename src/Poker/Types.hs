@@ -155,7 +155,7 @@ data Game = Game
   , _pot :: Int
   , _maxBet :: Bet
   , _dealer :: Int
-  , _currentPosToAct :: Int -- position here refes to the zero indexed set of active users
+  , _currentPosToAct :: Int -- position here refes to the zero indexed set of active players that have a playerState not set to None
   } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Game where
