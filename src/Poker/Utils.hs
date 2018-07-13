@@ -47,6 +47,14 @@ modInc num modulo
     incNum = num + 1
     modInc = incNum `mod` modulo
 
+modDec :: Int -> Int -> Int
+modDec num modulo
+  | decNum < modulo = 0
+  | otherwise = decNum
+  where
+    decNum = num - 1
+    modInc = decNum `mod` modulo
+
 -- return players which have the ability to make further moves i.e not all in or folded
 -- the distinction between sat in and active is important
 -- if a player is sat out then there has been no historical participation in this hand 

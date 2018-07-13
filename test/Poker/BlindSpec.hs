@@ -11,6 +11,7 @@ import Data.Text (Text)
 import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
 
+import Data.Aeson
 import Poker
 import Poker.ActionValidation
 import Poker.Actions
@@ -20,6 +21,7 @@ import Poker.Utils
 
 import Control.Lens
 import Control.Monad.State hiding (state)
+import Data.Either
 import Data.List.Lens
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -266,15 +268,22 @@ main =
     describe "blind required by player" $
       it "should return correct blind" $
       blindRequiredByPlayer twoPlayerGame "player2" `shouldBe` Just Big
-    describe "getSmallBlindPosition" $
-      it "small blind position should be correct for a two player game" $
-      getSmallBlindPosition twoPlayerNames 0 `shouldBe` (0 :: Int)
+    describe "getSmallBlindPosition" $ do
+      it "small blind position should be correct for a two player game" $ do
+        let dealerPos = 0
+        getSmallBlindPosition twoPlayerNames dealerPos `shouldBe` (0 :: Int)
+      it "small blind position should be correct for a three player game" $ do
+        let dealerPos = 2
+        getSmallBlindPosition threePlayerNames dealerPos `shouldBe` (0 :: Int)
     describe "getRequiredBlinds" $ do
       it "should return correct blinds for two player game" $
         getRequiredBlinds twoPlayerGame `shouldBe` [Just Small, Just Big]
-      it "should return correct blinds for three player game" $
-        getRequiredBlinds threePlayerGame `shouldBe`
-        [Nothing, Just Small, Just Big]
+      it "should return correct blinds for three player game" $ do
+        let game =
+              eitherDecode
+                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"PreDeal\",\"_deck\":[{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Clubs\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"}],\"_dealer\":2,\"_pot\":150,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"1z\",\"_actedThisTurn\":false,\"_chips\":2100},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"2z\",\"_actedThisTurn\":false,\"_chips\":1975},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"3z\",\"_actedThisTurn\":false,\"_chips\":2000}],\"_currentPosToAct\":2,\"_board\":[],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":0,\"_bigBlind\":50}"
+        let game' = fromRight initialGameState game
+        getRequiredBlinds game' `shouldBe` [Just Small, Just Big, Nothing]
     describe "blinds" $ do
       describe "getSmallBlindPosition" $ do
         it "returns correct small blind position in three player game" $ do

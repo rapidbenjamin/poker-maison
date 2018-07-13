@@ -9,6 +9,7 @@ Skill Ratings Generated for Players bb Won ratio over x hands
 TODOs
 
 ***
+- Blinds should not be wrapped in a Just should incorporate a None data constructor to signify no blind needed
 - compose stm actions in joinTable into 1 atomic action 
 - Use a map as data structure for players in poker games
 - remove usage of FromJust from canBet, canRaise, canCall etc instead use find
