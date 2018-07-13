@@ -135,16 +135,16 @@ twoPlayerGameAllBlindsPosted =
             , _playerState = In
             , _playerName = "player1"
             , _committed = 25
-            , _actedThisTurn = False
+            , _actedThisTurn = True
             }
         , Player
             { _pockets = []
             , _chips = 2000
             , _bet = 50
-            , _playerState = None
+            , _playerState = In
             , _playerName = "player2"
             , _committed = 50
-            , _actedThisTurn = False
+            , _actedThisTurn = True
             }
         ]
     , _maxPlayers = 5
@@ -349,7 +349,18 @@ main =
         haveRequiredBlindsBeenPosted threePlayerGameAllBlindsPosted `shouldBe`
           True
     describe "updatePlayersInHand" $ do
-      it "should set players that are not in blind position to In" $ do
+      it
+        "should set players that are not in blind position to In for three players" $ do
         let newGame = updatePlayersInHand threePlayerGameAllBlindsPosted
         let playerStates = (\Player {..} -> _playerState) <$> (_players newGame)
         playerStates `shouldBe` [In, In, In]
+      it
+        "should return correct player states for two players when all blinds posted" $ do
+        let newGame = updatePlayersInHand twoPlayerGameAllBlindsPosted
+        let playerStates = (\Player {..} -> _playerState) <$> (_players newGame)
+        playerStates `shouldBe` [In, In]
+      it
+        "should return correct player states for two players when not all blinds posted" $ do
+        let newGame = updatePlayersInHand twoPlayerGame
+        let playerStates = (\Player {..} -> _playerState) <$> (_players newGame)
+        playerStates `shouldBe` [In, None]
