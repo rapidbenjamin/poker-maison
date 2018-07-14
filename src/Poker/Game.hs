@@ -96,18 +96,24 @@ resetPlayers game@Game {..} = Game {_players = newPlayers, ..}
 setWinners :: Game -> Game
 setWinners game@Game {..} = game
 
+progressToPreFlop :: Game -> Game
 progressToPreFlop =
-  (street .~ PreFlop) . resetPlayers . deal . updatePlayersInHand
+  (street .~ PreFlop) .
+  (players %~ ((<$>) (actedThisTurn .~ False))) . deal . updatePlayersInHand
 
+progressToFlop :: Game -> Game
 progressToFlop =
   (street .~ Flop) . (maxBet .~ 0) . (dealBoardCards 3) . resetPlayers
 
+progressToTurn :: Game -> Game
 progressToTurn =
   (street .~ Turn) . (maxBet .~ 0) . (dealBoardCards 1) . resetPlayers
 
+progressToRiver :: Game -> Game
 progressToRiver =
   (street .~ River) . (maxBet .~ 0) . (dealBoardCards 1) . resetPlayers
 
+progressToShowdown :: Game -> Game
 progressToShowdown game@Game {..} =
   Game {_street = Showdown, _winners = winners', _players = awardedPlayers, ..}
   where

@@ -80,7 +80,7 @@ activatePlayersWhenNoBlindNeeded plyrs requiredBlinds =
         , ..
         }
 
--- Sets player state to in if they don't need to
+-- Sets player state to in if they don't need to post blind
 updatePlayersInHand :: Game -> Game
 updatePlayersInHand game =
   (players %~ flip activatePlayersWhenNoBlindNeeded requiredBlinds) game
