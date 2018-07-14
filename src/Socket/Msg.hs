@@ -136,12 +136,19 @@ catchE tableName e = do
   print e
   return $ GameMove tableName Timeout
 
+-- A return value of Nothing denote that
+-- no valid action was received in the given time period.
+-- If a valid gameMove player action was received then we
+-- wrap the msgIn in a Just
 timeGameMoveMsg :: Game -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
 timeGameMoveMsg game playerName duration chan = do
   delayTVar <- registerDelay duration
   print "delay started"
   awaitValidAction game playerName delayTVar chan
 
+-- We duplicate the channel reading the socket msgs and start a timeout
+-- The thread will be blocked until either a valid action is received 
+-- or the timeout finishes 
 awaitValidAction ::
      Game -> PlayerName -> TVar Bool -> TChan MsgIn -> IO (Maybe MsgIn)
 awaitValidAction game playerName delayTVar chan
