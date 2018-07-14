@@ -104,7 +104,7 @@ player1 =
     , _playerState = In
     , _playerName = "player1"
     , _committed = 100
-    , _actedThisTurn = False
+    , _actedThisTurn = True
     }
 
 player2 =
@@ -236,7 +236,7 @@ main =
         let pName = "player1"
         let newGame = makeBet betValue pName game
         let newPositionToAct = newGame ^. currentPosToAct
-        let expectedNewPositionToAct = 1
+        let expectedNewPositionToAct = 2
         newPositionToAct `shouldBe` expectedNewPositionToAct
     describe "foldCards" $ do
       it "should update player attributes correctly" $ do
@@ -265,7 +265,7 @@ main =
         let pName = "player1"
         let newGame = foldCards pName game
         let newPositionToAct = newGame ^. currentPosToAct
-        let expectedNewPositionToAct = 1
+        let expectedNewPositionToAct = 2
         newPositionToAct `shouldBe` expectedNewPositionToAct
     describe "call" $ do
       it "should update player attributes correctly" $ do
@@ -329,7 +329,7 @@ main =
         let pName = "player1"
         let newGame = call pName game
         let newPositionToAct = newGame ^. currentPosToAct
-        let expectedNewPositionToAct = 1
+        let expectedNewPositionToAct = 2
         newPositionToAct `shouldBe` expectedNewPositionToAct
     describe "check" $ do
       it "should update player attributes correctly" $ do
@@ -354,16 +354,54 @@ main =
       it "should increment position to act" $ do
         let game =
               (street .~ PreFlop) . (currentPosToAct .~ 0) .
-              (players .~ [player1, player2]) $
+              (players .~ [player1, player3]) $
               initialGameState
         let pName = "player1"
         let newGame = check pName game
         let newPositionToAct = newGame ^. currentPosToAct
-        let expectedNewPositionToAct = 0
+        let expectedNewPositionToAct = 1
         newPositionToAct `shouldBe` expectedNewPositionToAct
     describe "incPosToAct" $ do
-      it "should modulo increment position" $ do
+      it "should modulo increment position for two players who are both In" $ do
         let game =
-              (street .~ PreFlop) . (players .~ [player1, player2]) $
+              (street .~ PreFlop) . (currentPosToAct .~ 0) .
+              (players .~ [player1, player3]) $
+              initialGameState
+        incPosToAct game `shouldBe` 1
+        let game2 =
+              (street .~ PreFlop) . (currentPosToAct .~ 1) .
+              (players .~ [player1, player3]) $
+              initialGameState
+        incPosToAct game2 `shouldBe` 0
+      it "should modulo increment position when one player has folded" $ do
+        let game =
+              (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
+              initialGameState
+        incPosToAct game `shouldBe` 2
+        let game2 =
+              (street .~ PreFlop) . (currentPosToAct .~ 2) .
+              (players .~ [player1, player2, player3]) $
+              initialGameState
+        incPosToAct game2 `shouldBe` 0
+      it "should modulo increment position for four players" $ do
+        let game =
+              (street .~ PreFlop) . (currentPosToAct .~ 2) .
+              (players .~ [player1, player4, player3, player2]) $
               initialGameState
         incPosToAct game `shouldBe` 0
+        let game2 =
+              (street .~ PreFlop) . (currentPosToAct .~ 2) .
+              (players .~
+               [ player1
+               , player4
+               , player3
+               , (playerState .~ Out AllIn) player2
+               , (playerState .~ Out AllIn) player2
+               ]) $
+              initialGameState
+        incPosToAct game2 `shouldBe` 0
+        let game3 =
+              (street .~ PreFlop) . (currentPosToAct .~ 2) .
+              (players .~ [player2, player4, player3, player2]) $
+              initialGameState
+        incPosToAct game3 `shouldBe` 1

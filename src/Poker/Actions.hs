@@ -7,16 +7,20 @@ module Poker.Actions where
 
 import Control.Lens
 
+import Control.Lens
+
 ------------------------------------------------------------------------------
 import Control.Monad.State hiding (state)
 import Data.Char (toLower)
 import Data.List
 import qualified Data.List.Safe as Safe
 import Data.Maybe
-import Text.Read (readMaybe)
+import Data.Monoid
+import Text.Pretty.Simple (pPrint)
 
-import Control.Lens
+import Debug.Trace
 import Poker.ActionValidation
+import Text.Read (readMaybe)
 
 ------------------------------------------------------------------------------
 import Poker.Types
@@ -136,7 +140,14 @@ check pName game@Game {..} =
       _players
     nextPosToAct = incPosToAct game
 
+-- should only ever return the position of a player who has playerState equal to In
+-- As a player in any other state cannot perform an action
 incPosToAct :: Game -> Int
-incPosToAct Game {..} = _currentPosToAct `modInc` numActivePlayers
+incPosToAct Game {..} = nextIx
   where
-    numActivePlayers = (length $ getActivePlayers _players) - 1
+    iplayers = zip [0 ..] _players
+    iplayers' =
+      let (a, b) = splitAt _currentPosToAct iplayers
+       in (b <> a)
+    (nextIx, nextPlayer) =
+      fromJust $ find (\(_, p) -> _playerState p == In) (tail iplayers')

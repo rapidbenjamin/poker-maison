@@ -12,6 +12,8 @@ TODOs
 - Blinds should not be wrapped in a Just should incorporate a None data constructor to signify no blind needed
 - compose stm actions in joinTable into 1 atomic action 
 - Use a map as data structure for players in poker games
+] <dmwit> I suggested `IntMap Name` and `Map Name Player
+
 - remove usage of FromJust from canBet, canRaise, canCall etc instead use find
   and throw player not at table err if Nothing
 - add muck hand or show player action for players that win pot because everyone else folded
