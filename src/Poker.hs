@@ -80,7 +80,7 @@ initialGameState =
     , _bigBlind = 50
     , _pot = 0
     , _street = PreDeal
-    , _maxBet = 0
+    , _maxBet = 50
     , _winners = NoWinners
     }
 

@@ -194,15 +194,6 @@ main =
                 , _actedThisTurn = True
                 }
         playerWhoBet `shouldBe` Just expectedPlayer
-      it "should add update maxBet" $ do
-        let game =
-              (street .~ PreDeal) . (players .~ [player1, player3]) $
-              initialGameState
-        let pName = "player1"
-        let blind = Small
-        let newGame = postBlind blind pName game
-        let playerWhoBet = newGame ^? players . ix 0
-        _maxBet newGame `shouldBe` _smallBlind game
       it "should add blind bet to pot" $ do
         let game =
               (street .~ PreDeal) . (players .~ [player1, player3]) $

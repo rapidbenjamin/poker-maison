@@ -284,7 +284,6 @@ main =
       let preFlopGame = progressToPreFlop preDealGame
       it "should update street to PreFlop" $ do
         preFlopGame ^. street `shouldBe` PreFlop
-      it "should reset maxBet" $ do preFlopGame ^. maxBet `shouldBe` 0
       it "should reset all player bets" $ do
         let playerBets = (\Player {..} -> _bet) <$> (_players preFlopGame)
         playerBets `shouldBe` [0, 0]
@@ -352,6 +351,20 @@ main =
         let playerChipCounts =
               (\Player {..} -> _chips) <$> (_players showdownGame)
         playerChipCounts `shouldBe` [1500, 1500]
+    describe "getNextHand" $ do
+      let showdownGame =
+            (street .~ Showdown) . (maxBet .~ 1000) . (pot .~ 1000) .
+            (deck .~ initialDeck) .
+            (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+            initialGameState
+      let preDealGame = getNextHand showdownGame []
+      it "should update street to PreDeal" $ do
+        preDealGame ^. street `shouldBe` PreDeal
+      it "should set maxBet to bigBlind" $ do
+        preDealGame ^. maxBet `shouldBe` _bigBlind showdownGame
+      it "should reset all player bets" $ do
+        let playerBets = (\Player {..} -> _bet) <$> (_players preDealGame)
+        playerBets `shouldBe` [0, 0]
     describe "hasBettingFinished" $ do
       it
         "should return True when all players are All In and all players have acted" $ do

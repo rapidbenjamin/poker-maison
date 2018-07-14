@@ -34,6 +34,7 @@ placeBet value =
 markAllIn :: Player -> Player
 markAllIn = (playerState .~ Out AllIn)
 
+markActed :: Player -> Player
 markActed = (actedThisTurn .~ True)
 
 updateMaxBet :: Int -> Game -> Game

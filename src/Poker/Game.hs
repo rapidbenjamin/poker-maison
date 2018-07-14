@@ -96,11 +96,8 @@ resetPlayers game@Game {..} = Game {_players = newPlayers, ..}
 setWinners :: Game -> Game
 setWinners game@Game {..} = game
 
-progressToPreDeal = getNextHand
-
 progressToPreFlop =
-  (street .~ PreFlop) .
-  (maxBet .~ 0) . resetPlayers . deal . updatePlayersInHand
+  (street .~ PreFlop) . resetPlayers . deal . updatePlayersInHand
 
 progressToFlop =
   (street .~ Flop) . (maxBet .~ 0) . (dealBoardCards 3) . resetPlayers
@@ -155,7 +152,9 @@ progressGame game@Game {..} =
            Turn -> return $ progressToTurn game
            River -> return $ progressToRiver game
            Showdown -> return $ progressToShowdown game
-           PreDeal -> progressToPreDeal game
+           PreDeal -> do
+             shuffledDeck <- shuffle initialDeck
+             return $ getNextHand game shuffledDeck
     else if allButOneFolded game && (_street /= PreDeal || _street /= Showdown)
            then do
              print "ALL BUT ONE FOLDED IS TRUE"
@@ -170,22 +169,20 @@ progressGame game@Game {..} =
 -- new players can of course post their blinds early. In the case of an early posting the initial
 -- blind must be the big blind. After this 'early' blind or the posting of a normal blind in turn the 
 -- new player will be removed from the newBlindNeeded field and can play normally.
-getNextHand :: Game -> IO Game
-getNextHand Game {..} = do
-  shuffledDeck <- shuffle initialDeck
-  return
-    Game
-      { _waitlist = newWaitlist
-      , _maxBet = 0
-      , _players = newPlayers
-      , _board = []
-      , _deck = shuffledDeck
-      , _winners = NoWinners
-      , _street = PreDeal
-      , _dealer = newDealer
-      , _currentPosToAct = nextPlayerToAct
-      , ..
-      }
+getNextHand :: Game -> [Card] -> Game
+getNextHand Game {..} newDeck =
+  Game
+    { _waitlist = newWaitlist
+    , _maxBet = _bigBlind
+    , _players = newPlayers
+    , _board = []
+    , _deck = newDeck
+    , _winners = NoWinners
+    , _street = PreDeal
+    , _dealer = newDealer
+    , _currentPosToAct = nextPlayerToAct
+    , ..
+    }
   where
     newDealer = _dealer `modInc` length (getPlayersSatIn _players)
     freeSeatsNo = _maxPlayers - length _players
