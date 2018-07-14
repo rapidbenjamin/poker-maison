@@ -7,7 +7,6 @@ module Poker.Blinds where
 
 import Control.Lens
 
-------------------------------------------------------------------------------
 import Control.Monad.State hiding (state)
 import Data.Char (toLower)
 import Data.List
@@ -16,7 +15,6 @@ import Data.Maybe
 import Data.Text (Text)
 import Text.Read (readMaybe)
 
-------------------------------------------------------------------------------
 import Poker.Types
 import Poker.Utils
 import Prelude

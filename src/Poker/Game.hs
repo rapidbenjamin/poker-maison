@@ -2,12 +2,12 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Poker.Game where
 
 import Control.Arrow
 
-------------------------------------------------------------------------------
 import Control.Monad.Random.Class
 import Control.Monad.State hiding (state)
 import Data.List
@@ -21,7 +21,6 @@ import Poker.Blinds
 import System.Random.Shuffle (shuffleM)
 import System.Timeout
 
-------------------------------------------------------------------------------
 import Poker.Hands
 import Poker.Types
 import Poker.Utils
@@ -68,7 +67,7 @@ hasBettingFinished :: Game -> Bool
 hasBettingFinished game@Game {..} =
   if _street == PreDeal || _street == Showdown
     then False
-    else if not (traceShow allPlayersActed allPlayersActed)
+    else if not allPlayersActed
            then False
            else numPlayersIn <= 1 && numPlayersAllIn > 0
   where
@@ -116,7 +115,7 @@ progressToShowdown game@Game {..} =
   Game {_street = Showdown, _winners = winners', _players = awardedPlayers, ..}
   where
     winners' = getWinners game
-    awardedPlayers = awardWinners _players winners' _pot
+    awardedPlayers = awardWinners _players _pot winners'
 
 -- need to give players the chips they are due and split pot if necessary
 -- if only one active player then this is a result of everyone else folding 
@@ -125,22 +124,24 @@ progressToShowdown game@Game {..} =
 -- If only one player is active during the showdown stage then this means all other players
 -- folded to him. The winning player then has the choice of whether to "muck"
 -- (not show) his cards or not.
-awardWinners :: [Player] -> Winners -> Int -> [Player]
-awardWinners _players (MultiPlayerShowdown winners') pot' =
-  let chipsPerPlayer = pot' `div` length winners'
-      playerNames = (snd <$> winners')
-   in (\p@Player {..} ->
-         if _playerName `elem` playerNames
-           then Player {_chips = _chips + chipsPerPlayer, ..}
+-- SinglePlayerShowdown occurs when everyone folds to one player
+awardWinners :: [Player] -> Int -> Winners -> [Player]
+awardWinners _players pot' =
+  \case
+    MultiPlayerShowdown winners' ->
+      let chipsPerPlayer = pot' `div` length winners'
+          playerNames = (snd <$> winners')
+       in (\p@Player {..} ->
+             if _playerName `elem` playerNames
+               then Player {_chips = _chips + chipsPerPlayer, ..}
+               else p) <$>
+          _players
+    SinglePlayerShowdown pName ->
+      (\p@Player {..} ->
+         if p `elem` (getActivePlayers _players)
+           then Player {_chips = _chips + pot', ..}
            else p) <$>
       _players
--- SinglePlayerShowdown occurs when everyone folds to one player
-awardWinners _players (SinglePlayerShowdown pName) pot' =
-  (\p@Player {..} ->
-     if p `elem` (getActivePlayers _players)
-       then Player {_chips = _chips + pot', ..}
-       else p) <$>
-  _players
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.

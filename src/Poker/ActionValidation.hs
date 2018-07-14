@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Poker.ActionValidation where
 
@@ -24,54 +25,55 @@ import Poker.Types
 import Poker.Utils
 
 -- a Nothing signifies the absence of an error in which case the action is valid
+-- TODO SHOULD BE Either GameErr () not Maybe GameErr as maybe monad is in wrong direction
 validateAction :: Game -> PlayerName -> PlayerAction -> Maybe GameErr
-validateAction game@Game {..} playerName action@(PostBlind blind) =
-  case checkPlayerSatAtTable game playerName of
-    err@(Just _) -> err
-    Nothing ->
-      case validateBlindAction game playerName blind of
+validateAction game@Game {..} playerName =
+  \case
+    PostBlind blind ->
+      case checkPlayerSatAtTable game playerName of
         err@(Just _) -> err
-        Nothing -> Nothing
-validateAction game@Game {..} playerName action@ShowHand =
-  validateShowOrMuckHand game playerName action
-validateAction game@Game {..} playerName action@MuckHand =
-  validateShowOrMuckHand game playerName action
-validateAction game@Game {..} playerName action@(Check) =
-  case isPlayerActingOutOfTurn game playerName of
-    err@(Just _) -> err
-    Nothing -> do
-      err <- canCheck playerName game
-      return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@(Fold) =
-  case isPlayerActingOutOfTurn game playerName of
-    err@(Just _) -> err
-    Nothing -> do
-      err <- canFold playerName game
-      return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@(Bet amount) =
-  case isPlayerActingOutOfTurn game playerName of
-    err@(Just _) -> err
-    Nothing -> do
-      err <- canBet playerName amount game
-      return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@(Raise amount) =
-  case isPlayerActingOutOfTurn game playerName of
-    err@(Just _) -> err
-    Nothing -> do
-      err <- canRaise playerName amount game
-      return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@(Call) =
-  case isPlayerActingOutOfTurn game playerName of
-    err@(Just _) -> err
-    Nothing -> do
-      err <- canCall playerName game
-      return $ InvalidMove playerName err
-validateAction game@Game {..} playerName action@(Timeout) =
-  if _street == Showdown
-    then Just $ InvalidMove playerName InvalidActionForStreet
-    else case isPlayerActingOutOfTurn game playerName of
-           err@(Just _) -> err
-           Nothing -> Nothing
+        Nothing ->
+          case validateBlindAction game playerName blind of
+            err@(Just _) -> err
+            Nothing -> Nothing
+    Check ->
+      case isPlayerActingOutOfTurn game playerName of
+        err@(Just _) -> err
+        Nothing -> do
+          err <- canCheck playerName game
+          return $ InvalidMove playerName err
+    Fold ->
+      case isPlayerActingOutOfTurn game playerName of
+        err@(Just _) -> err
+        Nothing -> do
+          err <- canFold playerName game
+          return $ InvalidMove playerName err
+    Bet amount ->
+      case isPlayerActingOutOfTurn game playerName of
+        err@(Just _) -> err
+        Nothing -> do
+          err <- canBet playerName amount game
+          return $ InvalidMove playerName err
+    Raise amount ->
+      case isPlayerActingOutOfTurn game playerName of
+        err@(Just _) -> err
+        Nothing -> do
+          err <- canRaise playerName amount game
+          return $ InvalidMove playerName err
+    Call ->
+      case isPlayerActingOutOfTurn game playerName of
+        err@(Just _) -> err
+        Nothing -> do
+          err <- canCall playerName game
+          return $ InvalidMove playerName err
+    Timeout ->
+      if _street == Showdown
+        then Just $ InvalidMove playerName InvalidActionForStreet
+        else case isPlayerActingOutOfTurn game playerName of
+               err@(Just _) -> err
+               Nothing -> Nothing
+    ShowHand -> validateShowOrMuckHand game playerName ShowHand
+    MuckHand -> validateShowOrMuckHand game playerName MuckHand
 
 -- | The first player to post their blinds in the predeal stage  can do it from any position
 -- Therefore the acting in turn rule wont apply for that first move.

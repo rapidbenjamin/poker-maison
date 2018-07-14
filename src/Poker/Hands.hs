@@ -9,10 +9,8 @@ import Data.List
 import Data.Monoid
 import Data.Ord
 
-------------------------------------------------------------------------------
 import Poker.Types
 
-------------------------------------------------------------------------------
 value :: [Card] -> (HandRank, [Card])
 value h = maybe ifNotFlush ifFlush (maybeFlush h)
   where
