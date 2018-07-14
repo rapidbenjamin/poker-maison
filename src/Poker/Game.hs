@@ -190,7 +190,7 @@ getNextHand Game {..} newDeck =
     , ..
     }
   where
-    newDealer = _dealer `modInc` length (getPlayersSatIn _players)
+    newDealer = _dealer `modInc` (length (getPlayersSatIn _players) - 1)
     freeSeatsNo = _maxPlayers - length _players
     newPlayers = resetPlayerCardsAndBets <$> _players
     newWaitlist = drop freeSeatsNo _waitlist

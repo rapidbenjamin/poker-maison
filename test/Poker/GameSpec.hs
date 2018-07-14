@@ -366,6 +366,8 @@ main =
       it "should reset all player bets" $ do
         let playerBets = (\Player {..} -> _bet) <$> (_players preDealGame)
         playerBets `shouldBe` [0, 0]
+      it "should increment dealer position" $ do
+        preDealGame ^. dealer `shouldBe` (showdownGame ^. dealer) + 1
     describe "hasBettingFinished" $ do
       it
         "should return True when all players are All In and all players have acted" $ do
