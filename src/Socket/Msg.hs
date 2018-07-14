@@ -137,8 +137,8 @@ catchE tableName e = do
   print e
   return $ GameMove tableName Timeout
 
--- A return value of Nothing denote that
--- no valid action was received in the given time period.
+-- A return value of Nothing denotes that no valid action
+-- was received in the given time period.
 -- If a valid gameMove player action was received then we
 -- wrap the msgIn in a Just
 timeGameMoveMsg :: Game -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)

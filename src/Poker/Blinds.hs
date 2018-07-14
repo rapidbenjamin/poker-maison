@@ -45,6 +45,7 @@ validateBlindAction game@Game {..} playerName blind
         where blindRequired = blindRequiredByPlayer game playerName
               bigBlindValue = _smallBlind * 2
 
+haveRequiredBlindsBeenPosted :: Game -> Bool
 haveRequiredBlindsBeenPosted game@Game {..} =
   all (== True) $
   zipWith
@@ -99,13 +100,14 @@ getSmallBlindPosition playersSatIn dealerPos =
 -- If no blind is required for the player to remain In for the next hand then we will return Nothing
 blindRequiredByPlayer :: Game -> Text -> Maybe Blind
 blindRequiredByPlayer game playerName = do
-  let player = fromJust $ getGamePlayer game playerName
-  let playerNames = getPlayerNames (_players game)
-  let playerPosition = fromJust $ getPlayerPosition playerNames playerName
-  let smallBlindPos = getSmallBlindPosition playerNames (_dealer game)
-  let bigBlindPos = smallBlindPos `modInc` (length playerNames - 1)
   if playerPosition == smallBlindPos
     then Just Small
     else if playerPosition == bigBlindPos
            then Just Big
            else Nothing
+  where
+    player = fromJust $ getGamePlayer game playerName
+    playerNames = getPlayerNames (_players game)
+    playerPosition = fromJust $ getPlayerPosition playerNames playerName
+    smallBlindPos = getSmallBlindPosition playerNames (_dealer game)
+    bigBlindPos = smallBlindPos `modInc` (length playerNames - 1)
