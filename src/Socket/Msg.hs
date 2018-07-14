@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Socket.Msg
   ( authenticatedMsgLoop
@@ -151,28 +152,18 @@ timeGameMoveMsg game playerName duration chan = do
 -- or the timeout finishes 
 awaitValidAction ::
      Game -> PlayerName -> TVar Bool -> TChan MsgIn -> IO (Maybe MsgIn)
-awaitValidAction game playerName delayTVar chan
- -- v <-
- = do
-  x <- atomically $ isEmptyTChan chan
+awaitValidAction game playerName delayTVar chan = do
   dupChan <- atomically $ dupTChan chan
-  result <-
-    atomically $
-    (Just <$> readTChan dupChan) `orElse`
+  atomically $
+    (Just <$>
+     (readTChan dupChan >>= \msg ->
+        guard (isValidAction game playerName msg) *> pure msg)) `orElse`
     (Nothing <$ (readTVar delayTVar >>= check))
-  return result
- -- case v of
- --   Just msg
- --     | not $ isMsgValidPlayerAction game playerName msg ->
- --       awaitValidAction game playerName delayTVar chan
- --   _ -> return v
- -- TODO only halt timeout on valid actions
-
---  print $ "result of delay : " ++ show result
-isMsgValidPlayerAction :: Game -> PlayerName -> MsgIn -> Bool
-isMsgValidPlayerAction game playerName (GameMove _ action) = True
-  --isNothing $ validateAction game playerName action
-isMsgValidPlayerAction game playerName _ = True
+  where
+    isValidAction game playerName =
+      \case
+        (GameMove _ action) -> isNothing $ validateAction game playerName action
+        _ -> False
 
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
