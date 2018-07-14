@@ -142,6 +142,7 @@ check pName game@Game {..} =
 
 -- should only ever return the position of a player who has playerState equal to In
 -- As a player in any other state cannot perform an action
+--TODO REMOVE USE OF FROMJUST
 incPosToAct :: Game -> Int
 incPosToAct Game {..} = nextIx
   where
