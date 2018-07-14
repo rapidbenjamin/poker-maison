@@ -76,7 +76,6 @@ activatePlayersWhenNoBlindNeeded plyrs requiredBlinds =
             if isNothing blindReq
               then In
               else _playerState
-        , _bet = 0
         , ..
         }
 

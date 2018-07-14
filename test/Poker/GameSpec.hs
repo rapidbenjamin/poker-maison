@@ -282,11 +282,12 @@ main =
              ]) $
             initialGameState
       let preFlopGame = progressToPreFlop preDealGame
+      traceShowM (_players preDealGame)
       it "should update street to PreFlop" $ do
         preFlopGame ^. street `shouldBe` PreFlop
-      it "should reset all player bets" $ do
-        let playerBets = (\Player {..} -> _bet) <$> (_players preFlopGame)
-        playerBets `shouldBe` [0, 0]
+      it "should not reset all player bets!!!!!!" $ do
+        let playerBets = (^. bet) <$> (_players preFlopGame)
+        playerBets `shouldBe` [25, 50]
     describe "progressToFlop" $ do
       let preFlopGame =
             (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .

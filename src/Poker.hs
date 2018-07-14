@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Poker where
 
@@ -98,48 +99,50 @@ getPlayer playerName chips =
     }
 
 handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
-handlePlayerAction game _ action@(SitDown player) = seatPlayer game player
-handlePlayerAction game playerName action@LeaveSeat = undefined
-handlePlayerAction game@Game {..} playerName action@(PostBlind blind) =
-  maybe
-    (Right $ postBlind blind playerName game)
-    Left
-    (validateAction game playerName action)
-handlePlayerAction game playerName action@Fold =
-  maybe
-    (Right $ foldCards playerName game)
-    Left
-    (validateAction game playerName action)
-handlePlayerAction game playerName action@Call =
-  maybe
-    (Right $ call playerName game)
-    Left
-    (validateAction game playerName action)
-handlePlayerAction game playerName action@(Raise amount) =
-  maybe
-    (Right $ makeBet amount playerName game)
-    Left
-    (validateAction game playerName action)
-handlePlayerAction game playerName action@Check =
-  maybe
-    (Right $ check playerName game)
-    Left
-    (validateAction game playerName action)
-handlePlayerAction game playerName action@(Bet amount) =
-  maybe
-    (Right $ makeBet amount playerName game)
-    Left
-    (validateAction game playerName action)
-handlePlayerAction game playerName action@(Timeout) =
-  if isNothing $ canCheck playerName game
-    then maybe
-           (Right $ check playerName game)
-           Left
-           (validateAction game playerName action)
-    else maybe
-           (Right $ foldCards playerName game)
-           Left
-           (validateAction game playerName action)
+handlePlayerAction game@Game {..} playerName =
+  \case
+    action@(PostBlind blind) ->
+      maybe
+        (Right $ postBlind blind playerName game)
+        Left
+        (validateAction game playerName action)
+    action@Fold ->
+      maybe
+        (Right $ foldCards playerName game)
+        Left
+        (validateAction game playerName action)
+    action@Call ->
+      maybe
+        (Right $ call playerName game)
+        Left
+        (validateAction game playerName action)
+    action@(Raise amount) ->
+      maybe
+        (Right $ makeBet amount playerName game)
+        Left
+        (validateAction game playerName action)
+    action@Check ->
+      maybe
+        (Right $ check playerName game)
+        Left
+        (validateAction game playerName action)
+    action@(Bet amount) ->
+      maybe
+        (Right $ makeBet amount playerName game)
+        Left
+        (validateAction game playerName action)
+    action@(Timeout) ->
+      if isNothing $ canCheck playerName game
+        then maybe
+               (Right $ check playerName game)
+               Left
+               (validateAction game playerName action)
+        else maybe
+               (Right $ foldCards playerName game)
+               Left
+               (validateAction game playerName action)
+    action@(SitDown player) -> seatPlayer game player
+    action@LeaveSeat -> undefined
 
 -- TODO should be able to choose seat
 seatPlayer :: Game -> Player -> Either GameErr Game
