@@ -172,6 +172,46 @@ bettingNotFinishedGame =
 main :: IO ()
 main =
   hspec $ describe "Poker.Actions" $ do
+    describe "postBlind" $ do
+      it "should update player attributes correctly" $ do
+        let game =
+              (street .~ PreDeal) .
+              (players .~ [(committed .~ 0) player1, player3]) $
+              initialGameState
+        let pName = "player1"
+        let blind = Small
+        let newGame = postBlind blind pName game
+        let playerWhoBet = newGame ^? players . ix 0
+        let smallBlindValue = _smallBlind game
+        let expectedPlayer =
+              Player
+                { _pockets = []
+                , _chips = 2000 - smallBlindValue
+                , _bet = smallBlindValue
+                , _playerState = In
+                , _playerName = "player1"
+                , _committed = smallBlindValue
+                , _actedThisTurn = True
+                }
+        playerWhoBet `shouldBe` Just expectedPlayer
+      it "should add update maxBet" $ do
+        let game =
+              (street .~ PreDeal) . (players .~ [player1, player3]) $
+              initialGameState
+        let pName = "player1"
+        let blind = Small
+        let newGame = postBlind blind pName game
+        let playerWhoBet = newGame ^? players . ix 0
+        _maxBet newGame `shouldBe` _smallBlind game
+      it "should add blind bet to pot" $ do
+        let game =
+              (street .~ PreDeal) . (players .~ [player1, player3]) $
+              initialGameState
+        let pName = "player1"
+        let blind = Small
+        let newGame = postBlind blind pName game
+        let playerWhoBet = newGame ^? players . ix 0
+        _pot newGame `shouldBe` _smallBlind game
     describe "bet" $ do
       it "should update player attributes correctly" $ do
         let game =
