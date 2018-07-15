@@ -162,9 +162,7 @@ progressGame game@Game {..} =
              shuffledDeck <- shuffle initialDeck
              return $ getNextHand game shuffledDeck
     else if allButOneFolded game && (_street /= PreDeal || _street /= Showdown)
-           then do
-             print "ALL BUT ONE FOLDED IS TRUE"
-             return $ progressToShowdown game
+           then return $ progressToShowdown game
            else return game
 
 -- TODO move players from waitlist to players list

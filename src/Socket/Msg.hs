@@ -68,6 +68,7 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
       (\err -> sendMsg clientConn $ ErrMsg err)
       (handleNewGameState serverStateTVar)
       msgOutE
+    print msgOutE
     return ()
 
 -- This function writes msgs received from the websocket to the socket threads msgReader channel 
@@ -112,7 +113,7 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
       NewGameState _ game -> do
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
         if isPlayerToAct'
-          then let timeoutDuration = 9000000
+          then let timeoutDuration = 12000000
                 in do print $
                         show username <> " turn to act? " <> show isPlayerToAct'
                       maybeMsg <-

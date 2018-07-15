@@ -37,6 +37,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Debug.Trace
 import GHC.Generics
+import System.IO.Unsafe
 import Test.QuickCheck.Arbitrary.Generic
 import Test.QuickCheck.Gen
 
@@ -187,31 +188,27 @@ main =
                 else null _pockets)
            newPlayers) `shouldBe`
           True
-      it "should preserve ordering of players" $ do
-        property $ \(players) -> do
-          length players <= 21 ==> do
-            let players' = players :: [Player]
-            let (remainingDeck, players) = dealToPlayers initialDeck players'
-            (_playerName <$> players) == (_playerName <$> players')
-      it "the resulting set of cards should contain no duplicates" $ do
-        property $ \(players) -> do
-          length players <= 21 ==> do
-            let players' -- deal to players that have no pocket cards already
-                 = (players :: [Player]) & traverse . pockets .~ ([] :: [Card])
-            let (remainingDeck, players) = dealToPlayers initialDeck players'
-            let playerCards = concat $ _pockets <$> players
-            null $ playerCards `intersect` remainingDeck
+      it "should preserve ordering of players" $ property $ \(players) ->
+        length players <= 21 ==> do
+          let players' = players :: [Player]
+          let (remainingDeck, players) = dealToPlayers initialDeck players'
+          (_playerName <$> players) == (_playerName <$> players')
+      it "the resulting set of cards should contain no duplicates" $ property $ \(players) -> do
+        length players <= 21 ==> do
+          let players' -- deal to players that have no pocket cards already
+               = (players :: [Player]) & traverse . pockets .~ ([] :: [Card])
+          let (remainingDeck, players) = dealToPlayers initialDeck players'
+          let playerCards = concat $ _pockets <$> players
+          null $ playerCards `intersect` remainingDeck
     describe "dealBoardCards" $ do
-      it "should deal correct number of cards to board" $ do
-        property $ \(Positive n) -> do
-          n < 52 ==> do
-            let newGame = dealBoardCards n initialGameState
-            length (newGame ^. board) `shouldBe` n
-      it "should remove dealt cards from deck" $ do
-        property $ \(Positive n) -> do
-          n < 52 ==> do
-            let newGame = dealBoardCards n initialGameState
-            length (newGame ^. deck) `shouldBe` (length initialDeck - n)
+      it "should deal correct number of cards to board" $ property $ \(Positive n) -> do
+        n < 52 ==> do
+          let newGame = dealBoardCards n initialGameState
+          length (newGame ^. board) `shouldBe` n
+      it "should remove dealt cards from deck" $ property $ \(Positive n) -> do
+        n < 52 ==> do
+          let newGame = dealBoardCards n initialGameState
+          length (newGame ^. deck) `shouldBe` (length initialDeck - n)
     describe "haveAllPlayersActed" $ do
       it
         "should return True when all players have acted during PreDeal for Three Players" $ do
@@ -283,10 +280,10 @@ main =
             initialGameState
       let preFlopGame = progressToPreFlop preDealGame
       traceShowM (_players preDealGame)
-      it "should update street to PreFlop" $ do
-        preFlopGame ^. street `shouldBe` PreFlop
-      it "should not reset all player bets!!!!!!" $ do
-        let playerBets = (^. bet) <$> (_players preFlopGame)
+      it "should update street to PreFlop" $ preFlopGame ^. street `shouldBe`
+        PreFlop
+      it "should not reset any player bet" $ do
+        let playerBets = (^. bet) <$> _players preFlopGame
         playerBets `shouldBe` [25, 50]
     describe "progressToFlop" $ do
       let preFlopGame =
@@ -295,10 +292,10 @@ main =
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
             initialGameState
       let flopGame = progressToFlop preFlopGame
-      it "should update street to Turn" $ do flopGame ^. street `shouldBe` Flop
-      it "should reset maxBet" $ do flopGame ^. maxBet `shouldBe` 0
+      it "should update street to Turn" $ flopGame ^. street `shouldBe` Flop
+      it "should reset maxBet" $ flopGame ^. maxBet `shouldBe` 0
       it "should reset all player bets" $ do
-        let playerBets = (\Player {..} -> _bet) <$> (_players flopGame)
+        let playerBets = (^. bet) <$> (_players flopGame)
         playerBets `shouldBe` [0, 0]
     describe "progressToTurn" $ do
       let flopGame =
@@ -307,10 +304,10 @@ main =
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
             initialGameState
       let turnGame = progressToTurn flopGame
-      it "should update street to Turn" $ do turnGame ^. street `shouldBe` Turn
-      it "should reset maxBet" $ do turnGame ^. maxBet `shouldBe` 0
+      it "should update street to Turn" $ turnGame ^. street `shouldBe` Turn
+      it "should reset maxBet" $ turnGame ^. maxBet `shouldBe` 0
       it "should reset all player bets" $ do
-        let playerBets = (\Player {..} -> _bet) <$> (_players turnGame)
+        let playerBets = (^. bet) <$> _players turnGame
         playerBets `shouldBe` [0, 0]
     describe "progressToRiver" $ do
       let turnGame =
@@ -319,9 +316,8 @@ main =
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
             initialGameState
       let riverGame = progressToRiver turnGame
-      it "should update street to River" $ do
-        riverGame ^. street `shouldBe` River
-      it "should reset maxBet" $ do riverGame ^. maxBet `shouldBe` 0
+      it "should update street to River" $ riverGame ^. street `shouldBe` River
+      it "should reset maxBet" $ riverGame ^. maxBet `shouldBe` 0
       it "should reset all player bets" $ do
         let turnGame =
               (street .~ Turn) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -329,7 +325,7 @@ main =
               (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
               initialGameState
         let riverGame = progressToRiver turnGame
-        let playerBets = (\Player {..} -> _bet) <$> (_players riverGame)
+        let playerBets = (^. bet) <$> _players riverGame
         playerBets `shouldBe` [0, 0]
     describe "progressToShowdown" $ do
       let riverGame =
@@ -337,11 +333,10 @@ main =
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
             initialGameState
       let showdownGame = progressToShowdown riverGame
-      it "should update street to Turn" $ do
-        showdownGame ^. street `shouldBe` Showdown
+      it "should update street to Turn" $ showdownGame ^. street `shouldBe`
+        Showdown
       it "should award pot chips to winner of hand" $ do
-        let playerChipCounts =
-              (\Player {..} -> _chips) <$> (_players showdownGame)
+        let playerChipCounts = (^. chips) <$> (_players showdownGame)
         playerChipCounts `shouldBe` [2000, 1000]
       it "should split pot if more than one player wins given pot" $ do
         let riverGame =
@@ -359,15 +354,16 @@ main =
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
             initialGameState
       let preDealGame = getNextHand showdownGame []
-      it "should update street to PreDeal" $ do
-        preDealGame ^. street `shouldBe` PreDeal
-      it "should set maxBet to bigBlind" $ do
-        preDealGame ^. maxBet `shouldBe` _bigBlind showdownGame
+      it "should update street to PreDeal" $ preDealGame ^. street `shouldBe`
+        PreDeal
+      it "should set maxBet to bigBlind" $ preDealGame ^. maxBet `shouldBe`
+        _bigBlind showdownGame
       it "should reset all player bets" $ do
         let playerBets = (\Player {..} -> _bet) <$> (_players preDealGame)
         playerBets `shouldBe` [0, 0]
-      it "should increment dealer position" $ do
-        preDealGame ^. dealer `shouldBe` (showdownGame ^. dealer) + 1
+      it "should increment dealer position" $ preDealGame ^. dealer `shouldBe`
+        (showdownGame ^. dealer) +
+        1
     describe "hasBettingFinished" $ do
       it
         "should return True when all players are All In and all players have acted" $ do
