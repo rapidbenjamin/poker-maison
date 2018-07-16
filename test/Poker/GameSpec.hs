@@ -368,7 +368,7 @@ main =
       it
         "should return True when all players are All In and all players have acted" $ do
         let flopGame =
-              (street .~ Flop) . (pot .~ 1000) . (deck .~ initialDeck) .
+              (street .~ Flop) . (pot .~ 4000) . (deck .~ initialDeck) .
               (players .~
                [ (((playerState .~ In) . (actedThisTurn .~ True)) player1)
                , (((playerState .~ Out AllIn) . (actedThisTurn .~ True)) player2)
@@ -401,3 +401,122 @@ main =
                 "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"Turn\",\"_deck\":[{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":75,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Two\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"}],\"_playerName\":\"1z\",\"_actedThisTurn\":true,\"_chips\":2000},{\"_bet\":0,\"_playerState\":{\"tag\":\"Out\",\"contents\":\"Folded\"},\"_committed\":25,\"_pockets\":[{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"}],\"_playerName\":\"2z\",\"_actedThisTurn\":true,\"_chips\":1975},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":50,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"}],\"_playerName\":\"3z\",\"_actedThisTurn\":false,\"_chips\":1950}],\"_currentPosToAct\":1,\"_board\":[{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"}],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":0,\"_bigBlind\":50}"
         let turnGame = progressToTurn $ fromRight initialGameState flopGame
         hasBettingFinished turnGame `shouldBe` False
+    describe "isEveryoneAllIn" $ do
+      it "should return False for two player game if no one all in" $ do
+        let preFlopGame' =
+              (street .~ PreFlop) . (pot .~ 1000) . (deck .~ initialDeck) .
+              (players .~
+               [ (((playerState .~ In) . (actedThisTurn .~ False)) player1)
+               , (((playerState .~ In) . (actedThisTurn .~ True)) player3)
+               ]) $
+              initialGameState
+        isEveryoneAllIn preFlopGame' `shouldBe` False
+      it
+        "should return True for two player game if a player has called the other player all in" $ do
+        let preFlopGame =
+              (street .~ PreFlop) . (maxBet .~ 1950) . (pot .~ 4000) .
+              (deck .~ initialDeck) .
+              (players .~
+               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
+                  (bet .~ 1950) .
+                  (chips .~ 0) .
+                  (committed .~ 2000))
+                   player1
+               , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 1950) .
+                  (committed .~ 2000) .
+                  (chips .~ 3000))
+                   player3
+               ]) $
+              initialGameState
+        isEveryoneAllIn preFlopGame `shouldBe` True
+      it
+        "should return False for two player game if a player bet all in and the other has folded" $ do
+        let preFlopGame =
+              (street .~ PreFlop) . (maxBet .~ 1950) . (pot .~ 4000) .
+              (deck .~ initialDeck) .
+              (players .~
+               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
+                  (bet .~ 1950) .
+                  (chips .~ 0) .
+                  (committed .~ 2000))
+                   player1
+               , ((playerState .~ Out Folded) . (actedThisTurn .~ True) .
+                  (bet .~ 1950) .
+                  (committed .~ 2000) .
+                  (chips .~ 3000))
+                   player3
+               ]) $
+              initialGameState
+        isEveryoneAllIn preFlopGame `shouldBe` False
+      it
+        "should return False for three player game if only one short stacked player all in" $ do
+        let preFlopGame =
+              (street .~ PreFlop) . (maxBet .~ 1950) . (pot .~ 1000) .
+              (deck .~ initialDeck) .
+              (players .~
+               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
+                  (bet .~ 1950) .
+                  (chips .~ 0) .
+                  (committed .~ 2000))
+                   player1
+               , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 1950) .
+                  (committed .~ 2000) .
+                  (chips .~ 3000))
+                   player3
+               , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 1950) .
+                  (committed .~ 2000) .
+                  (chips .~ 3000))
+                   player3
+               ]) $
+              initialGameState
+        isEveryoneAllIn preFlopGame `shouldBe` False
+      it "should return True for three player game if everyone is all in" $ do
+        let flopGame =
+              (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
+              (deck .~ initialDeck) .
+              (players .~
+               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
+                  (bet .~ 0) .
+                  (chips .~ 0) .
+                  (committed .~ 2000))
+                   player1
+               , ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
+                  (bet .~ 2000) .
+                  (committed .~ 4000) .
+                  (chips .~ 0))
+                   player3
+               , ((playerState .~ Out AllIn) . (actedThisTurn .~ True) .
+                  (bet .~ 2000) .
+                  (committed .~ 4000) .
+                  (chips .~ 0))
+                   player3
+               ]) $
+              initialGameState
+        isEveryoneAllIn flopGame `shouldBe` True
+      it "should return False for four player game if one player not all in" $ do
+        let flopGame =
+              (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
+              (deck .~ initialDeck) .
+              (players .~
+               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
+                  (bet .~ 0) .
+                  (chips .~ 0) .
+                  (committed .~ 2000))
+                   player1
+               , ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
+                  (bet .~ 2000) .
+                  (committed .~ 4000) .
+                  (chips .~ 0))
+                   player3
+               , ((playerState .~ Out AllIn) . (actedThisTurn .~ True) .
+                  (bet .~ 2000) .
+                  (committed .~ 4000) .
+                  (chips .~ 0))
+                   player3
+               , ((playerState .~ In) . (actedThisTurn .~ False) . (bet .~ 0) .
+                  (committed .~ 2000) .
+                  (chips .~ 800))
+                   player3
+               ]) $
+              initialGameState
+        isEveryoneAllIn flopGame `shouldBe` False

@@ -163,7 +163,33 @@ progressGame game@Game {..} =
              return $ getNextHand game shuffledDeck
     else if allButOneFolded game && (_street /= PreDeal || _street /= Showdown)
            then return $ progressToShowdown game
+        --   else if isEveryoneAllIn game &&
+        --           (_street /= PreDeal || _street /= Showdown)
+        --          then case getNextStreet _street of
+        --                 PreFlop -> return $ progressToPreFlop game
+        --                 Flop -> return $ progressToFlop game
+        --                 Turn -> return $ progressToTurn game
+        --                 River -> return $ progressToRiver game
+        --                 Showdown -> return $ progressToShowdown game
+        --                 PreDeal -> do
+        --                   shuffledDeck <- shuffle initialDeck
+        --                   return $ getNextHand game shuffledDeck
            else return game
+
+isEveryoneAllIn :: Game -> Bool
+isEveryoneAllIn game@Game {..}
+  | _street == PreDeal = False
+  | numPlayersIn < 2 = False
+  | allPlayersActed =
+    traceShow
+      (show numPlayersIn ++ show numPlayersAllIn)
+      ((numPlayersIn - numPlayersAllIn) <= 1)
+  | otherwise = False
+  where
+    numPlayersIn = length $ getActivePlayers _players
+    numPlayersAllIn =
+      length $ (\Player {..} -> _playerState == Out AllIn) `filter` _players
+    allPlayersActed = haveAllPlayersActed game
 
 -- TODO move players from waitlist to players list
 -- TODO need to send msg to players on waitlist when a seat frees up to inform them 
@@ -241,9 +267,25 @@ getHandRankings plyrs boardCards =
            (_playerState /= None) || (_pockets == []))
         plyrs
 
+-- PlayerState reset to In if Out Folded or Out AllIn. However we don't reset None
+-- states as this gives the information that the player needs to post a big blind
+-- if they dont want to wait for the dealer button to pass - this should probably be refactored
+-- if it needs a comment to explain it
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =
-  Player {_pockets = [], _bet = 0, _committed = 0, _actedThisTurn = False, ..}
+  Player
+    { _pockets = []
+    , _playerState = newPlayerState
+    , _bet = 0
+    , _committed = 0
+    , _actedThisTurn = False
+    , ..
+    }
+  where
+    newPlayerState =
+      if _playerState == Out AllIn || _playerState == Out Folded
+        then In
+        else None
 
 allButOneFolded :: Game -> Bool
 allButOneFolded game@Game {..} =
