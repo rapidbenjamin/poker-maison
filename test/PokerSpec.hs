@@ -44,7 +44,7 @@ instance Arbitrary PlayerState where
 
 instance Arbitrary Out where
   arbitrary = genericArbitrary
-
+ 
 instance Arbitrary Street where
   arbitrary = genericArbitrary
 
