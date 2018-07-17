@@ -82,11 +82,14 @@ hasBettingFinished game@Game {..} =
            (_playerState == Out AllIn || _playerState == In))
         _players
 
+-- Unless in the scenario where everyone is all in 
 -- if no further player actions are possible (i.e betting has finished)
 -- then actedThisTurn should be set to True for all active players in Hand.
 -- This scenario occurs when all players or all but one players are all in. 
 resetPlayers :: Game -> Game
-resetPlayers game@Game {..} = Game {_players = newPlayers, ..}
+resetPlayers game@Game {..}
+  | isEveryoneAllIn game = game
+  | otherwise = (players .~ newPlayers) game
   where
     bettingOver = hasBettingFinished game
     newPlayers =
@@ -99,19 +102,19 @@ setWinners game@Game {..} = game
 progressToPreFlop :: Game -> Game
 progressToPreFlop =
   (street .~ PreFlop) .
-  (players %~ ((<$>) (actedThisTurn .~ False))) . deal . updatePlayersInHand
+  (players %~ (<$>) (actedThisTurn .~ False)) . deal . updatePlayersInHand
 
 progressToFlop :: Game -> Game
 progressToFlop =
-  (street .~ Flop) . (maxBet .~ 0) . (dealBoardCards 3) . resetPlayers
+  (street .~ Flop) . (maxBet .~ 0) . dealBoardCards 3 . resetPlayers
 
 progressToTurn :: Game -> Game
 progressToTurn =
-  (street .~ Turn) . (maxBet .~ 0) . (dealBoardCards 1) . resetPlayers
+  (street .~ Turn) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers
 
 progressToRiver :: Game -> Game
 progressToRiver =
-  (street .~ River) . (maxBet .~ 0) . (dealBoardCards 1) . resetPlayers
+  (street .~ River) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers
 
 progressToShowdown :: Game -> Game
 progressToShowdown game@Game {..} =
@@ -119,6 +122,25 @@ progressToShowdown game@Game {..} =
   where
     winners' = getWinners game
     awardedPlayers = awardWinners _players _pot winners'
+
+-- | Just get the identity function if not all players acted otherwise we return 
+-- the function necessary to progress the game to the next stage.
+progressGame :: Game -> IO Game
+progressGame game@Game {..} =
+  if (haveAllPlayersActed game && not (allButOneFolded game)) ||
+     _street == Showdown || (isEveryoneAllIn game)
+    then case getNextStreet _street of
+           PreFlop -> return $ progressToPreFlop game
+           Flop -> return $ progressToFlop game
+           Turn -> return $ progressToTurn game
+           River -> return $ progressToRiver game
+           Showdown -> return $ progressToShowdown game
+           PreDeal -> do
+             shuffledDeck <- shuffle initialDeck
+             return $ getNextHand game shuffledDeck
+    else if allButOneFolded game && (_street /= PreDeal || _street /= Showdown)
+           then return $ progressToShowdown game
+           else return game
 
 -- need to give players the chips they are due and split pot if necessary
 -- if only one active player then this is a result of everyone else folding 
@@ -145,36 +167,6 @@ awardWinners _players pot' =
            then Player {_chips = _chips + pot', ..}
            else p) <$>
       _players
-
--- | Just get the identity function if not all players acted otherwise we return 
--- the function necessary to progress the game to the next stage.
-progressGame :: Game -> IO Game
-progressGame game@Game {..} =
-  if (haveAllPlayersActed game && not (allButOneFolded game)) ||
-     _street == Showdown
-    then case getNextStreet _street of
-           PreFlop -> return $ progressToPreFlop game
-           Flop -> return $ progressToFlop game
-           Turn -> return $ progressToTurn game
-           River -> return $ progressToRiver game
-           Showdown -> return $ progressToShowdown game
-           PreDeal -> do
-             shuffledDeck <- shuffle initialDeck
-             return $ getNextHand game shuffledDeck
-    else if allButOneFolded game && (_street /= PreDeal || _street /= Showdown)
-           then return $ progressToShowdown game
-        --   else if isEveryoneAllIn game &&
-        --           (_street /= PreDeal || _street /= Showdown)
-        --          then case getNextStreet _street of
-        --                 PreFlop -> return $ progressToPreFlop game
-        --                 Flop -> return $ progressToFlop game
-        --                 Turn -> return $ progressToTurn game
-        --                 River -> return $ progressToRiver game
-        --                 Showdown -> return $ progressToShowdown game
-        --                 PreDeal -> do
-        --                   shuffledDeck <- shuffle initialDeck
-        --                   return $ getNextHand game shuffledDeck
-           else return game
 
 isEveryoneAllIn :: Game -> Bool
 isEveryoneAllIn game@Game {..}
