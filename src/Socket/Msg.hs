@@ -68,7 +68,8 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
       (\err -> sendMsg clientConn $ ErrMsg err)
       (handleNewGameState serverStateTVar)
       msgOutE
-    print msgOutE
+    print "msgReaderChannel"
+    pPrint msgOutE
     return ()
 
 -- This function writes msgs received from the websocket to the socket threads msgReader channel 
@@ -127,7 +128,7 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
                              writeTChan
                                msgReaderChan
                                (GameMove tableName Timeout)
-                        else return ()
+                        else print maybeMsg
                           --atomically $
                            --  writeTChan msgReaderChan (fromJust maybeMsg)
           else return ()
@@ -190,19 +191,28 @@ handleNewGameState :: TVar ServerState -> MsgOut -> IO ()
 handleNewGameState serverStateTVar (NewGameState tableName newGame) = do
   newServerState <-
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
- -- print newServerState
-  if (_street newGame == Showdown) ||
-     ((hasBettingFinished newGame) && (_street newGame /= Showdown))
-    then do
-      (maybeErr, progressedGame) <- runStateT nextStage newGame
-      if isNothing maybeErr
-        then atomically $
-             updateGameAndBroadcastT serverStateTVar tableName progressedGame
-        else return ()
-    else return ()
+  pPrint newGame
+  progressGameAlong serverStateTVar tableName newGame
 handleNewGameState serverStateTVar msg = do
   print msg
   return ()
+
+progressGameAlong :: TVar ServerState -> TableName -> Game -> IO ()
+progressGameAlong serverStateTVar tableName game@Game {..}
+  | canProgress = do
+    (maybeErr, progressedGame) <- runStateT nextStage game
+    if (isNothing maybeErr)
+      then do
+        print $ "isEveryoneAllin" ++ (show $ isEveryoneAllIn progressedGame)
+        atomically $
+          updateGameAndBroadcastT serverStateTVar tableName progressedGame
+        pPrint progressedGame
+      else print $ "progressGameAlong " ++ show maybeErr
+  | otherwise = return ()
+  where
+    canProgress =
+      (_street == Showdown) ||
+      ((hasBettingFinished game) && (_street /= Showdown))
 
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
@@ -318,8 +328,8 @@ updateGameWithMove (GameMove tableName playerAction) (Username username) game
   (maybeErr, newGame) <-
     liftIO $ runStateT (runPlayerAction username playerAction) game
   liftIO $ print "next game state"
-  liftIO $ pPrint newGame
-  liftIO $ pPrint maybeErr
+ -- liftIO $ pPrint newGame
+  liftIO $ print $ ("updateGameWithMove") ++ show maybeErr
   case maybeErr of
     Just gameErr -> throwError $ GameErr gameErr
     Nothing -> return $ NewGameState tableName newGame

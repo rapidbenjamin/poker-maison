@@ -87,9 +87,7 @@ hasBettingFinished game@Game {..} =
 -- then actedThisTurn should be set to True for all active players in Hand.
 -- This scenario occurs when all players or all but one players are all in. 
 resetPlayers :: Game -> Game
-resetPlayers game@Game {..}
-  | isEveryoneAllIn game = game
-  | otherwise = (players .~ newPlayers) game
+resetPlayers game@Game {..} = (players .~ newPlayers) game
   where
     bettingOver = hasBettingFinished game
     newPlayers =
@@ -105,16 +103,22 @@ progressToPreFlop =
   (players %~ (<$>) (actedThisTurn .~ False)) . deal . updatePlayersInHand
 
 progressToFlop :: Game -> Game
-progressToFlop =
-  (street .~ Flop) . (maxBet .~ 0) . dealBoardCards 3 . resetPlayers
+progressToFlop game
+  | isEveryoneAllIn game = ((street .~ Flop) . dealBoardCards 3) game
+  | otherwise =
+    ((street .~ Flop) . (maxBet .~ 0) . dealBoardCards 3 . resetPlayers) game
 
 progressToTurn :: Game -> Game
-progressToTurn =
-  (street .~ Turn) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers
+progressToTurn game
+  | isEveryoneAllIn game = ((street .~ Turn) . dealBoardCards 1) game
+  | otherwise =
+    ((street .~ Turn) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers) game
 
 progressToRiver :: Game -> Game
-progressToRiver =
-  (street .~ River) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers
+progressToRiver game
+  | isEveryoneAllIn game = ((street .~ River) . dealBoardCards 1) game
+  | otherwise =
+    ((street .~ River) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers) game
 
 progressToShowdown :: Game -> Game
 progressToShowdown game@Game {..} =
