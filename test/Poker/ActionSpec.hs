@@ -335,6 +335,24 @@ main =
                 , _actedThisTurn = True
                 }
         playerWhoCalled `shouldBe` Just expectedPlayer
+        let game' =
+              (street .~ PreFlop) . (maxBet .~ 4000) .
+              (players .~ [player5, player1]) $
+              initialGameState
+        let pName' = "player1"
+        let newGame' = call pName' game'
+        let playerWhoCalled' = newGame' ^? players . ix 1
+        let expectedPlayer' =
+              Player
+                { _pockets = []
+                , _chips = 0
+                , _bet = 2000
+                , _playerState = Out AllIn
+                , _playerName = "player1"
+                , _committed = 2100
+                , _actedThisTurn = True
+                }
+        playerWhoCalled' `shouldBe` Just expectedPlayer'
       it "Should add call amount to the player's committed chips field" $ do
         let g =
               eitherDecode
@@ -350,25 +368,6 @@ main =
         let pName = "player6"
         let newGame = call pName game
         (newGame ^. pot) `shouldBe` 2000
-      it "should update player attributes correctly when called all in" $ do
-        let game =
-              (street .~ PreFlop) . (maxBet .~ 4000) .
-              (players .~ [player5, player1]) $
-              initialGameState
-        let pName = "player1"
-        let newGame = call pName game
-        let playerWhoCalled = newGame ^? players . ix 1
-        let expectedPlayer =
-              Player
-                { _pockets = []
-                , _chips = 0
-                , _bet = 2000
-                , _playerState = Out AllIn
-                , _playerName = "player1"
-                , _committed = 2100
-                , _actedThisTurn = True
-                }
-        playerWhoCalled `shouldBe` Just expectedPlayer
       it "should increment position to act" $ do
         let game =
               (street .~ PreFlop) . (currentPosToAct .~ 0) .
