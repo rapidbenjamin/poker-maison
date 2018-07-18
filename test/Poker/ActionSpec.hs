@@ -299,7 +299,7 @@ main =
         let expectedNewPositionToAct = 2
         newPositionToAct `shouldBe` expectedNewPositionToAct
     describe "call" $ do
-      it "should update player attributes correctly" $ do
+      it "should update player attributes correctly when calling a bet" $ do
         let game =
               (street .~ PreFlop) . (maxBet .~ 200) .
               (players .~ [player6, player1]) $
@@ -315,6 +315,23 @@ main =
                 , _playerState = In
                 , _playerName = "player1"
                 , _committed = 300
+                , _actedThisTurn = True
+                }
+        playerWhoCalled `shouldBe` Just expectedPlayer
+      it "should update player attributes correctly when calling AllIn" $ do
+        let g =
+              eitherDecode
+                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"Flop\",\"_deck\":[{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":2050,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":50,\"_pockets\":[],\"_playerName\":\"11eds\",\"_actedThisTurn\":false,\"_chips\":1950},{\"_bet\":1950,\"_playerState\":{\"tag\":\"Out\",\"contents\":\"AllIn\"},\"_committed\":2000,\"_pockets\":[{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"}],\"_playerName\":\"22deds\",\"_actedThisTurn\":true,\"_chips\":0}],\"_currentPosToAct\":0,\"_board\":[{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"},{\"suit\":\"Hearts\",\"rank\":\"Three\"}],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":1950,\"_bigBlind\":50}"
+        let flopGame = call "11eds" (fromRight initialGameState g)
+        let playerWhoCalled = flopGame ^? players . ix 0
+        let expectedPlayer =
+              Player
+                { _pockets = []
+                , _chips = 0
+                , _bet = 1950
+                , _playerState = Out AllIn
+                , _playerName = "11eds"
+                , _committed = 2000
                 , _actedThisTurn = True
                 }
         playerWhoCalled `shouldBe` Just expectedPlayer
