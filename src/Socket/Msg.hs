@@ -198,17 +198,17 @@ handleNewGameState serverStateTVar msg = do
   return ()
 
 progressGameAlong :: TVar ServerState -> TableName -> Game -> IO ()
-progressGameAlong serverStateTVar tableName game@Game {..}
-  | canProgress = do
+progressGameAlong serverStateTVar tableName game@Game {..} =
+  when canProgress $ do
     (maybeErr, progressedGame) <- runStateT nextStage game
-    if (isNothing maybeErr)
+    if isNothing maybeErr
       then do
         print $ "isEveryoneAllin" ++ (show $ isEveryoneAllIn progressedGame)
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         pPrint progressedGame
+        progressGameAlong serverStateTVar tableName progressedGame
       else print $ "progressGameAlong " ++ show maybeErr
-  | otherwise = return ()
   where
     canProgress =
       (_street == Showdown) ||
