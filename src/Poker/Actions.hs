@@ -19,11 +19,18 @@ import Text.Read (readMaybe)
 
 import Poker.Types
 import Poker.Utils
+import Data.Bool
 import Prelude
 
+
+-- Update table maxBet and pot as well as player state and chip count
 placeBet :: Int -> Player -> Player
-placeBet value =
-  (chips -~ value) . (bet +~ value) . (committed +~ value) . (playerState .~ In)
+placeBet value plyr = let
+  chips' = plyr ^. chips 
+  hasEnoughChips = chips' > value
+  betAmount = bool chips' value hasEnoughChips in
+   ((chips -~ betAmount) . (bet +~ betAmount) . (committed +~ betAmount) 
+   . (playerState .~ bool (Out AllIn) In hasEnoughChips)) plyr
 
 markAllIn :: Player -> Player
 markAllIn = playerState .~ Out AllIn
