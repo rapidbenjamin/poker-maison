@@ -30,10 +30,7 @@ placeBet value plyr = let
   hasEnoughChips = chips' > value
   betAmount = bool chips' value hasEnoughChips in
    ((chips -~ betAmount) . (bet +~ betAmount) . (committed +~ betAmount) 
-   . (playerState .~ bool (Out AllIn) In hasEnoughChips)) plyr
-
-markAllIn :: Player -> Player
-markAllIn = playerState .~ Out AllIn
+   . (playerState .~ In)) plyr
 
 markActed :: Player -> Player
 markActed = actedThisTurn .~ True
@@ -52,11 +49,7 @@ postBlind blind pName game@Game {..} =
     newPlayers =
       (\p@Player {..} ->
          if _playerName == pName
-           then let newPlayer =
-                      (markInForHand . markActed . placeBet blindValue) p
-                 in if (newPlayer ^. chips) == 0
-                      then markAllIn newPlayer
-                      else newPlayer
+           then (markInForHand . markActed . placeBet blindValue) p
            else p) <$>
       _players
     isFirstBlind = (sum $ (\Player {..} -> _bet) <$> _players) == 0
@@ -80,10 +73,7 @@ makeBet amount pName game@Game {..} =
     newPlayers =
       (\p@Player {..} ->
          if _playerName == pName
-           then let newPlayer = (markActed . placeBet amount) p
-                 in if (newPlayer ^. chips) == 0
-                      then markAllIn newPlayer
-                      else newPlayer
+           then (markActed . placeBet amount) p
            else p) <$>
       _players
     nextPosToAct = incPosToAct game
@@ -116,10 +106,7 @@ call pName game@Game {..} =
     newPlayers =
       (\p@Player {..} ->
          if _playerName == pName
-           then let newPlayer = (markActed . placeBet callAmount) p
-                 in if (newPlayer ^. chips) == 0
-                      then markAllIn newPlayer
-                      else newPlayer
+           then (markActed . placeBet callAmount) p
            else p) <$>
       _players
     nextPosToAct = incPosToAct game

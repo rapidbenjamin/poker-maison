@@ -96,7 +96,8 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
 
 isPlayerToAct playerName game =
   (_street game /= PreDeal && _street game /= Showdown) &&
-  _playerName (_players game !! _currentPosToAct game) == playerName
+  (_playerName (_players game !! _currentPosToAct game) == playerName)
+   && not (isEveryoneAllIn game)
 
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
@@ -113,8 +114,7 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
         when isPlayerToAct' $
               let timeoutDuration = 12000000
-                in do print $
-                        show username <> " turn to act? " <> show isPlayerToAct'
+                in do 
                       maybeMsg <-
                         timeGameMoveMsg
                           game
@@ -206,7 +206,7 @@ progressGameAlong serverStateTVar tableName game@Game {..} =
       else print $ "progressGameAlong Err" ++ show maybeErr
   where
     canProgress =
-      (_street == Showdown) || hasBettingFinished game && (_street /= Showdown)
+      (_street == Showdown) || haveAllPlayersActed game && (_street /= Showdown)
 
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()

@@ -21,6 +21,8 @@ import Poker.Hands
 import Poker.Types
 import Poker.Utils
 
+import Text.Pretty.Simple (pPrint)
+
 import Debug.Trace
 
 newGame :: Game -> State Game (Maybe GameErr)
@@ -37,20 +39,21 @@ runPlayerAction playerName action =
     case handlePlayerAction currGame playerName action of
       Left err -> return (Just err, currGame)
       Right newGameState -> do
-        liftIO $
-          print $
-          "\n haveAllPlayersActed: " <> show (haveAllPlayersActed newGameState)
-        liftIO $
-          print $ "\n allButOneFolded: " <> show (allButOneFolded newGameState)
-        liftIO $
-          print $
-          "\n hasBettingFinished: " <> show (hasBettingFinished newGameState)
         case action of
           SitDown _ -> return (Nothing, newGameState)
           LeaveSeat -> return (Nothing, newGameState)
           _ -> do
             liftIO $ print $ "action is " <> show action
             game' <- progressGame newGameState
+            liftIO $ pPrint game'
+            liftIO $ print $
+              "\n haveAllPlayersActed: " <> show (haveAllPlayersActed game')
+            liftIO $
+              print $ "\n allButOneFolded: " <> show (allButOneFolded game')
+            liftIO $
+              print $
+              "\n hasBettingFinished: " <> show (hasBettingFinished game')
+            liftIO $ print $ "isEveryoneAllin" ++ (show $ isEveryoneAllIn game')
             return (Nothing, game')
 
 -- when no player action is possible we can can call this function to get the game 

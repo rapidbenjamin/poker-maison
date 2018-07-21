@@ -121,7 +121,7 @@ progressToShowdown game@Game {..} =
 progressGame :: Game -> IO Game
 progressGame game@Game{..}
   | haveAllPlayersActed game && not (allButOneFolded game) ||
-      _street == Showdown || isEveryoneAllIn game =
+      _street == Showdown =
     case getNextStreet _street of
         PreFlop -> return $ progressToPreFlop game
         Flop -> return $ progressToFlop game
@@ -171,7 +171,7 @@ isEveryoneAllIn game@Game {..}
   where
     numPlayersIn = length $ getActivePlayers _players
     numPlayersAllIn =
-      length $ (\Player {..} -> _playerState == Out AllIn) `filter` _players
+      length $ (\Player {..} -> _playerState == In && _chips == 0) `filter` _players
     allPlayersActed = haveAllPlayersActed game
 
 -- TODO move players from waitlist to players list
