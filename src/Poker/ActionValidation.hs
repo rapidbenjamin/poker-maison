@@ -39,33 +39,23 @@ validateAction game@Game {..} playerName =
     Check ->
       case isPlayerActingOutOfTurn game playerName of
         err@(Just _) -> err
-        Nothing -> do
-          err <- canCheck playerName game
-          return $ InvalidMove playerName err
+        Nothing -> InvalidMove playerName <$> canCheck playerName game
     Fold ->
       case isPlayerActingOutOfTurn game playerName of
         err@(Just _) -> err
-        Nothing -> do
-          err <- canFold playerName game
-          return $ InvalidMove playerName err
+        Nothing -> InvalidMove playerName <$> canFold playerName game
     Bet amount ->
       case isPlayerActingOutOfTurn game playerName of
         err@(Just _) -> err
-        Nothing -> do
-          err <- canBet playerName amount game
-          return $ InvalidMove playerName err
+        Nothing -> InvalidMove playerName <$> canFold playerName game
     Raise amount ->
       case isPlayerActingOutOfTurn game playerName of
         err@(Just _) -> err
-        Nothing -> do
-          err <- canRaise playerName amount game
-          return $ InvalidMove playerName err
+        Nothing -> InvalidMove playerName <$> canRaise playerName amount game
     Call ->
       case isPlayerActingOutOfTurn game playerName of
         err@(Just _) -> err
-        Nothing -> do
-          err <- canCall playerName game
-          return $ InvalidMove playerName err
+        Nothing -> InvalidMove playerName <$> canCall playerName game
     Timeout ->
       if _street == Showdown
         then Just $ InvalidMove playerName InvalidActionForStreet
@@ -105,49 +95,39 @@ checkPlayerSatAtTable game@Game {..} playerName
     atTable = playerName `elem` playerNames
 
 canBet :: PlayerName -> Int -> Game -> Maybe InvalidMoveErr
-canBet pName amount game@Game {..} =
-  if amount < _bigBlind
-    then Just BetLessThanBigBlind
-    else if _maxBet > 0
-           then Just CannotBetShouldRaiseInstead
-           else if amount > chipCount
-                  then Just NotEnoughChipsForAction
-                  else if (_street == Showdown) || (_street == PreDeal)
-                         then Just InvalidActionForStreet
-                         else Nothing
-  where
-    chipCount = _chips $ fromJust (getGamePlayer game pName)
+canBet pName amount game@Game{..}
+  | amount < _bigBlind = Just BetLessThanBigBlind
+  | _maxBet > 0 = Just CannotBetShouldRaiseInstead
+  | amount > chipCount = Just NotEnoughChipsForAction
+  | (_street == Showdown) || (_street == PreDeal) =
+    Just InvalidActionForStreet
+  | otherwise = Nothing
+  where chipCount = _chips $ fromJust (getGamePlayer game pName)
 
 -- Keep in mind that a player can always raise all in,
 -- even if their total chip count is less than what 
 -- a min-bet or min-raise would be. 
 canRaise :: PlayerName -> Int -> Game -> Maybe InvalidMoveErr
-canRaise pName amount game@Game {..} =
-  if (_street == Showdown) || (_street == PreDeal)
-    then Just InvalidActionForStreet
-    else if _maxBet == 0
-           then Just CannotRaiseShouldBetInstead
-           else if (amount < minRaise) && (amount /= chipCount)
-                  then Just $ RaiseAmountBelowMinRaise minRaise
-                  else if amount > chipCount
-                         then Just NotEnoughChipsForAction
-                         else Nothing
-  where
-    minRaise = 2 * _maxBet
-    chipCount = _chips $ fromJust (getGamePlayer game pName)
+canRaise pName amount game@Game{..}
+  | (_street == Showdown) || (_street == PreDeal) =
+    Just InvalidActionForStreet
+  | _maxBet == 0 = Just CannotRaiseShouldBetInstead
+  | (amount < minRaise) && (amount /= chipCount) =
+    Just $ RaiseAmountBelowMinRaise minRaise
+  | amount > chipCount = Just NotEnoughChipsForAction
+  | otherwise = Nothing
+  where minRaise = 2 * _maxBet
+        chipCount = _chips $ fromJust (getGamePlayer game pName)
 
 canCheck :: PlayerName -> Game -> Maybe InvalidMoveErr
-canCheck pName game@Game {..} =
-  if (_street == PreFlop && _committed < _bigBlind)
-    then Just CannotCheckShouldCallRaiseOrFold
-    else if (_street == Showdown) || (_street == PreDeal)
-           then Just InvalidActionForStreet
-           else if _maxBet /= 0
-                  then Just CannotCheckShouldCallRaiseOrFold
-                  else Nothing
-  where
-    Player {..} =
-      fromJust $ find (\Player {..} -> _playerName == pName) _players
+canCheck pName game@Game{..}
+  | _street == PreFlop && _committed < _bigBlind =
+    Just CannotCheckShouldCallRaiseOrFold
+  | (_street == Showdown) || (_street == PreDeal) =
+    Just InvalidActionForStreet
+  | _maxBet /= 0 = Just CannotCheckShouldCallRaiseOrFold
+  | otherwise = Nothing
+  where Player{..} = fromJust $ find (\ Player{..} -> _playerName == pName) _players
 
 canFold :: PlayerName -> Game -> Maybe InvalidMoveErr
 canFold pName game@Game {..} =
@@ -156,38 +136,33 @@ canFold pName game@Game {..} =
     else Nothing
 
 canCall :: PlayerName -> Game -> Maybe InvalidMoveErr
-canCall pName game@Game {..} =
-  if (_street == Showdown) || (_street == PreDeal)
-    then Just InvalidActionForStreet
-    else if (_maxBet == 0 && _street /= PreFlop)
-           then Just CannotCallZeroAmountCheckOrBetInstead
-           else Nothing
-  where
-    minRaise = 2 * _maxBet
-    p = fromJust (getGamePlayer game pName)
-    chipCount = _chips p
-    amountNeededToCall = _maxBet - (_bet p)
+canCall pName game@Game{..}
+  | (_street == Showdown) || (_street == PreDeal) =
+    Just InvalidActionForStreet
+  | _maxBet == 0 && _street /= PreFlop =
+    Just CannotCallZeroAmountCheckOrBetInstead
+  | otherwise = Nothing
+  where minRaise = 2 * _maxBet
+        p = fromJust (getGamePlayer game pName)
+        chipCount = _chips p
+        amountNeededToCall = _maxBet - _bet p
 
 validateShowOrMuckHand :: Game -> PlayerName -> PlayerAction -> Maybe GameErr
 validateShowOrMuckHand game@Game {..} pName action =
   case checkPlayerSatAtTable game pName of
     err@(Just _) -> err
-    Nothing -> do
-      err <- canShowOrMuckHand pName game
-      return $ InvalidMove pName err
+    Nothing -> InvalidMove pName <$> canShowOrMuckHand pName game
 
 -- Should Tell us if everyone has folded to the given playerName 
 -- and the hand is over
 canShowOrMuckHand :: PlayerName -> Game -> Maybe InvalidMoveErr
-canShowOrMuckHand pName game@Game {..} =
-  if (_street /= Showdown)
-    then Just InvalidActionForStreet
-    else case _winners of
-           SinglePlayerShowdown winningPlayerName ->
-             if winningPlayerName == pName
-               then Nothing
-               else Just $ CannotShowHandOrMuckHand "Not winner of hand"
-           MultiPlayerShowdown _ ->
-             Just $
-             CannotShowHandOrMuckHand
-               "Can only show or muck cards if winner of single player pot during showdown"
+canShowOrMuckHand pName game@Game {..} | _street /= Showdown = Just InvalidActionForStreet
+   | otherwise = case _winners of
+      SinglePlayerShowdown winningPlayerName ->
+        if winningPlayerName == pName
+          then Nothing
+          else Just $ CannotShowHandOrMuckHand "Not winner of hand"
+      MultiPlayerShowdown _ ->
+        Just $
+        CannotShowHandOrMuckHand
+          "Can only show or muck cards if winner of single player pot during showdown"

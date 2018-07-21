@@ -13,7 +13,6 @@ import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan
 import Control.Exception
 import Control.Monad
-import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.STM
@@ -78,14 +77,14 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
 -- if an expected msg in not received in a given time without killing threads.
 -- This is preferable as killing threads inside IO actions is not safe 
 authenticatedMsgLoop :: MsgHandlerConfig -> IO ()
-authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
-  withAsync (handleReadChanMsgs msgHandlerConfig) $ \sockMsgReaderThread -> do
+authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = 
+  withAsync (handleReadChanMsgs msgHandlerConfig) $ \sockMsgReaderThread -> 
     finally
       (catch
          (forever $ do
             msg <- WS.receiveData clientConn
             let parsedMsg = parseMsgFromJSON msg
-            for_ parsedMsg (\msg -> atomically $ writeTChan msgReaderChan msg)
+            for_ parsedMsg $ atomically . writeTChan msgReaderChan
             return ())
          (\e -> do
             let err = show (e :: IOException)
@@ -98,7 +97,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = do
 
 isPlayerToAct playerName game =
   (_street game /= PreDeal && _street game /= Showdown) &&
-  ((_playerName (_players game !! _currentPosToAct game)) == (playerName))
+  _playerName (_players game !! _currentPosToAct game) == playerName
 
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
@@ -113,8 +112,8 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
     case chanMsg of
       NewGameState _ game -> do
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
-        if isPlayerToAct'
-          then let timeoutDuration = 12000000
+        when isPlayerToAct' $
+              let timeoutDuration = 12000000
                 in do print $
                         show username <> " turn to act? " <> show isPlayerToAct'
                       maybeMsg <-
@@ -129,9 +128,6 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
                                msgReaderChan
                                (GameMove tableName Timeout)
                         else print maybeMsg
-                          --atomically $
-                           --  writeTChan msgReaderChan (fromJust maybeMsg)
-          else return ()
       _ -> return ()
 
 catchE :: TableName -> WS.ConnectionException -> IO MsgIn
@@ -211,8 +207,7 @@ progressGameAlong serverStateTVar tableName game@Game {..} =
       else print $ "progressGameAlong " ++ show maybeErr
   where
     canProgress =
-      (_street == Showdown) ||
-      ((hasBettingFinished game) && (_street /= Showdown))
+      (_street == Showdown) || hasBettingFinished game && (_street /= Showdown)
 
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
@@ -232,7 +227,7 @@ getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 getTablesHandler = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
-  liftIO $ sendMsg clientConn $ TableList
+  liftIO $ sendMsg clientConn TableList
 
 -- simply adds client to the list of subscribers
 suscribeToTableChannel ::

@@ -1,12 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Poker.Utils where
 
-------------------------------------------------------------------------------
-import Control.Monad.State hiding (state)
+import Control.Monad.State
 import Data.Text (Text)
 
 import Data.Foldable
@@ -16,11 +14,8 @@ import Data.Maybe
 
 import Control.Lens
 
-------------------------------------------------------------------------------
-import Poker.Types
 import Poker.Types
 
-------------------------------------------------------------------------------
 import Control.Monad
 import Data.Array.IO
 import System.Random
@@ -37,7 +32,7 @@ shuffle xs = do
   where
     n = length xs
     newArray :: Int -> [a] -> IO (IOArray Int a)
-    newArray n xs = newListArray (1, n) xs
+    newArray n = newListArray (1, n)
 
 modInc :: Int -> Int -> Int
 modInc num modulo

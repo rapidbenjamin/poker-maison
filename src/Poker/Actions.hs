@@ -1,15 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Poker.Actions where
 
 import Control.Lens
-
-import Control.Lens
-
-------------------------------------------------------------------------------
 import Control.Monad.State hiding (state)
 import Data.Char (toLower)
 import Data.List
@@ -22,7 +17,6 @@ import Debug.Trace
 import Poker.ActionValidation
 import Text.Read (readMaybe)
 
-------------------------------------------------------------------------------
 import Poker.Types
 import Poker.Utils
 import Prelude
@@ -32,15 +26,15 @@ placeBet value =
   (chips -~ value) . (bet +~ value) . (committed +~ value) . (playerState .~ In)
 
 markAllIn :: Player -> Player
-markAllIn = (playerState .~ Out AllIn)
+markAllIn = playerState .~ Out AllIn
 
 markActed :: Player -> Player
-markActed = (actedThisTurn .~ True)
+markActed = actedThisTurn .~ True
 
 updateMaxBet :: Int -> Game -> Game
 updateMaxBet amount = maxBet %~ max amount
 
-markInForHand = (playerState .~ In)
+markInForHand = playerState .~ In
 
 postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
@@ -144,6 +138,6 @@ incPosToAct Game {..} = nextIx
     iplayers = zip [0 ..] _players
     iplayers' =
       let (a, b) = splitAt _currentPosToAct iplayers
-       in (b <> a)
+       in b <> a
     (nextIx, nextPlayer) =
       fromJust $ find (\(_, p) -> _playerState p == In) (tail iplayers')

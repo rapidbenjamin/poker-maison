@@ -35,14 +35,12 @@ initialDeck = Card <$> [minBound ..] <*> [minBound ..]
 -- We need to have the remaining cards in the deck for dealing
 -- board cards over the next stages.
 dealToPlayers :: [Card] -> [Player] -> ([Card], [Player])
-dealToPlayers deck players =
+dealToPlayers =
   mapAccumL
     (\cards player ->
        if player ^. playerState == In
-         then (drop 2 cards, (pockets .~ (take 2 cards)) player)
+         then (drop 2 cards, (pockets .~ take 2 cards) player)
          else (cards, player))
-    deck
-    players
 
 dealBoardCards :: Int -> Game -> Game
 dealBoardCards n game@Game {..} =
@@ -64,17 +62,14 @@ getNextStreet _street = succ _street
 -- to bet so if all players go all in then the rounds will still progress as normal 
 -- until the final showdown stage.
 hasBettingFinished :: Game -> Bool
-hasBettingFinished game@Game {..} =
-  if _street == PreDeal || _street == Showdown
-    then False
-    else if not allPlayersActed
-           then False
-           else numPlayersIn <= 1 && numPlayersAllIn > 0
-  where
-    numPlayersAllIn =
-      length $ filter (\Player {..} -> _playerState == Out AllIn) _players
-    numPlayersIn = length $ filter (\Player {..} -> _playerState == In) _players
-    allPlayersActed = haveAllPlayersActed game
+hasBettingFinished game@Game{..}
+  | _street == PreDeal || _street == Showdown = False
+  | not allPlayersActed = False
+  | otherwise = numPlayersIn <= 1 && numPlayersAllIn > 0
+  where numPlayersAllIn = length $
+              filter (\ Player{..} -> _playerState == Out AllIn) _players
+        numPlayersIn = length $ filter (\ Player{..} -> _playerState == In) _players
+        allPlayersActed = haveAllPlayersActed game
 
 -- Unless in the scenario where everyone is all in 
 -- if no further player actions are possible (i.e betting has finished)
@@ -124,21 +119,19 @@ progressToShowdown game@Game {..} =
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 progressGame :: Game -> IO Game
-progressGame game@Game {..} =
-  if (haveAllPlayersActed game && not (allButOneFolded game)) ||
-     _street == Showdown || (isEveryoneAllIn game)
-    then case getNextStreet _street of
-           PreFlop -> return $ progressToPreFlop game
-           Flop -> return $ progressToFlop game
-           Turn -> return $ progressToTurn game
-           River -> return $ progressToRiver game
-           Showdown -> return $ progressToShowdown game
-           PreDeal -> do
-             shuffledDeck <- shuffle initialDeck
-             return $ getNextHand game shuffledDeck
-    else if allButOneFolded game && (_street /= PreDeal || _street /= Showdown)
-           then return $ progressToShowdown game
-           else return game
+progressGame game@Game{..}
+  | haveAllPlayersActed game && not (allButOneFolded game) ||
+      _street == Showdown || isEveryoneAllIn game =
+    case getNextStreet _street of
+        PreFlop -> return $ progressToPreFlop game
+        Flop -> return $ progressToFlop game
+        Turn -> return $ progressToTurn game
+        River -> return $ progressToRiver game
+        Showdown -> return $ progressToShowdown game
+        PreDeal -> getNextHand game <$> shuffle initialDeck
+  | allButOneFolded game && (_street /= PreDeal || _street /= Showdown) =
+      return $ progressToShowdown game
+  | otherwise = return game
 
 -- need to give players the chips they are due and split pot if necessary
 -- if only one active player then this is a result of everyone else folding 
@@ -161,7 +154,7 @@ awardWinners _players pot' =
           _players
     SinglePlayerShowdown pName ->
       (\p@Player {..} ->
-         if p `elem` (getActivePlayers _players)
+         if p `elem` getActivePlayers _players
            then Player {_chips = _chips + pot', ..}
            else p) <$>
       _players
@@ -222,7 +215,7 @@ haveAllPlayersActed game@Game {..} =
     awaitingPlayerAction =
       any
         (\Player {..} ->
-           (_actedThisTurn == False) || (_playerState == In && _bet < _maxBet))
+           not _actedThisTurn || (_playerState == In && _bet < _maxBet))
         activePlayers
 
 -- If all players have folded apart from a remaining player then the mucked boolean 
@@ -254,7 +247,7 @@ getHandRankings plyrs boardCards =
       filter
         (\Player {..} ->
            (_playerState /= Out Folded) ||
-           (_playerState /= None) || (_pockets == []))
+           (_playerState /= None) || null _pockets)
         plyrs
 
 -- PlayerState reset to In if Out Folded or Out AllIn. However we don't reset None
@@ -278,10 +271,8 @@ resetPlayerCardsAndBets Player {..} =
         else None
 
 allButOneFolded :: Game -> Bool
-allButOneFolded game@Game {..} =
-  if _street == PreDeal
-    then False
-    else (length playersInHand) <= 1
+allButOneFolded game@Game {..} = 
+  _street /= PreDeal && length playersInHand <= 1
   where
     playersInHand =
       filter
