@@ -9,7 +9,7 @@ module Poker.Game where
 import Control.Arrow
 
 import Control.Monad.Random.Class
-import Control.Monad.State hiding (state)
+import Control.Monad.State
 import Data.List
 import Data.List.Split
 import Data.Maybe
@@ -27,7 +27,7 @@ import Poker.Utils
 
 import Control.Lens
 
--- | Returns a standard deck of cards.
+-- | A standard deck of cards.
 initialDeck :: [Card]
 initialDeck = Card <$> [minBound ..] <*> [minBound ..]
 
@@ -146,7 +146,7 @@ awardWinners _players pot' =
   \case
     MultiPlayerShowdown winners' ->
       let chipsPerPlayer = pot' `div` length winners'
-          playerNames = (snd <$> winners')
+          playerNames = snd <$> winners'
        in (\p@Player {..} ->
              if _playerName `elem` playerNames
                then Player {_chips = _chips + chipsPerPlayer, ..}
@@ -197,7 +197,7 @@ getNextHand Game {..} newDeck =
     , ..
     }
   where
-    newDealer = _dealer `modInc` (length (getPlayersSatIn _players) - 1)
+    newDealer = _dealer `modInc` length (getPlayersSatIn _players) - 1
     freeSeatsNo = _maxPlayers - length _players
     newPlayers = resetPlayerCardsAndBets <$> _players
     newWaitlist = drop freeSeatsNo _waitlist

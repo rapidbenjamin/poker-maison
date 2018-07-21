@@ -84,14 +84,13 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
          (forever $ do
             msg <- WS.receiveData clientConn
             let parsedMsg = parseMsgFromJSON msg
-            for_ parsedMsg $ atomically . writeTChan msgReaderChan
-            return ())
+            for_ parsedMsg $ atomically . writeTChan msgReaderChan)
          (\e -> do
             let err = show (e :: IOException)
             print
               ("Warning: Exception occured in authenticatedMsgLoop for " ++
                show username ++ ": " ++ err)
-            (removeClient username serverStateTVar)
+            removeClient username serverStateTVar
             return ()))
       (removeClient username serverStateTVar)
 
@@ -204,7 +203,7 @@ progressGameAlong serverStateTVar tableName game@Game {..} =
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         pPrint progressedGame
         progressGameAlong serverStateTVar tableName progressedGame
-      else print $ "progressGameAlong " ++ show maybeErr
+      else print $ "progressGameAlong Err" ++ show maybeErr
   where
     canProgress =
       (_street == Showdown) || hasBettingFinished game && (_street /= Showdown)
@@ -230,8 +229,7 @@ getTablesHandler = do
   liftIO $ sendMsg clientConn TableList
 
 -- simply adds client to the list of subscribers
-suscribeToTableChannel ::
-     MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+suscribeToTableChannel :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 suscribeToTableChannel (JoinTable tableName) = undefined
 
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
@@ -244,7 +242,7 @@ takeSeatHandler move@(TakeSeat tableName) = do
   case M.lookup tableName $ unLobby lobby of
     Nothing -> throwError $ TableDoesNotExist tableName
     Just table@Table {..} ->
-      if (unUsername username) `elem` getGamePlayerNames game
+      if unUsername username `elem` getGamePlayerNames game
         then throwError $ AlreadySatInGame tableName
         else do
           let chips_Hardcoded = 2000
