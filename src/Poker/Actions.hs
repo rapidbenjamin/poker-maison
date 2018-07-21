@@ -5,7 +5,7 @@
 module Poker.Actions where
 
 import Control.Lens
-import Control.Monad.State hiding (state)
+import Control.Monad.State
 import Data.Char (toLower)
 import Data.List
 import qualified Data.List.Safe as Safe
