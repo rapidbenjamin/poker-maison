@@ -74,13 +74,7 @@ hasBettingFinished game@Game {..} =
     numPlayersAllIn =
       length $ filter (\Player {..} -> _playerState == Out AllIn) _players
     numPlayersIn = length $ filter (\Player {..} -> _playerState == In) _players
-    allPlayersActed =
-      null $
-      filter
-        (\Player {..} ->
-           (not _actedThisTurn) &&
-           (_playerState == Out AllIn || _playerState == In))
-        _players
+    allPlayersActed = haveAllPlayersActed game
 
 -- Unless in the scenario where everyone is all in 
 -- if no further player actions are possible (i.e betting has finished)

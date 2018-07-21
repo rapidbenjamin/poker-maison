@@ -64,6 +64,7 @@ nextStage = do
   StateT $ \currGame@Game {..} -- should give error if not showdown as progress wont lead to new hand
    -> do
     game' <- progressGame currGame
+    liftIO $ print game'
     return (Nothing, game')
 
 ------------------------------------------------------------------------------
