@@ -64,7 +64,7 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
     msg <- atomically $ readTChan msgReaderChan
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
     either
-      (\err -> sendMsg clientConn $ ErrMsg err)
+      (sendMsg clientConn . ErrMsg)
       (handleNewGameState serverStateTVar)
       msgOutE
     print "msgReaderChannel"
