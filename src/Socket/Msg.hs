@@ -19,6 +19,7 @@ import Control.Monad.STM
 import Control.Monad.State.Lazy
 import Data.Either
 import Data.Foldable
+import Data.Functor
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Maybe
@@ -77,8 +78,8 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
 -- if an expected msg in not received in a given time without killing threads.
 -- This is preferable as killing threads inside IO actions is not safe 
 authenticatedMsgLoop :: MsgHandlerConfig -> IO ()
-authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} = 
-  withAsync (handleReadChanMsgs msgHandlerConfig) $ \sockMsgReaderThread -> 
+authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
+  withAsync (handleReadChanMsgs msgHandlerConfig) $ \sockMsgReaderThread ->
     finally
       (catch
          (forever $ do
@@ -96,8 +97,8 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
 
 isPlayerToAct playerName game =
   (_street game /= PreDeal && _street game /= Showdown) &&
-  (_playerName (_players game !! _currentPosToAct game) == playerName)
-   && not (isEveryoneAllIn game)
+  (_playerName (_players game !! _currentPosToAct game) == playerName) &&
+  not (isEveryoneAllIn game)
 
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
@@ -113,20 +114,17 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
       NewGameState _ game -> do
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
         when isPlayerToAct' $
-              let timeoutDuration = 14000000
-                in do 
-                      maybeMsg <-
-                        timeGameMoveMsg
-                          game
-                          (unUsername username)
-                          timeoutDuration
-                          msgReaderChan
-                      if isNothing maybeMsg
-                        then atomically $
-                             writeTChan
-                               msgReaderChan
-                               (GameMove tableName Timeout)
-                        else print maybeMsg
+          let timeoutDuration = 14000000
+           in do maybeMsg <-
+                   timeGameMoveMsg
+                     game
+                     (unUsername username)
+                     timeoutDuration
+                     msgReaderChan
+                 if isNothing maybeMsg
+                   then atomically $
+                        writeTChan msgReaderChan (GameMove tableName Timeout)
+                   else print maybeMsg
       _ -> return ()
 
 catchE :: TableName -> WS.ConnectionException -> IO MsgIn
@@ -154,7 +152,7 @@ awaitValidAction game playerName delayTVar chan = do
   atomically $
     (Just <$>
      (readTChan dupChan >>= \msg ->
-        guard (isValidAction game playerName msg) *> pure msg)) `orElse`
+        guard (isValidAction game playerName msg) $> msg)) `orElse`
     (Nothing <$ (readTVar delayTVar >>= check))
   where
     isValidAction game playerName =
@@ -205,8 +203,7 @@ progressGameAlong serverStateTVar tableName game@Game {..} =
         progressGameAlong serverStateTVar tableName progressedGame
       else print $ "progressGameAlong Err" ++ show maybeErr
   where
-    canProgress =
-      (_street == Showdown) || haveAllPlayersActed game && (_street /= Showdown)
+    canProgress = haveAllPlayersActed game
 
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
@@ -229,7 +226,8 @@ getTablesHandler = do
   liftIO $ sendMsg clientConn TableList
 
 -- simply adds client to the list of subscribers
-suscribeToTableChannel :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+suscribeToTableChannel ::
+     MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 suscribeToTableChannel (JoinTable tableName) = undefined
 
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
