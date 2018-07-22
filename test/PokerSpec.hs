@@ -115,9 +115,9 @@ player2 =
   Player
     { _pockets =
         [Card {rank = Three, suit = Clubs}, Card {rank = Four, suit = Hearts}]
-    , _chips = 2000
+    , _chips = 0
     , _bet = 0
-    , _playerState = Out AllIn
+    , _playerState = In
     , _playerName = "player2"
     , _committed = 50
     , _actedThisTurn = False

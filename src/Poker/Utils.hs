@@ -57,8 +57,7 @@ modDec num modulo
 -- whereas sat in means that the player has at the very least had some historical participation
 -- in the current hand
 getActivePlayers :: [Player] -> [Player]
-getActivePlayers =
-  filter (\Player {..} -> _playerState == In || _playerState == Out AllIn)
+getActivePlayers = filter (\Player {..} -> _playerState == In)
 
 -- get all players who are not currently sat out
 getPlayersSatIn :: [Player] -> [Player]

@@ -250,9 +250,9 @@ main =
         let expectedPlayer =
               Player
                 { _pockets = []
-                , _chips = 2000 - betValue
+                , _chips = 0
                 , _bet = betValue
-                , _playerState = Out AllIn
+                , _playerState = In
                 , _playerName = "player1"
                 , _committed = 100 + betValue
                 , _actedThisTurn = True
@@ -329,7 +329,7 @@ main =
                 { _pockets = []
                 , _chips = 0
                 , _bet = 1950
-                , _playerState = Out AllIn
+                , _playerState = In
                 , _playerName = "11eds"
                 , _committed = 2000
                 , _actedThisTurn = True
@@ -347,7 +347,7 @@ main =
                 { _pockets = []
                 , _chips = 0
                 , _bet = 2000
-                , _playerState = Out AllIn
+                , _playerState = In
                 , _playerName = "player1"
                 , _committed = 2100
                 , _actedThisTurn = True
@@ -442,8 +442,8 @@ main =
                [ player1
                , player4
                , player3
-               , (playerState .~ Out AllIn) player2
-               , (playerState .~ Out AllIn) player2
+               , (playerState .~ In) player2
+               , (playerState .~ In) player2
                ]) $
               initialGameState
         incPosToAct game2 `shouldBe` 0

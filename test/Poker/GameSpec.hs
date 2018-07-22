@@ -122,7 +122,7 @@ player2 =
         [Card {rank = Three, suit = Clubs}, Card {rank = Four, suit = Hearts}]
     , _chips = 2000
     , _bet = 0
-    , _playerState = Out AllIn
+    , _playerState = In
     , _playerName = "player2"
     , _committed = 50
     , _actedThisTurn = False
@@ -380,8 +380,7 @@ main =
               (street .~ PreFlop) . (maxBet .~ 1950) . (pot .~ 4000) .
               (deck .~ initialDeck) .
               (players .~
-               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
-                  (bet .~ 1950) .
+               [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 1950) .
                   (chips .~ 0) .
                   (committed .~ 2000))
                    player1
@@ -398,8 +397,7 @@ main =
               (street .~ PreFlop) . (maxBet .~ 1950) . (pot .~ 4000) .
               (deck .~ initialDeck) .
               (players .~
-               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
-                  (bet .~ 1950) .
+               [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 1950) .
                   (chips .~ 0) .
                   (committed .~ 2000))
                    player1
@@ -417,8 +415,7 @@ main =
               (street .~ PreFlop) . (maxBet .~ 1950) . (pot .~ 1000) .
               (deck .~ initialDeck) .
               (players .~
-               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
-                  (bet .~ 1950) .
+               [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 1950) .
                   (chips .~ 0) .
                   (committed .~ 2000))
                    player1
@@ -438,18 +435,15 @@ main =
               (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
               (deck .~ initialDeck) .
               (players .~
-               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
-                  (bet .~ 0) .
+               [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 0) .
                   (chips .~ 0) .
                   (committed .~ 2000))
                    player1
-               , ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
-                  (bet .~ 2000) .
+               , ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 2000) .
                   (committed .~ 4000) .
                   (chips .~ 0))
                    player3
-               , ((playerState .~ Out AllIn) . (actedThisTurn .~ True) .
-                  (bet .~ 2000) .
+               , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 2000) .
                   (committed .~ 4000) .
                   (chips .~ 0))
                    player3
@@ -461,18 +455,15 @@ main =
               (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
               (deck .~ initialDeck) .
               (players .~
-               [ ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
-                  (bet .~ 0) .
+               [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 0) .
                   (chips .~ 0) .
                   (committed .~ 2000))
                    player1
-               , ((actedThisTurn .~ True) . (playerState .~ Out AllIn) .
-                  (bet .~ 2000) .
+               , ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 2000) .
                   (committed .~ 4000) .
                   (chips .~ 0))
                    player3
-               , ((playerState .~ Out AllIn) . (actedThisTurn .~ True) .
-                  (bet .~ 2000) .
+               , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 2000) .
                   (committed .~ 4000) .
                   (chips .~ 0))
                    player3
