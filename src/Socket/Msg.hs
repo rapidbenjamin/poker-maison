@@ -113,7 +113,7 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
       NewGameState _ game -> do
         let isPlayerToAct' = isPlayerToAct (unUsername username) game
         when isPlayerToAct' $
-              let timeoutDuration = 12000000
+              let timeoutDuration = 14000000
                 in do 
                       maybeMsg <-
                         timeGameMoveMsg

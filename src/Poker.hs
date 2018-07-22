@@ -46,13 +46,11 @@ runPlayerAction playerName action =
             liftIO $ print $ "action is " <> show action
             game' <- progressGame newGameState
             liftIO $ pPrint game'
-            liftIO $ print $
+            liftIO $
+              print $
               "\n haveAllPlayersActed: " <> show (haveAllPlayersActed game')
             liftIO $
               print $ "\n allButOneFolded: " <> show (allButOneFolded game')
-            liftIO $
-              print $
-              "\n hasBettingFinished: " <> show (hasBettingFinished game')
             liftIO $ print $ "isEveryoneAllin" ++ (show $ isEveryoneAllIn game')
             return (Nothing, game')
 

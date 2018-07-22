@@ -364,43 +364,6 @@ main =
       it "should increment dealer position" $ preDealGame ^. dealer `shouldBe`
         (showdownGame ^. dealer) +
         1
-    describe "hasBettingFinished" $ do
-      it
-        "should return True when all players are All In and all players have acted" $ do
-        let flopGame =
-              (street .~ Flop) . (pot .~ 4000) . (deck .~ initialDeck) .
-              (players .~
-               [ (((playerState .~ In) . (actedThisTurn .~ True)) player1)
-               , (((playerState .~ Out AllIn) . (actedThisTurn .~ True)) player2)
-               ]) $
-              initialGameState
-        hasBettingFinished flopGame `shouldBe` True
-      it
-        "should return False when all players are All In and not all players have acted" $ do
-        let flopGame =
-              (street .~ Flop) . (pot .~ 1000) . (deck .~ initialDeck) .
-              (players .~
-               [ (((playerState .~ Out AllIn) . (actedThisTurn .~ True)) player1)
-               , (((playerState .~ In) . (actedThisTurn .~ False)) player2)
-               ]) $
-              initialGameState
-        hasBettingFinished flopGame `shouldBe` False
-      it "should return False when more than one player is not AllIn" $ do
-        let flopGame =
-              (street .~ Flop) . (pot .~ 1000) . (deck .~ initialDeck) .
-              (players .~
-               [ (((playerState .~ In) . (actedThisTurn .~ True)) player1)
-               , (((playerState .~ Out AllIn) . (actedThisTurn .~ True)) player2)
-               , (((playerState .~ In) . (actedThisTurn .~ True)) player3)
-               ]) $
-              initialGameState
-        hasBettingFinished flopGame `shouldBe` False
-      it "Should return False when a player is left to act" $ do
-        let flopGame =
-              eitherDecode
-                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"Turn\",\"_deck\":[{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":75,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Two\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"}],\"_playerName\":\"1z\",\"_actedThisTurn\":true,\"_chips\":2000},{\"_bet\":0,\"_playerState\":{\"tag\":\"Out\",\"contents\":\"Folded\"},\"_committed\":25,\"_pockets\":[{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"}],\"_playerName\":\"2z\",\"_actedThisTurn\":true,\"_chips\":1975},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":50,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"}],\"_playerName\":\"3z\",\"_actedThisTurn\":false,\"_chips\":1950}],\"_currentPosToAct\":1,\"_board\":[{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"}],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":0,\"_bigBlind\":50}"
-        let turnGame = progressToTurn $ fromRight initialGameState flopGame
-        hasBettingFinished turnGame `shouldBe` False
     describe "isEveryoneAllIn" $ do
       it "should return False for two player game if no one all in" $ do
         let preFlopGame' =

@@ -57,20 +57,6 @@ getNextStreet :: Street -> Street
 getNextStreet Showdown = minBound
 getNextStreet _street = succ _street
 
--- | Betting is over if only one players or no player can bet.
--- Note that an all in player is still active they just don't have any more chips
--- to bet so if all players go all in then the rounds will still progress as normal 
--- until the final showdown stage.
-hasBettingFinished :: Game -> Bool
-hasBettingFinished game@Game{..}
-  | _street == PreDeal || _street == Showdown = False
-  | not allPlayersActed = False
-  | otherwise = numPlayersIn <= 1 && numPlayersAllIn > 0
-  where numPlayersAllIn = length $
-              filter (\ Player{..} -> _playerState == Out AllIn) _players
-        numPlayersIn = length $ filter (\ Player{..} -> _playerState == In) _players
-        allPlayersActed = haveAllPlayersActed game
-
 -- Unless in the scenario where everyone is all in 
 -- if no further player actions are possible (i.e betting has finished)
 -- then actedThisTurn should be set to True for all active players in Hand.
@@ -78,9 +64,8 @@ hasBettingFinished game@Game{..}
 resetPlayers :: Game -> Game
 resetPlayers game@Game {..} = (players .~ newPlayers) game
   where
-    bettingOver = hasBettingFinished game
     newPlayers =
-      (\Player {..} -> Player {_bet = 0, _actedThisTurn = bettingOver, ..}) <$>
+      (\Player {..} -> Player {_bet = 0, _actedThisTurn = False, ..}) <$>
       _players
 
 setWinners :: Game -> Game
@@ -119,18 +104,17 @@ progressToShowdown game@Game {..} =
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 progressGame :: Game -> IO Game
-progressGame game@Game{..}
-  | haveAllPlayersActed game && not (allButOneFolded game) ||
-      _street == Showdown =
+progressGame game@Game {..}
+  | haveAllPlayersActed game && not (allButOneFolded game) =
     case getNextStreet _street of
-        PreFlop -> return $ progressToPreFlop game
-        Flop -> return $ progressToFlop game
-        Turn -> return $ progressToTurn game
-        River -> return $ progressToRiver game
-        Showdown -> return $ progressToShowdown game
-        PreDeal -> getNextHand game <$> shuffle initialDeck
+      PreFlop -> return $ progressToPreFlop game
+      Flop -> return $ progressToFlop game
+      Turn -> return $ progressToTurn game
+      River -> return $ progressToRiver game
+      Showdown -> return $ progressToShowdown game
+      PreDeal -> getNextHand game <$> shuffle initialDeck
   | allButOneFolded game && (_street /= PreDeal || _street /= Showdown) =
-      return $ progressToShowdown game
+    return $ progressToShowdown game
   | otherwise = return game
 
 -- need to give players the chips they are due and split pot if necessary
@@ -171,7 +155,8 @@ isEveryoneAllIn game@Game {..}
   where
     numPlayersIn = length $ getActivePlayers _players
     numPlayersAllIn =
-      length $ (\Player {..} -> _playerState == In && _chips == 0) `filter` _players
+      length $
+      (\Player {..} -> _playerState == In && _chips == 0) `filter` _players
     allPlayersActed = haveAllPlayersActed game
 
 -- TODO move players from waitlist to players list
@@ -206,10 +191,10 @@ getNextHand Game {..} newDeck =
 -- | If all players have acted and their bets are equal 
 -- to the max bet then we can move to the next stage
 haveAllPlayersActed :: Game -> Bool
-haveAllPlayersActed game@Game {..} =
-  if _street == PreDeal
-    then haveRequiredBlindsBeenPosted game
-    else not awaitingPlayerAction
+haveAllPlayersActed game@Game {..}
+  | _street == Showdown = True
+  | _street == PreDeal = haveRequiredBlindsBeenPosted game
+  | otherwise = not awaitingPlayerAction
   where
     activePlayers = getActivePlayers _players
     awaitingPlayerAction =
@@ -271,8 +256,7 @@ resetPlayerCardsAndBets Player {..} =
         else None
 
 allButOneFolded :: Game -> Bool
-allButOneFolded game@Game {..} = 
-  _street /= PreDeal && length playersInHand <= 1
+allButOneFolded game@Game {..} = _street /= PreDeal && length playersInHand <= 1
   where
     playersInHand =
       filter

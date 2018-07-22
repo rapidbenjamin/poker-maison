@@ -17,20 +17,20 @@ import Debug.Trace
 import Poker.ActionValidation
 import Text.Read (readMaybe)
 
+import Data.Bool
 import Poker.Types
 import Poker.Utils
-import Data.Bool
 import Prelude
-
 
 -- Update table maxBet and pot as well as player state and chip count
 placeBet :: Int -> Player -> Player
-placeBet value plyr = let
-  chips' = plyr ^. chips 
-  hasEnoughChips = chips' > value
-  betAmount = bool chips' value hasEnoughChips in
-   ((chips -~ betAmount) . (bet +~ betAmount) . (committed +~ betAmount) 
-   . (playerState .~ In)) plyr
+placeBet value plyr =
+  let chips' = plyr ^. chips
+      hasEnoughChips = chips' > value
+      betAmount = bool chips' value hasEnoughChips
+   in ((chips -~ betAmount) .
+       (bet +~ betAmount) . (committed +~ betAmount) . (playerState .~ In))
+        plyr
 
 markActed :: Player -> Player
 markActed = actedThisTurn .~ True
