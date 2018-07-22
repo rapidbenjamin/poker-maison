@@ -136,7 +136,7 @@ awardWinners _players pot' =
                then Player {_chips = _chips + chipsPerPlayer, ..}
                else p) <$>
           _players
-    SinglePlayerShowdown pName ->
+    SinglePlayerShowdown _ ->
       (\p@Player {..} ->
          if p `elem` getActivePlayers _players
            then Player {_chips = _chips + pot', ..}
@@ -146,8 +146,9 @@ awardWinners _players pot' =
 isEveryoneAllIn :: Game -> Bool
 isEveryoneAllIn game@Game {..}
   | _street == PreDeal = False
+  | _street == Showdown = False
   | numPlayersIn < 2 = False
-  | allPlayersActed =
+  | haveAllPlayersActed game =
     traceShow
       (show numPlayersIn ++ show numPlayersAllIn)
       ((numPlayersIn - numPlayersAllIn) <= 1)
@@ -157,7 +158,6 @@ isEveryoneAllIn game@Game {..}
     numPlayersAllIn =
       length $
       (\Player {..} -> _playerState == In && _chips == 0) `filter` _players
-    allPlayersActed = haveAllPlayersActed game
 
 -- TODO move players from waitlist to players list
 -- TODO need to send msg to players on waitlist when a seat frees up to inform them 
@@ -200,7 +200,8 @@ haveAllPlayersActed game@Game {..}
     awaitingPlayerAction =
       any
         (\Player {..} ->
-           not _actedThisTurn || (_playerState == In && _bet < _maxBet))
+           not _actedThisTurn ||
+           (_playerState == In && (_bet < _maxBet && _chips /= 0)))
         activePlayers
 
 -- If all players have folded apart from a remaining player then the mucked boolean 
@@ -214,9 +215,7 @@ getWinners game@Game {..} =
     then SinglePlayerShowdown $
          head $
          flip (^.) playerName <$>
-         filter
-           (\Player {..} -> _playerState == In || _playerState == Out AllIn)
-           _players
+         filter (\Player {..} -> _playerState == In) _players
     else MultiPlayerShowdown $ maximums $ getHandRankings _players _board
 
 -- Get the best hand for each active player (AllIn or In)/
@@ -235,7 +234,7 @@ getHandRankings plyrs boardCards =
            (_playerState /= None) || null _pockets)
         plyrs
 
--- PlayerState reset to In if Out Folded or Out AllIn. However we don't reset None
+-- PlayerState reset to In if Out Folded. However we don't reset None
 -- states as this gives the information that the player needs to post a big blind
 -- if they dont want to wait for the dealer button to pass - this should probably be refactored
 -- if it needs a comment to explain it
@@ -251,14 +250,11 @@ resetPlayerCardsAndBets Player {..} =
     }
   where
     newPlayerState =
-      if _playerState == Out AllIn || _playerState == Out Folded
+      if _playerState == Out Folded
         then In
         else None
 
 allButOneFolded :: Game -> Bool
 allButOneFolded game@Game {..} = _street /= PreDeal && length playersInHand <= 1
   where
-    playersInHand =
-      filter
-        (\Player {..} -> (_playerState == In) || (_playerState == Out AllIn))
-        _players
+    playersInHand = filter (\Player {..} -> _playerState == In) _players
