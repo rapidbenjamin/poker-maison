@@ -59,7 +59,6 @@ nextStage =
     game' <- progressGame currGame
     return (Nothing, game')
 
-------------------------------------------------------------------------------
 initialGameState :: Game
 initialGameState =
   Game
@@ -124,7 +123,7 @@ handlePlayerAction game@Game {..} playerName =
         (Right $ makeBet amount playerName game)
         Left
         (validateAction game playerName action)
-    action@(Timeout) ->
+    action@Timeout ->
       if isNothing $ canCheck playerName game
         then maybe
                (Right $ check playerName game)

@@ -186,7 +186,7 @@ getNextHand Game {..} newDeck =
     freeSeatsNo = _maxPlayers - length _players
     newPlayers = resetPlayerCardsAndBets <$> _players
     newWaitlist = drop freeSeatsNo _waitlist
-    nextPlayerToAct = _dealer `modInc` (length newPlayers - 1)
+    nextPlayerToAct = newDealer `modInc` (length newPlayers - 1)
 
 -- | If all players have acted and their bets are equal 
 -- to the max bet then we can move to the next stage
