@@ -1,4 +1,3 @@
-
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -94,14 +93,9 @@ data HandRank
 
 type Bet = Int
 
-data Out
-  = Folded
-  | AllIn
-  deriving (Eq, Show, Ord, Read, Generic, ToJSON, FromJSON)
-
 data PlayerState
   = None -- none denotes a player that will not be dealt cards unless they send a postblinds action to the server
-  | Out Out
+  | Folded
   | In
   deriving (Eq, Show, Ord, Read, Generic, ToJSON, FromJSON)
 

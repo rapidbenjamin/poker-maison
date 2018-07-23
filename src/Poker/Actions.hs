@@ -85,7 +85,7 @@ foldCards pName game@Game {..} =
     newPlayers =
       (\p@Player {..} ->
          if _playerName == pName
-           then (markActed . (playerState .~ Out Folded)) p
+           then (markActed . (playerState .~ Folded)) p
            else p) <$>
       _players
     nextPosToAct = incPosToAct game

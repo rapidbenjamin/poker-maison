@@ -255,7 +255,7 @@ main =
       it "should return True when all but one player " $ do
         let game =
               (street .~ PreFlop) .
-              (players .~ [((playerState .~ (Out Folded)) player1), player2]) $
+              (players .~ [((playerState .~ (Folded)) player1), player2]) $
               initialGameState
         allButOneFolded game `shouldBe` True
       it "should return False when not all players acted" $ do
@@ -266,7 +266,7 @@ main =
       it "should always return False for PreDeal (blinds) stage" $ do
         let unfinishedBlindsGame =
               (street .~ PreDeal) .
-              (players .~ [((playerState .~ (Out Folded)) player1), player2]) $
+              (players .~ [((playerState .~ (Folded)) player1), player2]) $
               initialGameState
         allButOneFolded unfinishedBlindsGame `shouldBe` False
     describe "progressToPreFlop" $ do
@@ -401,7 +401,7 @@ main =
                   (chips .~ 0) .
                   (committed .~ 2000))
                    player1
-               , ((playerState .~ Out Folded) . (actedThisTurn .~ True) .
+               , ((playerState .~ Folded) . (actedThisTurn .~ True) .
                   (bet .~ 1950) .
                   (committed .~ 2000) .
                   (chips .~ 3000))

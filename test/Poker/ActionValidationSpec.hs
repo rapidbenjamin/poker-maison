@@ -105,7 +105,7 @@ player2 =
     { _pockets = []
     , _chips = 2000
     , _bet = 0
-    , _playerState = Out Folded
+    , _playerState = Folded
     , _playerName = "player2"
     , _committed = 50
     , _actedThisTurn = False
@@ -381,8 +381,7 @@ main =
               (winners .~ SinglePlayerShowdown "player4") .
               (players .~
                [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
-               , (((playerState .~ Out Folded) . (actedThisTurn .~ True))
-                    player5)
+               , (((playerState .~ Folded) . (actedThisTurn .~ True)) player5)
                ]) $
               initialGameState
         let playerName = "player5"
@@ -397,8 +396,7 @@ main =
               (winners .~ SinglePlayerShowdown "player4") .
               (players .~
                [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
-               , (((playerState .~ Out Folded) . (actedThisTurn .~ True))
-                    player5)
+               , (((playerState .~ Folded) . (actedThisTurn .~ True)) player5)
                ]) $
               initialGameState
         let playerName = "player4"

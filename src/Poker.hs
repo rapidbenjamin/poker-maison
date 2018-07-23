@@ -38,20 +38,12 @@ runPlayerAction playerName action =
   StateT $ \currGame@Game {..} ->
     case handlePlayerAction currGame playerName action of
       Left err -> return (Just err, currGame)
-      Right newGameState -> do
+      Right newGameState ->
         case action of
           SitDown _ -> return (Nothing, newGameState)
           LeaveSeat -> return (Nothing, newGameState)
           _ -> do
-            liftIO $ print $ "action is " <> show action
             game' <- progressGame newGameState
-            liftIO $ pPrint game'
-            liftIO $
-              print $
-              "\n haveAllPlayersActed: " <> show (haveAllPlayersActed game')
-            liftIO $
-              print $ "\n allButOneFolded: " <> show (allButOneFolded game')
-            liftIO $ print $ "isEveryoneAllin" ++ (show $ isEveryoneAllIn game')
             return (Nothing, game')
 
 -- when no player action is possible we can can call this function to get the game 
@@ -61,11 +53,10 @@ runPlayerAction playerName action =
 -- A similar situation occurs when no further player action is possible but  the game is not over
 -- - in other words more than one players are active and all or all but one are all in
 nextStage :: StateT Game IO (Maybe GameErr)
-nextStage = do
+nextStage =
   StateT $ \currGame@Game {..} -- should give error if not showdown as progress wont lead to new hand
    -> do
     game' <- progressGame currGame
-    liftIO $ print game'
     return (Nothing, game')
 
 ------------------------------------------------------------------------------

@@ -230,11 +230,10 @@ getHandRankings plyrs boardCards =
     remainingPlayersInHand =
       filter
         (\Player {..} ->
-           (_playerState /= Out Folded) ||
-           (_playerState /= None) || null _pockets)
+           (_playerState /= Folded) || (_playerState /= None) || null _pockets)
         plyrs
 
--- PlayerState reset to In if Out Folded. However we don't reset None
+-- PlayerState reset to In if Folded. However we don't reset None
 -- states as this gives the information that the player needs to post a big blind
 -- if they dont want to wait for the dealer button to pass - this should probably be refactored
 -- if it needs a comment to explain it
@@ -250,11 +249,11 @@ resetPlayerCardsAndBets Player {..} =
     }
   where
     newPlayerState =
-      if _playerState == Out Folded
+      if _playerState == Folded
         then In
         else None
 
 allButOneFolded :: Game -> Bool
 allButOneFolded game@Game {..} = _street /= PreDeal && length playersInHand <= 1
   where
-    playersInHand = filter (\Player {..} -> _playerState == In) _players
+    playersInHand = filter ((== In) . (^. playerState)) _players

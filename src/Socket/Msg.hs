@@ -139,7 +139,6 @@ catchE tableName e = do
 timeGameMoveMsg :: Game -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
 timeGameMoveMsg game playerName duration chan = do
   delayTVar <- registerDelay duration
-  print "delay started"
   awaitValidAction game playerName delayTVar chan
 
 -- We duplicate the channel reading the socket msgs and start a timeout
@@ -184,7 +183,6 @@ handleNewGameState :: TVar ServerState -> MsgOut -> IO ()
 handleNewGameState serverStateTVar (NewGameState tableName newGame) = do
   newServerState <-
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
-  pPrint newGame
   progressGameAlong serverStateTVar tableName newGame
 handleNewGameState serverStateTVar msg = do
   print msg
@@ -192,18 +190,15 @@ handleNewGameState serverStateTVar msg = do
 
 progressGameAlong :: TVar ServerState -> TableName -> Game -> IO ()
 progressGameAlong serverStateTVar tableName game@Game {..} =
-  when canProgress $ do
+  when (haveAllPlayersActed game) $ do
     (maybeErr, progressedGame) <- runStateT nextStage game
     if isNothing maybeErr
       then do
-        print $ "isEveryoneAllin" ++ (show $ isEveryoneAllIn progressedGame)
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         pPrint progressedGame
         progressGameAlong serverStateTVar tableName progressedGame
       else print $ "progressGameAlong Err" ++ show maybeErr
-  where
-    canProgress = haveAllPlayersActed game
 
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
@@ -313,14 +308,9 @@ updateGameWithMove ::
   -> Username
   -> Game
   -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-updateGameWithMove (GameMove tableName playerAction) (Username username) game
---  liftIO $ print "running player action"
- = do
+updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
   (maybeErr, newGame) <-
     liftIO $ runStateT (runPlayerAction username playerAction) game
-  liftIO $ print "next game state"
- -- liftIO $ pPrint newGame
-  liftIO $ print $ ("updateGameWithMove") ++ show maybeErr
   case maybeErr of
     Just gameErr -> throwError $ GameErr gameErr
     Nothing -> return $ NewGameState tableName newGame
