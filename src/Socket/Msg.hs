@@ -156,7 +156,7 @@ awaitValidAction game playerName delayTVar chan = do
   where
     isValidAction game playerName =
       \case
-        (GameMove _ action) -> isNothing $ validateAction game playerName action
+        (GameMove _ action) -> isRight $ validateAction game playerName action
         _ -> False
 
 --- If the game gets to a state where no player action is possible 
@@ -191,14 +191,14 @@ handleNewGameState serverStateTVar msg = do
 progressGameAlong :: TVar ServerState -> TableName -> Game -> IO ()
 progressGameAlong serverStateTVar tableName game@Game {..} =
   when (haveAllPlayersActed game) $ do
-    (maybeErr, progressedGame) <- runStateT nextStage game
-    if isNothing maybeErr
+    (errE, progressedGame) <- runStateT nextStage game
+    if isRight errE
       then do
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         pPrint progressedGame
         progressGameAlong serverStateTVar tableName progressedGame
-      else print $ "progressGameAlong Err" ++ show maybeErr
+      else print $ "progressGameAlong Err" ++ show errE
 
 -- Send a Message to the poker tables channel.
 broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
@@ -241,14 +241,14 @@ takeSeatHandler move@(TakeSeat tableName) = do
           let chips_Hardcoded = 2000
           let player = getPlayer (unUsername username) chips_Hardcoded
           let takeSeatAction = GameMove tableName $ SitDown player
-          (maybeErr, newGame) <-
+          (errE, newGame) <-
             liftIO $
             runStateT
               (runPlayerAction (unUsername username) (SitDown player))
               game
-          case maybeErr of
-            Just gameErr -> throwError $ GameErr gameErr
-            Nothing -> do
+          case errE of
+            Left gameErr -> throwError $ GameErr gameErr
+            Right () -> do
               liftIO $ atomically $ joinTable tableName msgHandlerConfig
               asyncGameReceiveLoop <-
                 liftIO $
@@ -309,8 +309,8 @@ updateGameWithMove ::
   -> Game
   -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
-  (maybeErr, newGame) <-
+  (errE, newGame) <-
     liftIO $ runStateT (runPlayerAction username playerAction) game
-  case maybeErr of
-    Just gameErr -> throwError $ GameErr gameErr
-    Nothing -> return $ NewGameState tableName newGame
+  case errE of
+    Left gameErr -> throwError $ GameErr gameErr
+    Right () -> return $ NewGameState tableName newGame

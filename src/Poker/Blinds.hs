@@ -19,29 +19,29 @@ import Poker.Types
 import Poker.Utils
 import Prelude
 
-validateBlindAction :: Game -> PlayerName -> Blind -> Maybe GameErr
+validateBlindAction :: Game -> PlayerName -> Blind -> Either GameErr ()
 validateBlindAction game@Game {..} playerName blind
   | _street /= PreDeal =
-    Just $ InvalidMove playerName CannotPostBlindOutsidePreDeal
+    Left $ InvalidMove playerName CannotPostBlindOutsidePreDeal
   | otherwise =
     case getGamePlayer game playerName of
-      Nothing -> Just $ PlayerNotAtTable playerName
+      Nothing -> Left $ PlayerNotAtTable playerName
       Just p@Player {..} ->
         case blindRequired of
           Just Small ->
             if blind == Small
               then if _committed >= _smallBlind
-                     then Just $
+                     then Left $
                           InvalidMove playerName $ BlindAlreadyPosted Small
-                     else Nothing
-              else Just $ InvalidMove playerName $ BlindRequired Small
+                     else Right ()
+              else Left $ InvalidMove playerName $ BlindRequired Small
           Just Big ->
             if blind == Big
               then if _committed >= bigBlindValue
-                     then Just $ InvalidMove playerName $ BlindAlreadyPosted Big
-                     else Nothing
-              else Just $ InvalidMove playerName $ BlindRequired Big
-          Nothing -> Just $ InvalidMove playerName NoBlindRequired
+                     then Left $ InvalidMove playerName $ BlindAlreadyPosted Big
+                     else Right ()
+              else Left $ InvalidMove playerName $ BlindRequired Big
+          Nothing -> Left $ InvalidMove playerName NoBlindRequired
         where blindRequired = blindRequiredByPlayer game playerName
               bigBlindValue = _smallBlind * 2
 
@@ -102,9 +102,9 @@ blindRequiredByPlayer game playerName
   | playerPosition == smallBlindPos = Just Small
   | playerPosition == bigBlindPos = Just Big
   | otherwise = Nothing
-  where player = fromJust $ getGamePlayer game playerName
-        playerNames = getPlayerNames (_players game)
-        playerPosition
-          = fromJust $ getPlayerPosition playerNames playerName
-        smallBlindPos = getSmallBlindPosition playerNames (_dealer game)
-        bigBlindPos = smallBlindPos `modInc` (length playerNames - 1)
+  where
+    player = fromJust $ getGamePlayer game playerName
+    playerNames = getPlayerNames (_players game)
+    playerPosition = fromJust $ getPlayerPosition playerNames playerName
+    smallBlindPos = getSmallBlindPosition playerNames (_dealer game)
+    bigBlindPos = smallBlindPos `modInc` (length playerNames - 1)

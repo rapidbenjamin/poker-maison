@@ -8,6 +8,8 @@ module Poker where
 
 import Control.Lens hiding (Fold)
 import Control.Monad.State.Lazy
+import Data.Either
+import Data.Functor
 import Data.List
 import Data.Maybe
 import Data.Monoid
@@ -33,18 +35,19 @@ newGame initState = state $ \_ -> (Nothing, initialGameState)
 -- player action or an err signifying an invalid player action with the reason why
 -- if the current game stage is showdown then the next game state will have a newly shuffled
 -- deck and pocket cards/ bets reset
-runPlayerAction :: PlayerName -> PlayerAction -> StateT Game IO (Maybe GameErr)
+runPlayerAction ::
+     PlayerName -> PlayerAction -> StateT Game IO (Either GameErr ())
 runPlayerAction playerName action =
   StateT $ \currGame@Game {..} ->
     case handlePlayerAction currGame playerName action of
-      Left err -> return (Just err, currGame)
+      Left err -> return (Left err, currGame)
       Right newGameState ->
         case action of
-          SitDown _ -> return (Nothing, newGameState)
-          LeaveSeat -> return (Nothing, newGameState)
+          SitDown _ -> return (Right (), newGameState)
+          LeaveSeat -> return (Right (), newGameState)
           _ -> do
             game' <- progressGame newGameState
-            return (Nothing, game')
+            return (Right (), game')
 
 -- when no player action is possible we can can call this function to get the game 
 -- to the next stage.
@@ -52,12 +55,11 @@ runPlayerAction playerName action =
 -- to progress the game to the next hand.
 -- A similar situation occurs when no further player action is possible but  the game is not over
 -- - in other words more than one players are active and all or all but one are all in
-nextStage :: StateT Game IO (Maybe GameErr)
+nextStage :: StateT Game IO (Either GameErr ())
 nextStage =
-  StateT $ \currGame@Game {..} -- should give error if not showdown as progress wont lead to new hand
-   -> do
+  StateT $ \currGame@Game {..} -> do
     game' <- progressGame currGame
-    return (Nothing, game')
+    return (Right (), game')
 
 initialGameState :: Game
 initialGameState =
@@ -94,49 +96,23 @@ handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
 handlePlayerAction game@Game {..} playerName =
   \case
     action@(PostBlind blind) ->
-      maybe
-        (Right $ postBlind blind playerName game)
-        Left
-        (validateAction game playerName action)
+      validateAction game playerName action $> postBlind blind playerName game
     action@Fold ->
-      maybe
-        (Right $ foldCards playerName game)
-        Left
-        (validateAction game playerName action)
-    action@Call ->
-      maybe
-        (Right $ call playerName game)
-        Left
-        (validateAction game playerName action)
+      validateAction game playerName action $> foldCards playerName game
+    action@Call -> validateAction game playerName action $> call playerName game
     action@(Raise amount) ->
-      maybe
-        (Right $ makeBet amount playerName game)
-        Left
-        (validateAction game playerName action)
+      validateAction game playerName action $> makeBet amount playerName game
     action@Check ->
-      maybe
-        (Right $ check playerName game)
-        Left
-        (validateAction game playerName action)
+      validateAction game playerName action $> check playerName game
     action@(Bet amount) ->
-      maybe
-        (Right $ makeBet amount playerName game)
-        Left
-        (validateAction game playerName action)
+      validateAction game playerName action $> makeBet amount playerName game
     action@Timeout ->
-      if isNothing $ canCheck playerName game
-        then maybe
-               (Right $ check playerName game)
-               Left
-               (validateAction game playerName action)
-        else maybe
-               (Right $ foldCards playerName game)
-               Left
-               (validateAction game playerName action)
+      if isRight $ canCheck playerName game
+        then validateAction game playerName action $> check playerName game
+        else validateAction game playerName action $> foldCards playerName game
     action@(SitDown player) -> seatPlayer game player
     action@LeaveSeat -> undefined
 
--- TODO should be able to choose seat
 seatPlayer :: Game -> Player -> Either GameErr Game
 seatPlayer Game {..} player@Player {..}
   | _playerName `elem` getPlayerNames _players =
