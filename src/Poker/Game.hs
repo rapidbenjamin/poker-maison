@@ -6,7 +6,6 @@
 module Poker.Game where
 
 import Control.Arrow
-
 import Control.Monad.Random.Class
 import Control.Monad.State
 import Data.List
@@ -15,10 +14,8 @@ import Data.Maybe
 import Data.Text (Text)
 
 import Data.Monoid
-import Debug.Trace
 import Poker.Blinds
 import System.Random.Shuffle (shuffleM)
-import System.Timeout
 
 import Poker.Hands
 import Poker.Types

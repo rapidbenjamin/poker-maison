@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -8,16 +7,14 @@
 
 module Poker.Types where
 
-import Data.Aeson
-import Data.Aeson.Types
-import Data.Text
-import GHC.Generics
-
 import Control.Lens
 import Control.Monad.State
+import Data.Aeson
+import Data.Aeson.Types
 import Data.Function
 import Data.Monoid
 import Data.Text
+import GHC.Generics
 
 ------------------------------------------------------------------------------
 data Rank
