@@ -6,22 +6,22 @@
 module Poker.Game where
 
 import Control.Arrow
+import Control.Lens
 import Control.Monad.Random.Class
 import Control.Monad.State
+
 import Data.List
 import Data.List.Split
 import Data.Maybe
+import Data.Monoid
 import Data.Text (Text)
 
-import Data.Monoid
-import Poker.Blinds
 import System.Random.Shuffle (shuffleM)
 
+import Poker.Blinds
 import Poker.Hands
 import Poker.Types
 import Poker.Utils
-
-import Control.Lens
 
 -- | A standard deck of cards.
 initialDeck :: [Card]
@@ -62,9 +62,6 @@ resetPlayers game@Game {..} = (players .~ newPlayers) game
   where
     newPlayers = (bet .~ 0) . (actedThisTurn .~ False) <$> _players
 
-setWinners :: Game -> Game
-setWinners game@Game {..} = game
-
 progressToPreFlop :: Game -> Game
 progressToPreFlop =
   (street .~ PreFlop) .
@@ -101,7 +98,8 @@ progressToShowdown game@Game {..} =
 -- toDO - make function pure by taking stdGen as an arg
 progressGame :: Game -> IO Game
 progressGame game@Game {..}
-  | haveAllPlayersActed game && not (allButOneFolded game) =
+  | haveAllPlayersActed game &&
+      (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
     case getNextStreet _street of
       PreFlop -> return $ progressToPreFlop game
       Flop -> return $ progressToFlop game
