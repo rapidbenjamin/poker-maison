@@ -1,13 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Poker.Blinds where
 
 import Control.Lens
 
-import Control.Monad.State hiding (state)
+import Control.Monad.State
 import Data.Char (toLower)
 import Data.List
 import qualified Data.List.Safe as Safe
@@ -82,7 +81,7 @@ activatePlayersWhenNoBlindNeeded plyrs requiredBlinds =
 -- Sets player state to in if they don't need to post blind
 updatePlayersInHand :: Game -> Game
 updatePlayersInHand game =
-  (players %~ flip activatePlayersWhenNoBlindNeeded requiredBlinds) game
+  game & (players %~ flip activatePlayersWhenNoBlindNeeded requiredBlinds)
   where
     requiredBlinds = getRequiredBlinds game
 

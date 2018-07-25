@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Poker.Game where
@@ -64,9 +63,7 @@ getNextStreet _street = succ _street
 resetPlayers :: Game -> Game
 resetPlayers game@Game {..} = (players .~ newPlayers) game
   where
-    newPlayers =
-      (\Player {..} -> Player {_bet = 0, _actedThisTurn = False, ..}) <$>
-      _players
+    newPlayers = (bet .~ 0) . (actedThisTurn .~ False) <$> _players
 
 setWinners :: Game -> Game
 setWinners game@Game {..} = game
@@ -78,31 +75,33 @@ progressToPreFlop =
 
 progressToFlop :: Game -> Game
 progressToFlop game
-  | isEveryoneAllIn game = ((street .~ Flop) . dealBoardCards 3) game
+  | isEveryoneAllIn game = game & (street .~ Flop) . dealBoardCards 3
   | otherwise =
-    ((street .~ Flop) . (maxBet .~ 0) . dealBoardCards 3 . resetPlayers) game
+    game & (street .~ Flop) . (maxBet .~ 0) . dealBoardCards 3 . resetPlayers
 
 progressToTurn :: Game -> Game
 progressToTurn game
-  | isEveryoneAllIn game = ((street .~ Turn) . dealBoardCards 1) game
+  | isEveryoneAllIn game = game & (street .~ Turn) . dealBoardCards 1
   | otherwise =
-    ((street .~ Turn) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers) game
+    game & (street .~ Turn) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers
 
 progressToRiver :: Game -> Game
 progressToRiver game
-  | isEveryoneAllIn game = ((street .~ River) . dealBoardCards 1) game
+  | isEveryoneAllIn game = game & (street .~ River) . dealBoardCards 1
   | otherwise =
-    ((street .~ River) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers) game
+    game & (street .~ River) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers
 
 progressToShowdown :: Game -> Game
 progressToShowdown game@Game {..} =
-  Game {_street = Showdown, _winners = winners', _players = awardedPlayers, ..}
+  game &
+  (street .~ Showdown) . (winners .~ winners') . (players .~ awardedPlayers)
   where
     winners' = getWinners game
     awardedPlayers = awardWinners _players _pot winners'
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
+-- toDO - make function pure by taking stdGen as an arg
 progressGame :: Game -> IO Game
 progressGame game@Game {..}
   | haveAllPlayersActed game && not (allButOneFolded game) =
@@ -148,16 +147,13 @@ isEveryoneAllIn game@Game {..}
   | _street == PreDeal = False
   | _street == Showdown = False
   | numPlayersIn < 2 = False
-  | haveAllPlayersActed game =
-    traceShow
-      (show numPlayersIn ++ show numPlayersAllIn)
-      ((numPlayersIn - numPlayersAllIn) <= 1)
+  | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
   | otherwise = False
   where
     numPlayersIn = length $ getActivePlayers _players
     numPlayersAllIn =
       length $
-      (\Player {..} -> _playerState == In && _chips == 0) `filter` _players
+      filter (\Player {..} -> _playerState == In && _chips == 0) _players
 
 -- TODO move players from waitlist to players list
 -- TODO need to send msg to players on waitlist when a seat frees up to inform them 
@@ -249,7 +245,7 @@ resetPlayerCardsAndBets Player {..} =
     }
   where
     newPlayerState =
-      if _playerState == Folded
+      if _playerState == Folded || _playerState == In
         then In
         else None
 

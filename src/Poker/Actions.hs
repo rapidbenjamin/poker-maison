@@ -42,9 +42,9 @@ markInForHand = playerState .~ In
 
 postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
+  game &
   ((players .~ newPlayers) .
    (pot +~ blindValue) . (currentPosToAct .~ nextPositionToAct))
-    game
   where
     newPlayers =
       (\p@Player {..} ->
@@ -67,8 +67,8 @@ postBlind blind pName game@Game {..} =
 
 makeBet :: Int -> PlayerName -> Game -> Game
 makeBet amount pName game@Game {..} =
+  updateMaxBet amount game &
   ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct) . (pot +~ amount))
-    (updateMaxBet amount game)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -80,7 +80,7 @@ makeBet amount pName game@Game {..} =
 
 foldCards :: PlayerName -> Game -> Game
 foldCards pName game@Game {..} =
-  ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)) game
+  game & ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct))
   where
     newPlayers =
       (\p@Player {..} ->
@@ -92,9 +92,9 @@ foldCards pName game@Game {..} =
 
 call :: PlayerName -> Game -> Game
 call pName game@Game {..} =
+  game &
   ((players .~ newPlayers) .
    (currentPosToAct .~ nextPosToAct) . (pot +~ callAmount))
-    game
   where
     player = fromJust $ find (\Player {..} -> _playerName == pName) _players --horrible performance use map for players
     callAmount =
@@ -113,7 +113,7 @@ call pName game@Game {..} =
 
 check :: PlayerName -> Game -> Game
 check pName game@Game {..} =
-  ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)) game
+  game & ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct))
   where
     newPlayers =
       (\p@Player {..} ->

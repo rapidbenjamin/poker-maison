@@ -29,7 +29,6 @@ import qualified Data.Text as T
 import qualified Network.WebSockets as WS
 import Prelude
 import Socket.Types
-import System.Timeout
 import Text.Pretty.Simple (pPrint)
 
 import Control.Concurrent.Async
@@ -192,6 +191,9 @@ progressGameAlong :: TVar ServerState -> TableName -> Game -> IO ()
 progressGameAlong serverStateTVar tableName game@Game {..} =
   when (haveAllPlayersActed game) $ do
     (errE, progressedGame) <- runStateT nextStage game
+    pPrint game
+    print "haveAllPlayersActed:"
+    print (haveAllPlayersActed progressedGame)
     if isRight errE
       then do
         atomically $
