@@ -130,6 +130,8 @@ data Winners
 
 data Game = Game
   { _players :: [Player]
+  , _minBuyInChips :: Int
+  , _maxBuyInChips :: Int
   , _maxPlayers :: Int
   , _board :: [Card]
   , _winners :: Winners
@@ -189,9 +191,12 @@ data PlayerAction
 
 data GameErr
   = NotEnoughChips PlayerName
+  | OverMaxChipsBuyIn PlayerName
   | PlayerNotAtTable PlayerName
   | AlreadySatAtTable PlayerName
   | NotAtTable PlayerName
+  | CannotSitAtFullTable PlayerName
+  | AlreadyOnWaitlist PlayerName
   | InvalidMove PlayerName
                 InvalidMoveErr
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)

@@ -40,6 +40,7 @@ validateAction game@Game {..} playerName =
       if _street == Showdown
         then Left $ InvalidMove playerName InvalidActionForStreet
         else isPlayerActingOutOfTurn game playerName
+    SitDown plyr -> canSit plyr game
     ShowHand -> validateShowOrMuckHand game playerName ShowHand
     MuckHand -> validateShowOrMuckHand game playerName MuckHand
 
@@ -129,6 +130,20 @@ canCall pName game@Game {..}
     p = fromJust (getGamePlayer game pName)
     chipCount = _chips p
     amountNeededToCall = _maxBet - _bet p
+
+canSit :: Player -> Game -> Either GameErr ()
+canSit player@Player {..} game@Game {..}
+  | _playerName `elem` getPlayerNames _players =
+    Left $ AlreadySatAtTable _playerName
+  | _chips < _minBuyInChips = Left $ NotEnoughChips _playerName
+  | _chips > _maxBuyInChips = Left $ OverMaxChipsBuyIn _playerName
+  | length _players < _maxPlayers = Right ()
+  | otherwise = Left $ CannotSitAtFullTable _playerName
+
+canJoinWaitList :: Player -> Game -> Either GameErr ()
+canJoinWaitList player@Player {..} game@Game {..}
+  | _playerName `elem` _waitlist = Left $ AlreadyOnWaitlist _playerName
+  | otherwise = Right ()
 
 validateBlindAction :: Game -> PlayerName -> Blind -> Either GameErr ()
 validateBlindAction game@Game {..} playerName blind

@@ -83,13 +83,24 @@ handlePlayerAction game@Game {..} playerName =
       if isRight $ canCheck playerName game
         then validateAction game playerName action $> check playerName game
         else validateAction game playerName action $> foldCards playerName game
-    action@(SitDown player) -> seatPlayer game player
+    action@(SitDown player) ->
+      validateAction game playerName action $> seatPlayer player game
     action@LeaveSeat -> undefined
 
-seatPlayer :: Game -> Player -> Either GameErr Game
-seatPlayer Game {..} player@Player {..}
-  | _playerName `elem` getPlayerNames _players =
-    Left $ AlreadySatAtTable _playerName
-  | length _players < _maxPlayers =
-    Right Game {_players = _players <> [player], ..}
-  | otherwise = Right $ Game {_waitlist = _waitlist <> [_playerName], ..}
+-- | Just get the identity function if not all players acted otherwise we return 
+-- the function necessary to progress the game to the next stage.
+-- toDO - make function pure by taking stdGen as an arg
+progressGame :: Game -> IO Game
+progressGame game@Game {..}
+  | haveAllPlayersActed game &&
+      (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
+    case getNextStreet _street of
+      PreFlop -> return $ progressToPreFlop game
+      Flop -> return $ progressToFlop game
+      Turn -> return $ progressToTurn game
+      River -> return $ progressToRiver game
+      Showdown -> return $ progressToShowdown game
+      PreDeal -> getNextHand game <$> shuffle initialDeck
+  | allButOneFolded game && (_street /= PreDeal || _street /= Showdown) =
+    return $ progressToShowdown game
+  | otherwise = return game

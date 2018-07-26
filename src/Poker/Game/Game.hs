@@ -16,8 +16,6 @@ import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
 
-import System.Random.Shuffle (shuffleM)
-
 import Poker.Game.Blinds
 import Poker.Game.Hands
 import Poker.Game.Utils
@@ -92,24 +90,6 @@ progressToShowdown game@Game {..} =
   where
     winners' = getWinners game
     awardedPlayers = awardWinners _players _pot winners'
-
--- | Just get the identity function if not all players acted otherwise we return 
--- the function necessary to progress the game to the next stage.
--- toDO - make function pure by taking stdGen as an arg
-progressGame :: Game -> IO Game
-progressGame game@Game {..}
-  | haveAllPlayersActed game &&
-      (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
-    case getNextStreet _street of
-      PreFlop -> return $ progressToPreFlop game
-      Flop -> return $ progressToFlop game
-      Turn -> return $ progressToTurn game
-      River -> return $ progressToRiver game
-      Showdown -> return $ progressToShowdown game
-      PreDeal -> getNextHand game <$> shuffle initialDeck
-  | allButOneFolded game && (_street /= PreDeal || _street /= Showdown) =
-    return $ progressToShowdown game
-  | otherwise = return game
 
 -- need to give players the chips they are due and split pot if necessary
 -- if only one active player then this is a result of everyone else folding 
@@ -254,6 +234,8 @@ initialGameState =
   Game
     { _players = []
     , _waitlist = []
+    , _minBuyInChips = 1500
+    , _maxBuyInChips = 3000
     , _maxPlayers = 5
     , _dealer = 0
     , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
