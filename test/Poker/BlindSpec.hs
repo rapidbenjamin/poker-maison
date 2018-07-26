@@ -12,12 +12,12 @@ import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
 
 import Data.Aeson
-import Poker
 import Poker.ActionValidation
-import Poker.Actions
-import Poker.Blinds
+import Poker.Game.Actions
+import Poker.Game.Blinds
+import Poker.Game.Utils
+import Poker.Poker
 import Poker.Types
-import Poker.Utils
 
 import Control.Lens
 import Control.Monad.State hiding (state)
@@ -37,9 +37,6 @@ instance Arbitrary Card where
   arbitrary = genericArbitrary
 
 instance Arbitrary PlayerState where
-  arbitrary = genericArbitrary
-
-instance Arbitrary Out where
   arbitrary = genericArbitrary
 
 instance Arbitrary Street where
@@ -72,6 +69,8 @@ instance Arbitrary Game where
     _pot <- suchThat chooseAny (\x -> x >= 0 && x >= _bigBlind)
     _maxBet <- suchThat chooseAny (>= 0)
     let _winners = NoWinners
+    let _minBuyInChips = 1000
+    let _maxBuyInChips = 3000
     return Game {_maxPlayers = fromInteger x, ..}
 
 instance Arbitrary Player where
@@ -121,6 +120,8 @@ twoPlayerGame =
     , _bigBlind = 50
     , _street = PreDeal
     , _pot = 0
+    , _minBuyInChips = 1000
+    , _maxBuyInChips = 3000
     , _maxBet = 0
     , _dealer = 0
     , _currentPosToAct = 1
@@ -160,6 +161,8 @@ twoPlayerGameAllBlindsPosted =
     , _winners = NoWinners
     , _maxBet = 0
     , _dealer = 0
+    , _minBuyInChips = 1000
+    , _maxBuyInChips = 3000
     , _currentPosToAct = 1
     }
 
@@ -205,6 +208,8 @@ threePlayerGame =
     , _winners = NoWinners
     , _maxBet = 0
     , _dealer = 0
+    , _minBuyInChips = 1000
+    , _maxBuyInChips = 3000
     , _currentPosToAct = 1
     }
 
@@ -247,6 +252,8 @@ threePlayerGameAllBlindsPosted =
     , _bigBlind = 50
     , _street = PreDeal
     , _pot = 0
+    , _minBuyInChips = 1000
+    , _maxBuyInChips = 3000
     , _winners = NoWinners
     , _maxBet = 0
     , _dealer = 0

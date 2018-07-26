@@ -76,10 +76,10 @@ checkPlayerSatAtTable game@Game {..} pName
 canBet :: PlayerName -> Int -> Game -> Either GameErr ()
 canBet pName amount game@Game {..}
   | amount < _bigBlind = Left $ InvalidMove pName BetLessThanBigBlind
-  | _maxBet > 0 = Left $ InvalidMove pName CannotBetShouldRaiseInstead
   | amount > chipCount = Left $ InvalidMove pName NotEnoughChipsForAction
   | _street == Showdown || _street == PreDeal =
     Left $ InvalidMove pName InvalidActionForStreet
+  | _maxBet > 0 = Left $ InvalidMove pName CannotBetShouldRaiseInstead
   | otherwise = Right ()
   where
     chipCount = _chips $ fromJust (getGamePlayer game pName)

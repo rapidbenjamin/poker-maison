@@ -17,10 +17,10 @@ import Data.Text (Text)
 import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
 
-import Poker
 import Poker.ActionValidation
+import Poker.Game.Utils
+import Poker.Poker
 import Poker.Types
-import Poker.Utils
 
 import Control.Lens
 import Control.Monad.State hiding (state)

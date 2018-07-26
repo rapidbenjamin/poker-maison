@@ -18,10 +18,10 @@ import Data.Text (Text)
 import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
 
-import Poker
 import Poker.ActionValidation
-import Poker.Actions
-import Poker.Game
+import Poker.Game.Actions
+import Poker.Game.Game
+import Poker.Poker
 import Poker.Types
 
 import Control.Lens
@@ -42,9 +42,6 @@ instance Arbitrary Card where
   arbitrary = genericArbitrary
 
 instance Arbitrary PlayerState where
-  arbitrary = genericArbitrary
-
-instance Arbitrary Out where
   arbitrary = genericArbitrary
 
 instance Arbitrary Street where
@@ -77,6 +74,8 @@ instance Arbitrary Game where
     _pot <- suchThat chooseAny (\x -> x >= 0 && x >= _bigBlind)
     _maxBet <- suchThat chooseAny (>= 0)
     let _winners = NoWinners
+    let _minBuyInChips = 1000
+    let _maxBuyInChips = 3000
     return Game {_maxPlayers = fromInteger x, ..}
 
 instance Arbitrary Player where
@@ -323,6 +322,7 @@ main =
               eitherDecode
                 "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"Flop\",\"_deck\":[{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":2050,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":50,\"_pockets\":[],\"_playerName\":\"11eds\",\"_actedThisTurn\":false,\"_chips\":1950},{\"_bet\":1950,\"_playerState\":{\"tag\":\"Out\",\"contents\":\"AllIn\"},\"_committed\":2000,\"_pockets\":[{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"}],\"_playerName\":\"22deds\",\"_actedThisTurn\":true,\"_chips\":0}],\"_currentPosToAct\":0,\"_board\":[{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"},{\"suit\":\"Hearts\",\"rank\":\"Three\"}],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":1950,\"_bigBlind\":50}"
         let flopGame = call "11eds" (fromRight initialGameState g)
+        traceShowM flopGame
         let playerWhoCalled = flopGame ^? players . ix 0
         let expectedPlayer =
               Player
@@ -446,7 +446,7 @@ main =
                , (playerState .~ In) player2
                ]) $
               initialGameState
-        incPosToAct game2 `shouldBe` 0
+        incPosToAct game2 `shouldBe` 3
         let game3 =
               (street .~ PreFlop) . (currentPosToAct .~ 2) .
               (players .~ [player2, player4, player3, player2]) $

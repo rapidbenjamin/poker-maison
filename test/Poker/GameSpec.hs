@@ -12,9 +12,9 @@ import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
 import Test.QuickCheck.Modifiers
 
-import Poker
 import Poker.ActionValidation
-import Poker.Game
+import Poker.Game.Game
+import Poker.Poker
 import Poker.Types
 
 import Control.Lens
@@ -37,9 +37,6 @@ instance Arbitrary Card where
   arbitrary = genericArbitrary
 
 instance Arbitrary PlayerState where
-  arbitrary = genericArbitrary
-
-instance Arbitrary Out where
   arbitrary = genericArbitrary
 
 instance Arbitrary Street where
@@ -75,6 +72,8 @@ instance Arbitrary Game where
     _pot <- suchThat chooseAny (\x -> x >= 0 && x >= _bigBlind)
     _maxBet <- suchThat chooseAny (>= 0)
     let _winners = NoWinners
+    let _minBuyInChips = 1000
+    let _maxBuyInChips = 3000
     return Game {_maxPlayers = fromInteger x, ..}
 
 instance Arbitrary Player where
