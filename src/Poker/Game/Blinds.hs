@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Poker.Blinds where
+module Poker.Game.Blinds where
 
 import Control.Lens
 
@@ -14,35 +14,9 @@ import Data.Maybe
 import Data.Text (Text)
 import Text.Read (readMaybe)
 
+import Poker.Game.Utils
 import Poker.Types
-import Poker.Utils
 import Prelude
-
-validateBlindAction :: Game -> PlayerName -> Blind -> Either GameErr ()
-validateBlindAction game@Game {..} playerName blind
-  | _street /= PreDeal =
-    Left $ InvalidMove playerName CannotPostBlindOutsidePreDeal
-  | otherwise =
-    case getGamePlayer game playerName of
-      Nothing -> Left $ PlayerNotAtTable playerName
-      Just p@Player {..} ->
-        case blindRequired of
-          Just Small ->
-            if blind == Small
-              then if _committed >= _smallBlind
-                     then Left $
-                          InvalidMove playerName $ BlindAlreadyPosted Small
-                     else Right ()
-              else Left $ InvalidMove playerName $ BlindRequired Small
-          Just Big ->
-            if blind == Big
-              then if _committed >= bigBlindValue
-                     then Left $ InvalidMove playerName $ BlindAlreadyPosted Big
-                     else Right ()
-              else Left $ InvalidMove playerName $ BlindRequired Big
-          Nothing -> Left $ InvalidMove playerName NoBlindRequired
-        where blindRequired = blindRequiredByPlayer game playerName
-              bigBlindValue = _smallBlind * 2
 
 haveRequiredBlindsBeenPosted :: Game -> Bool
 haveRequiredBlindsBeenPosted game@Game {..} =

@@ -19,9 +19,9 @@ import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Monoid
 import Data.Text (Text)
-import Poker
+import Poker.Game.Utils
+import Poker.Poker
 import Poker.Types
-import Poker.Utils
 import Socket.Clients
 import Socket.Types
 import Socket.Utils

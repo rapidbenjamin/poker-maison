@@ -69,13 +69,13 @@ library:
     - Database
     - Schema
     - Config
-    - Poker
-    - Poker.Actions
+    - Poker.Poker
+    - Poker.Game.Actions
     - Poker.ActionValidation
     - Poker.Types
-    - Poker.Blinds
-    - Poker.Game
-    - Poker.Utils
+    - Poker.Game.Blinds
+    - Poker.Game.Game
+    - Poker.Game.Utils
     - Socket
 
 executables:

@@ -16,13 +16,12 @@ import Data.Monoid
 import Data.Text (Text)
 
 import qualified Data.Text as T
-import Debug.Trace
 
-import Poker.Blinds (validateBlindAction)
-import Poker.Game (getWinners)
-import Poker.Hands
+import Poker.Game.Blinds
+import Poker.Game.Game (getWinners)
+import Poker.Game.Hands
+import Poker.Game.Utils
 import Poker.Types
-import Poker.Utils
 
 -- a Nothing signifies the absence of an error in which case the action is valid
 -- TODO SHOULD BE Either GameErr () not Maybe GameErr as maybe monad is in wrong direction
@@ -132,6 +131,32 @@ canCall pName game@Game {..}
     p = fromJust (getGamePlayer game pName)
     chipCount = _chips p
     amountNeededToCall = _maxBet - _bet p
+
+validateBlindAction :: Game -> PlayerName -> Blind -> Either GameErr ()
+validateBlindAction game@Game {..} playerName blind
+  | _street /= PreDeal =
+    Left $ InvalidMove playerName CannotPostBlindOutsidePreDeal
+  | otherwise =
+    case getGamePlayer game playerName of
+      Nothing -> Left $ PlayerNotAtTable playerName
+      Just p@Player {..} ->
+        case blindRequired of
+          Just Small ->
+            if blind == Small
+              then if _committed >= _smallBlind
+                     then Left $
+                          InvalidMove playerName $ BlindAlreadyPosted Small
+                     else Right ()
+              else Left $ InvalidMove playerName $ BlindRequired Small
+          Just Big ->
+            if blind == Big
+              then if _committed >= bigBlindValue
+                     then Left $ InvalidMove playerName $ BlindAlreadyPosted Big
+                     else Right ()
+              else Left $ InvalidMove playerName $ BlindRequired Big
+          Nothing -> Left $ InvalidMove playerName NoBlindRequired
+        where blindRequired = blindRequiredByPlayer game playerName
+              bigBlindValue = _smallBlind * 2
 
 validateShowOrMuckHand ::
      Game -> PlayerName -> PlayerAction -> Either GameErr ()

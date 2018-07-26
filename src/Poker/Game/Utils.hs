@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Poker.Utils where
+module Poker.Game.Utils where
 
 import Control.Monad.State
 import Data.Text (Text)

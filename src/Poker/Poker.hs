@@ -3,7 +3,12 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Poker where
+module Poker.Poker
+  ( initialGameState
+  , getPlayer
+  , nextStage
+  , runPlayerAction
+  ) where
 
 import Control.Lens hiding (Fold)
 import Control.Monad.State.Lazy
@@ -15,12 +20,12 @@ import Data.Monoid
 import Data.Text (Text)
 
 import Poker.ActionValidation
-import Poker.Actions
-import Poker.Blinds
-import Poker.Game
-import Poker.Hands
+import Poker.Game.Actions
+import Poker.Game.Blinds
+import Poker.Game.Game
+import Poker.Game.Hands
+import Poker.Game.Utils
 import Poker.Types
-import Poker.Utils
 
 import Text.Pretty.Simple (pPrint)
 
@@ -59,37 +64,6 @@ nextStage =
   StateT $ \currGame@Game {..} -> do
     game' <- progressGame currGame
     return (Right (), game')
-
-initialGameState :: Game
-initialGameState =
-  Game
-    { _players = []
-    , _waitlist = []
-    , _maxPlayers = 5
-    , _dealer = 0
-    , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
-    , _board = []
-    , _deck = initialDeck
-    , _smallBlind = 25
-    , _bigBlind = 50
-    , _pot = 0
-    , _street = PreDeal
-    , _maxBet = 50
-    , _winners = NoWinners
-    }
-
--- initially a players state is set to None to denote that they havent posted their blinds yet
-getPlayer :: Text -> Int -> Player
-getPlayer playerName chips =
-  Player
-    { _pockets = []
-    , _bet = 0
-    , _playerState = None
-    , _playerName = playerName
-    , _committed = 0
-    , _actedThisTurn = False
-    , _chips = chips
-    }
 
 handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
 handlePlayerAction game@Game {..} playerName =

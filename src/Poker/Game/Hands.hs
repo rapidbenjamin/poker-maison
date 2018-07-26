@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 
-module Poker.Hands
+module Poker.Game.Hands
   ( value
   ) where
 

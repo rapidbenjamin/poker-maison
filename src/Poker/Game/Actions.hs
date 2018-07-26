@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Poker.Actions where
+module Poker.Game.Actions where
 
 import Control.Lens
 import Control.Monad.State
@@ -18,8 +18,8 @@ import Poker.ActionValidation
 import Text.Read (readMaybe)
 
 import Data.Bool
+import Poker.Game.Utils
 import Poker.Types
-import Poker.Utils
 import Prelude
 
 -- Update table maxBet and pot as well as player state and chip count

@@ -32,11 +32,11 @@ import Socket.Types
 import Text.Pretty.Simple (pPrint)
 
 import Control.Concurrent.Async
-import Poker
 import Poker.ActionValidation
-import Poker.Game
+import Poker.Game.Game
+import Poker.Game.Utils
+import Poker.Poker
 import Poker.Types
-import Poker.Utils
 import Socket.Clients
 import Socket.Lobby
 import Socket.Types
