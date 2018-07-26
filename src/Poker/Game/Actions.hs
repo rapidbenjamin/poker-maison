@@ -4,22 +4,23 @@
 
 module Poker.Game.Actions where
 
+import qualified Data.List.Safe as Safe
+
 import Control.Lens
 import Control.Monad.State
-import Data.Char (toLower)
-import Data.List
-import qualified Data.List.Safe as Safe
-import Data.Maybe
-import Data.Monoid
-import Text.Pretty.Simple (pPrint)
-
-import Debug.Trace
-import Poker.ActionValidation
-import Text.Read (readMaybe)
 
 import Data.Bool
+import Data.Char (toLower)
+import Data.List
+import Data.Maybe
+import Data.Monoid
+
+import Poker.ActionValidation
 import Poker.Game.Utils
 import Poker.Types
+
+import Text.Read (readMaybe)
+
 import Prelude
 
 -- Update table maxBet and pot as well as player state and chip count
@@ -28,9 +29,9 @@ placeBet value plyr =
   let chips' = plyr ^. chips
       hasEnoughChips = chips' > value
       betAmount = bool chips' value hasEnoughChips
-   in ((chips -~ betAmount) .
-       (bet +~ betAmount) . (committed +~ betAmount) . (playerState .~ In))
-        plyr
+   in plyr &
+      (chips -~ betAmount) .
+      (bet +~ betAmount) . (committed +~ betAmount) . (playerState .~ In)
 
 markActed :: Player -> Player
 markActed = actedThisTurn .~ True
@@ -38,13 +39,14 @@ markActed = actedThisTurn .~ True
 updateMaxBet :: Int -> Game -> Game
 updateMaxBet amount = maxBet %~ max amount
 
+markInForHand :: Player -> Player
 markInForHand = playerState .~ In
 
 postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
   game &
-  ((players .~ newPlayers) .
-   (pot +~ blindValue) . (currentPosToAct .~ nextPositionToAct))
+  (players .~ newPlayers) .
+  (pot +~ blindValue) . (currentPosToAct .~ nextPositionToAct)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -52,10 +54,10 @@ postBlind blind pName game@Game {..} =
            then (markInForHand . markActed . placeBet blindValue) p
            else p) <$>
       _players
-    isFirstBlind = (sum $ (\Player {..} -> _bet) <$> _players) == 0
+    isFirstBlind = sum ((\Player {..} -> _bet) <$> _players) == 0
     gamePlayerNames = (\Player {..} -> _playerName) <$> _players
     playerPosition = fromJust $ pName `elemIndex` gamePlayerNames
-    haveBetsBeenMade = (sum $ (\Player {..} -> _bet) <$> _players) == 0
+    haveBetsBeenMade = sum ((\Player {..} -> _bet) <$> _players) == 0
     nextPositionToAct =
       if not haveBetsBeenMade
         then playerPosition
@@ -68,7 +70,7 @@ postBlind blind pName game@Game {..} =
 makeBet :: Int -> PlayerName -> Game -> Game
 makeBet amount pName game@Game {..} =
   updateMaxBet amount game &
-  ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct) . (pot +~ amount))
+  (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct) . (pot +~ amount)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -80,7 +82,7 @@ makeBet amount pName game@Game {..} =
 
 foldCards :: PlayerName -> Game -> Game
 foldCards pName game@Game {..} =
-  game & ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct))
+  game & (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -93,8 +95,8 @@ foldCards pName game@Game {..} =
 call :: PlayerName -> Game -> Game
 call pName game@Game {..} =
   game &
-  ((players .~ newPlayers) .
-   (currentPosToAct .~ nextPosToAct) . (pot +~ callAmount))
+  (players .~ newPlayers) .
+  (currentPosToAct .~ nextPosToAct) . (pot +~ callAmount)
   where
     player = fromJust $ find (\Player {..} -> _playerName == pName) _players --horrible performance use map for players
     callAmount =
@@ -113,7 +115,7 @@ call pName game@Game {..} =
 
 check :: PlayerName -> Game -> Game
 check pName game@Game {..} =
-  game & ((players .~ newPlayers) . (currentPosToAct .~ nextPosToAct))
+  game & (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)
   where
     newPlayers =
       (\p@Player {..} ->
