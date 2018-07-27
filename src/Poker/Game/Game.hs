@@ -261,3 +261,9 @@ getPlayer playerName chips =
     , _actedThisTurn = False
     , _chips = chips
     }
+
+isPlayerToAct :: Text -> Game -> Bool
+isPlayerToAct playerName game =
+  (_street game /= PreDeal && _street game /= Showdown) &&
+  (_playerName (_players game !! _currentPosToAct game) == playerName) &&
+  not (isEveryoneAllIn game)

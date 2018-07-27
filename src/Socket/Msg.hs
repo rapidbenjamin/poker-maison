@@ -86,12 +86,6 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
             return ()))
       (removeClient username serverStateTVar)
 
-isPlayerToAct :: Text -> Game -> Bool
-isPlayerToAct playerName game =
-  (_street game /= PreDeal && _street game /= Showdown) &&
-  (_playerName (_players game !! _currentPosToAct game) == playerName) &&
-  not (isEveryoneAllIn game)
-
 -- takes a channel and if the player in the thread is the current player to act in the room 
 -- then if no valid game action is received within 30 secs then we run the Timeout action
 -- against the game
