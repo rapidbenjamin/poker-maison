@@ -7,16 +7,20 @@ module Socket.Msg
   ) where
 
 import Control.Applicative
+
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan
+
 import Control.Exception
+
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.STM
 import Control.Monad.State.Lazy
+
 import Data.Either
 import Data.Foldable
 import Data.Functor
@@ -27,8 +31,9 @@ import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Network.WebSockets as WS
+
 import Prelude
-import Socket.Types
+
 import Text.Pretty.Simple (pPrint)
 
 import Control.Concurrent.Async
@@ -201,14 +206,6 @@ progressGameAlong serverStateTVar tableName game@Game {..} =
         pPrint progressedGame
         progressGameAlong serverStateTVar tableName progressedGame
       else print $ "progressGameAlong Err" ++ show errE
-
--- Send a Message to the poker tables channel.
-broadcastChanMsg :: MsgHandlerConfig -> TableName -> MsgOut -> IO ()
-broadcastChanMsg MsgHandlerConfig {..} tableName msg = do
-  ServerState {..} <- readTVarIO serverStateTVar
-  case M.lookup tableName (unLobby lobby) of
-    Nothing -> error "couldnt find tableName in lobby in broadcastChanMsg"
-    Just Table {..} -> atomically $ writeTChan channel msg
 
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler GetTables {} = undefined
