@@ -30,7 +30,7 @@ data MsgHandlerConfig = MsgHandlerConfig
   , username :: Username
   , clientConn :: WS.Connection
   , redisConfig :: RedisConfig
-  , msgReaderChan :: TChan MsgIn
+  , socketReadChan :: TChan MsgIn
   }
 
 type TableName = Text

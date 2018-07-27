@@ -62,7 +62,7 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
                    clients
              , ..
              })
-      msgReaderChan <- newTChanIO
+      socketReadChan <- newTChanIO
       let msgHandlerConfig =
             MsgHandlerConfig
               { serverStateTVar = state

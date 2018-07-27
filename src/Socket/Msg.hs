@@ -49,30 +49,17 @@ import Socket.Utils
 import System.Timeout
 import Types
 
--- catches all synchronous exceptions for logging purposes
-tryAny :: IO a -> IO (Either SomeException a)
-tryAny action = do
-  var <- newEmptyMVar
-  uninterruptibleMask_ $
-    forkIOWithUnmask $ \restore -> do
-      res <- try $ restore action
-      putMVar var res
-  takeMVar var
-
--- default action derived from game state 
-defaultMsg = GameMove "black" Fold
-
 -- process msgs sent by the client socket
 handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
-    msg <- atomically $ readTChan msgReaderChan
+    msg <- atomically $ readTChan socketReadChan
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
     either
       (sendMsg clientConn . ErrMsg)
       (handleNewGameState serverStateTVar)
       msgOutE
-    print "msgReaderChannel"
+    print "socketReadChannel"
     pPrint msgOutE
     return ()
 
@@ -89,7 +76,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
          (forever $ do
             msg <- WS.receiveData clientConn
             let parsedMsg = parseMsgFromJSON msg
-            for_ parsedMsg $ atomically . writeTChan msgReaderChan)
+            for_ parsedMsg $ atomically . writeTChan socketReadChan)
          (\e -> do
             let err = show (e :: IOException)
             print
@@ -99,6 +86,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
             return ()))
       (removeClient username serverStateTVar)
 
+isPlayerToAct :: Text -> Game -> Bool
 isPlayerToAct playerName game =
   (_street game /= PreDeal && _street game /= Showdown) &&
   (_playerName (_players game !! _currentPosToAct game) == playerName) &&
@@ -109,49 +97,48 @@ isPlayerToAct playerName game =
 -- against the game
 tableReceiveMsgLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
 tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
-  msgReaderDup <- atomically $ dupTChan msgReaderChan
+  msgReaderDup <- atomically $ dupTChan socketReadChan
   dupChan <- atomically $ dupTChan channel
   forever $ do
     chanMsg <- atomically $ readTChan dupChan
     sendMsg clientConn chanMsg
-    case chanMsg of
-      NewGameState _ game -> do
-        let isPlayerToAct' = isPlayerToAct (unUsername username) game
-        when isPlayerToAct' $
-          let timeoutDuration = 14000000
-           in do maybeMsg <-
-                   timeGameMoveMsg
-                     game
-                     (unUsername username)
-                     timeoutDuration
-                     msgReaderChan
-                 if isNothing maybeMsg
-                   then atomically $
-                        writeTChan msgReaderChan (GameMove tableName Timeout)
-                   else print maybeMsg
-      _ -> return ()
+    handleTableMsg msgHandlerConfig chanMsg
 
-catchE :: TableName -> WS.ConnectionException -> IO MsgIn
-catchE tableName e = do
-  print e
-  return $ GameMove tableName Timeout
+handleTableMsg :: MsgHandlerConfig -> MsgOut -> IO ()
+handleTableMsg msgHandlerConfig@MsgHandlerConfig {..} (NewGameState tableName game') =
+  when
+    (isPlayerToAct (unUsername username) game')
+    (awaitTimedPlayerAction socketReadChan game' tableName username)
+handleTableMsg msgHandlerConfig@MsgHandlerConfig {..} _ = return ()
 
--- A return value of Nothing denotes that no valid action
--- was received in the given time period.
--- If a valid gameMove player action was received then we
--- wrap the msgIn in a Just
-timeGameMoveMsg :: Game -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
-timeGameMoveMsg game playerName duration chan = do
-  delayTVar <- registerDelay duration
-  awaitValidAction game playerName delayTVar chan
+awaitTimedPlayerAction :: TChan MsgIn -> Game -> TableName -> Username -> IO ()
+awaitTimedPlayerAction socketReadChan game tableName username = do
+  maybeMsg <-
+    awaitValidAction
+      game
+      tableName
+      (unUsername username)
+      timeoutDuration
+      socketReadChan
+  if isNothing maybeMsg
+    then atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
+    else print maybeMsg
+  where
+    timeoutDuration = 14000000
 
 -- We duplicate the channel reading the socket msgs and start a timeout
 -- The thread will be blocked until either a valid action is received 
 -- or the timeout finishes 
+--
+-- A return value of Nothing denotes that no valid action
+-- was received in the given time period.
+-- If a valid gameMove player action was received then we
+-- wrap the msgIn in a Just
 awaitValidAction ::
-     Game -> PlayerName -> TVar Bool -> TChan MsgIn -> IO (Maybe MsgIn)
-awaitValidAction game playerName delayTVar chan = do
-  dupChan <- atomically $ dupTChan chan
+     Game -> TableName -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
+awaitValidAction game tableName playerName duration socketReadChan = do
+  delayTVar <- registerDelay duration
+  dupChan <- atomically $ dupTChan socketReadChan
   atomically $
     (Just <$>
      (readTChan dupChan >>= \msg ->
@@ -187,13 +174,13 @@ handleNewGameState :: TVar ServerState -> MsgOut -> IO ()
 handleNewGameState serverStateTVar (NewGameState tableName newGame) = do
   newServerState <-
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
-  progressGameAlong serverStateTVar tableName newGame
+  progressGame serverStateTVar tableName newGame
 handleNewGameState serverStateTVar msg = do
   print msg
   return ()
 
-progressGameAlong :: TVar ServerState -> TableName -> Game -> IO ()
-progressGameAlong serverStateTVar tableName game@Game {..} =
+progressGame :: TVar ServerState -> TableName -> Game -> IO ()
+progressGame serverStateTVar tableName game@Game {..} =
   when (haveAllPlayersActed game) $ do
     (errE, progressedGame) <- runStateT nextStage game
     pPrint game
@@ -204,25 +191,20 @@ progressGameAlong serverStateTVar tableName game@Game {..} =
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         pPrint progressedGame
-        progressGameAlong serverStateTVar tableName progressedGame
+        progressGame serverStateTVar tableName progressedGame
       else print $ "progressGameAlong Err" ++ show errE
 
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler GetTables {} = undefined
 gameMsgHandler msg@JoinTable {} = undefined
 gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
-gameMsgHandler msg@GameMove {} = gameMoveHandler msg
+gameMsgHandler msg@GameMove {} = gameActionHandler msg
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
 getTablesHandler = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   liftIO $ sendMsg clientConn TableList
-
--- simply adds client to the list of subscribers
-suscribeToTableChannel ::
-     MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-suscribeToTableChannel (JoinTable tableName) = undefined
 
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
 -- We link the new thread to the current thread so on any exception in either then both threads are
@@ -238,8 +220,8 @@ takeSeatHandler move@(TakeSeat tableName) = do
         then throwError $ AlreadySatInGame tableName
         else do
           let chips_Hardcoded = 2000
-          let player = getPlayer (unUsername username) chips_Hardcoded
-          let takeSeatAction = GameMove tableName $ SitDown player
+              player = getPlayer (unUsername username) chips_Hardcoded
+              takeSeatAction = GameMove tableName $ SitDown player
           (errE, newGame) <-
             liftIO $
             runStateT
@@ -288,8 +270,8 @@ unUsername (Username username) = username
 -- then the player move is applied to the table which results in either a new game state which is 
 -- broadcast to all table subscribers or an error is returned which is then only sent to the
 -- originator of the invalid in-game move
-gameMoveHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameMoveHandler gameMove@(GameMove tableName move) = do
+gameActionHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+gameActionHandler gameMove@(GameMove tableName playerAction) = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
@@ -298,18 +280,12 @@ gameMoveHandler gameMove@(GameMove tableName move) = do
       let satAtTable = unUsername username `elem` getGamePlayerNames game
        in if not satAtTable
             then throwError $ NotSatAtTable tableName
-            else updateGameWithMove gameMove username game
-
--- TODO MOVE THE BELOW TO POKER MODULE
--- get either the new game state or an error when an in-game move is taken by a player 
-updateGameWithMove ::
-     MsgIn
-  -> Username
-  -> Game
-  -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-updateGameWithMove (GameMove tableName playerAction) (Username username) game = do
-  (errE, newGame) <-
-    liftIO $ runStateT (runPlayerAction username playerAction) game
-  case errE of
-    Left gameErr -> throwError $ GameErr gameErr
-    Right () -> return $ NewGameState tableName newGame
+            else do
+              (errE, newGame) <-
+                liftIO $
+                runStateT
+                  (runPlayerAction (unUsername username) playerAction)
+                  game
+              case errE of
+                Left gameErr -> throwError $ GameErr gameErr
+                Right () -> return $ NewGameState tableName newGame
