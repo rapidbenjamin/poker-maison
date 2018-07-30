@@ -342,6 +342,7 @@ main =
       let showdownGame =
             (street .~ Showdown) . (maxBet .~ 1000) . (pot .~ 1000) .
             (deck .~ initialDeck) .
+            (dealer .~ 1) .
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
             initialGameState
       let preDealGame = getNextHand showdownGame []
@@ -350,11 +351,9 @@ main =
       it "should set maxBet to bigBlind" $ preDealGame ^. maxBet `shouldBe`
         _bigBlind showdownGame
       it "should reset all player bets" $ do
-        let playerBets = (\Player {..} -> _bet) <$> (_players preDealGame)
+        let playerBets = (\Player {..} -> _bet) <$> _players preDealGame
         playerBets `shouldBe` [0, 0]
-      it "should increment dealer position" $ preDealGame ^. dealer `shouldBe`
-        (showdownGame ^. dealer) +
-        1
+      it "should increment dealer position" $ preDealGame ^. dealer `shouldBe` 1
     describe "isEveryoneAllIn" $ do
       it "should return False for two player game if no one all in" $ do
         let preFlopGame' =

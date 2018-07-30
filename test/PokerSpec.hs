@@ -13,28 +13,23 @@
 module PokerSpec where
 
 import Control.Lens
-import Data.List
-import Data.Text (Text)
-import Test.Hspec
-import Test.QuickCheck hiding (Big, Small)
-import Test.QuickCheck.Modifiers
-
-import Poker
-import Poker.ActionValidation
-import Poker.Game
-import Poker.Types
-
 import Control.Lens
-import Control.Monad
-import Control.Monad.State hiding (state)
-import Data.List.Lens
-import Data.List.Split
+import Data.Aeson
+import Data.Either
+import Data.List
+import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
-import Debug.Trace
-import GHC.Generics
+import Test.Hspec
+import Test.QuickCheck hiding (Big, Small)
 import Test.QuickCheck.Arbitrary.Generic
 import Test.QuickCheck.Gen
+
+import Poker.ActionValidation
+import Poker.Game.Actions
+import Poker.Game.Game
+import Poker.Poker
+import Poker.Types
 
 instance Arbitrary Card where
   arbitrary = genericArbitrary
@@ -42,9 +37,6 @@ instance Arbitrary Card where
 instance Arbitrary PlayerState where
   arbitrary = genericArbitrary
 
-instance Arbitrary Out where
-  arbitrary = genericArbitrary
- 
 instance Arbitrary Street where
   arbitrary = genericArbitrary
 
@@ -77,7 +69,9 @@ instance Arbitrary Game where
     let _bigBlind = _smallBlind * 2
     _pot <- suchThat chooseAny (\x -> x >= 0 && x >= _bigBlind)
     _maxBet <- suchThat chooseAny (>= 0)
-    let _winners = []
+    let _winners = NoWinners
+    let _minBuyInChips = 1000
+    let _maxBuyInChips = 3000
     return Game {_maxPlayers = fromInteger x, ..}
 
 instance Arbitrary Player where
@@ -160,7 +154,4 @@ player5 =
 initPlayers = [player1, player2, player3]
 
 main :: IO ()
-main =
-  hspec $
-  describe "Poker" $ do
-    
+main = hspec $ describe "Poker" $ return ()
