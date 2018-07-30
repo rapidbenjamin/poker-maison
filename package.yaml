@@ -90,7 +90,7 @@ executables:
     - poker-server
 
 tests:
-  poker-server-test:
+  spec:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -100,5 +100,7 @@ tests:
     dependencies:
     - poker-server
     - generic-arbitrary
-    - quickcheck-instances
     - hspec
+    - QuickCheck
+    - quickcheck-instances
+

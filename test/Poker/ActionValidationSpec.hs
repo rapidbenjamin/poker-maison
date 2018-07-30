@@ -1,15 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE StandaloneDeriving #-}
 
-module ActionValidationSpec where
+module Poker.ActionValidationSpec where
 
 import Control.Lens
 import Data.List
@@ -147,9 +139,7 @@ playerFixtures = [player1, player2, player3, player4]
 
 playerFixtures2 = [player3, player5]
 
-main :: IO ()
-main =
-  hspec $
+spec =
   describe "ActionValidation" $ do
     describe "Player Acting in Turn Validation" $ do
       let game =

@@ -1,17 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE StandaloneDeriving #-}
 
-module ActionSpec where
+module Poker.ActionSpec where
 
-import Control.Lens
 import Control.Lens
 import Data.Aeson
 import Data.Either
@@ -160,9 +151,8 @@ bettingNotFinishedGame =
   ((players .~ [player1, player2, player3, player4]) . (street .~ PreFlop))
     initialGameState
 
-main :: IO ()
-main =
-  hspec $ describe "Poker.Actions" $ do
+spec =
+  describe "Poker.Actions" $ do
     describe "postBlind" $ do
       it "should update player attributes correctly" $ do
         let game =

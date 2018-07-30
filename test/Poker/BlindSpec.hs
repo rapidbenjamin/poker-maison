@@ -1,15 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
+module Poker.BlindSpec where
+
 import Control.Lens
+import Control.Lens
+import Data.Either
 import Data.List
+import Data.List.Lens
 import Data.Text (Text)
+import Data.Text (Text)
+import qualified Data.Text as T
 import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
+import Test.QuickCheck.Arbitrary.Generic
+import Test.QuickCheck.Gen
 
 import Data.Aeson
 import Poker.ActionValidation
@@ -18,20 +23,6 @@ import Poker.Game.Blinds
 import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
-
-import Control.Lens
-import Control.Monad.State hiding (state)
-import Data.Either
-import Data.List.Lens
-import Data.Text (Text)
-import qualified Data.Text as T
-import Debug.Trace
-import GHC.Generics
-import GHC.Generics
-import Test.QuickCheck.Arbitrary.Generic
-import Test.QuickCheck.Arbitrary.Generic
-import Test.QuickCheck.Gen
-import Test.QuickCheck.Gen
 
 instance Arbitrary Card where
   arbitrary = genericArbitrary
@@ -268,9 +259,7 @@ threePlayerNames = getGamePlayerNames threePlayerGame
 
 threePlayers = _players threePlayerGame
 
-main :: IO ()
-main =
-  hspec $
+spec =
   describe "Poker.Blinds" $ do
     describe "blind required by player" $
       it "should return correct blind" $
@@ -285,12 +274,6 @@ main =
     describe "getRequiredBlinds" $ do
       it "should return correct blinds for two player game" $
         getRequiredBlinds twoPlayerGame `shouldBe` [Just Small, Just Big]
-      it "should return correct blinds for three player game" $ do
-        let game =
-              eitherDecode
-                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"PreDeal\",\"_deck\":[{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Clubs\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"}],\"_dealer\":2,\"_pot\":150,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"1z\",\"_actedThisTurn\":false,\"_chips\":2100},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"2z\",\"_actedThisTurn\":false,\"_chips\":1975},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"3z\",\"_actedThisTurn\":false,\"_chips\":2000}],\"_currentPosToAct\":2,\"_board\":[],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":0,\"_bigBlind\":50}"
-        let game' = fromRight initialGameState game
-        getRequiredBlinds game' `shouldBe` [Just Small, Just Big, Nothing]
     describe "blinds" $ do
       describe "getSmallBlindPosition" $ do
         it "returns correct small blind position in three player game" $ do
@@ -351,32 +334,32 @@ main =
             Nothing -> True
     describe "haveRequiredBlindsBeenPosted" $ do
       it
-        "should return False when not all players have posted blinds in 2 player game" $ do
+        "should return False when not all players have posted blinds in 2 player game" $
         haveRequiredBlindsBeenPosted twoPlayerGame `shouldBe` False
       it
-        "should return True when all players have posted blinds in 2 player game" $ do
+        "should return True when all players have posted blinds in 2 player game" $
         haveRequiredBlindsBeenPosted twoPlayerGameAllBlindsPosted `shouldBe`
-          True
+        True
       it
-        "should return False when not all players have posted blinds in 3 player game" $ do
+        "should return False when not all players have posted blinds in 3 player game" $
         haveRequiredBlindsBeenPosted threePlayerGame `shouldBe` False
       it
-        "should  return True when all players have posted blinds in 3 player game" $ do
+        "should  return True when all players have posted blinds in 3 player game" $
         haveRequiredBlindsBeenPosted threePlayerGameAllBlindsPosted `shouldBe`
-          True
+        True
     describe "updatePlayersInHand" $ do
       it
         "should set players that are not in blind position to In for three players" $ do
         let newGame = updatePlayersInHand threePlayerGameAllBlindsPosted
-        let playerStates = (\Player {..} -> _playerState) <$> (_players newGame)
+        let playerStates = (\Player {..} -> _playerState) <$> _players newGame
         playerStates `shouldBe` [In, In, In]
       it
         "should return correct player states for two players when all blinds posted" $ do
         let newGame = updatePlayersInHand twoPlayerGameAllBlindsPosted
-        let playerStates = (\Player {..} -> _playerState) <$> (_players newGame)
+        let playerStates = (\Player {..} -> _playerState) <$> _players newGame
         playerStates `shouldBe` [In, In]
       it
         "should return correct player states for two players when not all blinds posted" $ do
         let newGame = updatePlayersInHand twoPlayerGame
-        let playerStates = (\Player {..} -> _playerState) <$> (_players newGame)
+        let playerStates = (\Player {..} -> _playerState) <$> _players newGame
         playerStates `shouldBe` [In, None]

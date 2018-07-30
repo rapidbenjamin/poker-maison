@@ -2,36 +2,31 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module GameSpec where
+module Poker.GameSpec where
 
 import Control.Lens
+import Control.Monad
+import Data.Aeson
+import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Either
 import Data.List
+import Data.List.Lens
+import Data.List.Split
+import Data.Maybe
 import Data.Text (Text)
+import qualified Data.Text as T
+import GHC.Generics
+import System.IO.Unsafe
 import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
+import Test.QuickCheck.Arbitrary.Generic
+import Test.QuickCheck.Gen
 import Test.QuickCheck.Modifiers
 
 import Poker.ActionValidation
 import Poker.Game.Game
 import Poker.Poker
 import Poker.Types
-
-import Control.Lens
-import Control.Monad
-import Control.Monad.State hiding (state)
-import Data.Aeson
-import qualified Data.ByteString.Lazy.Char8 as C
-import Data.List.Lens
-import Data.List.Split
-import Data.Maybe
-import Data.Text (Text)
-import qualified Data.Text as T
-import Debug.Trace
-import GHC.Generics
-import System.IO.Unsafe
-import Test.QuickCheck.Arbitrary.Generic
-import Test.QuickCheck.Gen
 
 instance Arbitrary Card where
   arbitrary = genericArbitrary
@@ -166,9 +161,8 @@ player6 =
 
 initPlayers = [player1, player2, player3]
 
-main :: IO ()
-main =
-  hspec $ describe "Poker.Game" $ do
+spec =
+  describe "Poker.Game" $ do
     describe "dealToPlayers" $ do
       it "should deal correct number of cards" $ do
         let (_, newPlayers) = dealToPlayers initialDeck [player1, player3]
@@ -270,7 +264,6 @@ main =
              ]) $
             initialGameState
       let preFlopGame = progressToPreFlop preDealGame
-      traceShowM (_players preDealGame)
       it "should update street to PreFlop" $ preFlopGame ^. street `shouldBe`
         PreFlop
       it "should not reset any player bet" $ do

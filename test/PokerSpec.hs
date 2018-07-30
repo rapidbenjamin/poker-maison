@@ -1,18 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module PokerSpec where
 
-import Control.Lens
 import Control.Lens
 import Data.Aeson
 import Data.Either
@@ -153,5 +144,4 @@ player5 =
 
 initPlayers = [player1, player2, player3]
 
-main :: IO ()
-main = hspec $ describe "Poker" $ return ()
+spec = describe "Poker" $ return ()
