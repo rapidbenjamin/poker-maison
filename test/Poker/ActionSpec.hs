@@ -12,31 +12,23 @@
 module ActionSpec where
 
 import Control.Lens
+import Control.Lens
 import Data.Aeson
+import Data.Either
 import Data.List
+import Data.Maybe
 import Data.Text (Text)
+import qualified Data.Text as T
 import Test.Hspec
 import Test.QuickCheck hiding (Big, Small)
+import Test.QuickCheck.Arbitrary.Generic
+import Test.QuickCheck.Gen
 
 import Poker.ActionValidation
 import Poker.Game.Actions
 import Poker.Game.Game
 import Poker.Poker
 import Poker.Types
-
-import Control.Lens
-import Control.Monad
-import Control.Monad.State hiding (state)
-import Data.Either
-import Data.List.Lens
-import Data.List.Split
-import Data.Maybe
-import Data.Text (Text)
-import qualified Data.Text as T
-import Debug.Trace
-import GHC.Generics
-import Test.QuickCheck.Arbitrary.Generic
-import Test.QuickCheck.Gen
 
 instance Arbitrary Card where
   arbitrary = genericArbitrary
@@ -300,41 +292,24 @@ main =
     describe "call" $ do
       it "should update player attributes correctly when calling a bet" $ do
         let game =
-              (street .~ PreFlop) . (maxBet .~ 200) .
-              (players .~ [player6, player1]) $
+              (street .~ PreFlop) . (maxBet .~ 400) .
+              (players .~ [player1, player6]) $
               initialGameState
-        let pName = "player1"
+        let pName = "player6"
         let newGame = call pName game
         let playerWhoCalled = newGame ^? players . ix 1
         let expectedPlayer =
               Player
                 { _pockets = []
                 , _chips = 1800
-                , _bet = 200
+                , _bet = 400
                 , _playerState = In
-                , _playerName = "player1"
-                , _committed = 300
+                , _playerName = "player6"
+                , _committed = 450
                 , _actedThisTurn = True
                 }
         playerWhoCalled `shouldBe` Just expectedPlayer
       it "should update player attributes correctly when calling AllIn" $ do
-        let g =
-              eitherDecode
-                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"Flop\",\"_deck\":[{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":2050,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":50,\"_pockets\":[],\"_playerName\":\"11eds\",\"_actedThisTurn\":false,\"_chips\":1950},{\"_bet\":1950,\"_playerState\":{\"tag\":\"Out\",\"contents\":\"AllIn\"},\"_committed\":2000,\"_pockets\":[{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"}],\"_playerName\":\"22deds\",\"_actedThisTurn\":true,\"_chips\":0}],\"_currentPosToAct\":0,\"_board\":[{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"},{\"suit\":\"Hearts\",\"rank\":\"Three\"}],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":1950,\"_bigBlind\":50}"
-        let flopGame = call "11eds" (fromRight initialGameState g)
-        traceShowM flopGame
-        let playerWhoCalled = flopGame ^? players . ix 0
-        let expectedPlayer =
-              Player
-                { _pockets = []
-                , _chips = 0
-                , _bet = 1950
-                , _playerState = In
-                , _playerName = "11eds"
-                , _committed = 2000
-                , _actedThisTurn = True
-                }
-        playerWhoCalled `shouldBe` Just expectedPlayer
         let game' =
               (street .~ PreFlop) . (maxBet .~ 4000) .
               (players .~ [player5, player1]) $
@@ -353,21 +328,6 @@ main =
                 , _actedThisTurn = True
                 }
         playerWhoCalled' `shouldBe` Just expectedPlayer'
-      it "Should add call amount to the player's committed chips field" $ do
-        let g =
-              eitherDecode
-                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"PreDeal\",\"_deck\":[{\"suit\":\"Clubs\",\"rank\":\"Two\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"},{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"},{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"},{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"},{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":0,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"None\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"1z\",\"_actedThisTurn\":false,\"_chips\":2000},{\"_bet\":0,\"_playerState\":{\"tag\":\"None\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"2z\",\"_actedThisTurn\":false,\"_chips\":2000},{\"_bet\":0,\"_playerState\":{\"tag\":\"None\"},\"_committed\":0,\"_pockets\":[],\"_playerName\":\"3z\",\"_actedThisTurn\":false,\"_chips\":2000}],\"_currentPosToAct\":1,\"_board\":[],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":50,\"_bigBlind\":50}"
-        let preDealGame = call "2z" (fromRight initialGameState g)
-        let playerWhoCalled = preDealGame ^? players . ix 1
-        ((fromJust playerWhoCalled) ^. committed) `shouldBe` 50
-      it "should add call amount to pot" $ do
-        let game =
-              (street .~ PreFlop) . (maxBet .~ 4000) .
-              (players .~ [player5, player6]) $
-              initialGameState
-        let pName = "player6"
-        let newGame = call pName game
-        (newGame ^. pot) `shouldBe` 2000
       it "should increment position to act" $ do
         let game =
               (street .~ PreFlop) . (currentPosToAct .~ 0) .
@@ -389,15 +349,6 @@ main =
         let playerWhoChecked = newGame ^? players . ix 0
         let expectedPlayer = (actedThisTurn .~ True) player1
         playerWhoChecked `shouldBe` Just expectedPlayer
-      it "should set hasActed to True" $ do
-        let turnGame =
-              eitherDecode
-                "{\"_smallBlind\":25,\"_maxPlayers\":5,\"_waitlist\":[],\"_street\":\"Turn\",\"_deck\":[{\"suit\":\"Hearts\",\"rank\":\"Four\"},{\"suit\":\"Spades\",\"rank\":\"Four\"},{\"suit\":\"Clubs\",\"rank\":\"Five\"},{\"suit\":\"Diamonds\",\"rank\":\"Five\"},{\"suit\":\"Hearts\",\"rank\":\"Five\"},{\"suit\":\"Spades\",\"rank\":\"Five\"},{\"suit\":\"Clubs\",\"rank\":\"Six\"},{\"suit\":\"Diamonds\",\"rank\":\"Six\"},{\"suit\":\"Hearts\",\"rank\":\"Six\"},{\"suit\":\"Spades\",\"rank\":\"Six\"},{\"suit\":\"Clubs\",\"rank\":\"Seven\"},{\"suit\":\"Diamonds\",\"rank\":\"Seven\"},{\"suit\":\"Hearts\",\"rank\":\"Seven\"},{\"suit\":\"Spades\",\"rank\":\"Seven\"},{\"suit\":\"Clubs\",\"rank\":\"Eight\"},{\"suit\":\"Diamonds\",\"rank\":\"Eight\"},{\"suit\":\"Hearts\",\"rank\":\"Eight\"},{\"suit\":\"Spades\",\"rank\":\"Eight\"},{\"suit\":\"Clubs\",\"rank\":\"Nine\"},{\"suit\":\"Diamonds\",\"rank\":\"Nine\"},{\"suit\":\"Hearts\",\"rank\":\"Nine\"},{\"suit\":\"Spades\",\"rank\":\"Nine\"},{\"suit\":\"Clubs\",\"rank\":\"Ten\"},{\"suit\":\"Diamonds\",\"rank\":\"Ten\"},{\"suit\":\"Hearts\",\"rank\":\"Ten\"},{\"suit\":\"Spades\",\"rank\":\"Ten\"},{\"suit\":\"Clubs\",\"rank\":\"Jack\"},{\"suit\":\"Diamonds\",\"rank\":\"Jack\"},{\"suit\":\"Hearts\",\"rank\":\"Jack\"},{\"suit\":\"Spades\",\"rank\":\"Jack\"},{\"suit\":\"Clubs\",\"rank\":\"Queen\"},{\"suit\":\"Diamonds\",\"rank\":\"Queen\"},{\"suit\":\"Hearts\",\"rank\":\"Queen\"},{\"suit\":\"Spades\",\"rank\":\"Queen\"},{\"suit\":\"Clubs\",\"rank\":\"King\"},{\"suit\":\"Diamonds\",\"rank\":\"King\"},{\"suit\":\"Hearts\",\"rank\":\"King\"},{\"suit\":\"Spades\",\"rank\":\"King\"},{\"suit\":\"Clubs\",\"rank\":\"Ace\"},{\"suit\":\"Diamonds\",\"rank\":\"Ace\"},{\"suit\":\"Hearts\",\"rank\":\"Ace\"},{\"suit\":\"Spades\",\"rank\":\"Ace\"}],\"_dealer\":0,\"_pot\":75,\"_players\":[{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":0,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Two\"},{\"suit\":\"Diamonds\",\"rank\":\"Two\"}],\"_playerName\":\"1z\",\"_actedThisTurn\":true,\"_chips\":2000},{\"_bet\":0,\"_playerState\":{\"tag\":\"Out\",\"contents\":\"Folded\"},\"_committed\":25,\"_pockets\":[{\"suit\":\"Hearts\",\"rank\":\"Two\"},{\"suit\":\"Spades\",\"rank\":\"Two\"}],\"_playerName\":\"2z\",\"_actedThisTurn\":true,\"_chips\":1975},{\"_bet\":0,\"_playerState\":{\"tag\":\"In\"},\"_committed\":50,\"_pockets\":[{\"suit\":\"Clubs\",\"rank\":\"Three\"},{\"suit\":\"Diamonds\",\"rank\":\"Three\"}],\"_playerName\":\"3z\",\"_actedThisTurn\":false,\"_chips\":1950}],\"_currentPosToAct\":1,\"_board\":[{\"suit\":\"Hearts\",\"rank\":\"Three\"},{\"suit\":\"Spades\",\"rank\":\"Three\"},{\"suit\":\"Clubs\",\"rank\":\"Four\"},{\"suit\":\"Diamonds\",\"rank\":\"Four\"}],\"_winners\":{\"tag\":\"NoWinners\"},\"_maxBet\":0,\"_bigBlind\":50}"
-        let turnGame' = fromRight initialGameState turnGame
-        let turnGame'' = check "3z" turnGame'
-        let playerWhoChecked = fromJust $ turnGame'' ^? players . ix 2
-        let acted = playerWhoChecked ^. actedThisTurn
-        acted `shouldBe` True
       it "should increment position to act" $ do
         let game =
               (street .~ PreFlop) . (currentPosToAct .~ 0) .
