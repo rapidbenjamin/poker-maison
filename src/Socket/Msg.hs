@@ -34,6 +34,8 @@ import qualified Network.WebSockets as WS
 
 import Prelude
 
+import Debug.Trace
+
 import Text.Pretty.Simple (pPrint)
 
 import Control.Concurrent.Async

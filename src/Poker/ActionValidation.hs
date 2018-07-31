@@ -18,7 +18,7 @@ import Data.Monoid
 import Data.Text (Text)
 
 import Poker.Game.Blinds
-import Poker.Game.Game (getWinners)
+import Poker.Game.Game (getWinners, isPlayerToAct)
 import Poker.Game.Hands
 import Poker.Game.Utils
 import Poker.Types
@@ -53,7 +53,7 @@ isPlayerActingOutOfTurn game@Game {..} playerName
     case playerName `elemIndex` gamePlayerNames of
       Nothing -> Left $ NotAtTable playerName
       Just pos ->
-        if _currentPosToAct == pos
+        if isPlayerToAct playerName game
           then Right ()
           else Left $
                InvalidMove playerName $

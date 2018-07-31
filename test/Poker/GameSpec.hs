@@ -395,3 +395,23 @@ spec = do
              ]) $
             initialGameState
       isEveryoneAllIn flopGame `shouldBe` False
+  describe "isPlayerToAct" $ do
+    it "should return True for an active player in position" $ do
+      let game =
+            (street .~ Flop) . (dealer .~ 0) .
+            (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
+            initialGameState
+      isPlayerToAct (_playerName player2) game `shouldBe` True
+      isPlayerToAct (_playerName player5) game `shouldBe` False
+    it "should return False for non-active players" $ do
+      let game =
+            (street .~ Flop) . (dealer .~ 0) .
+            (players .~
+             [ ((chips .~ 1000) player5)
+             , ((playerState .~ Folded) player4)
+             , ((playerState .~ None) player3)
+             , ((chips .~ 1000) player2)
+             ]) $
+            initialGameState
+      isPlayerToAct (_playerName player3) game `shouldBe` False
+      isPlayerToAct (_playerName player4) game `shouldBe` False

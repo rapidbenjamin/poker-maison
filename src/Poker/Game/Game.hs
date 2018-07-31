@@ -11,6 +11,7 @@ import Control.Monad.Random.Class
 import Control.Monad.State
 
 import Data.List
+import qualified Data.List.Safe as Safe
 import Data.List.Split
 import Data.Maybe
 import Data.Monoid
@@ -263,7 +264,12 @@ getPlayer playerName chips =
     }
 
 isPlayerToAct :: Text -> Game -> Bool
-isPlayerToAct playerName game =
-  (_street game /= PreDeal && _street game /= Showdown) &&
-  (_playerName (_players game !! _currentPosToAct game) == playerName) &&
-  not (isEveryoneAllIn game)
+isPlayerToAct playerName game
+  | isNothing maybePlyr = False
+  | otherwise =
+    let plyr = fromJust maybePlyr
+     in (_street game /= PreDeal && _street game /= Showdown) &&
+        _playerName plyr == playerName &&
+        _playerState plyr == In && not (isEveryoneAllIn game)
+  where
+    maybePlyr = _players game Safe.!! _currentPosToAct game
