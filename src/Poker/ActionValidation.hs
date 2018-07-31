@@ -47,23 +47,21 @@ validateAction game@Game {..} playerName =
 -- | The first player to post their blinds in the predeal stage  can do it from any position
 -- Therefore the acting in turn rule wont apply for that first move.
 isPlayerActingOutOfTurn :: Game -> PlayerName -> Either GameErr ()
-isPlayerActingOutOfTurn game@Game {..} playerName =
-  if _street == PreDeal && not haveBetsBeenMade -- first predeal blind bet can be done from any pos
-    then Right ()
-    else do
-      let playerPosition = playerName `elemIndex` gamePlayerNames
-      case playerPosition of
-        Nothing -> Left $ NotAtTable playerName
-        Just pos ->
-          if _currentPosToAct == pos
-            then Right ()
-            else Left $
-                 InvalidMove playerName $
-                 OutOfTurn $
-                 CurrentPlayerToActErr $ gamePlayerNames !! _currentPosToAct
+isPlayerActingOutOfTurn game@Game {..} playerName
+  | _street == PreDeal && not haveBetsBeenMade = Right () -- first predeal blind bet can be done from any position
+  | otherwise =
+    case playerName `elemIndex` gamePlayerNames of
+      Nothing -> Left $ NotAtTable playerName
+      Just pos ->
+        if _currentPosToAct == pos
+          then Right ()
+          else Left $
+               InvalidMove playerName $
+               OutOfTurn $
+               CurrentPlayerToActErr $ gamePlayerNames !! _currentPosToAct
   where
     haveBetsBeenMade = sum ((\Player {..} -> _bet) <$> _players) == 0
-    gamePlayerNames = (\Player {..} -> _playerName) <$> _players
+    gamePlayerNames = getGamePlayerNames game
 
 checkPlayerSatAtTable :: Game -> PlayerName -> Either GameErr ()
 checkPlayerSatAtTable game@Game {..} pName
@@ -82,7 +80,7 @@ canBet pName amount game@Game {..}
   | _maxBet > 0 = Left $ InvalidMove pName CannotBetShouldRaiseInstead
   | otherwise = Right ()
   where
-    chipCount = _chips $ fromJust (getGamePlayer game pName)
+    chipCount = _chips $ fromJust $ getGamePlayer game pName
 
 -- Keep in mind that a player can always raise all in,
 -- even if their total chip count is less than what 
@@ -98,7 +96,7 @@ canRaise pName amount game@Game {..}
   | otherwise = Right ()
   where
     minRaise = 2 * _maxBet
-    chipCount = _chips $ fromJust (getGamePlayer game pName)
+    chipCount = _chips $ fromJust $ getGamePlayer game pName
 
 canCheck :: PlayerName -> Game -> Either GameErr ()
 canCheck pName Game {..}

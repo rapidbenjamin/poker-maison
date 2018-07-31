@@ -27,12 +27,8 @@ import Poker.Game.Hands
 import Poker.Game.Utils
 import Poker.Types
 
-import Text.Pretty.Simple (pPrint)
-
-import Debug.Trace
-
 newGame :: Game -> State Game (Maybe GameErr)
-newGame initState = state $ \_ -> (Nothing, initialGameState)
+newGame initState = state $ const (Nothing, initialGameState)
 
 -- this is public api of the poker module 
 -- the function takes a player action and returns either a new game for a valid 
