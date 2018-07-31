@@ -178,7 +178,7 @@ spec = do
     it "should return True when all but one player " $ do
       let game =
             (street .~ PreFlop) .
-            (players .~ [((playerState .~ (Folded)) player1), player2]) $
+            (players .~ [((playerState .~ Folded) player1), player2]) $
             initialGameState
       allButOneFolded game `shouldBe` True
     it "should return False when not all players acted" $ do
@@ -189,7 +189,7 @@ spec = do
     it "should always return False for PreDeal (blinds) stage" $ do
       let unfinishedBlindsGame =
             (street .~ PreDeal) .
-            (players .~ [((playerState .~ (Folded)) player1), player2]) $
+            (players .~ [((playerState .~ Folded) player1), player2]) $
             initialGameState
       allButOneFolded unfinishedBlindsGame `shouldBe` False
   describe "progressToPreFlop" $ do
