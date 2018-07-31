@@ -154,20 +154,20 @@ validateBlindAction game@Game {..} playerName blind
       Nothing -> Left $ PlayerNotAtTable playerName
       Just p@Player {..} ->
         case blindRequired of
-          Just Small ->
+          Small ->
             if blind == Small
               then if _committed >= _smallBlind
                      then Left $
                           InvalidMove playerName $ BlindAlreadyPosted Small
                      else Right ()
               else Left $ InvalidMove playerName $ BlindRequired Small
-          Just Big ->
+          Big ->
             if blind == Big
               then if _committed >= bigBlindValue
                      then Left $ InvalidMove playerName $ BlindAlreadyPosted Big
                      else Right ()
               else Left $ InvalidMove playerName $ BlindRequired Big
-          Nothing -> Left $ InvalidMove playerName NoBlindRequired
+          NoBlind -> Left $ InvalidMove playerName NoBlindRequired
         where blindRequired = blindRequiredByPlayer game playerName
               bigBlindValue = _smallBlind * 2
 

@@ -24,29 +24,28 @@ haveRequiredBlindsBeenPosted game@Game {..} =
   zipWith
     (\requiredBlind Player {..} ->
        case requiredBlind of
-         Nothing -> True
-         Just Big -> _committed == _bigBlind
-         Just Small -> _committed == _smallBlind)
+         NoBlind -> True
+         Big -> _committed == _bigBlind
+         Small -> _committed == _smallBlind)
     requiredBlinds
     _players
   where
     requiredBlinds = getRequiredBlinds game
 
-getRequiredBlinds :: Game -> [Maybe Blind]
+getRequiredBlinds :: Game -> [Blind]
 getRequiredBlinds game@Game {..}
   | _street /= PreDeal = []
   | otherwise = blindRequiredByPlayer game <$> getPlayerNames _players
 
 -- We use the list of required blinds to calculate if a player has posted 
 -- chips sufficient to be "In" for this hand.
-activatePlayersWhenNoBlindNeeded :: [Player] -> [Maybe Blind] -> [Player]
-activatePlayersWhenNoBlindNeeded plyrs requiredBlinds =
-  zipWith updatePlayer requiredBlinds plyrs
+activatePlayersWhenNoBlindNeeded :: [Blind] -> [Player] -> [Player]
+activatePlayersWhenNoBlindNeeded = zipWith updatePlayer
   where
     updatePlayer blindReq Player {..} =
       Player
         { _playerState =
-            if isNothing blindReq
+            if blindReq == NoBlind
               then In
               else _playerState
         , ..
@@ -55,26 +54,24 @@ activatePlayersWhenNoBlindNeeded plyrs requiredBlinds =
 -- Sets player state to in if they don't need to post blind
 updatePlayersInHand :: Game -> Game
 updatePlayersInHand game =
-  game & (players %~ flip activatePlayersWhenNoBlindNeeded requiredBlinds)
-  where
-    requiredBlinds = getRequiredBlinds game
+  game & (players %~ activatePlayersWhenNoBlindNeeded (getRequiredBlinds game))
 
 getSmallBlindPosition :: [Text] -> Int -> Int
 getSmallBlindPosition playersSatIn dealerPos =
   if length playersSatIn == 2
     then dealerPos
-    else modInc dealerPos ((length playersSatIn) - 1)
+    else modInc dealerPos (length playersSatIn - 1)
 
 -- if a player does not post their blind at the appropriate time then their state will be changed to 
 -- None signifying that they have a seat but are now sat out
 -- blind is required either if player is sitting in bigBlind or smallBlind position relative to dealer
 -- or if their current playerState is set to Out 
 -- If no blind is required for the player to remain In for the next hand then we will return Nothing
-blindRequiredByPlayer :: Game -> Text -> Maybe Blind
+blindRequiredByPlayer :: Game -> Text -> Blind
 blindRequiredByPlayer game playerName
-  | playerPosition == smallBlindPos = Just Small
-  | playerPosition == bigBlindPos = Just Big
-  | otherwise = Nothing
+  | playerPosition == smallBlindPos = Small
+  | playerPosition == bigBlindPos = Big
+  | otherwise = NoBlind
   where
     player = fromJust $ getGamePlayer game playerName
     playerNames = getPlayerNames (_players game)

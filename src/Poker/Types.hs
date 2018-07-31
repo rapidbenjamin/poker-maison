@@ -163,6 +163,7 @@ type PlayerName = Text
 data Blind
   = Small
   | Big
+  | NoBlind
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 -- If you can check, that is you aren't facing an amount you have to call, 

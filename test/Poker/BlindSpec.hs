@@ -204,7 +204,7 @@ threePlayers = _players threePlayerGame
 spec = do
   describe "blind required by player" $
     it "should return correct blind" $
-    blindRequiredByPlayer twoPlayerGame "player2" `shouldBe` Just Big
+    blindRequiredByPlayer twoPlayerGame "player2" `shouldBe` Big
   describe "getSmallBlindPosition" $ do
     it "small blind position should be correct for a two player game" $ do
       let dealerPos = 0
@@ -212,9 +212,9 @@ spec = do
     it "small blind position should be correct for a three player game" $ do
       let dealerPos = 2
       getSmallBlindPosition threePlayerNames dealerPos `shouldBe` (0 :: Int)
-  describe "getRequiredBlinds" $ do
+  describe "getRequiredBlinds" $
     it "should return correct blinds for two player game" $
-      getRequiredBlinds twoPlayerGame `shouldBe` [Just Small, Just Big]
+    getRequiredBlinds twoPlayerGame `shouldBe` [Small, Big]
   describe "blinds" $ do
     describe "getSmallBlindPosition" $ do
       it "returns correct small blind position in three player game" $ do
@@ -225,42 +225,42 @@ spec = do
         let dealerPos = 0
         getSmallBlindPosition ["Player1", "Player2"] dealerPos `shouldBe` 0
     describe "blindRequiredByPlayer" $ do
-      it "returns Just Small if player position is dealer + 1 for three players" $ do
+      it "returns Small if player position is dealer + 1 for three players" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player2" `shouldBe` Just Small
-      it "returns Just Big if player position is dealer + 2 for three players" $ do
+        blindRequiredByPlayer game "Player2" `shouldBe` Small
+      it "returns Big if player position is dealer + 2 for three players" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player3" `shouldBe` Just Big
+        blindRequiredByPlayer game "Player3" `shouldBe` Big
       it
-        "returns Nothing if player position is dealer for three players and playerState is In" $ do
+        "returns NoBlind if player position is dealer for three players and playerState is In" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player1" `shouldBe` Nothing
+        blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
       it
-        "returns Just Big if player position is dealer for three players and playerState is None" $ do
+        "returns Big if player position is dealer for three players and playerState is None" $ do
         let testPlayers =
               (playerState .~ None) <$>
               (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player1" `shouldBe` Nothing
-      it "returns Just Small if player position is dealer for two players" $ do
+        blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
+      it "returns Small if player position is dealer for two players" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (getPlayer <$> ["Player1", "Player2"] <*> [100])
         let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player1" `shouldBe` Just Small
-      it "returns Just Big if player position is dealer + 1 for two players" $ do
+        blindRequiredByPlayer game "Player1" `shouldBe` Small
+      it "returns Big if player position is dealer + 1 for two players" $ do
         let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
         let game = players .~ testPlayers $ initialGameState
-        blindRequiredByPlayer game "Player2" `shouldBe` Just Big
+        blindRequiredByPlayer game "Player2" `shouldBe` Big
     context "Players with PlayerState set to None" $
       it "should always require bigBlind" $
       property $ \game@Game {..} playerName -> do
@@ -268,7 +268,7 @@ spec = do
         case player of
           Just Player {..} -> do
             let result = blindRequiredByPlayer game playerName
-            (_playerState == None && result == Just Big) || _playerState /= None
+            (_playerState == None && result == Big) || _playerState /= None
           Nothing -> True
   describe "haveRequiredBlindsBeenPosted" $ do
     it
