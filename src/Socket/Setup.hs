@@ -34,4 +34,4 @@ setInitialLobby redisConfig = do
     void $ Redis.hsetnx "gamesState" "lobby" (pack $ show lobby)
 
 intialiseGameStateInRedis :: RedisConfig -> IO ()
-intialiseGameStateInRedis redisConfig = setInitialLobby redisConfig
+intialiseGameStateInRedis = setInitialLobby

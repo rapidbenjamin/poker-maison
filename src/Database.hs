@@ -98,4 +98,10 @@ redisFetchUserByEmail redisConfig email =
     case result of
       Right (Just userString) -> return $ Just (read . unpack $ userString)
       _ -> return Nothing
+
 -------  Redis  --------
+updateUserChips :: ConnectionString -> Text -> Int -> IO ()
+updateUserChips connString email newChips =
+  runAction
+    connString
+    (updateWhere [UserEmail ==. email] [UserChips =. newChips])

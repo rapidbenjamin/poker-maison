@@ -116,9 +116,10 @@ awaitTimedPlayerAction socketReadChan game tableName username = do
       (unUsername username)
       timeoutDuration
       socketReadChan
-  if isNothing maybeMsg
-    then atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
-    else print maybeMsg
+  case maybeMsg of
+    Nothing ->
+      atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
+    Just _ -> print maybeMsg
   where
     timeoutDuration = 14000000
 
@@ -182,13 +183,13 @@ progressGame serverStateTVar tableName game@Game {..} =
     pPrint game
     print "haveAllPlayersActed:"
     print (haveAllPlayersActed progressedGame)
-    if isRight errE
-      then do
+    case errE of
+      Right _ -> do
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         pPrint progressedGame
         progressGame serverStateTVar tableName progressedGame
-      else print $ "progressGameAlong Err" ++ show errE
+      Left _ -> print $ "progressGameAlong Err" ++ show errE
 
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler GetTables {} = undefined
