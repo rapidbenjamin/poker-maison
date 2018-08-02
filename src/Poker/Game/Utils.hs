@@ -10,6 +10,8 @@ import Data.Text (Text)
 import Data.Foldable
 import Data.Functor
 import Data.List
+import Data.Map.Lazy (Map)
+import qualified Data.Map.Lazy as M
 import Data.Maybe
 
 import Control.Lens
@@ -81,6 +83,10 @@ getGamePlayer game playerName =
 
 getGamePlayerNames :: Game -> [Text]
 getGamePlayerNames game = _playerName <$> _players game
+
+getPlayerChipCounts :: Game -> [(Text, Int)]
+getPlayerChipCounts Game {..} =
+  (\Player {..} -> (_playerName, _chips)) <$> _players
 
 getPlayerNames :: [Player] -> [Text]
 getPlayerNames players = (^. playerName) <$> players

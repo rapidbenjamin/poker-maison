@@ -100,8 +100,10 @@ redisFetchUserByEmail redisConfig email =
       _ -> return Nothing
 
 -------  Redis  --------
-updateUserChips :: ConnectionString -> Text -> Int -> IO ()
-updateUserChips connString email newChips =
+dbUpdateUserChips :: ConnectionString -> [(Text, Int)] -> IO ()
+dbUpdateUserChips connString userChipCounts =
   runAction
     connString
-    (updateWhere [UserEmail ==. email] [UserChips =. newChips])
+    (updateWhere
+       ((UserUsername ==.) . fst <$> userChipCounts)
+       ((UserChips =.) . snd <$> userChipCounts))

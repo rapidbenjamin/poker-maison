@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Socket.Msg
@@ -15,6 +16,7 @@ import Control.Concurrent.STM.TChan
 
 import Control.Exception
 
+import Control.Lens
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Reader
@@ -30,6 +32,7 @@ import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
+import Database.Persist.Postgresql (ConnectionString)
 import qualified Network.WebSockets as WS
 
 import Prelude
@@ -39,6 +42,7 @@ import Debug.Trace
 import Text.Pretty.Simple (pPrint)
 
 import Control.Concurrent.Async
+import Database (dbUpdateUserChips)
 import Poker.ActionValidation
 import Poker.Game.Game
 import Poker.Game.Utils
@@ -59,7 +63,7 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
     either
       (sendMsg clientConn . ErrMsg)
-      (handleNewGameState serverStateTVar)
+      (handleNewGameState dbConn serverStateTVar)
       msgOutE
     print "socketReadChannel"
     pPrint msgOutE
@@ -167,17 +171,18 @@ updateGameAndBroadcastT serverStateTVar tableName newGame = do
       swapTVar serverStateTVar ServerState {lobby = updatedLobby, ..}
       return ()
 
-handleNewGameState :: TVar ServerState -> MsgOut -> IO ()
-handleNewGameState serverStateTVar (NewGameState tableName newGame) = do
+handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
+handleNewGameState connString serverStateTVar (NewGameState tableName newGame) = do
   newServerState <-
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
-  progressGame serverStateTVar tableName newGame
-handleNewGameState serverStateTVar msg = do
+  progressGame connString serverStateTVar tableName newGame
+handleNewGameState _ _ msg = do
   print msg
   return ()
 
-progressGame :: TVar ServerState -> TableName -> Game -> IO ()
-progressGame serverStateTVar tableName game@Game {..} =
+progressGame ::
+     ConnectionString -> TVar ServerState -> TableName -> Game -> IO ()
+progressGame connString serverStateTVar tableName game@Game {..} =
   when (haveAllPlayersActed game) $ do
     (errE, progressedGame) <- runStateT nextStage game
     pPrint game
@@ -187,8 +192,11 @@ progressGame serverStateTVar tableName game@Game {..} =
       Right _ -> do
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
+        when
+          (progressedGame ^. street == Showdown)
+          (dbUpdateUserChips connString $ getPlayerChipCounts progressedGame)
         pPrint progressedGame
-        progressGame serverStateTVar tableName progressedGame
+        progressGame connString serverStateTVar tableName progressedGame
       Left _ -> print $ "progressGameAlong Err" ++ show errE
 
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
