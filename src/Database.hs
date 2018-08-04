@@ -3,6 +3,7 @@
 
 module Database where
 
+import Control.Lens
 import Control.Monad (void)
 import Control.Monad.Except
 import Control.Monad.Logger (LoggingT, runStdoutLoggingT)
@@ -39,13 +40,21 @@ deleteUserPG connString uid = runAction connString (delete userKey)
     userKey :: Key User
     userKey = toSqlKey uid
 
-dbGetUserByEmail :: ConnectionString -> Text -> IO (Maybe (Entity User))
-dbGetUserByEmail connString email =
-  runAction connString (selectFirst [UserEmail ==. email] [])
+dbGetUserByEmail :: ConnectionString -> Text -> IO (Maybe User)
+dbGetUserByEmail connString email = do
+  maybeUser <- runAction connString (selectFirst [UserEmail ==. email] [])
+  return $
+    case maybeUser of
+      Just (Entity _ user) -> Just user
+      Nothing -> Nothing
 
-dbGetUserByUsername :: ConnectionString -> Username -> IO (Maybe (Entity User))
-dbGetUserByUsername connString (Username username) =
-  runAction connString (selectFirst [UserUsername ==. username] [])
+dbGetUserByUsername :: ConnectionString -> Username -> IO (Maybe User)
+dbGetUserByUsername connString (Username username) = do
+  maybeUser <- runAction connString (selectFirst [UserUsername ==. username] [])
+  return $
+    case maybeUser of
+      Just (Entity _ user) -> Just user
+      Nothing -> Nothing
 
 dbRegisterUser ::
      ConnectionString -> RedisConfig -> User -> ExceptT Text IO Int64
@@ -60,24 +69,23 @@ dbRegisterUser connString redisConfig user@User {..} = do
         then throwError "Username is Already Taken"
         else liftIO $ fromSqlKey <$> runAction connString (insert user)
 
-dbGetUserByLogin :: ConnectionString -> Login -> IO (Maybe (Entity User))
-dbGetUserByLogin connString Login {..} =
-  runAction
-    connString
-    (selectFirst [UserEmail ==. loginEmail, UserPassword ==. loginPassword] [])
+dbGetUserByLogin :: ConnectionString -> Login -> IO (Maybe User)
+dbGetUserByLogin connString Login {..} = do
+  maybeUser <-
+    runAction
+      connString
+      (selectFirst [UserEmail ==. loginEmail, UserPassword ==. loginPassword] [])
+  return $
+    case maybeUser of
+      Just (Entity _ user) -> Just user
+      Nothing -> Nothing
 
 fetchUserByEmail :: ConnectionString -> RedisConfig -> Text -> IO (Maybe User)
 fetchUserByEmail connString redisConfig email = do
   maybeCachedUser <- liftIO $ redisFetchUserByEmail redisConfig email
   case maybeCachedUser of
     Just user -> return $ Just user
-    Nothing -> do
-      maybeUser <- liftIO $ dbGetUserByEmail connString email
-      case maybeUser of
-        Just (Entity _ user@User {..}) -> do
-          cacheUser redisConfig email user
-          return $ Just user
-        Nothing -> return Nothing
+    Nothing -> dbGetUserByEmail connString email
 
 -------  Redis  --------
 runRedisAction :: RedisConfig -> Redis a -> IO a
@@ -100,10 +108,28 @@ redisFetchUserByEmail redisConfig email =
       _ -> return Nothing
 
 -------  Redis  --------
-dbUpdateUserChips :: ConnectionString -> [(Text, Int)] -> IO ()
-dbUpdateUserChips connString userChipCounts =
+-- Query is called at the end of every hand to update player balances
+dbUpdateUsersChips :: ConnectionString -> [(Text, Int)] -> IO ()
+dbUpdateUsersChips connString userChipCounts =
   runAction
     connString
     (updateWhere
        ((UserUsername ==.) . fst <$> userChipCounts)
-       ((UserChips =.) . snd <$> userChipCounts))
+       ((UserTotalChips =.) . snd <$> userChipCounts))
+
+-- Query runs when player takes or leaves a seat at a game
+dbPutUserChipsIntoPlay :: ConnectionString -> Text -> Int -> IO ()
+dbPutUserChipsIntoPlay connString username chipsToAdd =
+  runAction
+    connString
+    (updateWhere
+       [UserUsername ==. username]
+       [UserTotalChips +=. negate chipsToAdd, UserChipsInPlay +=. chipsToAdd])
+
+dbGetAvailableChipCount :: ConnectionString -> Username -> IO (Maybe Int)
+dbGetAvailableChipCount connString username = do
+  maybeUser <- dbGetUserByUsername connString username
+  return $
+    case maybeUser of
+      Just User {..} -> Just $ userTotalChips - userChipsInPlay
+      Nothing -> Nothing

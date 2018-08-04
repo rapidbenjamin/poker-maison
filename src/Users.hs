@@ -43,7 +43,8 @@ fetchUserProfileHandler User {..} =
   return
     UserProfile
       { proEmail = userEmail
-      , proChips = userChips
+      , proTotalChips = userTotalChips
+      , proChipsInPlay = userChipsInPlay
       , proUsername = Username userUsername
       }
 
@@ -55,7 +56,7 @@ loginHandler secretKey connString Login {..} = do
   maybe (throwError unAuthErr) createToken maybeUser
   where
     unAuthErr = err401 {errBody = "Incorrect email or password"}
-    createToken (Entity _ User {..}) = signToken secretKey userEmail
+    createToken User {..} = signToken secretKey userEmail
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
 
 -- when we register new user we check to see if email and username are already taken
@@ -74,7 +75,8 @@ registerUserHandler secretKey connString redisConfig Register {..} = do
           { userUsername = username
           , userEmail = newUserEmail
           , userPassword = hashedPassword
-          , userChips = 3000
+          , userTotalChips = 3000
+          , userChipsInPlay = 0
           }
   registrationResult <-
     liftIO $ runExceptT $ dbRegisterUser connString redisConfig newUser

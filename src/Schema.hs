@@ -24,16 +24,18 @@ PTH.share
     username Text
     email Text
     password Text
-    chips Int
+    totalChips Int
+    chipsInPlay Int
     UniqueEmail email
     UniqueUsername username
     deriving Show Read
 |]
 
 instance FromJSON User where
-  parseJSON (Object v) =
-    User <$> v .: "username" <*> v .: "email" <*> v .: "chips" <*>
-    v .: "password"
+  parseJSON (Object obj) =
+    User <$> obj .: "username" <*> obj .: "email" <*> obj .: "userTotalChips" <*>
+    obj .: "userChipsInPlay" <*>
+    obj .: "password"
   parseJSON _ = mzero
 
 instance ToJSON User where
@@ -41,7 +43,8 @@ instance ToJSON User where
     object
       [ "username" .= userUsername p
       , "email" .= userEmail p
-      , "chips" .= userChips p
+      , "totalChips" .= userTotalChips p
+      , "chipsInPlay" .= userChipsInPlay p
       , "password" .= userPassword p
       ]
 
@@ -49,14 +52,16 @@ parseUser :: Object -> Parser User
 parseUser o = do
   uUsername <- o .: "username"
   uEmail <- o .: "email"
-  uChips <- o .: "chips"
+  uTotalChips <- o .: "totalChips"
+  uChipsInPlay <- o .: "chipsInPlay"
   uPassword <- o .: "password"
   return
     User
       { userUsername = uUsername
       , userPassword = uPassword
       , userEmail = uEmail
-      , userChips = uChips
+      , userTotalChips = uTotalChips
+      , userChipsInPlay = uChipsInPlay
       }
 
 instance ToSample User where
@@ -64,7 +69,8 @@ instance ToSample User where
     where
       g =
         User
-          { userChips = 2000
+          { userTotalChips = 2000
+          , userChipsInPlay = 0
           , userUsername = "Tom"
           , userEmail = "gooby@g.com"
           , userPassword = "n84!@R5G"

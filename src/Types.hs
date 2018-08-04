@@ -40,7 +40,8 @@ type UserID = Text
 data UserProfile = UserProfile
   { proUsername :: Username
   , proEmail :: Text
-  , proChips :: Int
+  , proTotalChips :: Int
+  , proChipsInPlay :: Int
   } deriving (Eq, Show, Generic, ToJSON)
 
 data ReturnToken = ReturnToken

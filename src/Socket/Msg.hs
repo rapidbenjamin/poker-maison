@@ -42,7 +42,6 @@ import Debug.Trace
 import Text.Pretty.Simple (pPrint)
 
 import Control.Concurrent.Async
-import Database (dbUpdateUserChips)
 import Poker.ActionValidation
 import Poker.Game.Game
 import Poker.Game.Utils
@@ -54,6 +53,8 @@ import Socket.Types
 import Socket.Utils
 import System.Timeout
 import Types
+
+import Database (dbGetAvailableChipCount, dbUpdateUsersChips)
 
 -- process msgs sent by the client socket
 handleReadChanMsgs :: MsgHandlerConfig -> IO ()
@@ -194,7 +195,7 @@ progressGame connString serverStateTVar tableName game@Game {..} =
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         when
           (progressedGame ^. street == Showdown)
-          (dbUpdateUserChips connString $ getPlayerChipCounts progressedGame)
+          (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
         pPrint progressedGame
         progressGame connString serverStateTVar tableName progressedGame
       Left _ -> print $ "progressGameAlong Err" ++ show errE
