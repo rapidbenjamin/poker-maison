@@ -47,6 +47,7 @@ import Poker.Game.Game
 import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
+import Schema
 import Socket.Clients
 import Socket.Lobby
 import Socket.Types
@@ -54,7 +55,7 @@ import Socket.Utils
 import System.Timeout
 import Types
 
-import Database (dbGetAvailableChipCount, dbUpdateUsersChips)
+import Database
 
 -- process msgs sent by the client socket
 handleReadChanMsgs :: MsgHandlerConfig -> IO ()
@@ -225,23 +226,44 @@ takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
       if unUsername username `elem` getGamePlayerNames game
         then throwError $ AlreadySatInGame tableName
         else do
-          let player = getPlayer (unUsername username) chipsToSit
-              takeSeatAction = GameMove tableName $ SitDown player
-          (errE, newGame) <-
-            liftIO $
-            runStateT
-              (runPlayerAction (unUsername username) (SitDown player))
-              game
-          case errE of
-            Left gameErr -> throwError $ GameErr gameErr
+          hasEnoughChipsErrE <-
+            liftIO $ canTakeSeat dbConn username chipsToSit tableName table
+          case hasEnoughChipsErrE of
+            Left err -> throwError err
             Right () -> do
-              liftIO $ atomically $ joinTable tableName msgHandlerConfig
-              asyncGameReceiveLoop <-
+              let player = getPlayer (unUsername username) chipsToSit
+                  takeSeatAction = GameMove tableName $ SitDown player
+              (errE, newGame) <-
                 liftIO $
-                async (tableReceiveMsgLoop tableName channel msgHandlerConfig)
-              liftIO $ link asyncGameReceiveLoop
-              liftIO $ sendMsg clientConn (SuccessFullySatDown tableName)
-              return $ NewGameState tableName newGame
+                runStateT
+                  (runPlayerAction (unUsername username) (SitDown player))
+                  game
+              case errE of
+                Left gameErr -> throwError $ GameErr gameErr
+                Right () -> do
+                  liftIO $ atomically $ joinTable tableName msgHandlerConfig
+                  asyncGameReceiveLoop <-
+                    liftIO $
+                    async
+                      (tableReceiveMsgLoop tableName channel msgHandlerConfig)
+                  liftIO $ link asyncGameReceiveLoop
+                  liftIO $ sendMsg clientConn (SuccessFullySatDown tableName)
+                  return $ NewGameState tableName newGame
+
+canTakeSeat ::
+     ConnectionString -> Username -> Int -> Text -> Table -> IO (Either Err ())
+canTakeSeat connString username chipsToSit tableName Table { game = Game {..}
+                                                           , ..
+                                                           } = do
+  maybeUser <- dbGetUserByUsername connString username
+  return $
+    case maybeUser of
+      Nothing -> Left $ UserDoesNotExistInDB (unUsername username)
+      Just User {..} ->
+        let availableChips = userTotalChips - userChipsInPlay
+         in if chipsToSit >= _minBuyInChips && chipsToSit <= _maxBuyInChips
+              then Right ()
+              else Left $ ChipAmountNotWithinBuyInRange tableName
 
 -- If game is in predeal stage then add player to game else add to waitlist
 -- the waitlist is a queue awaiting the next predeal stage of the game

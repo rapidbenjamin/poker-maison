@@ -125,11 +125,10 @@ dbPutUserChipsIntoPlay connString username chipsToAdd =
     (updateWhere
        [UserUsername ==. username]
        [UserTotalChips +=. negate chipsToAdd, UserChipsInPlay +=. chipsToAdd])
-
-dbGetAvailableChipCount :: ConnectionString -> Username -> IO (Maybe Int)
-dbGetAvailableChipCount connString username = do
-  maybeUser <- dbGetUserByUsername connString username
-  return $
-    case maybeUser of
-      Just User {..} -> Just $ userTotalChips - userChipsInPlay
-      Nothing -> Nothing
+--dbGetAvailableChipCount :: ConnectionString -> Username -> IO (Maybe Int)
+--dbGetAvailableChipCount connString username = do
+--  maybeUser <- dbGetUserByUsername connString username
+--  return $
+--    case maybeUser of
+--      Just User {..} -> Just $ userTotalChips - userChipsInPlay
+--      Nothing -> Nothing

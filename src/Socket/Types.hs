@@ -120,5 +120,7 @@ data Err
   | NotEnoughChips
   | GameErr GameErr
   | InvalidGameAction
+  | ChipAmountNotWithinBuyInRange TableName
+  | UserDoesNotExistInDB Text
   | AuthFailed Text
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
