@@ -99,6 +99,7 @@ data MsgOut
   = TableList -- TODO only broadcast public table info -- add list of tables to msg
   | NewTableList -- TODO only broadcast public table info -- add list of tables to msg
   | PlayerLeft
+  | SuccessFullySatDown TableName
   | PlayerJoined TableName
                  Text
   | NewGameState TableName

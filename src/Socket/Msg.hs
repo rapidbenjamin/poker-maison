@@ -241,6 +241,7 @@ takeSeatHandler move@(TakeSeat tableName) = do
                 liftIO $
                 async (tableReceiveMsgLoop tableName channel msgHandlerConfig)
               liftIO $ link asyncGameReceiveLoop
+              liftIO $ sendMsg clientConn (SuccessFullySatDown tableName)
               return $ NewGameState tableName newGame
 
 -- If game is in predeal stage then add player to game else add to waitlist
