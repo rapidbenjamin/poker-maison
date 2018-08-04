@@ -89,6 +89,7 @@ data MsgIn
   | JoinTable TableName
   | LeaveTable
   | TakeSeat TableName
+             Int
   | LeaveSeat
   | GameMove TableName
              PlayerAction

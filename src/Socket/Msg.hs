@@ -216,7 +216,7 @@ getTablesHandler = do
 -- We link the new thread to the current thread so on any exception in either then both threads are
 -- killed to prevent memory leaks.
 takeSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-takeSeatHandler move@(TakeSeat tableName) = do
+takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
@@ -225,8 +225,7 @@ takeSeatHandler move@(TakeSeat tableName) = do
       if unUsername username `elem` getGamePlayerNames game
         then throwError $ AlreadySatInGame tableName
         else do
-          let chips_Hardcoded = 2000
-              player = getPlayer (unUsername username) chips_Hardcoded
+          let player = getPlayer (unUsername username) chipsToSit
               takeSeatAction = GameMove tableName $ SitDown player
           (errE, newGame) <-
             liftIO $
