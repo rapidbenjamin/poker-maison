@@ -266,8 +266,20 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
           case errE of
             Left gameErr -> throwError $ GameErr gameErr
             Right () -> do
-              liftIO $ sendMsg clientConn (SuccessfullyLeftSeat tableName)
-              return $ NewGameState tableName newGame
+              let maybePlayer =
+                    find
+                      (\Player {..} -> unUsername username == _playerName)
+                      (_players game)
+              case maybePlayer of
+                Nothing -> throwError $ NotSatInGame tableName
+                Just Player {_chips = chipsInPlay, ..} -> do
+                  liftIO $
+                    dbPutUserChipsIntoPlay
+                      dbConn
+                      (unUsername username)
+                      (negate chipsInPlay)
+                  liftIO $ sendMsg clientConn (SuccessfullyLeftSeat tableName)
+                  return $ NewGameState tableName newGame
 
 canTakeSeat ::
      Int
