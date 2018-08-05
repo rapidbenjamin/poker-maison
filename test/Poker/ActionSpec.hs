@@ -103,12 +103,12 @@ spec = do
             (street .~ PreDeal) .
             (players .~ [(committed .~ 0) player1, player3]) $
             initialGameState
-      let pName = "player1"
-      let blind = Small
-      let newGame = postBlind blind pName game
-      let playerWhoBet = newGame ^? players . ix 0
-      let smallBlindValue = _smallBlind game
-      let expectedPlayer =
+          pName = "player1"
+          blind = Small
+          newGame = postBlind blind pName game
+          playerWhoBet = newGame ^? players . ix 0
+          smallBlindValue = _smallBlind game
+          expectedPlayer =
             Player
               { _pockets = []
               , _chips = 2000 - smallBlindValue
@@ -123,21 +123,21 @@ spec = do
       let game =
             (street .~ PreDeal) . (players .~ [player1, player3]) $
             initialGameState
-      let pName = "player1"
-      let blind = Small
-      let newGame = postBlind blind pName game
-      let playerWhoBet = newGame ^? players . ix 0
+          pName = "player1"
+          blind = Small
+          newGame = postBlind blind pName game
+          playerWhoBet = newGame ^? players . ix 0
       _pot newGame `shouldBe` _smallBlind game
   describe "bet" $ do
     it "should update player attributes correctly" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
             initialGameState
-      let betValue = 200
-      let pName = "player1"
-      let newGame = makeBet betValue pName game
-      let playerWhoBet = newGame ^? players . ix 0
-      let expectedPlayer =
+          betValue = 200
+          pName = "player1"
+          newGame = makeBet betValue pName game
+          playerWhoBet = newGame ^? players . ix 0
+          expectedPlayer =
             Player
               { _pockets = []
               , _chips = 2000 - betValue
@@ -152,27 +152,27 @@ spec = do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
             initialGameState
-      let betValue = 200
-      let pName = "player1"
-      let newGame = makeBet betValue pName game
+          betValue = 200
+          pName = "player1"
+          newGame = makeBet betValue pName game
       (newGame ^. pot) `shouldBe` betValue
     it "should update maxBet if amount greater than current maxBet" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
             initialGameState
-      let betValue = 200
-      let pName = "player1"
-      let newGame = makeBet betValue pName game
+          betValue = 200
+          pName = "player1"
+          newGame = makeBet betValue pName game
       (newGame ^. maxBet) `shouldBe` betValue
     it "should update player attributes correctly when bet all in" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
             initialGameState
-      let betValue = player1 ^. chips
-      let pName = "player1"
-      let newGame = makeBet betValue pName game
-      let playerWhoBet = newGame ^? players . ix 0
-      let expectedPlayer =
+          betValue = player1 ^. chips
+          pName = "player1"
+          newGame = makeBet betValue pName game
+          playerWhoBet = newGame ^? players . ix 0
+          expectedPlayer =
             Player
               { _pockets = []
               , _chips = 0
@@ -188,21 +188,21 @@ spec = do
             (street .~ PreFlop) . (currentPosToAct .~ 0) .
             (players .~ [player1, player2, player3]) $
             initialGameState
-      let betValue = 200
-      let pName = "player1"
-      let newGame = makeBet betValue pName game
-      let newPositionToAct = newGame ^. currentPosToAct
-      let expectedNewPositionToAct = 2
+          betValue = 200
+          pName = "player1"
+          newGame = makeBet betValue pName game
+          newPositionToAct = newGame ^. currentPosToAct
+          expectedNewPositionToAct = 2
       newPositionToAct `shouldBe` expectedNewPositionToAct
   describe "foldCards" $ do
     it "should update player attributes correctly" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
             initialGameState
-      let pName = "player1"
-      let newGame = foldCards pName game
-      let playerWhoFolded = newGame ^? players . ix 0
-      let expectedPlayer =
+          pName = "player1"
+          newGame = foldCards pName game
+          playerWhoFolded = newGame ^? players . ix 0
+          expectedPlayer =
             Player
               { _pockets = []
               , _chips = 2000
@@ -218,10 +218,10 @@ spec = do
             (street .~ PreFlop) . (currentPosToAct .~ 0) .
             (players .~ [player1, player2, player3]) $
             initialGameState
-      let pName = "player1"
-      let newGame = foldCards pName game
-      let newPositionToAct = newGame ^. currentPosToAct
-      let expectedNewPositionToAct = 2
+          pName = "player1"
+          newGame = foldCards pName game
+          newPositionToAct = newGame ^. currentPosToAct
+          expectedNewPositionToAct = 2
       newPositionToAct `shouldBe` expectedNewPositionToAct
   describe "call" $ do
     it "should update player attributes correctly when calling a bet" $ do
@@ -229,10 +229,10 @@ spec = do
             (street .~ PreFlop) . (maxBet .~ 400) .
             (players .~ [player1, player6]) $
             initialGameState
-      let pName = "player6"
-      let newGame = call pName game
-      let playerWhoCalled = newGame ^? players . ix 1
-      let expectedPlayer =
+          pName = "player6"
+          newGame = call pName game
+          playerWhoCalled = newGame ^? players . ix 1
+          expectedPlayer =
             Player
               { _pockets = []
               , _chips = 1800
@@ -248,10 +248,10 @@ spec = do
             (street .~ PreFlop) . (maxBet .~ 4000) .
             (players .~ [player5, player1]) $
             initialGameState
-      let pName' = "player1"
-      let newGame' = call pName' game'
-      let playerWhoCalled' = newGame' ^? players . ix 1
-      let expectedPlayer' =
+          pName' = "player1"
+          newGame' = call pName' game'
+          playerWhoCalled' = newGame' ^? players . ix 1
+          expectedPlayer' =
             Player
               { _pockets = []
               , _chips = 0
@@ -267,31 +267,31 @@ spec = do
             (street .~ PreFlop) . (currentPosToAct .~ 0) .
             (players .~ [player1, player2, player3]) $
             initialGameState
-      let pName = "player1"
-      let newGame = call pName game
-      let newPositionToAct = newGame ^. currentPosToAct
-      let expectedNewPositionToAct = 2
+          pName = "player1"
+          newGame = call pName game
+          newPositionToAct = newGame ^. currentPosToAct
+          expectedNewPositionToAct = 2
       newPositionToAct `shouldBe` expectedNewPositionToAct
   describe "check" $ do
     it "should update player attributes correctly" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2]) $
             initialGameState
-      let pName = "player1"
-      let expectedPlayers = [player1, player2, player3]
-      let newGame = check pName game
-      let playerWhoChecked = newGame ^? players . ix 0
-      let expectedPlayer = (actedThisTurn .~ True) player1
+          pName = "player1"
+          expectedPlayers = [player1, player2, player3]
+          newGame = check pName game
+          playerWhoChecked = newGame ^? players . ix 0
+          expectedPlayer = (actedThisTurn .~ True) player1
       playerWhoChecked `shouldBe` Just expectedPlayer
     it "should increment position to act" $ do
       let game =
             (street .~ PreFlop) . (currentPosToAct .~ 0) .
             (players .~ [player1, player3]) $
             initialGameState
-      let pName = "player1"
-      let newGame = check pName game
-      let newPositionToAct = newGame ^. currentPosToAct
-      let expectedNewPositionToAct = 1
+          pName = "player1"
+          newGame = check pName game
+          newPositionToAct = newGame ^. currentPosToAct
+          expectedNewPositionToAct = 1
       newPositionToAct `shouldBe` expectedNewPositionToAct
   describe "incPosToAct" $ do
     it "should modulo increment position for two players who are both In" $ do
