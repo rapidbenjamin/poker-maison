@@ -81,7 +81,8 @@ handlePlayerAction game@Game {..} playerName =
         else validateAction game playerName action $> foldCards playerName game
     action@(SitDown player) ->
       validateAction game playerName action $> seatPlayer player game
-    action@LeaveSeat -> undefined
+    action@LeaveSeat ->
+      validateAction game playerName action $> leaveSeat playerName game
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.

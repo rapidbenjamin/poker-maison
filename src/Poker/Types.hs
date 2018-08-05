@@ -229,6 +229,7 @@ data InvalidMoveErr
   | CannotCheckShouldCallRaiseOrFold
   | CannotCallZeroAmountCheckOrBetInstead
   | CannotShowHandOrMuckHand Text
+  | CannotLeaveSeatOutsidePreDeal
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =

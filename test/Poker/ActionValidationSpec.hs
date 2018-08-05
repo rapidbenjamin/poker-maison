@@ -103,9 +103,9 @@ spec = do
       "should return NotEnoughChipsForAction InvalidMoveErr if raise value is greater than remaining chips" $ do
       let game2 =
             (players .~ playerFixtures2) . (street .~ Flop) $ initialGameState
-      let playerName = "player3"
-      let amount = 10000
-      let expectedErr = Left $ InvalidMove playerName $ NotEnoughChipsForAction
+          playerName = "player3"
+          amount = 10000
+          expectedErr = Left $ InvalidMove playerName $ NotEnoughChipsForAction
       canBet playerName amount game2 `shouldBe` expectedErr
     it
       "should return CannotBetShouldRaiseInstead InvalidMoveErr if players have already bet or raised already" $ do
@@ -358,3 +358,27 @@ spec = do
       let playerName = "player3"
       let expectedErr = Left $ InvalidMove playerName InvalidActionForStreet
       validateAction showDownGame playerName Timeout `shouldBe` expectedErr
+  describe "canTimeout" $ do
+    it "should return err for LeaveSeat if game state is not PreDeal" $ do
+      let preFlopGame =
+            (street .~ PreFlop) . (players .~ playerFixtures2) $
+            initialGameState
+      let playerName = "player3"
+      let expectedErr = InvalidMove "player3" CannotLeaveSeatOutsidePreDeal
+      validateAction preFlopGame playerName LeaveSeat `shouldBe`
+        Left expectedErr
+    it "should return err for LeaveSeat if player is not sat at Table" $ do
+      let preDealGame =
+            (street .~ PreDeal) . (players .~ playerFixtures2) $
+            initialGameState
+      let playerName = "playerX"
+      let expectedErr = NotAtTable playerName
+      validateAction preDealGame playerName LeaveSeat `shouldBe`
+        Left expectedErr
+    it
+      "should return no err for leave seat if player is sat at table during PreDeal" $ do
+      let preDealGame =
+            (street .~ PreDeal) . (players .~ playerFixtures2) $
+            initialGameState
+      let playerName = "player3"
+      validateAction preDealGame playerName LeaveSeat `shouldBe` Right ()

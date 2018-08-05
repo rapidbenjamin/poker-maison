@@ -40,6 +40,7 @@ validateAction game@Game {..} playerName =
       if _street == Showdown
         then Left $ InvalidMove playerName InvalidActionForStreet
         else isPlayerActingOutOfTurn game playerName
+    LeaveSeat -> canLeaveSeat playerName game
     SitDown plyr -> canSit plyr game
     ShowHand -> validateShowOrMuckHand game playerName ShowHand
     MuckHand -> validateShowOrMuckHand game playerName MuckHand
@@ -137,6 +138,13 @@ canSit player@Player {..} game@Game {..}
   | _chips > _maxBuyInChips = Left $ OverMaxChipsBuyIn _playerName
   | length _players < _maxPlayers = Right ()
   | otherwise = Left $ CannotSitAtFullTable _playerName
+
+canLeaveSeat :: PlayerName -> Game -> Either GameErr ()
+canLeaveSeat playerName game@Game {..}
+  | _street /= PreDeal =
+    Left $ InvalidMove playerName CannotLeaveSeatOutsidePreDeal
+  | playerName `notElem` getPlayerNames _players = Left $ NotAtTable playerName
+  | otherwise = Right ()
 
 canJoinWaitList :: Player -> Game -> Either GameErr ()
 canJoinWaitList player@Player {..} game@Game {..}

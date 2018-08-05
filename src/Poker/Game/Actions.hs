@@ -131,6 +131,8 @@ seatPlayer plyr = players <>~ [plyr]
 joinWaitlist :: Player -> Game -> Game
 joinWaitlist plyr = waitlist %~ (:) (plyr ^. playerName)
 
+leaveSeat playerName game@Game {..} = undefined
+
 -- should only ever return the position of a player who has playerState equal to In
 -- As a player in any other state cannot perform an action
 --TODO REMOVE USE OF FROMJUST
