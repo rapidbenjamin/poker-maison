@@ -36,10 +36,7 @@ validateAction game@Game {..} playerName =
     Raise amount ->
       isPlayerActingOutOfTurn game playerName >> canRaise playerName amount game
     Call -> isPlayerActingOutOfTurn game playerName >> canCall playerName game
-    Timeout ->
-      if _street == Showdown
-        then Left $ InvalidMove playerName InvalidActionForStreet
-        else isPlayerActingOutOfTurn game playerName
+    Timeout -> canTimeout playerName game
     LeaveSeat -> canLeaveSeat playerName game
     SitDown plyr -> canSit plyr game
     ShowHand -> validateShowOrMuckHand game playerName ShowHand
@@ -71,6 +68,11 @@ checkPlayerSatAtTable game@Game {..} pName
   where
     playerNames = getGamePlayerNames game
     atTable = pName `elem` playerNames
+
+canTimeout :: PlayerName -> Game -> Either GameErr ()
+canTimeout playerName game@Game {..}
+  | _street == Showdown = Left $ InvalidMove playerName InvalidActionForStreet
+  | otherwise = isPlayerActingOutOfTurn game playerName
 
 canBet :: PlayerName -> Int -> Game -> Either GameErr ()
 canBet pName amount game@Game {..}
