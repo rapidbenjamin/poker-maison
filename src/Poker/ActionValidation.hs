@@ -134,6 +134,8 @@ canCall pName game@Game {..}
 
 canSit :: Player -> Game -> Either GameErr ()
 canSit player@Player {..} game@Game {..}
+  | _street /= PreDeal =
+    Left $ InvalidMove _playerName CannotSitDownOutsidePreDeal
   | _playerName `elem` getPlayerNames _players =
     Left $ AlreadySatAtTable _playerName
   | _chips < _minBuyInChips = Left $ NotEnoughChips _playerName
