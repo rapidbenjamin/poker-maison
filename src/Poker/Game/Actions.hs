@@ -131,7 +131,8 @@ seatPlayer plyr = players <>~ [plyr]
 joinWaitlist :: Player -> Game -> Game
 joinWaitlist plyr = waitlist %~ (:) (plyr ^. playerName)
 
-leaveSeat playerName game@Game {..} = undefined
+leaveSeat :: PlayerName -> Game -> Game
+leaveSeat plyrName = players %~ filter (\Player {..} -> plyrName == _playerName)
 
 -- should only ever return the position of a player who has playerState equal to In
 -- As a player in any other state cannot perform an action
