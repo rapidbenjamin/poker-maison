@@ -337,3 +337,10 @@ spec = do
             (players .~ [player2, player4, player3, player2]) $
             initialGameState
       incPosToAct game3 `shouldBe` 1
+  describe "leaveSeat" $ it "should remove player from players list" $ do
+    let game =
+          (street .~ PreDeal) . (players .~ [player1, player6]) $
+          initialGameState
+        pName = "player6"
+        newGame = leaveSeat pName game
+    not (any (\Player {..} -> pName /= _playerName) (_players newGame))

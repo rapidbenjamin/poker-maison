@@ -37,7 +37,7 @@ validateAction game@Game {..} playerName =
       isPlayerActingOutOfTurn game playerName >> canRaise playerName amount game
     Call -> isPlayerActingOutOfTurn game playerName >> canCall playerName game
     Timeout -> canTimeout playerName game
-    LeaveSeat -> canLeaveSeat playerName game
+    LeaveSeat' -> canLeaveSeat playerName game
     SitDown plyr -> canSit plyr game
     ShowHand -> validateShowOrMuckHand game playerName ShowHand
     MuckHand -> validateShowOrMuckHand game playerName MuckHand

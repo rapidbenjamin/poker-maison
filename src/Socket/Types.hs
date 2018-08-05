@@ -90,7 +90,7 @@ data MsgIn
   | LeaveTable
   | TakeSeat TableName
              Int
-  | LeaveSeat
+  | LeaveSeat TableName
   | GameMove TableName
              PlayerAction
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
@@ -100,7 +100,8 @@ data MsgOut
   = TableList -- TODO only broadcast public table info -- add list of tables to msg
   | NewTableList -- TODO only broadcast public table info -- add list of tables to msg
   | PlayerLeft
-  | SuccessFullySatDown TableName
+  | SuccessfullySatDown TableName
+  | SuccessfullyLeftSeat TableName
   | PlayerJoined TableName
                  Text
   | NewGameState TableName
@@ -115,9 +116,10 @@ data Err
   | TableDoesNotExist TableName
   | NotSatAtTable TableName
   | AlreadySatInGame TableName
+  | NotSatInGame TableName
   | AlreadySatAtTable TableName
   | AlreadySubscribedToTable TableName
-  | NotEnoughChips
+  | NotEnoughChipsToSit
   | GameErr GameErr
   | InvalidGameAction
   | ChipAmountNotWithinBuyInRange TableName

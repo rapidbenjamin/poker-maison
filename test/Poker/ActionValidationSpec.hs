@@ -365,7 +365,7 @@ spec = do
             initialGameState
       let playerName = "player3"
       let expectedErr = InvalidMove "player3" CannotLeaveSeatOutsidePreDeal
-      validateAction preFlopGame playerName LeaveSeat `shouldBe`
+      validateAction preFlopGame playerName LeaveSeat' `shouldBe`
         Left expectedErr
     it "should return err for LeaveSeat if player is not sat at Table" $ do
       let preDealGame =
@@ -373,7 +373,7 @@ spec = do
             initialGameState
       let playerName = "playerX"
       let expectedErr = NotAtTable playerName
-      validateAction preDealGame playerName LeaveSeat `shouldBe`
+      validateAction preDealGame playerName LeaveSeat' `shouldBe`
         Left expectedErr
     it
       "should return no err for leave seat if player is sat at table during PreDeal" $ do
@@ -381,4 +381,4 @@ spec = do
             (street .~ PreDeal) . (players .~ playerFixtures2) $
             initialGameState
       let playerName = "player3"
-      validateAction preDealGame playerName LeaveSeat `shouldBe` Right ()
+      validateAction preDealGame playerName LeaveSeat' `shouldBe` Right ()

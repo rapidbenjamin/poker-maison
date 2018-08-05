@@ -178,7 +178,7 @@ data Blind
 -- show ones hand or not to the table after everyone else has folded.
 data PlayerAction
   = SitDown Player -- doesnt progress the game
-  | LeaveSeat -- doesnt progress the game
+  | LeaveSeat' -- doesnt progress the game
   | PostBlind Blind
   | Fold
   | Call

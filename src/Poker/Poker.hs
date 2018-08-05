@@ -44,7 +44,7 @@ runPlayerAction playerName action =
       Right newGameState ->
         case action of
           SitDown _ -> return (Right (), newGameState)
-          LeaveSeat -> return (Right (), newGameState)
+          LeaveSeat' -> return (Right (), newGameState)
           _ -> do
             game' <- progressGame newGameState
             return (Right (), game')
@@ -81,7 +81,7 @@ handlePlayerAction game@Game {..} playerName =
         else validateAction game playerName action $> foldCards playerName game
     action@(SitDown player) ->
       validateAction game playerName action $> seatPlayer player game
-    action@LeaveSeat ->
+    action@LeaveSeat' ->
       validateAction game playerName action $> leaveSeat playerName game
 
 -- | Just get the identity function if not all players acted otherwise we return 

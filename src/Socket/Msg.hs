@@ -46,7 +46,7 @@ import Poker.ActionValidation
 import Poker.Game.Game
 import Poker.Game.Utils
 import Poker.Poker
-import Poker.Types
+import Poker.Types hiding (LeaveSeat)
 import Schema
 import Socket.Clients
 import Socket.Lobby
@@ -205,6 +205,7 @@ gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler GetTables {} = undefined
 gameMsgHandler msg@JoinTable {} = undefined
 gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
+gameMsgHandler msg@LeaveSeat {} = leaveSeatHandler msg
 gameMsgHandler msg@GameMove {} = gameActionHandler msg
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
@@ -226,8 +227,7 @@ takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
       if unUsername username `elem` getGamePlayerNames game
         then throwError $ AlreadySatInGame tableName
         else do
-          hasEnoughChipsErrE <-
-            liftIO $ canTakeSeat dbConn username chipsToSit tableName table
+          hasEnoughChipsErrE <- canTakeSeat chipsToSit tableName table
           case hasEnoughChipsErrE of
             Left err -> throwError err
             Right () -> do
@@ -247,23 +247,53 @@ takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
                     async
                       (tableReceiveMsgLoop tableName channel msgHandlerConfig)
                   liftIO $ link asyncGameReceiveLoop
-                  liftIO $ sendMsg clientConn (SuccessFullySatDown tableName)
+                  liftIO $ sendMsg clientConn (SuccessfullySatDown tableName)
                   return $ NewGameState tableName newGame
 
+leaveSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
+  msgHandlerConfig@MsgHandlerConfig {..} <- ask
+  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
+  case M.lookup tableName $ unLobby lobby of
+    Nothing -> throwError $ TableDoesNotExist tableName
+    Just table@Table {..} ->
+      if unUsername username `notElem` getGamePlayerNames game
+        then throwError $ NotSatInGame tableName
+        else do
+          (errE, newGame) <-
+            liftIO $
+            runStateT (runPlayerAction (unUsername username) LeaveSeat') game
+          case errE of
+            Left gameErr -> throwError $ GameErr gameErr
+            Right () -> do
+              liftIO $ sendMsg clientConn (SuccessfullyLeftSeat tableName)
+              return $ NewGameState tableName newGame
+
 canTakeSeat ::
-     ConnectionString -> Username -> Int -> Text -> Table -> IO (Either Err ())
-canTakeSeat connString username chipsToSit tableName Table { game = Game {..}
-                                                           , ..
-                                                           } = do
-  maybeUser <- dbGetUserByUsername connString username
+     Int
+  -> Text
+  -> Table
+  -> ReaderT MsgHandlerConfig (ExceptT Err IO) (Either Err ())
+canTakeSeat chipsToSit tableName Table {game = Game {..}, ..}
+  | chipsToSit >= _minBuyInChips && chipsToSit <= _maxBuyInChips = do
+    availableChipsE <- getPlayersAvailableChips
+    case availableChipsE of
+      Left err -> throwError err
+      Right availableChips ->
+        if availableChips >= chipsToSit
+          then return $ Right ()
+          else return $ Left NotEnoughChipsToSit
+  | otherwise = return $ Left $ ChipAmountNotWithinBuyInRange tableName
+
+getPlayersAvailableChips ::
+     ReaderT MsgHandlerConfig (ExceptT Err IO) (Either Err Int)
+getPlayersAvailableChips = do
+  MsgHandlerConfig {..} <- ask
+  maybeUser <- liftIO $ dbGetUserByUsername dbConn username
   return $
     case maybeUser of
       Nothing -> Left $ UserDoesNotExistInDB (unUsername username)
-      Just User {..} ->
-        let availableChips = userTotalChips - userChipsInPlay
-         in if chipsToSit >= _minBuyInChips && chipsToSit <= _maxBuyInChips
-              then Right ()
-              else Left $ ChipAmountNotWithinBuyInRange tableName
+      Just User {..} -> Right $ userTotalChips - userChipsInPlay
 
 -- If game is in predeal stage then add player to game else add to waitlist
 -- the waitlist is a queue awaiting the next predeal stage of the game
