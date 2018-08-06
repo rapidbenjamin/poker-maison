@@ -47,7 +47,7 @@ fetchUserProfileHandler User {..} =
       , proAvailableChips = userAvailableChips
       , proChipsInPlay = userChipsInPlay
       , proUsername = Username userUsername
-      , proUserCreated = userCreated
+      , proUserCreatedAt = userCreatedAt
       }
 
 ------------------------------------------------------------------------
@@ -80,7 +80,7 @@ registerUserHandler secretKey connString redisConfig Register {..} = do
           , userPassword = hashedPassword
           , userAvailableChips = 3000
           , userChipsInPlay = 0
-          , userCreated = currTime
+          , userCreatedAt = currTime
           }
   registrationResult <-
     liftIO $ runExceptT $ dbRegisterUser connString redisConfig newUser

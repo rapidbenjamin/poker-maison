@@ -43,7 +43,7 @@ data UserProfile = UserProfile
   , proEmail :: Text
   , proAvailableChips :: Int
   , proChipsInPlay :: Int
-  , proUserCreated :: UTCTime
+  , proUserCreatedAt :: UTCTime
   } deriving (Eq, Show, Generic, ToJSON)
 
 data ReturnToken = ReturnToken

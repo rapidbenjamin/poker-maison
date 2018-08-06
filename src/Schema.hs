@@ -29,7 +29,7 @@ share
     password Text
     availableChips Int
     chipsInPlay Int
-    created UTCTime default=CURRENT_TIME
+    createdAt UTCTime default=CURRENT_TIME
     UniqueEmail email
     UniqueUsername username
     deriving Show Read
@@ -101,5 +101,5 @@ instance ToSample User where
           , userUsername = "Tom"
           , userEmail = "gooby@g.com"
           , userPassword = "n84!@R5G"
-          , userCreated = read "2013 - 12 - 15 19 : 12 : 20.841326 UTC"
+          , userCreatedAt = read "2013 - 12 - 15 19 : 12 : 20.841326 UTC"
           }
