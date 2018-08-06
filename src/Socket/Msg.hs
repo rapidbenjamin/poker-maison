@@ -241,6 +241,11 @@ takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
               case errE of
                 Left gameErr -> throwError $ GameErr gameErr
                 Right () -> do
+                  liftIO $
+                    dbDepositChipsIntoPlay
+                      dbConn
+                      (unUsername username)
+                      chipsToSit
                   liftIO $ atomically $ joinTable tableName msgHandlerConfig
                   asyncGameReceiveLoop <-
                     liftIO $
@@ -274,10 +279,10 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
                 Nothing -> throwError $ NotSatInGame tableName
                 Just Player {_chips = chipsInPlay, ..} -> do
                   liftIO $
-                    dbPutUserChipsIntoPlay
+                    dbWithdrawChipsFromPlay
                       dbConn
                       (unUsername username)
-                      (negate chipsInPlay)
+                      chipsInPlay
                   liftIO $ sendMsg clientConn (SuccessfullyLeftSeat tableName)
                   return $ NewGameState tableName newGame
 
