@@ -24,12 +24,14 @@ share
   [mkPersist sqlSettings, mkMigrate "migrateAll"]
   [persistLowerCase|
   User json sql=users
-    UniqueEmail email
-    UniqueUsername username
+    username Text
+    email Text
     password Text
-    createdAt UTCTime default=CURRENT_TIME
     availableChips Int
     chipsInPlay Int
+    created UTCTime default=CURRENT_TIME
+    UniqueEmail email
+    UniqueUsername username
     deriving Show Read
   TableE json sql=tables
     name Text
@@ -55,6 +57,40 @@ share
     deriving Show Read
 |]
 
+{-
+instance FromJSON User where
+  parseJSON (Object obj) =
+    User <$> obj .: "username" <*> obj .: "email" <*> obj .: "userTotalChips" <*>
+    obj .: "userChipsInPlay" <*>
+    obj .: "password"
+  parseJSON _ = mzero
+
+instance ToJSON User where
+  toJSON p =
+    object
+      [ "username" .= userUsername p
+      , "email" .= userEmail p
+      , "availableChips" .= userAvailableChips p
+      , "chipsInPlay" .= userChipsInPlay p
+      , "password" .= userPassword p
+      ]
+
+parseUser :: Object -> Parser User
+parseUser o = do
+  uUsername <- o .: "username"
+  uEmail <- o .: "email"
+  uTotalChips <- o .: "totalChips"
+  uChipsInPlay <- o .: "chipsInPlay"
+  uPassword <- o .: "password"
+  return
+    User
+      { userUsername = uUsername
+      , userPassword = uPassword
+      , userEmail = uEmail
+      , userAvailableChips = uTotalChips
+      , userChipsInPlay = uChipsInPlay
+      }
+-}
 instance ToSample User where
   toSamples _ = [("Sample User", g)]
     where
@@ -65,5 +101,5 @@ instance ToSample User where
           , userUsername = "Tom"
           , userEmail = "gooby@g.com"
           , userPassword = "n84!@R5G"
-          , userCreatedAt = read "2013 - 12 - 15 19 : 12 : 20.841326 UTC"
+          , userCreated = read "2013 - 12 - 15 19 : 12 : 20.841326 UTC"
           }
