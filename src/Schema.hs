@@ -29,7 +29,7 @@ share
     password Text
     availableChips Int
     chipsInPlay Int
-    createdAt UTCTime default=CURRENT_TIME
+    createdAt UTCTime default=now()
     UniqueEmail email
     UniqueUsername username
     deriving Show Read
@@ -38,7 +38,7 @@ share
     deriving Show Read
   GameE json sql=games
     tableID TableEId
-    created UTCTime default=CURRENT_TIME
+    createdAt UTCTime default=now()
     players [Player]
     minBuyInChips Int
     maxBuyInChips Int
@@ -101,5 +101,5 @@ instance ToSample User where
           , userUsername = "Tom"
           , userEmail = "gooby@g.com"
           , userPassword = "n84!@R5G"
-          , userCreatedAt = read "2013 - 12 - 15 19 : 12 : 20.841326 UTC"
+          , userCreatedAt = read "" --"2013 - 12 - 15 19 : 12 : 20.841326 UTC"
           }
