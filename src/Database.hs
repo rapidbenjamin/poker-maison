@@ -115,7 +115,7 @@ dbUpdateUsersChips connString userChipCounts =
     connString
     (updateWhere
        ((UserUsername ==.) . fst <$> userChipCounts)
-       ((UserTotalChips =.) . snd <$> userChipCounts))
+       ((UserAvailableChips =.) . snd <$> userChipCounts))
 
 -- Query runs when player takes or leaves a seat at a game
 dbPutUserChipsIntoPlay :: ConnectionString -> Text -> Int -> IO ()
@@ -124,7 +124,9 @@ dbPutUserChipsIntoPlay connString username chipsToAdd =
     connString
     (updateWhere
        [UserUsername ==. username]
-       [UserTotalChips +=. negate chipsToAdd, UserChipsInPlay +=. chipsToAdd])
+       [ UserAvailableChips +=. negate chipsToAdd
+       , UserChipsInPlay +=. chipsToAdd
+       ])
 --dbGetAvailableChipCount :: ConnectionString -> Username -> IO (Maybe Int)
 --dbGetAvailableChipCount connString username = do
 --  maybeUser <- dbGetUserByUsername connString username

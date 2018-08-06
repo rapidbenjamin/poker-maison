@@ -14,6 +14,7 @@ import Data.Aeson.Types
 import Data.Function
 import Data.Monoid
 import Data.Text
+import Database.Persist.TH
 import GHC.Generics
 
 ------------------------------------------------------------------------------
@@ -242,3 +243,17 @@ makeLenses ''Player
 makeLenses ''Game
 
 makeLenses ''Winners
+
+-- Due to the GHC Stage Restriction, the call to the Template Haskell function derivePersistField must be
+-- in a separate module than where the generated code is used.
+-- Perform marshaling using the Show and Read
+-- instances of the datatype to string field in db 
+derivePersistField "Player"
+
+derivePersistField "Winners"
+
+derivePersistField "HandRank"
+
+derivePersistField "Street"
+
+derivePersistField "Card"

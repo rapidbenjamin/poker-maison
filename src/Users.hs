@@ -13,6 +13,7 @@ import qualified Data.ByteString.Lazy.Char8 as CL
 import Data.Proxy
 import qualified Data.Text as T
 import Data.Text (Text)
+import Data.Time.Clock
 import Database
 import Database.Persist
 import Database.Persist.Postgresql
@@ -43,9 +44,10 @@ fetchUserProfileHandler User {..} =
   return
     UserProfile
       { proEmail = userEmail
-      , proTotalChips = userTotalChips
+      , proAvailableChips = userAvailableChips
       , proChipsInPlay = userChipsInPlay
       , proUsername = Username userUsername
+      , proUserCreated = userCreated
       }
 
 ------------------------------------------------------------------------
@@ -70,13 +72,15 @@ registerUserHandler ::
 registerUserHandler secretKey connString redisConfig Register {..} = do
   let hashedPassword = hashPassword newUserPassword
   let (Username username) = newUsername
+  currTime <- liftIO getCurrentTime
   let newUser =
         User
           { userUsername = username
           , userEmail = newUserEmail
           , userPassword = hashedPassword
-          , userTotalChips = 3000
+          , userAvailableChips = 3000
           , userChipsInPlay = 0
+          , userCreated = currTime
           }
   registrationResult <-
     liftIO $ runExceptT $ dbRegisterUser connString redisConfig newUser

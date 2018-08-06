@@ -8,6 +8,7 @@ import Data.Aeson
 import Data.Aeson.Types
 import qualified Data.Text as T
 import Data.Text (Text)
+import Data.Time.Clock
 import Database.Redis (ConnectInfo)
 import GHC.Generics (Generic)
 import Servant
@@ -40,8 +41,9 @@ type UserID = Text
 data UserProfile = UserProfile
   { proUsername :: Username
   , proEmail :: Text
-  , proTotalChips :: Int
+  , proAvailableChips :: Int
   , proChipsInPlay :: Int
+  , proUserCreated :: UTCTime
   } deriving (Eq, Show, Generic, ToJSON)
 
 data ReturnToken = ReturnToken

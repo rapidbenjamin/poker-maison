@@ -305,7 +305,7 @@ getPlayersAvailableChips = do
   return $
     case maybeUser of
       Nothing -> Left $ UserDoesNotExistInDB (unUsername username)
-      Just User {..} -> Right $ userTotalChips - userChipsInPlay
+      Just User {..} -> Right $ userAvailableChips - userChipsInPlay
 
 -- If game is in predeal stage then add player to game else add to waitlist
 -- the waitlist is a queue awaiting the next predeal stage of the game

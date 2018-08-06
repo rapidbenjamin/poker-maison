@@ -14,23 +14,50 @@ import Control.Monad
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Text (Text)
-import qualified Database.Persist.TH as PTH
+import Data.Time.Clock
+import Database.Persist.TH
 import Servant.Docs
 
-PTH.share
-  [PTH.mkPersist PTH.sqlSettings, PTH.mkMigrate "migrateAll"]
-  [PTH.persistLowerCase|
-  User sql=users
+import Poker.Types
+
+share
+  [mkPersist sqlSettings, mkMigrate "migrateAll"]
+  [persistLowerCase|
+  User json sql=users
     username Text
     email Text
     password Text
-    totalChips Int
+    availableChips Int
     chipsInPlay Int
     UniqueEmail email
     UniqueUsername username
+    created UTCTime default=CURRENT_TIME
+    deriving Show Read
+  TableE json sql=tables
+    name Text
+    deriving Show Read
+  GameE json sql=games
+    tableID TableEId
+    created UTCTime default=CURRENT_TIME
+    players [Player]
+    minBuyInChips Int
+    maxBuyInChips Int
+    maxPlayers Int
+    board [Card]
+    winners Winners
+    waitlist [PlayerName]
+    deck [Card]
+    smallBlind Int
+    bigBlind Int
+    street Text
+    pot Int
+    maxBet Bet
+    dealer Int
+    currentPosToAct
     deriving Show Read
 |]
 
+{-
 instance FromJSON User where
   parseJSON (Object obj) =
     User <$> obj .: "username" <*> obj .: "email" <*> obj .: "userTotalChips" <*>
@@ -43,7 +70,7 @@ instance ToJSON User where
     object
       [ "username" .= userUsername p
       , "email" .= userEmail p
-      , "totalChips" .= userTotalChips p
+      , "availableChips" .= userAvailableChips p
       , "chipsInPlay" .= userChipsInPlay p
       , "password" .= userPassword p
       ]
@@ -60,18 +87,19 @@ parseUser o = do
       { userUsername = uUsername
       , userPassword = uPassword
       , userEmail = uEmail
-      , userTotalChips = uTotalChips
+      , userAvailableChips = uTotalChips
       , userChipsInPlay = uChipsInPlay
       }
-
+-}
 instance ToSample User where
   toSamples _ = [("Sample User", g)]
     where
       g =
         User
-          { userTotalChips = 2000
+          { userAvailableChips = 2000
           , userChipsInPlay = 0
           , userUsername = "Tom"
           , userEmail = "gooby@g.com"
           , userPassword = "n84!@R5G"
+          , userCreated = read "2013 - 12 - 15 19 : 12 : 20.841326 UTC"
           }
