@@ -23,7 +23,7 @@ import Poker.Types
 share
   [mkPersist sqlSettings, mkMigrate "migrateAll"]
   [persistLowerCase|
-  User json sql=users
+  UserEntity json sql=users
     username Text
     email Text
     password Text
@@ -33,11 +33,12 @@ share
     UniqueEmail email
     UniqueUsername username
     deriving Show Read
-  TableE json sql=tables
+  TableEntity json sql=tables
     name Text
+    UniqueName name
     deriving Show Read
-  GameE json sql=games
-    tableID TableEId
+  GameEntity json sql=games
+    tableID TableEntityId
     createdAt UTCTime default=now()
     players [Player]
     minBuyInChips Int
@@ -49,11 +50,11 @@ share
     deck [Card]
     smallBlind Int
     bigBlind Int
-    street Text
+    street Street
     pot Int
     maxBet Bet
     dealer Int
-    currentPosToAct
+    currentPosToAct Int
     deriving Show Read
 |]
 
@@ -91,15 +92,15 @@ parseUser o = do
       , userChipsInPlay = uChipsInPlay
       }
 -}
-instance ToSample User where
+instance ToSample UserEntity where
   toSamples _ = [("Sample User", g)]
     where
       g =
-        User
-          { userAvailableChips = 2000
-          , userChipsInPlay = 0
-          , userUsername = "Tom"
-          , userEmail = "gooby@g.com"
-          , userPassword = "n84!@R5G"
-          , userCreatedAt = read "" --"2013 - 12 - 15 19 : 12 : 20.841326 UTC"
+        UserEntity
+          { userEntityAvailableChips = 2000
+          , userEntityChipsInPlay = 0
+          , userEntityUsername = "Tom"
+          , userEntityEmail = "gooby@g.com"
+          , userEntityPassword = "n84!@R5G"
+          , userEntityCreatedAt = read "" --"2013 - 12 - 15 19 : 12 : 20.841326 UTC"
           }

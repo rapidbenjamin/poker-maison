@@ -36,7 +36,10 @@ import Schema
 import Types
 
 authHandler ::
-     J.Secret -> ConnectionString -> RedisConfig -> AuthHandler Request User
+     J.Secret
+  -> ConnectionString
+  -> RedisConfig
+  -> AuthHandler Request UserEntity
 authHandler secretKey connString redisConfig =
   let handler req =
         case lookup "Authorization" (requestHeaders req) of
@@ -52,7 +55,7 @@ authHandler secretKey connString redisConfig =
             case authResult of
               (Left err) ->
                 throwError $ err401 {errBody = CL.pack $ T.unpack err}
-              (Right user) -> return user
+              (Right userEntity) -> return userEntity
    in mkAuthHandler handler
 
 hashPassword :: Text -> Text
@@ -63,7 +66,7 @@ verifyToken ::
   -> ConnectionString
   -> RedisConfig
   -> Token
-  -> ExceptT Text IO User
+  -> ExceptT Text IO UserEntity
 verifyToken secretKey connString redisConfig token = do
   (Username email) <- verifyJWTToken secretKey token
   maybeUser <- liftIO $ fetchUserByEmail connString redisConfig email
@@ -74,11 +77,11 @@ verifyToken secretKey connString redisConfig token = do
 getAlgorithm :: J.Algorithm
 getAlgorithm = J.HS256
 
-getNewToken :: J.Secret -> User -> Password -> Handler ReturnToken
-getNewToken secretKey User {..} password
+getNewToken :: J.Secret -> UserEntity -> Password -> Handler ReturnToken
+getNewToken secretKey UserEntity {..} password
   | password /= decodeUtf8 hashedPassword =
     throwError (err401 {errBody = "Password Invalid"})
-  | otherwise = signToken secretKey userEmail
+  | otherwise = signToken secretKey userEntityEmail
   where
     hashedPassword = H.hash $ encodeUtf8 password
 

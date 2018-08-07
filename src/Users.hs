@@ -29,7 +29,7 @@ type UsersAPI
    = "profile" :> AuthProtect "JWT" :> Get '[ JSON] UserProfile :<|> "login" :> ReqBody '[ JSON] Login :> Post '[ JSON] ReturnToken :<|> "register" :> ReqBody '[ JSON] Register :> Post '[ JSON] ReturnToken
 
 -- | We need to specify the data returned after authentication
-type instance AuthServerData (AuthProtect "JWT") = User
+type instance AuthServerData (AuthProtect "JWT") = UserEntity
 
 usersAPI :: Proxy UsersAPI
 usersAPI = Proxy :: Proxy UsersAPI
@@ -39,15 +39,15 @@ usersServer secretKey connString redisConfig =
   fetchUserProfileHandler :<|> loginHandler secretKey connString :<|>
   registerUserHandler secretKey connString redisConfig
 
-fetchUserProfileHandler :: User -> Handler UserProfile
-fetchUserProfileHandler User {..} =
+fetchUserProfileHandler :: UserEntity -> Handler UserProfile
+fetchUserProfileHandler UserEntity {..} =
   return
     UserProfile
-      { proEmail = userEmail
-      , proAvailableChips = userAvailableChips
-      , proChipsInPlay = userChipsInPlay
-      , proUsername = Username userUsername
-      , proUserCreatedAt = userCreatedAt
+      { proEmail = userEntityEmail
+      , proAvailableChips = userEntityAvailableChips
+      , proChipsInPlay = userEntityChipsInPlay
+      , proUsername = Username userEntityUsername
+      , proUserCreatedAt = userEntityCreatedAt
       }
 
 ------------------------------------------------------------------------
@@ -58,7 +58,7 @@ loginHandler secretKey connString Login {..} = do
   maybe (throwError unAuthErr) createToken maybeUser
   where
     unAuthErr = err401 {errBody = "Incorrect email or password"}
-    createToken User {..} = signToken secretKey userEmail
+    createToken UserEntity {..} = signToken secretKey userEntityEmail
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
 
 -- when we register new user we check to see if email and username are already taken
@@ -71,16 +71,16 @@ registerUserHandler ::
   -> Handler ReturnToken
 registerUserHandler secretKey connString redisConfig Register {..} = do
   let hashedPassword = hashPassword newUserPassword
-  let (Username username) = newUsername
   currTime <- liftIO getCurrentTime
+  let (Username username) = newUsername
   let newUser =
-        User
-          { userUsername = username
-          , userEmail = newUserEmail
-          , userPassword = hashedPassword
-          , userAvailableChips = 3000
-          , userChipsInPlay = 0
-          , userCreatedAt = currTime
+        UserEntity
+          { userEntityUsername = username
+          , userEntityEmail = newUserEmail
+          , userEntityPassword = hashedPassword
+          , userEntityAvailableChips = 3000
+          , userEntityChipsInPlay = 0
+          , userEntityCreatedAt = currTime
           }
   registrationResult <-
     liftIO $ runExceptT $ dbRegisterUser connString redisConfig newUser

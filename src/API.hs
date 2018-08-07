@@ -37,6 +37,6 @@ app secretKey connString redisConfig =
     serverAuthContext
     (server secretKey connString redisConfig)
   where
-    serverAuthContext :: Context (AuthHandler Request User ': '[])
+    serverAuthContext :: Context (AuthHandler Request UserEntity ': '[])
     serverAuthContext =
       authHandler secretKey connString redisConfig :. EmptyContext

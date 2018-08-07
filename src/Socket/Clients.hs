@@ -47,7 +47,7 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
   authResult <- runExceptT $ verifyToken secretKey dbConn redisConfig token
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
-    (Right User {..}) -> do
+    (Right UserEntity {..}) -> do
       sendMsg conn AuthSuccess
       ServerState {..} <- readTVarIO state
       atomically $
@@ -56,7 +56,7 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
           (ServerState
              { clients =
                  addClient
-                   Client {conn = conn, email = userEmail}
+                   Client {conn = conn, email = userEntityEmail}
                    username
                    clients
              , ..
@@ -72,7 +72,7 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
               , ..
               }
       authMsgLoop msgHandlerConfig
-      where username = Username userUsername
+      where username = Username userEntityUsername
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
 removeClient username serverStateTVar = do
