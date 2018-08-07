@@ -12,6 +12,7 @@ import qualified Network.WebSockets as WS
 import Prelude
 import Web.JWT (Secret)
 
+import Concurrency
 import Socket.Clients
 import Socket.Lobby
 import Socket.Msg
@@ -29,13 +30,16 @@ import qualified Data.Text.Lazy.Encoding as D
 initialServerState :: Lobby -> ServerState
 initialServerState lobby = ServerState {clients = M.empty, lobby = lobby}
 
+-- Create the initial lobby holding all game state and then fork a new thread for each table in the lobby
+-- to write new game states to the DB
 runSocketServer :: Secret -> Int -> ConnectionString -> RedisConfig -> IO ()
-runSocketServer secretKey port dbConnString redisConfig = do
+runSocketServer secretKey port connString redisConfig = do
   lobby <- initialLobby
+  forkGameDBWriters connString lobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   print $ "Socket server listening on " ++ (show port :: String)
   WS.runServer "127.0.0.1" port $
-    application secretKey dbConnString redisConfig serverStateTVar
+    application secretKey connString redisConfig serverStateTVar
 
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 

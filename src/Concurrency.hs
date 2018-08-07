@@ -25,10 +25,10 @@ import Schema
 import Socket.Types
 
 -- Fork a new thread for each table that writes game updates received from the table channel to the DB
-forkGameDBWriters :: ConnectionString -> Lobby -> [IO (Async ())]
+forkGameDBWriters :: ConnectionString -> Lobby -> IO [Async ()]
 forkGameDBWriters connString (Lobby lobby) =
-  traverse %~
-  (\(tableName, Table {..}) -> forkGameDBWriter connString channel tableName) $
+  sequence $
+  (\(tableName, Table {..}) -> forkGameDBWriter connString channel tableName) <$>
   M.toList lobby
 
 -- Looks up the tableName in the DB to get the key and if no corresponsing  table is found in the db then
