@@ -150,6 +150,10 @@ dbGetTableEntity :: ConnectionString -> Text -> IO (Maybe (Entity TableEntity))
 dbGetTableEntity connString tableName =
   runAction connString (selectFirst [TableEntityName ==. tableName] [])
 
+dbInsertTableEntity :: ConnectionString -> Text -> IO (Key TableEntity)
+dbInsertTableEntity connString tableName =
+  runAction connString (insert (TableEntity {tableEntityName = tableName}))
+
 dbInsertGame ::
      ConnectionString -> Game -> Key TableEntity -> IO (Key GameEntity)
 dbInsertGame connString Game {..} tableId = do
