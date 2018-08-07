@@ -70,7 +70,7 @@ lookupTableSubscribers tableName (Lobby lobby) =
   case M.lookup tableName lobby of
     Nothing -> []
     Just Table {..} ->
-      (fmap Username $ getGamePlayerNames game) ++ waitlist ++ subscribers
+      (Username <$> getGamePlayerNames game) ++ waitlist ++ subscribers
 
 updateTableGame :: TableName -> Game -> Lobby -> Lobby
 updateTableGame tableName newGame (Lobby lobby) =

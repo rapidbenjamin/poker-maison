@@ -1,11 +1,16 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Concurrency where
 
 import Control.Concurrent.Async
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan
+import Control.Lens
 import Control.Monad
 import Control.Monad.STM
 
+import Data.Map.Lazy (Map)
+import qualified Data.Map.Lazy as M
 import Data.Text (Text)
 import Database.Persist
 import Database.Persist.Postgresql
@@ -18,6 +23,13 @@ import Database.Persist.Postgresql
 import Database
 import Schema
 import Socket.Types
+
+-- Fork a new thread for each table that writes game updates received from the table channel to the DB
+forkGameDBWriters :: ConnectionString -> Lobby -> [IO (Async ())]
+forkGameDBWriters connString (Lobby lobby) =
+  traverse %~
+  (\(tableName, Table {..}) -> forkGameDBWriter connString channel tableName) $
+  M.toList lobby
 
 -- Looks up the tableName in the DB to get the key and if no corresponsing  table is found in the db then
 -- we insert a new table to the db. This step is necessary as we use the TableID as a foreign key in the
@@ -34,10 +46,12 @@ forkGameDBWriter connString chan tableName = do
       forkGameWriter tableKey
     Just (Entity tableKey _) -> forkGameWriter tableKey
   where
-    forkGameWriter tableKey = async (writeNewGameToDB connString chan tableKey)
+    forkGameWriter tableKey =
+      async (writeNewGameStatesToDB connString chan tableKey)
 
-writeNewGameToDB :: ConnectionString -> TChan MsgOut -> Key TableEntity -> IO ()
-writeNewGameToDB connString chan tableKey = do
+writeNewGameStatesToDB ::
+     ConnectionString -> TChan MsgOut -> Key TableEntity -> IO ()
+writeNewGameStatesToDB connString chan tableKey = do
   dupChan <- atomically $ dupTChan chan
   forever $ do
     chanMsg <- atomically $ readTChan dupChan

@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Socket.Setup where
 
+import Control.Concurrent.Async (Async)
+import Control.Lens
 import Control.Monad (void)
 import Control.Monad.Except
 import Control.Monad.Logger (LoggingT, runStdoutLoggingT)
@@ -14,11 +15,12 @@ import Data.List (unfoldr)
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Maybe
-import Data.Maybe
 import Data.Text (Text)
+import Database.Persist.Postgresql (ConnectionString)
 import Database.Redis (Redis, connect, runRedis, setex)
 import qualified Database.Redis as Redis
 
+import Concurrency
 import Database
 import Schema
 import Socket.Clients
@@ -26,7 +28,7 @@ import Socket.Lobby
 import Socket.Types
 import Types
 
--- lobby inlcuding all game state is stored in redis to allow for horizontal scaling
+-- lobby including all game state is stored in redis 
 setInitialLobby :: RedisConfig -> IO ()
 setInitialLobby redisConfig = do
   lobby <- initialLobby
