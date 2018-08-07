@@ -1,7 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Concurrency where
+module Socket.Concurrency where
 
+import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan
@@ -59,3 +60,11 @@ writeNewGameStatesToDB connString chan tableKey = do
       (NewGameState tableName game) ->
         void (dbInsertGame connString game tableKey)
       _ -> return ()
+
+-- Fork a thread which refills low player chips balances in DB at a given interval
+forkChipRefillDBWriter :: ConnectionString -> Int -> Int -> IO (Async ())
+forkChipRefillDBWriter connString interval chipsThreshold =
+  async $
+  forever $ do
+    dbRefillAvailableChips connString chipsThreshold
+    threadDelay interval

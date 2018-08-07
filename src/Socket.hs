@@ -12,8 +12,8 @@ import qualified Network.WebSockets as WS
 import Prelude
 import Web.JWT (Secret)
 
-import Concurrency
 import Socket.Clients
+import Socket.Concurrency
 import Socket.Lobby
 import Socket.Msg
 import Socket.Setup
@@ -35,11 +35,15 @@ initialServerState lobby = ServerState {clients = M.empty, lobby = lobby}
 runSocketServer :: Secret -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port connString redisConfig = do
   lobby <- initialLobby
+  forkChipRefillDBWriter connString chipRefillInterval chipRefillThreshold
   forkGameDBWriters connString lobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   print $ "Socket server listening on " ++ (show port :: String)
   WS.runServer "127.0.0.1" port $
     application secretKey connString redisConfig serverStateTVar
+  where
+    chipRefillInterval = 100000000 -- 2 mins
+    chipRefillThreshold = 2000
 
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 

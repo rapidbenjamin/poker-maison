@@ -20,7 +20,6 @@ import Database.Persist.Postgresql (ConnectionString)
 import Database.Redis (Redis, connect, runRedis, setex)
 import qualified Database.Redis as Redis
 
-import Concurrency
 import Database
 import Schema
 import Socket.Clients

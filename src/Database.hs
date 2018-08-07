@@ -3,7 +3,7 @@
 
 module Database where
 
-import Control.Lens
+import Control.Lens hiding ((<.))
 import Control.Monad (void)
 import Control.Monad.Except
 import Control.Monad.Logger (LoggingT, runStdoutLoggingT)
@@ -180,3 +180,13 @@ dbInsertGame connString Game {..} tableId = do
         , gameEntityDealer = _dealer
         , gameEntityCurrentPosToAct = _currentPosToAct
         }
+
+-- TODO - Ensure that chips in play are also taking into account when
+-- determining which available chips counts to refill for plays with low balances
+dbRefillAvailableChips :: ConnectionString -> Int -> IO ()
+dbRefillAvailableChips connString refillThreshold =
+  runAction
+    connString
+    (updateWhere
+       [UserEntityAvailableChips <. refillThreshold]
+       [UserEntityAvailableChips =. refillThreshold])
