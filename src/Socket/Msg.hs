@@ -191,7 +191,7 @@ progressGame connString serverStateTVar tableName game@Game {..} =
     print "haveAllPlayersActed:"
     print (haveAllPlayersActed progressedGame)
     case errE of
-      Right _ -> do
+      Right () -> do
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         when
@@ -199,7 +199,7 @@ progressGame connString serverStateTVar tableName game@Game {..} =
           (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
         pPrint progressedGame
         progressGame connString serverStateTVar tableName progressedGame
-      Left _ -> print $ "progressGameAlong Err" ++ show errE
+      Left err -> print $ "progressGameAlong Err" ++ show err
 
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler GetTables {} = undefined
