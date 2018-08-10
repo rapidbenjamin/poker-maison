@@ -2,12 +2,12 @@ import axios from 'axios';
 
 import * from './types'
 
-const URL = 'http://www.sample-website.com';
+const AUTH_API_URL = Process.env.AUTH_API_URL || 'http://localhost:8000'
 
 export function signInAction({ loginEmail, loginPassword }, history) {
   return async (dispatch) => {
     try {
-      const res = await axios.post(`${URL}/signin`, {
+      const res = await axios.post(`${AUTH_API_URL}/signin`, {
         loginEmail, loginPassword
       });
 
@@ -26,7 +26,7 @@ export function signInAction({ loginEmail, loginPassword }, history) {
 export function signupAction({ newUserEmail, newUserUsername, newUserPassword }, history) {
   return async (dispatch) => {
     try {
-      const res = await axios.post(`${URL}/signin`, {
+      const res = await axios.post(`${AUTH_API_URL}/signin`, {
         newUserUsername,
         newUserEmail,
         newUserPassword
