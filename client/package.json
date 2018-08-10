@@ -30,6 +30,7 @@
     "test:watch": "cross-env NODE_ENV=test jest --watchAll"
   },
   "dependencies": {
+    "axios": "^0.18.0",
     "babel-polyfill": "6.26.0",
     "bulma": "^0.7.1",
     "chalk": "^2.3.2",
@@ -56,6 +57,7 @@
     "redux": "4.0.0",
     "redux-immutable": "4.0.0",
     "redux-saga": "0.16.0",
+    "redux-thunk": "^2.3.0",
     "reselect": "3.0.1",
     "sanitize.css": "6.0.0",
     "warning": "^4.0.1",
