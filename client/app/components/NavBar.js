@@ -2,44 +2,51 @@ import React from 'react';
 import { Navbar } from 'react-bulma-components/full';
 
 const NavBar = ({ authenticated, username, history }) => (
-  <Navbar>
-    <Navbar.Brand>
-      <Navbar.Item onClick={() => history.push('/')}>
+  <nav role="navigation" className="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" onClick={() => history.push('/')}>
         <img
           src="https://bulma.io/images/bulma-logo.png"
           alt="Bulma: a modern CSS framework based on Flexbox"
           width="112"
           height="28"
         />
-      </Navbar.Item>
-    </Navbar.Brand>
-    <Navbar.Menu>
-      <Navbar.Container>
-        <Navbar.Item onClick={() => history.push('lobby')}>
+      </a>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" onClick={() => history.push('lobby')}>
           Lobby
-        </Navbar.Item>
-        <Navbar.Item onClick={() => history.push('games')}>
+  </a>
+        <a class="navbar-item" onClick={() => history.push('games')}>
           Games
-        </Navbar.Item>
-      </Navbar.Container>
-      <Navbar.Container position="end">
+  </a>
+      </div>
+      <div className="navbar-end">
         {authenticated ?
-          <Navbar.Item onClick={() => history.push('profile')}>
+          <a
+            className="navbar-item"
+            onClick={() => history.push('profile')}>
             {`Logged in as ${username}`}
-          </Navbar.Item>
+          </a>
           : ''}
         {!authenticated ?
-          <Navbar.Item onClick={() => history.push('signin')}>
+          <a
+            className="navbar-item"
+            onClick={() => history.push('signin')}>
             Login
-          </Navbar.Item> : ''}
+          </a> : ''}
         {!authenticated ?
-          <Navbar.Item onClick={() => history.push('signup')}>
+          <a
+            className="navbar-item"
+            onClick={() => history.push('signup')}
+          >
             Register
-          </Navbar.Item> : ''
+          </a> : ''
         }
-      </Navbar.Container>
-    </Navbar.Menu>
-  </Navbar>
+      </div>
+    </div>
+  </nav>
 );
 
 export default NavBar;

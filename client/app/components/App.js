@@ -13,7 +13,7 @@ import { Switch, Route } from 'react-router-dom';
 import HomeContainer from '../containers/HomeContainer';
 import NavBarContainer from '../containers/NavBarContainer';
 import Signout from './Signout'
-import SignupFormContainer from '../containers/SignupFormContainer'
+import SignUpFormContainer from '../containers/SignUpFormContainer'
 import SignInFormContainer from '../containers/SignInFormContainer'
 import LobbyContainer from '../containers/LobbyContainer'
 
@@ -21,24 +21,24 @@ import Footer from './Footer';
 import NotFoundPage from './NotFoundPage';
 
 const App = () => (
-    <div className="app-wrapper">
-        <Helmet
-            titleTemplate="%s - React.js Boilerplate"
-            defaultTitle="React.js Boilerplate"
-        >
-            <meta name="description" content="A React.js Boilerplate application" />
-        </Helmet>
-        <NavBarContainer />
-        <Switch>
-            <Route exact path="/" component={HomeContainer} />
-            <Route path="/signup" component={SignupFormContainer} />
-            <Route path="/signin" component={SignInFormContainer} />
-            <Route path="/signout" component={Signout} />
-            <Route path="/lobby" component={LobbyContainer} />
-            <Route path="" component={NotFoundPage} />
-        </Switch>
-        <Footer />
-    </div>
+  <div className="app-wrapper">
+    <Helmet
+      titleTemplate="%s - React.js Boilerplate"
+      defaultTitle="React.js Boilerplate"
+    >
+      <meta name="description" content="A React.js Boilerplate application" />
+    </Helmet>
+    <NavBarContainer />
+    <Switch>
+      <Route exact path="/" component={HomeContainer} />
+      <Route path="/signup" component={SignUpFormContainer} />
+      <Route path="/signin" component={SignInFormContainer} />
+      <Route path="/signout" component={Signout} />
+      <Route path="/lobby" component={LobbyContainer} />
+      <Route path="" component={NotFoundPage} />
+    </Switch>
+    <Footer />
+  </div>
 );
 
 export default App;
