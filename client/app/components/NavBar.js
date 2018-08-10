@@ -1,5 +1,5 @@
-import React from 'react';
-import { Navbar } from 'react-bulma-components/full';
+import React from 'react'
+import { Navbar } from 'react-bulma-components/full'
 
 const NavBar = ({ authenticated, username, history }) => (
   <nav role="navigation" className="navbar">
@@ -23,30 +23,30 @@ const NavBar = ({ authenticated, username, history }) => (
         </a>
       </div>
       <div className="navbar-end">
-        {authenticated ?
-          <a
-            className="navbar-item"
-            onClick={() => history.push('profile')}>
+        {authenticated ? (
+          <a className="navbar-item" onClick={() => history.push('profile')}>
             {`Logged in as ${username}`}
           </a>
-          : ''}
-        {!authenticated ?
-          <a
-            className="navbar-item"
-            onClick={() => history.push('signin')}>
+        ) : (
+          ''
+        )}
+        {!authenticated ? (
+          <a className="navbar-item" onClick={() => history.push('signin')}>
             Login
-          </a> : ''}
-        {!authenticated ?
-          <a
-            className="navbar-item"
-            onClick={() => history.push('signup')}
-          >
+          </a>
+        ) : (
+          ''
+        )}
+        {!authenticated ? (
+          <a className="navbar-item" onClick={() => history.push('signup')}>
             Register
-          </a> : ''
-        }
+          </a>
+        ) : (
+          ''
+        )}
       </div>
     </div>
   </nav>
-);
+)
 
-export default NavBar;
+export default NavBar
