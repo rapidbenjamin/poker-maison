@@ -8,10 +8,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      statements: 98,
-      branches: 91,
-      functions: 98,
-      lines: 98
+      statements: 90,
+      branches: 80,
+      functions: 92,
+      lines: 90
     }
   },
   coverageReporters: ['json', 'lcov', 'text-summary'],
@@ -23,5 +23,6 @@ module.exports = {
       '<rootDir>/config/jest-mocks/image.js'
   },
   setupTestFrameworkScriptFile: '<rootDir>/config/test-setup.js',
+  testEnvironment: 'node',
   testRegex: 'tests/.*\\.test\\.js$'
 }

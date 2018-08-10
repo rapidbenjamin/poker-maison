@@ -1,7 +1,8 @@
 /* eslint-disable */
-import { Map, fromJS } from "immutable";
+import { Map } from "immutable";
+
 import reducer from "../auth";
-import * as actions from "../../actions/index";
+import * as types from "../../actions/types";
 
 const initialState = Map({
   authenticated: false,
@@ -15,24 +16,32 @@ describe("auth reducer", () => {
   });
 
   it("should handle authentication success", () => {
+    const username = 'Argo'
     const expectedState = Map({
-      isAuthenticated: true,
-      username: 'Argo',
+      authenticated: true,
+      username,
       error: null
     });
 
-    expect(reducer(initialState, actions.authSuccess(expectedState.username))).toEqual(expectedState);
+    expect(
+      reducer(initialState,
+        { type: types.AUTHENTICATED, username }
+      ))
+      .toEqual(expectedState)
   });
 
 
   it("should handle authentication errors", () => {
+    const error = '404'
     const expectedState = Map({
-      isAuthenticated: false,
+      authenticated: false,
       username: null,
-      error: '404'
+      error
     });
 
-    expect(reducer(initialState, actions.authError(expectedState.error))).toEqual(expectedState);
+    expect(reducer(
+      initialState, { type: types.AUTHENTICATION_ERROR, error }
+    )).toEqual(expectedState)
   });
 
   it("should handle logout", () => {
@@ -42,11 +51,11 @@ describe("auth reducer", () => {
       error: null
     });
     const expectedState = Map({
-      isAuthenticated: false,
+      authenticated: false,
       username: null,
       error: null
     });
 
-    expect(reducer(initialState, actions.logout())).toEqual(expectedState);
+    expect(reducer(initialState, { type: types.UNAUTHENTICATED })).toEqual(expectedState)
   });
 });

@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-import * from './types';
+import * as types from './types';
 import { UNAUTHENTICATED } from './types';
 
-const AUTH_API_URL = Process.env.AUTH_API_URL || 'http://localhost:8000'
+const AUTH_API_URL = process.env.AUTH_API_URL || 'http://localhost:8000'
 
 export function signIn({ loginEmail, loginPassword }, history) {
   return async dispatch => {
@@ -39,8 +39,8 @@ export function signup({ newUserEmail, newUserUsername, newUserPassword }, histo
   };
 }
 
-export const authSuccess = username => ({{ type: AUTHENTICATED, username })
+export const authSuccess = username => ({ type: types.AUTHENTICATED, username })
 
-export const authErr = error => ({ type: AUTHENTICATION_ERROR, error })
+export const authError = error => ({ type: types.AUTHENTICATION_ERROR, error })
 
-export const logout = () => ({ type: UNAUTHENTICATED })
+export const logout = () => ({ type: types.UNAUTHENTICATED })
