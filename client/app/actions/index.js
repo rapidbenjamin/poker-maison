@@ -1,29 +1,27 @@
 import axios from 'axios';
 
-import * from './types'
+import * from './types';
+import { UNAUTHENTICATED } from './types';
 
 const AUTH_API_URL = Process.env.AUTH_API_URL || 'http://localhost:8000'
 
-export function signInAction({ loginEmail, loginPassword }, history) {
+export function signIn({ loginEmail, loginPassword }, history) {
   return async dispatch => {
     try {
       const res = await axios.post(`${AUTH_API_URL}/signin`, {
         loginEmail, loginPassword
       });
 
-      dispatch({ type: AUTHENTICATED, username });
+      dispatch(authSuccess(loginEmail)); // TODO should be username
       localStorage.setItem('user', res.data.token);
       history.push('/lobby');
     } catch (error) {
-      dispatch({
-        type: AUTHENTICATION_ERROR,
-        payload: 'Invalid email or password'
-      });
+      dispatch(authError(error));
     }
   };
 }
 
-export function signupAction({ newUserEmail, newUserUsername, newUserPassword }, history) {
+export function signup({ newUserEmail, newUserUsername, newUserPassword }, history) {
   return async dispatch => {
     try {
       const res = await axios.post(`${AUTH_API_URL}/signin`, {
@@ -32,14 +30,17 @@ export function signupAction({ newUserEmail, newUserUsername, newUserPassword },
         newUserPassword
       });
 
-      dispatch({ type: AUTHENTICATED, username });
+      dispatch(authSuccess(newUserUsername));
       localStorage.setItem('user', res.data.token);
       history.push('/lobby');
     } catch (error) {
-      dispatch({
-        type: AUTHENTICATION_ERROR,
-        payload: 'Invalid email or password'
-      });
+      dispatch(authError(error))
     }
   };
 }
+
+export const authSuccess = username => ({{ type: AUTHENTICATED, username })
+
+export const authErr = error => ({ type: AUTHENTICATION_ERROR, error })
+
+export const logout = () => ({ type: UNAUTHENTICATED })
