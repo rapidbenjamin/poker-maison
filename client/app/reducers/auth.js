@@ -2,7 +2,7 @@ import Immutable from 'immutable';
 
 import { AUTHENTICATED, UNAUTHENTICATED, AUTHENTICATION_ERROR } from '../actions/types';
 
-const initialState = Immutable.Map();
+const initialState = Immutable.Map({ authenticated: false, username: null });
 
 export default function (state = initialState, action) {
   switch (action.type) {

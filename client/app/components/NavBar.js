@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navbar } from 'react-bulma-components/full';
 
-const NavBar = ({ authenticated, history }) => (
+const NavBar = ({ authenticated, username, history }) => (
   <Navbar>
     <Navbar.Brand>
       <Navbar.Item onClick={() => history.push('/')}>
@@ -23,9 +23,20 @@ const NavBar = ({ authenticated, history }) => (
         </Navbar.Item>
       </Navbar.Container>
       <Navbar.Container position="end">
-        <Navbar.Item>
-          this is aligned to the right
-        </Navbar.Item>
+        {authenticated ?
+          <Navbar.Item onClick={() => history.push('profile')}>
+            {`Logged in as ${username}`}
+          </Navbar.Item>
+          : ''}
+        {!authenticated ?
+          <Navbar.Item onClick={() => history.push('signin')}>
+            Login
+          </Navbar.Item> : ''}
+        {!authenticated ?
+          <Navbar.Item onClick={() => history.push('signup')}>
+            Register
+          </Navbar.Item> : ''
+        }
       </Navbar.Container>
     </Navbar.Menu>
   </Navbar>

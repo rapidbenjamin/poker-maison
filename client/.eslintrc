@@ -12,7 +12,12 @@
     "jest": true,
     "es6": true
   },
-  "plugins": ["redux-saga", "react", "jsx-a11y", "prettier"],
+  "plugins": [
+    "redux-saga",
+    "react",
+    "jsx-a11y",
+    "prettier"
+  ],
   "parserOptions": {
     "ecmaVersion": 6,
     "sourceType": "module",
@@ -22,10 +27,16 @@
   },
   "rules": {
     "no-param-reassign": "off",
+    "arrow-parens": "off",
     "function-paren-newline": "off",
-    "arrow-parens": ["error", "always"],
-    "arrow-body-style": [2, "as-needed"],
-    "comma-dangle": ["error", "only-multiline"],
+    "arrow-body-style": [
+      2,
+      "as-needed"
+    ],
+    "comma-dangle": [
+      "error",
+      "only-multiline"
+    ],
     "import/no-extraneous-dependencies": 0,
     "import/prefer-default-export": 0,
     "indent": [
@@ -39,7 +50,10 @@
     "no-console": 1,
     "react/forbid-prop-types": 0,
     "react/jsx-curly-brace-presence": "off",
-    "react/jsx-first-prop-new-line": [2, "multiline"],
+    "react/jsx-first-prop-new-line": [
+      2,
+      "multiline"
+    ],
     "react/jsx-filename-extension": 0,
     "react/require-default-props": 0,
     "react/self-closing-comp": 0,

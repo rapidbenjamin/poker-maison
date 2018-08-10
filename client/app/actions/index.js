@@ -5,7 +5,7 @@ import * from './types'
 const AUTH_API_URL = Process.env.AUTH_API_URL || 'http://localhost:8000'
 
 export function signInAction({ loginEmail, loginPassword }, history) {
-  return async (dispatch) => {
+  return async dispatch => {
     try {
       const res = await axios.post(`${AUTH_API_URL}/signin`, {
         loginEmail, loginPassword
@@ -24,7 +24,7 @@ export function signInAction({ loginEmail, loginPassword }, history) {
 }
 
 export function signupAction({ newUserEmail, newUserUsername, newUserPassword }, history) {
-  return async (dispatch) => {
+  return async dispatch => {
     try {
       const res = await axios.post(`${AUTH_API_URL}/signin`, {
         newUserUsername,
