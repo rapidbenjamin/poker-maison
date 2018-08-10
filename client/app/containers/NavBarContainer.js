@@ -1,4 +1,8 @@
-import React from 'react'
+import { withRouter } from 'react-router-dom'
+import { connect } from 'react-redux'
+
 import NavBar from '../components/NavBar'
 
-export default NavBar
+const mapStateToProps = ({ auth: authenticated }) => ({ authenticated })
+
+export default connect(mapStateToProps)(withRouter(NavBar));

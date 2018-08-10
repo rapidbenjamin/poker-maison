@@ -14,6 +14,7 @@ import HomeContainer from '../containers/HomeContainer';
 import NavBarContainer from '../containers/NavBarContainer';
 import SignoutContainer from '../containers/auth/SignoutContainer'
 import SignupContainer from '../containers/auth/SignupContainer'
+import LobbyContainer from '../containers/LobbyContainer'
 
 import Footer from './Footer';
 import NotFoundPage from './NotFoundPage';
@@ -31,6 +32,7 @@ const App = () => (
             <Route exact path="/" component={HomeContainer} />
             <Route path="/signup" component={SignupContainer} />
             <Route path="/signout" component={SignoutContainer} />
+            <Route path="/lobby" component={LobbyContainer} />
             <Route path="" component={NotFoundPage} />
         </Switch>
         <Footer />

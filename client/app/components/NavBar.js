@@ -1,10 +1,10 @@
 import React from 'react';
 import { Navbar } from 'react-bulma-components/full';
 
-const NavBar = () => (
+const NavBar = ({ authenticated, history }) => (
   <Navbar>
     <Navbar.Brand>
-      <Navbar.Item href="#">
+      <Navbar.Item onClick={() => history.push('/')}>
         <img
           src="https://bulma.io/images/bulma-logo.png"
           alt="Bulma: a modern CSS framework based on Flexbox"
@@ -15,10 +15,10 @@ const NavBar = () => (
     </Navbar.Brand>
     <Navbar.Menu>
       <Navbar.Container>
-        <Navbar.Item href="#">
+        <Navbar.Item onClick={() => history.push('lobby')}>
           Lobby
         </Navbar.Item>
-        <Navbar.Item href="#">
+        <Navbar.Item onClick={() => history.push('games')}>
           Games
         </Navbar.Item>
       </Navbar.Container>

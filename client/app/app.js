@@ -18,6 +18,8 @@ import 'sanitize.css/sanitize.css'
 
 import AppContainer from 'containers/AppContainer'
 
+import { AUTHENTICATED } from './actions/types';
+
 // Load the favicon
 /* eslint-disable import/no-webpack-loader-syntax */
 import '!file-loader?name=[name].[ext]!./images/favicon.ico'
@@ -53,6 +55,13 @@ if (module.hot) {
     ReactDOM.unmountComponentAtNode(MOUNT_NODE)
     render()
   })
+}
+
+// If we have a JWT token in localStorage then treat user as authenticated
+const user = localStorage.getItem('user');
+
+if (user) {
+  store.dispatch({ type: AUTHENTICATED });
 }
 
 render()
