@@ -1,6 +1,5 @@
 import { Field, Control, Label, Input, Icon, Help, RadioGroup, Button } from 'react-bulma-components/full';
 
-
 const SignUpForm = () => (
     <div>
         <Field>
@@ -101,3 +100,5 @@ const SignUpForm = () => (
         </Field>
     </div>
 )
+
+export default SignUpForm

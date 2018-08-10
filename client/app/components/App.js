@@ -12,8 +12,9 @@ import { Switch, Route } from 'react-router-dom';
 
 import HomeContainer from '../containers/HomeContainer';
 import NavBarContainer from '../containers/NavBarContainer';
-import SignoutContainer from '../containers/auth/SignoutContainer'
-import SignupContainer from '../containers/auth/SignupContainer'
+import Signout from './Signout'
+import SignupFormContainer from '../containers/SignupFormContainer'
+import SignInFormContainer from '../containers/SignInFormContainer'
 import LobbyContainer from '../containers/LobbyContainer'
 
 import Footer from './Footer';
@@ -30,8 +31,9 @@ const App = () => (
         <NavBarContainer />
         <Switch>
             <Route exact path="/" component={HomeContainer} />
-            <Route path="/signup" component={SignupContainer} />
-            <Route path="/signout" component={SignoutContainer} />
+            <Route path="/signup" component={SignupFormContainer} />
+            <Route path="/signin" component={SignInFormContainer} />
+            <Route path="/signout" component={Signout} />
             <Route path="/lobby" component={LobbyContainer} />
             <Route path="" component={NotFoundPage} />
         </Switch>
