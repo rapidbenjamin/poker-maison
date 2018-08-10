@@ -3,8 +3,8 @@ import { Navbar } from 'react-bulma-components/full';
 
 const NavBar = ({ authenticated, username, history }) => (
   <nav role="navigation" className="navbar">
-    <div class="navbar-brand">
-      <a class="navbar-item" onClick={() => history.push('/')}>
+    <div className="navbar-brand">
+      <a className="navbar-item" onClick={() => history.push('/')}>
         <img
           src="https://bulma.io/images/bulma-logo.png"
           alt="Bulma: a modern CSS framework based on Flexbox"
@@ -13,14 +13,14 @@ const NavBar = ({ authenticated, username, history }) => (
         />
       </a>
     </div>
-    <div class="navbar-menu">
-      <div class="navbar-start">
-        <a class="navbar-item" onClick={() => history.push('lobby')}>
+    <div className="navbar-menu">
+      <div className="navbar-start">
+        <a className="navbar-item" onClick={() => history.push('lobby')}>
           Lobby
-  </a>
-        <a class="navbar-item" onClick={() => history.push('games')}>
+        </a>
+        <a className="navbar-item" onClick={() => history.push('games')}>
           Games
-  </a>
+        </a>
       </div>
       <div className="navbar-end">
         {authenticated ?
