@@ -23,7 +23,7 @@ const NavBar = ({ authenticated, history }) => (
         </Navbar.Item>
       </Navbar.Container>
       <Navbar.Container position="end">
-        <Navbar.Item href="#">
+        <Navbar.Item>
           this is aligned to the right
         </Navbar.Item>
       </Navbar.Container>

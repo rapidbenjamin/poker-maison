@@ -1,13 +1,18 @@
+import Immutable from 'immutable';
+
 import { AUTHENTICATED, UNAUTHENTICATED, AUTHENTICATION_ERROR } from '../actions/types';
 
-export default function (state = {}, action) {
-    switch (action.type) {
-        case AUTHENTICATED:
-            return { ...state, authenticated: true };
-        case UNAUTHENTICATED:
-            return { ...state, authenticated: false };
-        case AUTHENTICATION_ERROR:
-            return { ...state, error: action.payload };
-    }
-    return state;
+const initialState = Immutable.Map();
+
+export default function (state = initialState, action) {
+  switch (action.type) {
+    case AUTHENTICATED:
+      return state.set('authenticated', true).set('username', action.username);
+    case UNAUTHENTICATED:
+      return state.set('authenticated', false).set('username', null);
+    case AUTHENTICATION_ERROR:
+      return state.set('error', action.payload);
+    default:
+      return state
+  }
 }
