@@ -1,5 +1,8 @@
 import React from 'react';
+import { connect } from "react-redux";
+import { withRouter } from 'react-router';
 
+import { login } from '../actions/auth'
 import SignInForm from '../components/SignInForm'
 
 class SignInFormContainer extends React.Component {
@@ -31,4 +34,6 @@ class SignInFormContainer extends React.Component {
   }
 }
 
-export default SignInFormContainer
+const mapDispatchToProps = (dispatch, { history }) => ({ login: credentials => dispatch(login({ ...credentials }, history)) })
+
+export default connect(undefined, mapDispatchToProps)(withRouter(SignInFormContainer));
