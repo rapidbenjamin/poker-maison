@@ -7,7 +7,8 @@ import * as types from "../../actions/types";
 const initialState = Map({
   authenticated: false,
   username: null,
-  error: null
+  error: null,
+  isLoading: false
 });
 
 describe("auth reducer", () => {
@@ -20,7 +21,8 @@ describe("auth reducer", () => {
     const expectedState = Map({
       authenticated: true,
       username,
-      error: null
+      error: null,
+      isLoading: false
     });
 
     expect(
@@ -36,7 +38,8 @@ describe("auth reducer", () => {
     const expectedState = Map({
       authenticated: false,
       username: null,
-      error
+      error,
+      isLoading: false
     });
 
     expect(reducer(
@@ -48,12 +51,14 @@ describe("auth reducer", () => {
     const initialState = Map({
       authenticated: true,
       username: 'Argo',
-      error: null
+      error: null,
+      isLoading: false
     });
     const expectedState = Map({
       authenticated: false,
       username: null,
-      error: null
+      error: null,
+      isLoading: false
     });
 
     expect(reducer(initialState, { type: types.UNAUTHENTICATED })).toEqual(expectedState)
