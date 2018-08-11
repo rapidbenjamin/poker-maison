@@ -6,6 +6,8 @@ const initialState = Immutable.Map({ authenticated: false, username: null, error
 
 export default function (state = initialState, action) {
   switch (action.type) {
+    case types.AUTH_REQUESTED:
+      return state.set('isLoading', true);
     case types.AUTHENTICATED:
       return state.set('authenticated', true).set('username', action.username);
     case types.UNAUTHENTICATED:
