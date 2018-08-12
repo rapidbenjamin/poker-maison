@@ -1,66 +1,69 @@
-name:                poker-server
-version:             0.1.0.0
-github:              "githubuser/poker-server"
-license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+name: poker-server
+version: 0.1.0.0
+github: "githubuser/poker-server"
+license: BSD3
+author: "Author name here"
+maintainer: "example@example.com"
+copyright: "2018 Author name here"
 
 extra-source-files:
-- README.md
-- ChangeLog.md
+  - README.md
+  - ChangeLog.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Web
+  # Metadata used when publishing your package
+  # synopsis:            Short description of your package
+  # category:            Web
 
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/poker-server#readme>
+  # To avoid duplicated efforts in documentation and dealing with the
+  # complications of embedding Haddock markup inside cabal files, it is
+  # common to point users to the README.md file.
+description: Please see the README on GitHub at <https://github.com/githubuser/poker-server#readme>
 
 dependencies:
-- base >= 4.7 && < 5
-- async
-- aeson
-- hedis
-- time
-- monad-logger
-- mtl
-- array
-- stm
-- generic-random
-- ekg
-- containers
-- cryptohash
-- bytestring
-- persistent
-- persistent-postgresql
-- persistent-template
-- servant
-- time
-- servant-client
-- servant-server
-- transformers
-- servant-js
-- random
-- text
-- wai
-- websockets
-- pretty-simple
-- random-shuffle
-- split
-- monad-loops
-- generic-arbitrary
-- MonadRandom
-- mtl
-- wuss
-- warp
-- servant-docs
-- listsafe
-- jwt
-- lens
-- async
+  - base >= 4.7 && < 5
+  - async
+  - aeson
+  - hedis
+  - time
+  - monad-logger
+  - mtl
+  - array
+  - stm
+  - generic-random
+  - ekg
+  - containers
+  - cryptohash
+  - bytestring
+  - persistent
+  - persistent-postgresql
+  - persistent-template
+  - servant
+  - time
+  - servant-client
+  - servant-options
+  - servant-server
+  - transformers
+  - servant-js
+  - random
+  - text
+  - wai
+  - wai-extra
+  - wai-cors
+  - websockets
+  - pretty-simple
+  - random-shuffle
+  - split
+  - monad-loops
+  - generic-arbitrary
+  - MonadRandom
+  - mtl
+  - wuss
+  - warp
+  - servant-docs
+  - listsafe
+  - jwt
+  - lens
+  - async
 
 library:
   source-dirs: src
@@ -80,27 +83,26 @@ library:
 
 executables:
   poker-server-exe:
-    main:                Main.hs
-    source-dirs:         app
+    main: Main.hs
+    source-dirs: app
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - poker-server
+      - poker-server
 
 tests:
   spec:
-    main:                Spec.hs
-    source-dirs:         test
+    main: Spec.hs
+    source-dirs: test
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
     dependencies:
-    - poker-server
-    - generic-arbitrary
-    - hspec
-    - QuickCheck
-    - quickcheck-instances
-
+      - poker-server
+      - generic-arbitrary
+      - hspec
+      - QuickCheck
+      - quickcheck-instances

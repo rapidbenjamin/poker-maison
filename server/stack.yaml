@@ -1,8 +1,7 @@
 flags: {}
 packages:
 - .
-extra-deps:
-- hspec-core-2.4.8
-- hspec-discover-2.4.8
-resolver: lts-11.13
 allow-newer: true
+extra-deps:
+- servant-options-0.1.0.0
+resolver: lts-11.13

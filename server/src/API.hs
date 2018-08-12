@@ -7,6 +7,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 
 module API where
 
@@ -22,6 +24,17 @@ import Schema
 import Types (RedisConfig)
 import Users
 
+import Network.Wai.Middleware.Cors
+
+
+app :: Secret -> ConnectionString -> RedisConfig -> Application
+app secretKey connString redisConfig = 
+    cors (const $ Just policy)
+    $ app'  secretKey connString redisConfig 
+  where
+  policy = simpleCorsResourcePolicy
+           { corsRequestHeaders = [ "content-type" ] }
+
 type API = UsersAPI
 
 api :: Proxy API
@@ -30,8 +43,8 @@ api = Proxy :: Proxy API
 server :: Secret -> ConnectionString -> RedisConfig -> Server API
 server = usersServer
 
-app :: Secret -> ConnectionString -> RedisConfig -> Application
-app secretKey connString redisConfig =
+app' :: Secret -> ConnectionString -> RedisConfig -> Application
+app' secretKey connString redisConfig = 
   serveWithContext
     api
     serverAuthContext
