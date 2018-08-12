@@ -26,7 +26,6 @@ import Users
 
 import Network.Wai.Middleware.Cors
 
-
 app :: Secret -> ConnectionString -> RedisConfig -> Application
 app secretKey connString redisConfig = 
     cors (const $ Just policy)

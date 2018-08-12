@@ -3,7 +3,7 @@
 module Main where
 
 import Control.Concurrent.Async
-import Network.Wai.Handler.Warp (run)
+import Network.Wai.Handler.Warp 
 import Prelude
 import qualified System.Remote.Monitoring as EKG
 
@@ -11,6 +11,9 @@ import API
 import Config
 import Database
 import Socket
+
+import           Network.Wai.Logger   
+
 
 main :: IO ((), ())
 main = do
@@ -20,7 +23,8 @@ main = do
   secretKey <- getSecretKey
   let runSocketAPI =
         runSocketServer secretKey socketAPIPort dbConnString redisConfig
-  let runUserAPI = run userAPIPort (app secretKey dbConnString redisConfig)
+  let runUserAPI = withStdoutLogger $ \applogger -> do
+           runSettings ( setPort userAPIPort $ setLogger applogger defaultSettings)  (app secretKey dbConnString redisConfig)
   migrateDB dbConnString
   ekg <- runMonitoringServer
   concurrently runUserAPI runSocketAPI
