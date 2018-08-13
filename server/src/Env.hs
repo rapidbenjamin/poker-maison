@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Config where
+module Env where
 
 import qualified Data.ByteString.Char8 as C
 import Data.Maybe
@@ -32,9 +32,9 @@ getDBConnStrFromEnv = do
     (Just conn) -> return $ C.pack conn
 
 -- get the port from the userAPIPort env variable
-getUserAPIPort :: Int -> IO Int
-getUserAPIPort defaultPort = do
-  maybeEnvPort <- lookupEnv "userAPIPort"
+getAuthAPIPort :: Int -> IO Int
+getAuthAPIPort defaultPort = do
+  maybeEnvPort <- lookupEnv "authAPIPort"
   case maybeEnvPort of
     Nothing -> return defaultPort
     (Just port) -> maybe (return defaultPort) return (readMaybe port)

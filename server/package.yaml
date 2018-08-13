@@ -72,7 +72,7 @@ library:
     - API
     - Database
     - Schema
-    - Config
+    - Env
     - Poker.Poker
     - Poker.Game.Actions
     - Poker.ActionValidation
