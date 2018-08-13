@@ -51,8 +51,8 @@
       ```javascript
 
   {
-  loginEmail: "gooby@goo.com",
-  loginPassword: "password123"
+    loginUsername: "gooby",
+    loginPassword: "password123"
   }
   ```
 

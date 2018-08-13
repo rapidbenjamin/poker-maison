@@ -13,17 +13,18 @@ export const authError = error => ({ type: types.AUTHENTICATION_ERROR, error })
 
 export const logout = () => ({ type: types.UNAUTHENTICATED })
 
-export function login({ loginEmail, loginPassword }, history) {
+export function login({ loginUsername, loginPassword }, history) {
   return async dispatch => {
     try {
       dispatch(authRequested())
-      const res = await axios.post(`${AUTH_API_URL}/signin`, {
-        loginEmail,
+      console.log(loginPassword, loginUsername)
+      const res = await axios.post(`${AUTH_API_URL}/login`, {
+        loginUsername,
         loginPassword
       })
 
       checkStatus(res)
-      dispatch(authSuccess(loginEmail)) // TODO should be username
+      dispatch(authSuccess(loginUsername))
       localStorage.setItem('token', res.data.token)
       history.push('/lobby')
     } catch (error) {
@@ -32,10 +33,7 @@ export function login({ loginEmail, loginPassword }, history) {
   }
 }
 
-export function register(
-  { newUserEmail, newUsername, newUserPassword },
-  history
-) {
+export function register({ newUserEmail, newUsername, newUserPassword }, history) {
   return async dispatch => {
     try {
       dispatch(authRequested())

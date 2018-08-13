@@ -80,7 +80,9 @@ dbGetUserByLogin connString Login {..} = do
     runAction
       connString
       (selectFirst
-         [UserEntityEmail ==. loginEmail, UserEntityPassword ==. loginPassword]
+         [ UserEntityUsername ==. loginUsername
+         , UserEntityPassword ==. loginPassword
+         ]
          [])
   return $
     case maybeUser of

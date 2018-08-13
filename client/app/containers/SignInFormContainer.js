@@ -10,7 +10,7 @@ class SignInFormContainer extends React.Component {
     super(props)
 
     this.state = {
-      email: '',
+      username: '',
       password: ''
     }
   }
@@ -21,15 +21,16 @@ class SignInFormContainer extends React.Component {
     })
 
   handleSubmit = event => {
+    const { username, password } = this.state
     this.props.login({
-      loginEmail: email,
+      loginUsername: username,
       loginPassword: password
     })
     event.preventDefault()
   }
 
   validateForm = () => {
-    return this.state.email.length > 0 && this.state.password.length > 0
+    return this.state.username.length > 0 && this.state.password.length > 0
   }
 
   render() {

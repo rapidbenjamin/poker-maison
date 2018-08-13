@@ -18,7 +18,7 @@ type RedisConfig = ConnectInfo
 type Password = Text
 
 data Login = Login
-  { loginEmail :: Text
+  { loginUsername :: Text
   , loginPassword :: Text
   } deriving (Eq, Show, Generic, FromJSON)
 

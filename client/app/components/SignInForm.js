@@ -4,7 +4,7 @@ const SignInForm = ({ handleChange, handleSubmit }) => (
   <form onSubmit={handleSubmit}>
     <div className="field">
       <p className="control has-icons-left has-icons-right">
-        <input className="input" type="email" placeholder="Email" name="email" onChange={e => handleChange(e)} />
+        <input className="input" type="text" placeholder="Username" name="username" onChange={e => handleChange(e)} />
         <span className="icon is-small is-left">
           <i className="fas fa-envelope"></i>
         </span>
