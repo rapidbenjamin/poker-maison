@@ -9,9 +9,9 @@ export default function (state = initialState, action) {
     case types.AUTH_REQUESTED:
       return state.set('isLoading', true);
     case types.AUTHENTICATED:
-      return state.set('authenticated', true).set('username', action.username).set('isLoading', false);
+      return state.set('authenticated', true).set('username', action.username).set('isLoading', false).set('error', null);
     case types.UNAUTHENTICATED:
-      return state.set('authenticated', false).set('username', null).set('isLoading', false);
+      return state.set('authenticated', false).set('username', null).set('isLoading', false).set('error', null);
     case types.AUTHENTICATION_ERROR:
       return state.set('error', action.error).set('isLoading', false)
     default:

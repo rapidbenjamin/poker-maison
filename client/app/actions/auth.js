@@ -21,6 +21,7 @@ export function login({ loginEmail, loginPassword }, history) {
         loginEmail,
         loginPassword
       })
+
       checkStatus(res)
       dispatch(authSuccess(loginEmail)) // TODO should be username
       localStorage.setItem('token', res.data.token)
@@ -32,20 +33,20 @@ export function login({ loginEmail, loginPassword }, history) {
 }
 
 export function register(
-  { newUserEmail, newUserUsername, newUserPassword },
+  { newUserEmail, newUsername, newUserPassword },
   history
 ) {
   return async dispatch => {
     try {
       dispatch(authRequested())
       const res = await axios.post(`${AUTH_API_URL}/register`, {
-        newUserUsername,
+        newUsername,
         newUserEmail,
         newUserPassword
       })
 
       checkStatus(res)
-      dispatch(authSuccess(newUserUsername))
+      dispatch(authSuccess(newUsername))
       localStorage.setItem('token', res.data.token)
       history.push('/lobby')
     } catch (error) {

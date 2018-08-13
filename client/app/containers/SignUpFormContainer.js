@@ -25,11 +25,9 @@ class SignUpFormContainer extends React.Component {
   handleSubmit = event => {
     const { username, email, password } = this.state
     this.props.register({
-      body: {
-        newUsername: username,
-        newUserEmail: email,
-        newUserPassword: password
-      }
+      newUsername: username,
+      newUserEmail: email,
+      newUserPassword: password
     })
     event.preventDefault()
   }
