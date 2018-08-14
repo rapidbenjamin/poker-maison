@@ -62,6 +62,8 @@ handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
     msg <- atomically $ readTChan socketReadChan
+    print "parsed:"
+    print msg
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
     either
       (sendMsg clientConn . ErrMsg)
@@ -83,6 +85,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
       (catch
          (forever $ do
             msg <- WS.receiveData clientConn
+            print msg
             let parsedMsg = parseMsgFromJSON msg
             for_ parsedMsg $ atomically . writeTChan socketReadChan)
          (\e -> do
@@ -202,17 +205,20 @@ progressGame connString serverStateTVar tableName game@Game {..} =
       Left err -> print $ "progressGameAlong Err" ++ show err
 
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameMsgHandler GetTables {} = undefined
+gameMsgHandler GetTables {} = getTablesHandler
 gameMsgHandler msg@JoinTable {} = undefined
 gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
 gameMsgHandler msg@LeaveSeat {} = leaveSeatHandler msg
 gameMsgHandler msg@GameMove {} = gameActionHandler msg
 
-getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) ()
+getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 getTablesHandler = do
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
-  liftIO $ sendMsg clientConn TableList
+  let tableSummaries = TableList $ summariseTables lobby
+  liftIO $ print tableSummaries
+  liftIO $ sendMsg clientConn tableSummaries
+  return tableSummaries
 
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
 -- We link the new thread to the current thread so on any exception in either then both threads are

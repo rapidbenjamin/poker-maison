@@ -1,9 +1,11 @@
 import { disconnectSocket } from '../actions/auth'
 import { socketConnErr, socketConnected, socketAuthErr, socketAuthSuccess } from '../actions/socket'
+import { newLobby } from '../actions/lobby'
+import * as types from '../actions/types'
 
 const SOCKET_API_URL = process.SOCKET_API_URL || 'ws://localhost:5000'
 
-function addHandlers(socket, authToken, dispatch, eventName) {
+function addHandlers(socket, authToken, dispatch) {
   socket.onopen = event => {
     // connected to server but not authenticated
     dispatch(socketConnected(socket)); // pass ref to socket so dispatcher - socket middleware has access to new connected socket instance
@@ -15,34 +17,41 @@ function addHandlers(socket, authToken, dispatch, eventName) {
   }
 
   socket.onmessage = msg => {
+    console.log(msg)
+
     const parsedMsg = JSON.parse(JSON.parse(msg.data))
     if (parsedMsg.tag === 'AuthSuccess') {
       dispatch(socketAuthSuccess())
     }
-
-    console.log(msg)
+    if (parsedMsg.tag === 'TableList') {
+      const tableList = parsedMsg.contents
+      dispatch(newLobby(tableList))
+    }
   }
 
   socket.onerror = err => {
+    dispatch(socketAuthErr(err))
     console.log(err)
   }
-
 }
 
 let connectedSocket = null;
 
-function connHandler(dispatch, action, eventName) {
-  if (action.type === "CONNECT_SOCKET") {
+function connHandler(dispatch, action) {
+  if (action.type === types.CONNECT_SOCKET) {
     const { token } = action
-    const ws = new WebSocket(SOCKET_API_URL)
-    console.log(ws)
-    addHandlers(ws, token, dispatch, eventName);
+    connectedSocket = new WebSocket(SOCKET_API_URL)
+    addHandlers(connectedSocket, token, dispatch);
   }
 
-  if (action.type === "DISCONNECT_SOCKET") {
+  if (action.type === types.DISCONNECT_SOCKET && connectedSocket) {
     if (connectedSocket) {
       connectedSocket.disconnect();
     }
+  }
+
+  if (action.data && connectedSocket) {
+    connectedSocket.send('data', action.payload);
   }
 }
 
@@ -58,21 +67,20 @@ function connHandler(dispatch, action, eventName) {
 *            // sending the message to the server.
 * }
 */
-const reduxSocketIo = (criteria = [], eventName = "data") => ({
+const reduxSocketMiddleware = ({
   dispatch,
   getState
 }) => next => action => {
-  connHandler(dispatch, action, eventName);
+  connHandler(dispatch, action);
   console.log(action);
+  const criteria = 'server/'
 
   if (connectedSocket) {
     if (evaluate(action, criteria)) {
-      return defaultExecute(next, eventName, action);
+      return defaultExecute(next, action);
     }
-    return next(action);
   }
   return next(action);
-
 };
 
 function evaluate(action, option) {
@@ -95,9 +103,8 @@ function evaluate(action, option) {
   return matched;
 }
 
-function defaultExecute(next, eventName, action) {
-  connectedSocket.emit(eventName, action);
-  return next(action);
+function defaultExecute(next, action) {
+  connectedSocket.send(JSON.stringify(action.data))
 }
 
-export default reduxSocketIo;
+export default reduxSocketMiddleware;

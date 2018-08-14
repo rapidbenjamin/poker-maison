@@ -95,10 +95,22 @@ data MsgIn
              PlayerAction
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
+-- TODO - add BBs per hour, hands per hour etc
+-- For the lobby view so client can make an informed decision about which game to join
+data TableSummary = TableSummary
+  { _tableName :: Text
+  , _playerCount :: Int
+  , _minBuyInChips :: Int
+  , _maxBuyInChips :: Int
+  , _maxPlayers :: Int
+  , _waitlistCount :: Int
+  , _smallBlind :: Int
+  , _bigBlind :: Int
+  } deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
 -- outgoing messages for ws client(s)
 data MsgOut
-  = TableList -- TODO only broadcast public table info -- add list of tables to msg
-  | NewTableList -- TODO only broadcast public table info -- add list of tables to msg
+  = TableList [TableSummary] -- TODO only broadcast public table info -- add list of tables to msg
   | PlayerLeft
   | SuccessfullySatDown TableName
   | SuccessfullyLeftSeat TableName

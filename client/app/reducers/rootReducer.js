@@ -4,10 +4,12 @@ import {
 
 import auth from './auth';
 import socket from './socket'
+import lobby from './lobby'
 
 const rootReducer = combineReducers({
   auth,
-  socket
+  socket,
+  lobby
 });
 
 export default rootReducer;

@@ -81,3 +81,15 @@ updateTableGame tableName newGame (Lobby lobby) =
 -- returns playernames of all observers , players in game and on waitlist
 getTableSubscribers Table {..} =
   (Username <$> getGamePlayerNames game) ++ waitlist ++ subscribers
+
+summariseGame :: TableName -> Table -> TableSummary
+summariseGame tableName Table {game = Game {..}, ..} =
+  TableSummary
+    { _tableName = tableName
+    , _playerCount = length _players
+    , _waitlistCount = length _waitlist
+    , ..
+    }
+
+summariseTables :: Lobby -> [TableSummary]
+summariseTables (Lobby lobby) = uncurry summariseGame <$> M.toList lobby

@@ -11,3 +11,7 @@ export const DISCONNECT_SOCKET = 'DISCONNECT_SOCKET'
 export const SOCKET_AUTH_SUCCESS = 'SOCKET_AUTH_SUCCESS'
 export const SOCKET_AUTH_ERR = 'SOCKET_AUTH_ERR'
 export const SOCKET_CONN_ERR = 'SOCKET_CONN_ERR'
+
+/* Lobby Action Types */
+export const GET_LOBBY = 'server/GET_LOBBY'
+export const NEW_LOBBY = 'NEW_LOBBY'

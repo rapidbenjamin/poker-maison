@@ -9,7 +9,6 @@ export default function (state = initialState, action) {
     case types.AUTH_REQUESTED:
       return state.set('isLoading', true);
     case types.AUTHENTICATED:
-      console.log('kjubgkjgb', action.username)
       return state.set('authenticated', true).set('username', action.username).set('isLoading', false).set('error', null);
     case types.UNAUTHENTICATED:
       return state.set('authenticated', false).set('username', null).set('isLoading', false).set('error', null);

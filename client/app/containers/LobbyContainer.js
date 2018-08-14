@@ -1,5 +1,26 @@
 import React from 'react'
+import { connect } from "react-redux";
 
-const LobbyContainer = () => <div> LOBBY</div>
+import { getLobby } from '../actions/lobby'
+import { getLobbyState } from '../selectors/lobby'
+import Lobby from '../components/Lobby'
 
-export default LobbyContainer
+class LobbyContainer extends React.Component {
+  componentDidMount() {
+    this.props.getLobby()
+  }
+
+  render() {
+    return (<Lobby />)
+  }
+}
+
+const mapStateToProps = state => ({
+  lobby: () => getLobbyState(state)
+});
+
+const mapDispatchToProps = dispatch => ({
+  getLobby: () => dispatch(getLobby())
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(LobbyContainer);
