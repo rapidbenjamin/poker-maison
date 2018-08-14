@@ -25,6 +25,8 @@ export default function socket(state = initialState, action) {
       return state.set('socketAuth', true)
     case SOCKET_AUTH_ERR:
       return state.set('socketAuthError' action.err)
+    case SOCKET_CONN_ERR:
+      return state.set('socketConnError' action.err)
     default:
       return state
   }
