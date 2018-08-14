@@ -62,8 +62,6 @@ handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
     msg <- atomically $ readTChan socketReadChan
-    print "parsed:"
-    print msg
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
     either
       (sendMsg clientConn . ErrMsg)
@@ -85,7 +83,6 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
       (catch
          (forever $ do
             msg <- WS.receiveData clientConn
-            print msg
             let parsedMsg = parseMsgFromJSON msg
             for_ parsedMsg $ atomically . writeTChan socketReadChan)
          (\e -> do
