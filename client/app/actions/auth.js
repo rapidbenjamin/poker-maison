@@ -17,7 +17,6 @@ export function login({ loginUsername, loginPassword }, history) {
   return async dispatch => {
     try {
       dispatch(authRequested())
-      console.log(loginPassword, loginUsername)
       const res = await axios.post(`${AUTH_API_URL}/login`, {
         loginUsername,
         loginPassword
