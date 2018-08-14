@@ -5,50 +5,19 @@
 
 // two authenticatation steps getting jwt and storing in local storage
 // then using the jwt to authentiate socket handshake using jwt-socket-io middleware
-export function socketAuthSuccess() {
-  return {
-    type: "SOCKET_AUTH_SUCCESS"
-  };
-}
+export const socketAuthSuccess = () => ({ type: "SOCKET_AUTH_SUCCESS" })
 
-export function socketAuthErr(err) {
-  return {
-    type: "SOCKET_AUTH_ERR",
-    err
-  };
-}
+export const socketAuthErr = err => ({ type: "SOCKET_AUTH_ERR", err })
 
-export function socketReconnecting() {
-  return {
-    type: "SOCKET_RECONNECTING"
-  };
-}
+export const socketReconnecting = () => ({ type: "SOCKET_RECONNECTING" })
 
-export function socketReconnectFail() {
-  return {
-    type: "SOCKET_RECONNECT_FAIL"
-  };
-}
+export const socketReconnectFail = () => ({ type: "SOCKET_RECONNECT_FAIL" })
 
-export function socketConnected(socket) {
-  return {
-    type: "SOCKET_CONNECTED",
-    socket
-  };
-}
+export const socketConnected = socket => ({ type: "SOCKET_CONNECTED", socket })
 
-export function socketConnectErr(err) {
-  return {
-    type: "SOCKET_CONNECT_ERR",
-    err
-  };
-}
+export const socketConnectErr = err => ({ type: "SOCKET_CONNECT_ERR", err })
 
-export function socketDisconnect() {
-  return {
-    type: "SOCKET_DISCONNECT"
-  };
-}
+export const socketDisconnect = () => ({ type: "SOCKET_DISCONNECT" })
 
 function addHandlers(socket, authToken, dispatch, eventName) {
   socket.on("connect", () => {
@@ -57,40 +26,28 @@ function addHandlers(socket, authToken, dispatch, eventName) {
     socket.emit("data", authToken);
   });
 
-  socket.on("authenticated", () => {
-    dispatch(socketAuthSuccess());
-  });
+  socket.on("authenticated", () => dispatch(socketAuthSuccess()))
 
-  socket.on("unauthorized", err => {
-    dispatch(socketAuthErr(err));
-  });
+  socket.on("unauthorized", err => dispatch(socketAuthErr(err)))
 
-  socket.on("connect_error", err => {
-    dispatch(socketConnectErr(err));
-  });
+  socket.on("connect_error", err => dispatch(socketConnectErr(err)))
 
-  socket.on("connect_timeout", err => {
-    dispatch(socketConnectErr(err));
-  });
+  socket.on("connect_timeout", err => dispatch(socketConnectErr(err)))
 
   // Fired upon an attempt to reconnect.
-  socket.on("reconnecting", attemptNumber => {
-    dispatch(socketReconnecting());
-  });
+  socket.on("reconnecting", () => dispatch(socketReconnecting()))
 
   // Fired upon a reconnection attempt error.
   socket.on("reconnect_error", err => {
     //  dispatch(socketReconnectFail(err))
-  });
+  })
 
   // Fired when couldn’t reconnect within reconnectionAttempts
   socket.on("reconnect_failed", err => {
     // dispatch(socketReconnectFail(err))
   });
 
-  socket.on("disconnect", () => {
-    dispatch(socketDisconnect());
-  });
+  socket.on("disconnect", () => dispatch(socketDisconnect()))
 
   // when socket receives any event with given name then dispatch the action payload to store
   connectedSocket.on(eventName, dispatch);
@@ -100,8 +57,10 @@ let connectedSocket = null;
 
 function connHandler(dispatch, action, socket, eventName) {
   if (action.type === "CONNECT_SOCKET") {
-    connectedSocket = socket(action.url);
-    addHandlers(connectedSocket, action.authToken, dispatch, eventName);
+    const { url, token } = action
+
+    connectedSocket = socket(url);
+    addHandlers(connectedSocket, token, dispatch, eventName);
   }
 
   if (action.type === "DISCONNECT_SOCKET") {
@@ -127,7 +86,7 @@ const reduxSocketIo = (socket, criteria = [], eventName = "data") => ({
   dispatch,
   getState
 }) => next => action => {
-  // connHandler(dispatch, action, socket, eventName);
+  connHandler(dispatch, action, socket, eventName);
   console.log(action);
 
   if (connectedSocket) {

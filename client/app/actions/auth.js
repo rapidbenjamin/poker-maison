@@ -7,10 +7,11 @@ import { checkStatus } from '../utils/request'
 /* Action Creators for Socket API authentication */
 const SOCKET_API_URL = process.env.SOCKET_API_URL || 'http://localhost:5000'
 
-export const connectSocket = (url, authToken) => ({
+// Redux Socket Middleware intercepts this action and handles connection logic
+export const connectSocket = (url, token) => ({
   type: types.CONNECT_SOCKET,
   url,
-  authToken
+  token
 })
 
 export const disconnectSocket = () => ({ type: types.DISCONNECT_SOCKET })
@@ -43,7 +44,7 @@ export function login(username, password, history) {
       const { access_token } = data
       dispatch(authSuccess(username))
       dispatch(connectSocket(SOCKET_API_URL, access_token));
-      localStorage.setItem('token', JSON.stringify(data))
+      localStorage.setItem('token', JSON.stringify({ ...data, username }))
       history.push('/lobby')
     }).catch(err => dispatch(authError(err)))
   }
@@ -60,7 +61,7 @@ export function register(email, username, password, history) {
       const { access_token } = data
       dispatch(authSuccess(username))
       dispatch(connectSocket(SOCKET_API_URL, access_token));
-      localStorage.setItem('token', JSON.stringify(data))
+      localStorage.setItem('token', JSON.stringify({ ...data, username }))
       history.push('/lobby')
     }).catch(err => dispatch(authError(err)))
   }

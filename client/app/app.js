@@ -58,12 +58,11 @@ if (module.hot) {
   })
 }
 
-//// If we have a JWT token in localStorage then treat user as authenticated
-//const token = localStorage.getItem('token')
-//
-//if (token) {
-//  store.dispatch({ type: AUTHENTICATED })
-//}
+// If we have a JWT token in localStorage then treat user as authenticated
+const token = localStorage.getItem('token')
 
+if (token) {
+  store.dispatch({ type: AUTHENTICATED })
+}
 
 render()
