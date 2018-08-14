@@ -1,6 +1,7 @@
 import { withRouter } from 'react-router-dom'
 import { connect } from 'react-redux'
 
+import { logoutUser } from '../actions/auth'
 import { isAuthenticated, getUsername } from '../selectors/auth'
 
 import NavBar from '../components/NavBar'
@@ -10,4 +11,8 @@ const mapStateToProps = state => ({
   username: getUsername(state),
 })
 
-export default connect(mapStateToProps)(withRouter(NavBar));
+const mapDispatchToProps = (dispatch, { history }) => ({
+  logoutUser: () => dispatch(logoutUser(history))
+})
+
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(NavBar));

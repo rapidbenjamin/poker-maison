@@ -15,10 +15,11 @@ export const connectSocket = token => ({
 export const disconnectSocket = () => ({ type: types.DISCONNECT_SOCKET })
 
 
-export const logoutUser = () => dispatch => {
+export const logoutUser = history => dispatch => {
   localStorage.removeItem("token");
   dispatch(logout());
   dispatch(disconnectSocket());
+  history.push('/')
 }
 
 
