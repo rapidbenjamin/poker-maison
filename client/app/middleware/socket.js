@@ -1,21 +1,15 @@
 import { disconnectSocket } from '../actions/auth'
 import { socketConnErr, socketConnected, socketAuthErr, socketAuthSuccess } from '../actions/socket'
 
-/**
-* Look to move this into its own npm modules
-* 
-*/
 const SOCKET_API_URL = process.SOCKET_API_URL || 'ws://localhost:5000'
 
 function addHandlers(socket, authToken, dispatch, eventName) {
-  // Connection opened
   socket.onopen = event => {
     // connected to server but not authenticated
     dispatch(socketConnected(socket)); // pass ref to socket so dispatcher - socket middleware has access to new connected socket instance
     socket.send(authToken);
   }
 
-  // Connection opened
   socket.onclose = event => {
     dispatch(disconnectSocket())
   }
@@ -68,7 +62,7 @@ const reduxSocketIo = (criteria = [], eventName = "data") => ({
 
   if (connectedSocket) {
     if (evaluate(action, criteria)) {
-      return defaultExecute(next, connectedSocket, eventName, action);
+      return defaultExecute(next, eventName, action);
     }
     return next(action);
   }
@@ -96,7 +90,7 @@ function evaluate(action, option) {
   return matched;
 }
 
-function defaultExecute(next, connectedSocket, eventName, action) {
+function defaultExecute(next, eventName, action) {
   connectedSocket.emit(eventName, action);
   return next(action);
 }
