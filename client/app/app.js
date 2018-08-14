@@ -19,7 +19,6 @@ import 'sanitize.css/sanitize.css'
 
 import AppContainer from 'containers/AppContainer'
 
-
 import { AUTHENTICATED } from './actions/types'
 
 // Load the favicon

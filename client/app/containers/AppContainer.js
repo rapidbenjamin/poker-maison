@@ -11,14 +11,14 @@ import { connectSocket } from "../actions/auth";
 import App from '../components/App'
 
 class AppContainer extends Component {
-  //componentDidMount() {
-  //  /* If we have a token and socket not connected then try and connect */
-  //  const { connectSocket, isSocketAuthenticated } = this.props
-  //  const token = localStorage.getItem("token");
-  //  if (token && !isSocketAuthenticated) {
-  //    connectSocket(token.access_token);
-  //  }
-  //}
+  componentDidMount() {
+    /* If we have a token and socket not connected then try and connect */
+    const { connectSocket, isSocketAuthenticated } = this.props
+    const token = localStorage.getItem("token");
+    if (token && !isSocketAuthenticated) {
+      connectSocket(token.access_token);
+    }
+  }
 
   render() {
     return <App />;

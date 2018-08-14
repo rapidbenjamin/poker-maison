@@ -8,36 +8,14 @@ import { routerMiddleware } from 'react-router-redux'
 import reduxThunk from 'redux-thunk'
 import socket from 'socket.io-client'
 
-
 import createReducer from './reducers'
 import socketMiddleware from "./middleware/socket";
-
-import { Iterable } from 'immutable'
-import { createLogger } from 'redux-logger';
-
-const logger = createLogger({
-  stateTransformer: (state) => {
-    const newState = {};
-    const stateObj = state.toObject();
-
-    for (const i of Object.keys(stateObj)) {
-      if (Iterable.isIterable(stateObj[i])) {
-        newState[i] = stateObj[i].toJS();
-      } else {
-        newState[i] = stateObj[i];
-      }
-    }
-
-    return newState;
-  }
-});
-
 
 export default function configureStore(initialState = {}, history) {
   // Create the store with two middlewares
   // 1. sagaMiddleware: Makes redux-sagas work
   // 2. routerMiddleware: Syncs the location/URL path to the state
-  const middlewares = [reduxThunk, logger, socketMiddleware(socket, 'server/'), routerMiddleware(history)]
+  const middlewares = [reduxThunk, socketMiddleware(socket, 'server/'), routerMiddleware(history)]
 
   const enhancers = [applyMiddleware(...middlewares)]
 

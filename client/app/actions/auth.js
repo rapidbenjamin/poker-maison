@@ -43,7 +43,7 @@ export function login(username, password, history) {
       const { access_token } = data
       dispatch(authSuccess(username))
       dispatch(connectSocket(SOCKET_API_URL, access_token));
-      localStorage.setItem('token', data)
+      localStorage.setItem('token', JSON.stringify(data))
       history.push('/lobby')
     }).catch(err => dispatch(authError(err)))
   }
@@ -60,7 +60,7 @@ export function register(email, username, password, history) {
       const { access_token } = data
       dispatch(authSuccess(username))
       dispatch(connectSocket(SOCKET_API_URL, access_token));
-      localStorage.setItem('token', data)
+      localStorage.setItem('token', JSON.stringify(data))
       history.push('/lobby')
     }).catch(err => dispatch(authError(err)))
   }
