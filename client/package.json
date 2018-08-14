@@ -61,8 +61,7 @@
     "reselect": "3.0.1",
     "sanitize.css": "6.0.0",
     "warning": "^4.0.1",
-    "whatwg-fetch": "2.0.4",
-    "ws": "^6.0.0"
+    "whatwg-fetch": "2.0.4"
   },
   "devDependencies": {
     "add-asset-html-webpack-plugin": "2.1.3",

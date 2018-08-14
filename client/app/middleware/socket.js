@@ -1,40 +1,22 @@
 import { disconnectSocket } from '../actions/auth'
+import { socketConnErr, socketConnected, socketAuthErr, socketAuthSuccess } from '../actions/socket'
+
 /**
 * Look to move this into its own npm modules
 * 
 */
-//import WebSocket from 'ws'
-
 const SOCKET_API_URL = process.SOCKET_API_URL || 'ws://localhost:5000'
-
-// two authenticatation steps getting jwt and storing in local storage
-// then using the jwt to authentiate socket handshake using jwt-socket-io middleware
-export const socketAuthSuccess = () => ({ type: "SOCKET_AUTH_SUCCESS" })
-
-export const socketAuthErr = err => ({ type: "SOCKET_AUTH_ERR", err })
-
-export const socketReconnecting = () => ({ type: "SOCKET_RECONNECTING" })
-
-export const socketReconnectFail = () => ({ type: "SOCKET_RECONNECT_FAIL" })
-
-export const socketConnected = socket => ({ type: "SOCKET_CONNECTED", socket })
-
-export const socketConnectErr = err => ({ type: "SOCKET_CONNECT_ERR", err })
-
-export const socketDisconnect = () => ({ type: "SOCKET_DISCONNECT" })
 
 function addHandlers(socket, authToken, dispatch, eventName) {
   // Connection opened
-  socket.onopen = (event) => {
-    console.log('9CONNECTED')
+  socket.onopen = event => {
     // connected to server but not authenticated
     dispatch(socketConnected(socket)); // pass ref to socket so dispatcher - socket middleware has access to new connected socket instance
     socket.send(authToken);
   }
 
   // Connection opened
-  socket.onclose = function (event) {
-    console.log('connection closed!')
+  socket.onclose = event => {
     dispatch(disconnectSocket())
   }
 
