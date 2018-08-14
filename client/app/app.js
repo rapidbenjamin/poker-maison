@@ -14,6 +14,7 @@ import ReactDOM from 'react-dom'
 import { Provider } from 'react-redux'
 import { ConnectedRouter } from 'react-router-redux'
 import createHistory from 'history/createBrowserHistory'
+
 import 'sanitize.css/sanitize.css'
 
 import AppContainer from 'containers/AppContainer'
@@ -58,14 +59,12 @@ if (module.hot) {
   })
 }
 
-// If we have a JWT token in localStorage then treat user as authenticated
-const user = localStorage.getItem('user')
+//// If we have a JWT token in localStorage then treat user as authenticated
+//const token = localStorage.getItem('token')
+//
+//if (token) {
+//  store.dispatch({ type: AUTHENTICATED })
+//}
 
-if (user) {
-  store.dispatch({ type: AUTHENTICATED })
-}
-
-
-const jwtToken = localStorage.getItem("token");
 
 render()

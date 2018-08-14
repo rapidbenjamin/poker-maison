@@ -127,7 +127,7 @@ const reduxSocketIo = (socket, criteria = [], eventName = "data") => ({
   dispatch,
   getState
 }) => next => action => {
-  connHandler(dispatch, action, socket, eventName);
+  // connHandler(dispatch, action, socket, eventName);
   console.log(action);
 
   if (connectedSocket) {
