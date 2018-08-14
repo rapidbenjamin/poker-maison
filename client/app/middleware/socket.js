@@ -15,6 +15,11 @@ function addHandlers(socket, authToken, dispatch, eventName) {
   }
 
   socket.onmessage = msg => {
+    const parsedMsg = JSON.parse(JSON.parse(msg.data))
+    if (parsedMsg.tag === 'AuthSuccess') {
+      dispatch(socketAuthSuccess())
+    }
+
     console.log(msg)
   }
 
