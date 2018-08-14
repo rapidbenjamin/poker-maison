@@ -19,7 +19,7 @@ import 'sanitize.css/sanitize.css'
 
 import AppContainer from 'containers/AppContainer'
 
-import { AUTHENTICATED } from './actions/types'
+import { authSuccess } from './actions/auth'
 
 // Load the favicon
 /* eslint-disable import/no-webpack-loader-syntax */
@@ -62,7 +62,8 @@ if (module.hot) {
 const token = localStorage.getItem('token')
 
 if (token) {
-  store.dispatch({ type: AUTHENTICATED })
+  const { username } = JSON.parse(localStorage.getItem('token'))
+  store.dispatch(authSuccess(username))
 }
 
 render()
