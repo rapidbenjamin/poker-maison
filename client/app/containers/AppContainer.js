@@ -4,16 +4,19 @@ import { connect } from "react-redux";
 import { withRouter } from 'react-router'
 
 import { isAuthenticated } from "../selectors/auth";
+import { isSocketAuthenticated } from "../selectors/socket";
+
 import { connectSocket } from "../actions/auth";
 
 import App from '../components/App'
 
 class AppContainer extends Component {
   componentDidMount() {
+    /* If we have a token and socket not connected then try and connect */
+    const { connectSocket, isSocketAuthenticated } = this.props
     const token = localStorage.getItem("token");
-    // If we have a token, consider the user to be signed in and update state
-    if (token && !this.props.isAuthenticated) {
-      this.props.connectSocket();
+    if (token && !isSocketAuthenticated) {
+      connectSocket(token.access_token);
     }
   }
 
@@ -22,7 +25,10 @@ class AppContainer extends Component {
   }
 }
 
-const mapStateToProps = state => ({ isAuthenticated: isAuthenticated(state) });
+const mapStateToProps = state => ({
+  isAuthenticated: isAuthenticated(state),
+  isSocketAuthenticated: isSocketAuthenticated(state)
+});
 
 const mapDispatchToProps = dispatch => ({
   connectSocket: token => dispatch(connectSocket(token))

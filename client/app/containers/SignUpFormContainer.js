@@ -24,11 +24,11 @@ class SignUpFormContainer extends React.Component {
 
   handleSubmit = event => {
     const { username, email, password } = this.state
-    this.props.register({
-      newUsername: username,
-      newUserEmail: email,
-      newUserPassword: password
-    })
+    this.props.register(
+      username,
+      email,
+      password
+    )
     event.preventDefault()
   }
 
@@ -47,7 +47,7 @@ class SignUpFormContainer extends React.Component {
 }
 
 const mapDispatchToProps = (dispatch, { history }) => ({
-  register: credentials => dispatch(register({ ...credentials }, history))
+  register: (username, email, password) => dispatch(register(username, email, password, history))
 })
 
 export default connect(

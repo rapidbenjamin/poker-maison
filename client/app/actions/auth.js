@@ -33,32 +33,34 @@ export const authError = error => ({ type: types.AUTHENTICATION_ERROR, error })
 
 export const logout = () => ({ type: types.UNAUTHENTICATED })
 
-export function login({ username, password }, history) {
+export function login(username, password, history) {
   return async dispatch => {
     dispatch(authRequested())
     axios.post(`${AUTH_API_URL}/login`, {
       loginUsername: username,
       loginPassword: password
-    }).then(({ data: { token } }) => {
+    }).then(({ data }) => {
+      const { access_token } = data
       dispatch(authSuccess(username))
-      dispatch(connectSocket(SOCKET_API_URL, token));
-      localStorage.setItem('token', token)
+      dispatch(connectSocket(SOCKET_API_URL, access_token));
+      localStorage.setItem('token', data)
       history.push('/lobby')
     }).catch(err => dispatch(authError(err)))
   }
 }
 
-export function register({ email, username, password }, history) {
+export function register(email, username, password, history) {
   return async dispatch => {
     dispatch(authRequested())
     axios.post(`${AUTH_API_URL}/register`, {
       newUsername: username,
       newUserEmail: email,
       newUserPassword: password
-    }).then(({ data: { token } }) => {
+    }).then(({ data }) => {
+      const { access_token } = data
       dispatch(authSuccess(username))
-      dispatch(connectSocket(SOCKET_API_URL, token));
-      localStorage.setItem('token', token)
+      dispatch(connectSocket(SOCKET_API_URL, access_token));
+      localStorage.setItem('token', data)
       history.push('/lobby')
     }).catch(err => dispatch(authError(err)))
   }

@@ -22,10 +22,10 @@ class SignInFormContainer extends React.Component {
 
   handleSubmit = event => {
     const { username, password } = this.state
-    this.props.login({
-      loginUsername: username,
-      loginPassword: password
-    })
+    this.props.login(
+      username,
+      password
+    )
     event.preventDefault()
   }
 
@@ -44,7 +44,7 @@ class SignInFormContainer extends React.Component {
 }
 
 const mapDispatchToProps = (dispatch, { history }) => ({
-  login: credentials => dispatch(login({ ...credentials }, history))
+  login: (username, password) => dispatch(login(username, password, history))
 })
 
 export default connect(
