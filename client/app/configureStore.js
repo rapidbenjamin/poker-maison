@@ -39,6 +39,9 @@ export default function configureStore(initialState = {}, history) {
     composeEnhancers(...enhancers)
   )
 
+  // Extensions
+  store.injectedReducers = {} // Reducer registry
+
   // Make reducers hot reloadable, see http://mxs.is/googmo
   /* istanbul ignore next */
   if (module.hot) {

@@ -4,6 +4,7 @@ import Immutable, { fromJS } from 'immutable';
 import {
   SOCKET_AUTH_SUCCESS,
   SOCKET_AUTH_ERR,
+  SOCKET_CONN_ERR,
   SOCKET_CONNECTED,
   DISCONNECT_SOCKET
 } from '../actions/types'
@@ -24,9 +25,9 @@ export default function socket(state = initialState, action) {
     case SOCKET_AUTH_SUCCESS:
       return state.set('socketAuth', true)
     case SOCKET_AUTH_ERR:
-      return state.set('socketAuthError' action.err)
+      return state.set('socketAuthError', action.err)
     case SOCKET_CONN_ERR:
-      return state.set('socketConnError' action.err)
+      return state.set('socketConnError', action.err)
     default:
       return state
   }

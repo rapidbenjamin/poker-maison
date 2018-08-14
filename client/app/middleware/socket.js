@@ -50,11 +50,11 @@ export function socketDisconnect() {
   };
 }
 
-function addHandlers(socket, jwt, dispatch, eventName) {
+function addHandlers(socket, authToken, dispatch, eventName) {
   socket.on("connect", () => {
     // connected to server but not authenticated
     dispatch(socketConnected(socket)); // pass ref to socket so dispatcher - socket middleware has access to new connected socket instance
-    socket.emit("authenticate", { token: jwt });
+    socket.emit("data", authToken);
   });
 
   socket.on("authenticated", () => {

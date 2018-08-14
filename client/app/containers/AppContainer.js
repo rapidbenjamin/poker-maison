@@ -2,8 +2,8 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 
-import { isAuthenticated } from "../selectors/index";
-import { connectSocket } from "../actions/socket";
+import { isAuthenticated } from "../selectors/auth";
+import { connectSocket } from "../actions/auth";
 
 import App from '../components/App'
 
