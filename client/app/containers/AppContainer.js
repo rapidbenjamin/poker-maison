@@ -1,6 +1,7 @@
 
 import React, { Component } from "react";
 import { connect } from "react-redux";
+import { withRouter } from 'react-router'
 
 import { isAuthenticated } from "../selectors/auth";
 import { connectSocket } from "../actions/auth";
@@ -27,4 +28,4 @@ const mapDispatchToProps = dispatch => ({
   connectSocket: token => dispatch(connectSocket(token))
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(AppContainer);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AppContainer));
