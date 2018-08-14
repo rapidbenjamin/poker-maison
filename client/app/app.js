@@ -18,6 +18,7 @@ import 'sanitize.css/sanitize.css'
 
 import AppContainer from 'containers/AppContainer'
 
+
 import { AUTHENTICATED } from './actions/types'
 
 // Load the favicon
@@ -63,5 +64,8 @@ const user = localStorage.getItem('user')
 if (user) {
   store.dispatch({ type: AUTHENTICATED })
 }
+
+
+const jwtToken = localStorage.getItem("token");
 
 render()

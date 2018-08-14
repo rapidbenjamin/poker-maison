@@ -2,10 +2,12 @@ import {
   combineReducers
 } from 'redux-immutable';
 
-import authReducer from './auth';
+import auth from './auth';
+import socket from './socket'
 
 const rootReducer = combineReducers({
-  auth: authReducer
+  auth,
+  socket
 });
 
 export default rootReducer;
