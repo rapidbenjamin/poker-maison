@@ -1,7 +1,11 @@
+import { disconnectSocket } from '../actions/auth'
 /**
 * Look to move this into its own npm modules
 * 
 */
+//import WebSocket from 'ws'
+
+const SOCKET_API_URL = process.SOCKET_API_URL || 'ws://localhost:5000'
 
 // two authenticatation steps getting jwt and storing in local storage
 // then using the jwt to authentiate socket handshake using jwt-socket-io middleware
@@ -20,47 +24,38 @@ export const socketConnectErr = err => ({ type: "SOCKET_CONNECT_ERR", err })
 export const socketDisconnect = () => ({ type: "SOCKET_DISCONNECT" })
 
 function addHandlers(socket, authToken, dispatch, eventName) {
-  socket.on("connect", () => {
+  // Connection opened
+  socket.onopen = (event) => {
+    console.log('9CONNECTED')
     // connected to server but not authenticated
     dispatch(socketConnected(socket)); // pass ref to socket so dispatcher - socket middleware has access to new connected socket instance
-    socket.emit("data", authToken);
-  });
+    socket.send(authToken);
+  }
 
-  socket.on("authenticated", () => dispatch(socketAuthSuccess()))
+  // Connection opened
+  socket.onclose = function (event) {
+    console.log('connection closed!')
+    dispatch(disconnectSocket())
+  }
 
-  socket.on("unauthorized", err => dispatch(socketAuthErr(err)))
+  socket.onmessage = msg => {
+    console.log(msg)
+  }
 
-  socket.on("connect_error", err => dispatch(socketConnectErr(err)))
+  socket.onerror = err => {
+    console.log(err)
+  }
 
-  socket.on("connect_timeout", err => dispatch(socketConnectErr(err)))
-
-  // Fired upon an attempt to reconnect.
-  socket.on("reconnecting", () => dispatch(socketReconnecting()))
-
-  // Fired upon a reconnection attempt error.
-  socket.on("reconnect_error", err => {
-    //  dispatch(socketReconnectFail(err))
-  })
-
-  // Fired when couldn’t reconnect within reconnectionAttempts
-  socket.on("reconnect_failed", err => {
-    // dispatch(socketReconnectFail(err))
-  });
-
-  socket.on("disconnect", () => dispatch(socketDisconnect()))
-
-  // when socket receives any event with given name then dispatch the action payload to store
-  connectedSocket.on(eventName, dispatch);
 }
 
 let connectedSocket = null;
 
-function connHandler(dispatch, action, socket, eventName) {
+function connHandler(dispatch, action, eventName) {
   if (action.type === "CONNECT_SOCKET") {
-    const { url, token } = action
-
-    connectedSocket = socket(url);
-    addHandlers(connectedSocket, token, dispatch, eventName);
+    const { token } = action
+    const ws = new WebSocket(SOCKET_API_URL)
+    console.log(ws)
+    addHandlers(ws, token, dispatch, eventName);
   }
 
   if (action.type === "DISCONNECT_SOCKET") {
@@ -72,7 +67,7 @@ function connHandler(dispatch, action, socket, eventName) {
 
 /**
 * Allows you to register actions that when dispatched, send the action to the
-* server via a socket.io socket.
+* server via a socket.
 * `criteria` may be a function (type, action) that returns true if you wish to send the
 *  action to the server, array of action types, or a string prefix.
 * the third parameter is an options object with the following properties:
@@ -82,11 +77,11 @@ function connHandler(dispatch, action, socket, eventName) {
 *            // sending the message to the server.
 * }
 */
-const reduxSocketIo = (socket, criteria = [], eventName = "data") => ({
+const reduxSocketIo = (criteria = [], eventName = "data") => ({
   dispatch,
   getState
 }) => next => action => {
-  connHandler(dispatch, action, socket, eventName);
+  connHandler(dispatch, action, eventName);
   console.log(action);
 
   if (connectedSocket) {

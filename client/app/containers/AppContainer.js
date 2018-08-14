@@ -10,9 +10,6 @@ import { connectSocket } from "../actions/auth";
 
 import App from '../components/App'
 
-/* Action Creators for Socket API authentication */
-const SOCKET_API_URL = process.env.SOCKET_API_URL || 'http://localhost:5000'
-
 class AppContainer extends Component {
   componentDidMount() {
     /* If we have a token and socket not connected then try and connect */
@@ -20,7 +17,7 @@ class AppContainer extends Component {
     const token = localStorage.getItem("token");
     if (token && !isSocketAuthenticated) {
       const { access_token } = JSON.parse(token)
-      connectSocket(SOCKET_API_URL, access_token);
+      connectSocket(access_token);
     }
   }
 

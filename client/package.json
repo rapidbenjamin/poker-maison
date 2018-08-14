@@ -60,9 +60,9 @@
     "redux-thunk": "^2.3.0",
     "reselect": "3.0.1",
     "sanitize.css": "6.0.0",
-    "socket.io-client": "^2.1.1",
     "warning": "^4.0.1",
-    "whatwg-fetch": "2.0.4"
+    "whatwg-fetch": "2.0.4",
+    "ws": "^6.0.0"
   },
   "devDependencies": {
     "add-asset-html-webpack-plugin": "2.1.3",
