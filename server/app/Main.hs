@@ -26,7 +26,7 @@ main = do
   concurrently runUserAPI runSocketAPI
   where
     defaultUserAPIPort = 8000
-    defaultSocketAPIPort = 3000
+    defaultSocketAPIPort = 5000
     redisConfig = redisConnectInfo
     defaultMonitoringServerAddress = "localhost"
     defaultMonitoringServerPort = 9999
