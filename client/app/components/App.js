@@ -21,7 +21,7 @@ import Footer from './Footer';
 import NotFoundPage from './NotFoundPage';
 import Signout from './Signout'
 
-const App = () => (
+const App = ({ username }) => (
   <div className="app-wrapper">
     <Helmet
       titleTemplate="%s - React.js Boilerplate"
@@ -36,7 +36,7 @@ const App = () => (
       <Route path="/signin" component={SignInFormContainer} />
       <Route path="/signout" component={Signout} />
       <Route path="/lobby" component={LobbyContainer} />
-      <Route path="/game/:tableName" component={GameContainer} />
+      <Route path="/game/:tableName" render={props => <GameContainer {...props} username={username} />} />
       <Route path="" component={NotFoundPage} />
     </Switch>
     <Footer />

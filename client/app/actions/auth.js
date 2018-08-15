@@ -42,7 +42,7 @@ export function login(username, password, history) {
       loginPassword: password
     }).then(({ data }) => {
       const { access_token } = data
-      dispatch(authSuccess(username))
+      dispatch(authSuccess(email))
       dispatch(connectSocket(access_token));
       localStorage.setItem('token', JSON.stringify({ ...data, username }))
       history.push('/profile')
@@ -59,7 +59,7 @@ export function register(email, username, password, history) {
       newUserPassword: password
     }).then(({ data }) => {
       const { access_token } = data
-      dispatch(authSuccess(username))
+      dispatch(authSuccess(email))
       dispatch(connectSocket(access_token));
       localStorage.setItem('token', JSON.stringify({ ...data, username }))
       history.push('/profile')

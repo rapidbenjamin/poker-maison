@@ -3,7 +3,7 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import { withRouter } from 'react-router'
 
-import { isAuthenticated } from "../selectors/auth";
+import { isAuthenticated, getUsername } from "../selectors/auth";
 import { isSocketAuthenticated } from "../selectors/socket";
 
 import { connectSocket } from "../actions/auth";
@@ -22,13 +22,16 @@ class AppContainer extends Component {
   }
 
   render() {
-    return <App />;
+    const { username } = this.props
+
+    return <App username={username} />;
   }
 }
 
 const mapStateToProps = state => ({
   isAuthenticated: isAuthenticated(state),
-  isSocketAuthenticated: isSocketAuthenticated(state)
+  isSocketAuthenticated: isSocketAuthenticated(state),
+  username: getUsername(state)
 });
 
 const mapDispatchToProps = dispatch => ({

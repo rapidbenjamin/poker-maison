@@ -1,24 +1,22 @@
 import React from 'react'
 import { connect } from "react-redux";
 
-import { getGame } from '../selectors/games'
+import { getGame, isTurnToAct } from '../selectors/games'
 
 class GameContainer extends React.Component {
-
-    render() {
-        const { match: { params: { tableName } } } = this.props
-
-        console.log(tableName)
-        return (<div>ggggg</div>)
-    }
+  render() {
+    const { game, isTurnToAct, username } = this.props
+    return (<Game game={game} username={username} isTurnToAct={isTurnToAct} />)
+  }
 }
 
-const mapStateToProps = (state, { match: { params: { tableName } } }) => ({
-    game: getGame(state, tableName)
+const mapStateToProps = (state, { username, match: { params: { tableName } } }) => ({
+  game: getGame(tableName)(state),
+  isTurnToAct: isTurnToAct(username, tableName)(state)
 });
 
 const mapDispatchToProps = (dispatch, { match: { params: { tableName } } }) => ({
-    // game: () => dispatch(getLobby()),
+  // game: () => dispatch(getLobby()),
 });
 
 
