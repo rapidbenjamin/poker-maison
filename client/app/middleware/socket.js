@@ -1,9 +1,13 @@
+import { fromJS } from 'immutable'
+
 import { disconnectSocket } from '../actions/auth'
 import { socketConnErr, socketConnected, socketAuthErr, socketAuthSuccess } from '../actions/socket'
 import { newLobby } from '../actions/lobby'
 import { newGameState } from '../actions/games'
 
 import * as types from '../actions/types'
+
+
 
 const SOCKET_API_URL = process.SOCKET_API_URL || 'ws://localhost:5000'
 
@@ -28,12 +32,12 @@ function addHandlers(socket, authToken, dispatch) {
     }
     if (parsedMsg.tag === 'TableList') {
       const tableList = parsedMsg.contents
-      dispatch(newLobby(tableList))
+      dispatch(newLobby(fromJS(tableList)))
     }
     if (parsedMsg.tag === 'SuccessfullySatDown' || parsedMsg.tag === 'NewGameState') {
       const tableName = parsedMsg.contents[0]
       const gameState = parsedMsg.contents[1]
-      dispatch(newGameState(tableName, gameState))
+      dispatch(newGameState(tableName, fromJS(gameState)))
     }
   }
 

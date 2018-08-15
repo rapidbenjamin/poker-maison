@@ -1,11 +1,13 @@
 import React from 'react'
 import { connect } from "react-redux";
 
+import Game from '../components/Game'
 import { getGame, isTurnToAct } from '../selectors/games'
 
 class GameContainer extends React.Component {
   render() {
     const { game, isTurnToAct, username } = this.props
+
     return (<Game game={game} username={username} isTurnToAct={isTurnToAct} />)
   }
 }
