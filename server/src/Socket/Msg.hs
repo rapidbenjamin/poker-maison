@@ -255,7 +255,8 @@ takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
                     async
                       (tableReceiveMsgLoop tableName channel msgHandlerConfig)
                   liftIO $ link asyncGameReceiveLoop
-                  liftIO $ sendMsg clientConn (SuccessfullySatDown tableName)
+                  liftIO $
+                    sendMsg clientConn (SuccessfullySatDown tableName newGame)
                   return $ NewGameState tableName newGame
 
 leaveSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut

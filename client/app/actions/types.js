@@ -18,3 +18,8 @@ export const SOCKET_CONN_ERR = 'SOCKET_CONN_ERR'
 export const GET_LOBBY = 'server/GET_LOBBY'
 export const TAKE_SEAT = 'server/TAKE_SEAT'
 export const NEW_LOBBY = 'NEW_LOBBY'
+
+
+/* Game Action Types */
+export const NEW_GAME_STATE = 'NEW_GAME_STATE'
+export const SUCCESSFULLY_SAT_DOWN = 'SUCCESSFULLY_SAT_DOWN'

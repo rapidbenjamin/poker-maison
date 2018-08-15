@@ -113,6 +113,7 @@ data MsgOut
   = TableList [TableSummary] -- TODO only broadcast public table info -- add list of tables to msg
   | PlayerLeft
   | SuccessfullySatDown TableName
+                        Game
   | SuccessfullyLeftSeat TableName
   | PlayerJoined TableName
                  Text

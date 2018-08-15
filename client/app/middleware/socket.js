@@ -1,6 +1,8 @@
 import { disconnectSocket } from '../actions/auth'
 import { socketConnErr, socketConnected, socketAuthErr, socketAuthSuccess } from '../actions/socket'
 import { newLobby } from '../actions/lobby'
+import { newGameState } from '../actions/games'
+
 import * as types from '../actions/types'
 
 const SOCKET_API_URL = process.SOCKET_API_URL || 'ws://localhost:5000'
@@ -20,12 +22,18 @@ function addHandlers(socket, authToken, dispatch) {
     console.log(msg)
 
     const parsedMsg = JSON.parse(JSON.parse(msg.data))
+
     if (parsedMsg.tag === 'AuthSuccess') {
       dispatch(socketAuthSuccess())
     }
     if (parsedMsg.tag === 'TableList') {
       const tableList = parsedMsg.contents
       dispatch(newLobby(tableList))
+    }
+    if (parsedMsg.tag === 'SuccessfullySatDown' || parsedMsg.tag === 'NewGameState') {
+      const tableName = parsedMsg.contents[0]
+      const gameState = parsedMsg.contents[1]
+      dispatch(newGameState(tableName, gameState))
     }
   }
 
