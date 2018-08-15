@@ -45,13 +45,13 @@ function connHandler(dispatch, action) {
   }
 
   if (action.type === types.DISCONNECT_SOCKET && connectedSocket) {
-    if (connectedSocket) {
-      connectedSocket.disconnect();
+    if (connectedSocket.readyState === 1) {
+      connectedSocket.close();
     }
   }
 
   if (action.data && connectedSocket) {
-    connectedSocket.send('data', action.payload);
+    if (connectedSocket.readyState === 1) connectedSocket.send('data', action.payload);
   }
 }
 
@@ -77,7 +77,7 @@ const reduxSocketMiddleware = ({
 
   if (connectedSocket) {
     if (evaluate(action, criteria)) {
-      return defaultExecute(next, action);
+      return defaultExecute(dispatch, next, action);
     }
   }
   return next(action);
@@ -103,8 +103,10 @@ function evaluate(action, option) {
   return matched;
 }
 
-function defaultExecute(next, action) {
-  connectedSocket.send(JSON.stringify(action.data))
+function defaultExecute(dispatch, next, action) {
+  if (connectedSocket) {
+    if (connectedSocket.readyState === 1) connectedSocket.send(JSON.stringify(action.data))
+  }
 }
 
 export default reduxSocketMiddleware;
