@@ -12,13 +12,14 @@ import { Switch, Route } from 'react-router-dom';
 
 import HomeContainer from '../containers/HomeContainer';
 import NavBarContainer from '../containers/NavBarContainer';
-import Signout from './Signout'
 import SignUpFormContainer from '../containers/SignUpFormContainer'
 import SignInFormContainer from '../containers/SignInFormContainer'
 import LobbyContainer from '../containers/LobbyContainer'
+import GameContainer from '../containers/GameContainer'
 
 import Footer from './Footer';
 import NotFoundPage from './NotFoundPage';
+import Signout from './Signout'
 
 const App = () => (
   <div className="app-wrapper">
@@ -35,6 +36,7 @@ const App = () => (
       <Route path="/signin" component={SignInFormContainer} />
       <Route path="/signout" component={Signout} />
       <Route path="/lobby" component={LobbyContainer} />
+      <Route path="/game/:tableName" component={GameContainer} />
       <Route path="" component={NotFoundPage} />
     </Switch>
     <Footer />

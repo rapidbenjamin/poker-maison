@@ -17,8 +17,8 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
         <a className="navbar-item" onClick={() => history.push('lobby')} >
           Lobby
         </a>
-        <a className="navbar-item" onClick={() => history.push('games')}>
-          Games
+        <a className="navbar-item" onClick={() => history.push('game')}>
+          Game
         </a>
       </div>
       <div className="navbar-end">
