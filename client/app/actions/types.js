@@ -23,3 +23,5 @@ export const NEW_LOBBY = 'NEW_LOBBY'
 /* Game Action Types */
 export const NEW_GAME_STATE = 'NEW_GAME_STATE'
 export const SUCCESSFULLY_SAT_DOWN = 'SUCCESSFULLY_SAT_DOWN'
+export const POST_BIG_BLIND = 'server/POST_BIG_BLIND'
+export const POST_SMALL_BLIND = 'server/POST_SMALL_BLIND'
