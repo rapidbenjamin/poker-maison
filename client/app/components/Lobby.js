@@ -1,6 +1,6 @@
 import React from 'react';
 
-const tableBody = lobby =>
+const tableBody = (lobby, takeSeat) =>
   <tbody >
     {lobby.map(({
       _tableName,
@@ -10,7 +10,7 @@ const tableBody = lobby =>
       _maxPlayers,
       _waitlistCount,
       _bigBlind }) =>
-      <tr key={_tableName}>
+      <tr key={_tableName} onClick={() => takeSeat(_tableName, 2000)}>
         <td>{_tableName}</td>
         <td>{`${_playerCount} / ${_maxPlayers}`}</td>
         <td>{_waitlistCount}</td>
@@ -20,7 +20,7 @@ const tableBody = lobby =>
       </tr>)}
   </tbody >
 
-const Lobby = ({ lobby }) =>
+const Lobby = ({ lobby, takeSeat }) =>
   <table className="table">
     <thead>
       <tr>
@@ -32,7 +32,7 @@ const Lobby = ({ lobby }) =>
         <th>Big Blind</th>
       </tr>
     </thead>
-    {tableBody(lobby)}
+    {tableBody(lobby, takeSeat)}
   </table>
 
 export default Lobby;
