@@ -104,7 +104,7 @@ tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = d
   forever $ do
     chanMsg <- atomically $ readTChan dupChan
     sendMsg clientConn chanMsg
-    handleTableMsg msgHandlerConfig chanMsg
+    async (handleTableMsg msgHandlerConfig chanMsg)
 
 handleTableMsg :: MsgHandlerConfig -> MsgOut -> IO ()
 handleTableMsg msgHandlerConfig@MsgHandlerConfig {..} (NewGameState tableName game') =
