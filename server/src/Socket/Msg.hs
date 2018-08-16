@@ -368,4 +368,6 @@ gameActionHandler gameMove@(GameMove tableName playerAction) = do
                   game
               case errE of
                 Left gameErr -> throwError $ GameErr gameErr
-                Right () -> return $ NewGameState tableName newGame
+                Right () -> do
+                  liftIO $ pPrint newGame
+                  return $ NewGameState tableName newGame

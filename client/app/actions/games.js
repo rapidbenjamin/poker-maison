@@ -15,3 +15,28 @@ export const postSmallBlind = tableName => ({
   type: types.POST_SMALL_BLIND,
   data: { "tag": "GameMove", "contents": [tableName, { "tag": "PostBlind", "contents": "Small" }] }
 })
+
+export const bet = (tableName, amount) => ({
+  type: types.BET,
+  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Bet", "contents": amount }] }
+})
+
+export const raise = (tableName, amount) => ({
+  type: types.RAISE,
+  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Raise", "contents": amount }] }
+})
+
+export const call = tableName => ({
+  type: types.CALL,
+  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Call" }] }
+})
+
+export const check = tableName => ({
+  type: types.CHECK,
+  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Check" }] }
+})
+
+export const fold = tableName => ({
+  type: types.FOLD,
+  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Fold" }] }
+})
