@@ -13,6 +13,7 @@ import Data.List
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Maybe
+import Data.Monoid
 
 import Control.Lens
 
@@ -100,3 +101,15 @@ maximums (x:xs) = foldl f [x] xs
         GT -> ys
         EQ -> y : ys
         LT -> [y]
+
+-- returns the index of the next active player after the given current index
+-- TODO REMOVE USE OF FROMJUST
+incPosToAct :: Int -> Game -> Int
+incPosToAct currIx Game {..} = nextIx
+  where
+    iplayers = zip [0 ..] _players
+    iplayers' =
+      let (a, b) = splitAt currIx iplayers
+       in b <> a
+    (nextIx, nextPlayer) =
+      fromJust $ find (\(_, p) -> _playerState p == In) (tail iplayers')

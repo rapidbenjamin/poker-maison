@@ -44,9 +44,7 @@ markInForHand = playerState .~ In
 
 postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
-  game &
-  (players .~ newPlayers) .
-  (pot +~ blindValue) . (currentPosToAct .~ nextPositionToAct)
+  game & (players .~ newPlayers) . (pot +~ blindValue)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -56,12 +54,6 @@ postBlind blind pName game@Game {..} =
       _players
     isFirstBlind = sum ((\Player {..} -> _bet) <$> _players) == 0
     gamePlayerNames = (\Player {..} -> _playerName) <$> _players
-    playerPosition = fromJust $ pName `elemIndex` gamePlayerNames
-    haveBetsBeenMade = sum ((\Player {..} -> _bet) <$> _players) == 0
-    nextPositionToAct =
-      if not haveBetsBeenMade
-        then playerPosition
-        else _currentPosToAct `modInc` (length _players - 1) -- give all players a chance to post blind not just actives
     blindValue =
       if blind == Small
         then _smallBlind
@@ -78,7 +70,7 @@ makeBet amount pName game@Game {..} =
            then (markActed . placeBet amount) p
            else p) <$>
       _players
-    nextPosToAct = incPosToAct game
+    nextPosToAct = incPosToAct _currentPosToAct game
 
 foldCards :: PlayerName -> Game -> Game
 foldCards pName game@Game {..} =
@@ -90,7 +82,7 @@ foldCards pName game@Game {..} =
            then (markActed . (playerState .~ Folded)) p
            else p) <$>
       _players
-    nextPosToAct = incPosToAct game
+    nextPosToAct = incPosToAct _currentPosToAct game
 
 call :: PlayerName -> Game -> Game
 call pName game@Game {..} =
@@ -111,7 +103,7 @@ call pName game@Game {..} =
            then (markActed . placeBet callAmount) p
            else p) <$>
       _players
-    nextPosToAct = incPosToAct game
+    nextPosToAct = incPosToAct _currentPosToAct game
 
 check :: PlayerName -> Game -> Game
 check pName game@Game {..} =
@@ -123,7 +115,7 @@ check pName game@Game {..} =
            then markActed p
            else p) <$>
       _players
-    nextPosToAct = incPosToAct game
+    nextPosToAct = incPosToAct _currentPosToAct game
 
 seatPlayer :: Player -> Game -> Game
 seatPlayer plyr = players <>~ [plyr]
@@ -133,16 +125,3 @@ joinWaitlist plyr = waitlist %~ (:) (plyr ^. playerName)
 
 leaveSeat :: PlayerName -> Game -> Game
 leaveSeat plyrName = players %~ filter (\Player {..} -> plyrName == _playerName)
-
--- should only ever return the position of a player who has playerState equal to In
--- As a player in any other state cannot perform an action
---TODO REMOVE USE OF FROMJUST
-incPosToAct :: Game -> Int
-incPosToAct Game {..} = nextIx
-  where
-    iplayers = zip [0 ..] _players
-    iplayers' =
-      let (a, b) = splitAt _currentPosToAct iplayers
-       in b <> a
-    (nextIx, nextPlayer) =
-      fromJust $ find (\(_, p) -> _playerState p == In) (tail iplayers')

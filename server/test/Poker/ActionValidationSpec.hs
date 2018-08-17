@@ -88,10 +88,41 @@ spec = do
           initialGameState
     it
       "returns Just OutOfTurn Error if given player is not in current position to act" $ do
+      let playerName = "player3"
       let expectedErr =
             Left $
-            InvalidMove "player3" $ OutOfTurn $ CurrentPlayerToActErr "player1"
-      isPlayerActingOutOfTurn game "player3" `shouldBe` expectedErr
+            InvalidMove playerName $ OutOfTurn $ CurrentPlayerToActErr "player1"
+      isPlayerActingOutOfTurn game playerName `shouldBe` expectedErr
+    it
+      "returns return Right () when player is acting in turn during heads up game" $ do
+      let game =
+            (street .~ PreFlop) .
+            (dealer .~ 0) .
+            (players .~
+             [ ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 25) . (committed .~ 25))
+                 player1
+             , ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
+                 player2
+             ]) $
+            initialGameState
+      let playerName = "player1"
+      isPlayerActingOutOfTurn game playerName `shouldBe` Right ()
+      let game2 =
+            (street .~ PreFlop) .
+            (dealer .~ 1) .
+            (players .~
+             [ ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
+                 player1
+             , ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 25) . (committed .~ 25))
+                 player2
+             ]) $
+            initialGameState
+      let playerName2 = "player2"
+      isPlayerActingOutOfTurn game2 playerName2 `shouldBe` Right ()
     it "return no Error if player is acting in turn" $
       isPlayerActingOutOfTurn game "player1" `shouldBe` Right ()
     it

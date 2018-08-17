@@ -61,28 +61,49 @@ resetPlayers game@Game {..} = (players .~ newPlayers) game
   where
     newPlayers = (bet .~ 0) . (actedThisTurn .~ False) <$> _players
 
+-- When there are only two players in game (Heads Up) then the first player
+-- to act PreFlop is the player at the dealer position.
 progressToPreFlop :: Game -> Game
-progressToPreFlop =
+progressToPreFlop game@Game {..} =
+  game &
   (street .~ PreFlop) .
+  (currentPosToAct .~ firstPosToAct) .
   (players %~ (<$>) (actedThisTurn .~ False)) . deal . updatePlayersInHand
+  where
+    playerCount = length $ getActivePlayers _players
+    firstPosToAct =
+      if playerCount == 2
+        then _dealer
+        else modInc _dealer playerCount
 
 progressToFlop :: Game -> Game
 progressToFlop game
   | isEveryoneAllIn game = game & (street .~ Flop) . dealBoardCards 3
   | otherwise =
-    game & (street .~ Flop) . (maxBet .~ 0) . dealBoardCards 3 . resetPlayers
+    game &
+    (street .~ Flop) .
+    (currentPosToAct .~ incPosToAct (_dealer game) game) .
+    (maxBet .~ 0) . dealBoardCards 3 . resetPlayers
 
 progressToTurn :: Game -> Game
 progressToTurn game
   | isEveryoneAllIn game = game & (street .~ Turn) . dealBoardCards 1
   | otherwise =
-    game & (street .~ Turn) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers
+    game &
+    (street .~ Turn) .
+    (maxBet .~ 0) .
+    (currentPosToAct .~ incPosToAct (_dealer game) game) .
+    dealBoardCards 1 . resetPlayers
 
 progressToRiver :: Game -> Game
-progressToRiver game
+progressToRiver game@Game {..}
   | isEveryoneAllIn game = game & (street .~ River) . dealBoardCards 1
   | otherwise =
-    game & (street .~ River) . (maxBet .~ 0) . dealBoardCards 1 . resetPlayers
+    game &
+    (street .~ River) .
+    (maxBet .~ 0) .
+    (currentPosToAct .~ incPosToAct _dealer game) .
+    dealBoardCards 1 . resetPlayers
 
 progressToShowdown :: Game -> Game
 progressToShowdown game@Game {..} =
