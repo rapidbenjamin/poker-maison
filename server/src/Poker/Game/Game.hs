@@ -63,6 +63,8 @@ resetPlayers game@Game {..} = (players .~ newPlayers) game
 
 -- When there are only two players in game (Heads Up) then the first player
 -- to act PreFlop is the player at the dealer position.
+-- First player to act is the player sitting to the right of the player
+-- in the big blind position
 progressToPreFlop :: Game -> Game
 progressToPreFlop game@Game {..} =
   game &
@@ -71,10 +73,11 @@ progressToPreFlop game@Game {..} =
   (players %~ (<$>) (actedThisTurn .~ False)) . deal . updatePlayersInHand
   where
     playerCount = length $ getActivePlayers _players
+    incAmount = 2
     firstPosToAct =
-      if playerCount == 2
+      if playerCount == 3
         then _dealer
-        else modInc _dealer playerCount
+        else modInc incAmount _dealer (playerCount - 1)
 
 progressToFlop :: Game -> Game
 progressToFlop game
@@ -176,11 +179,12 @@ getNextHand Game {..} newDeck =
     , ..
     }
   where
-    newDealer = _dealer `modInc` length (getPlayersSatIn _players) - 1
+    incAmount = 1
+    newDealer = modInc incAmount _dealer (length (getPlayersSatIn _players) - 1)
     freeSeatsNo = _maxPlayers - length _players
     newPlayers = resetPlayerCardsAndBets <$> _players
     newWaitlist = drop freeSeatsNo _waitlist
-    nextPlayerToAct = newDealer `modInc` (length newPlayers - 1)
+    nextPlayerToAct = modInc incAmount newDealer (length newPlayers - 1)
 
 -- | If all players have acted and their bets are equal 
 -- to the max bet then we can move to the next stage

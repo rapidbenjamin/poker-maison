@@ -60,7 +60,9 @@ getSmallBlindPosition :: [Text] -> Int -> Int
 getSmallBlindPosition playersSatIn dealerPos =
   if length playersSatIn == 2
     then dealerPos
-    else modInc dealerPos (length playersSatIn - 1)
+    else modInc incAmount dealerPos (length playersSatIn - 1)
+  where
+    incAmount = 1
 
 -- if a player does not post their blind at the appropriate time then their state will be changed to 
 -- None signifying that they have a seat but are now sat out
@@ -77,4 +79,5 @@ blindRequiredByPlayer game playerName
     playerNames = getPlayerNames (_players game)
     playerPosition = fromJust $ getPlayerPosition playerNames playerName
     smallBlindPos = getSmallBlindPosition playerNames (_dealer game)
-    bigBlindPos = smallBlindPos `modInc` (length playerNames - 1)
+    incAmount = 1
+    bigBlindPos = modInc incAmount smallBlindPos (length playerNames - 1)

@@ -37,12 +37,12 @@ shuffle xs = do
     newArray :: Int -> [a] -> IO (IOArray Int a)
     newArray n = newListArray (1, n)
 
-modInc :: Int -> Int -> Int
-modInc num modulo
+modInc :: Int -> Int -> Int -> Int
+modInc incAmount num modulo
   | incNum > modulo = 0
   | otherwise = incNum
   where
-    incNum = num + 1
+    incNum = num + incAmount
     modInc = incNum `mod` modulo
 
 modDec :: Int -> Int -> Int
