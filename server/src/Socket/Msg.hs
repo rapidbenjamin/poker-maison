@@ -185,22 +185,26 @@ handleNewGameState _ _ msg = do
 
 progressGame ::
      ConnectionString -> TVar ServerState -> TableName -> Game -> IO ()
-progressGame connString serverStateTVar tableName game@Game {..} =
+progressGame connString serverStateTVar tableName game@Game {..} = do
+  threadDelay stagePauseDuration
   when (haveAllPlayersActed game) $ do
     (errE, progressedGame) <- runStateT nextStage game
-    pPrint game
+    --pPrint game
     print "haveAllPlayersActed:"
     print (haveAllPlayersActed progressedGame)
     case errE of
       Right () -> do
+        let currentStreet = progressedGame ^. street
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
         when
-          (progressedGame ^. street == Showdown)
+          (currentStreet == Showdown)
           (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
-        pPrint progressedGame
+        --pPrint progressedGame
         progressGame connString serverStateTVar tableName progressedGame
       Left err -> print $ "progressGameAlong Err" ++ show err
+  where
+    stagePauseDuration = 5000000
 
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler GetTables {} = getTablesHandler
