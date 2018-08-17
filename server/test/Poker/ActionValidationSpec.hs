@@ -196,7 +196,7 @@ spec = do
       canRaise playerName amount showdownGame `shouldBe` expectedErr
   describe "canCheck" $ do
     it
-      "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if maxBet is greater than zero" $ do
+      "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if maxBet is greater than zero and player bet is not equal to maxBet" $ do
       let game =
             (street .~ PreFlop) . (players .~ playerFixtures) . (maxBet .~ 200) $
             initialGameState
@@ -204,6 +204,21 @@ spec = do
       let expectedErr =
             Left $ InvalidMove playerName $ CannotCheckShouldCallRaiseOrFold
       canCheck playerName game `shouldBe` expectedErr
+    it
+      "should allow Big Blind player to check during PreFlop when no bets or raises have occurred" $ do
+      let game =
+            (street .~ PreFlop) .
+            (players .~
+             [ ((playerState .~ In) .
+                (actedThisTurn .~ True) . (bet .~ 50) . (committed .~ 50))
+                 player1
+             , ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
+                 player2
+             ]) $
+            initialGameState
+      let playerName = "player2"
+      canCheck playerName game `shouldBe` Right ()
     it
       "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
       let preDealGame =

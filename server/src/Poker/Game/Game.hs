@@ -150,6 +150,7 @@ getNextHand Game {..} newDeck =
     , _winners = NoWinners
     , _street = PreDeal
     , _dealer = newDealer
+    , _pot = 0
     , _currentPosToAct = nextPlayerToAct
     , ..
     }

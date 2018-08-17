@@ -107,7 +107,8 @@ canCheck pName Game {..}
     Left $ InvalidMove pName CannotCheckShouldCallRaiseOrFold
   | _street == Showdown || _street == PreDeal =
     Left $ InvalidMove pName InvalidActionForStreet
-  | _maxBet /= 0 = Left $ InvalidMove pName CannotCheckShouldCallRaiseOrFold
+  | _committed < _maxBet =
+    Left $ InvalidMove pName CannotCheckShouldCallRaiseOrFold
   | otherwise = Right ()
   where
     Player {..} =
