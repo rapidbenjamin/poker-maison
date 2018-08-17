@@ -127,7 +127,7 @@ awaitTimedPlayerAction socketReadChan game tableName username = do
       atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
     Just _ -> print maybeMsg
   where
-    timeoutDuration = 14000000
+    timeoutDuration = 12000000
 
 -- We duplicate the channel reading the socket msgs and start a timeout
 -- The thread will be blocked until either a valid action is received 
@@ -177,7 +177,8 @@ handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
 handleNewGameState connString serverStateTVar (NewGameState tableName newGame) = do
   newServerState <-
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
-  progressGame connString serverStateTVar tableName newGame
+  async (progressGame connString serverStateTVar tableName newGame)
+  return ()
 handleNewGameState _ _ msg = do
   print msg
   return ()
