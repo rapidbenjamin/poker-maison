@@ -89,6 +89,7 @@ handlePlayerAction game@Game {..} playerName =
 -- toDO - make function pure by taking stdGen as an arg
 progressGame :: Game -> IO Game
 progressGame game@Game {..}
+  | activePlayersCount < 2 = return game
   | haveAllPlayersActed game &&
       (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
     case getNextStreet _street of
@@ -101,3 +102,5 @@ progressGame game@Game {..}
   | allButOneFolded game && (_street /= PreDeal || _street /= Showdown) =
     return $ progressToShowdown game
   | otherwise = return game
+  where
+    activePlayersCount = length $ getActivePlayers _players
