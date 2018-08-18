@@ -36,7 +36,10 @@ const mapDispatchToProps = (dispatch, { match: { params: { tableName } } }) => (
   check: () => dispatch(check(tableName)),
   postSmallBlind: () => dispatch(postSmallBlind(tableName)),
   postBigBlind: () => dispatch(postBigBlind(tableName)),
-  leaveSeat: () => dispatch(leaveSeat(tableName))
+  leaveGame: () => {
+    debugger;
+    dispatch(leaveSeat(tableName))
+  }
 });
 
 
