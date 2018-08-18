@@ -113,7 +113,6 @@ tableMsgWriteLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
   dupChan <- atomically $ dupTChan channel
   forever $ do
     chanMsg <- atomically $ readTChan dupChan
-    sendMsg clientConn chanMsg
     async (handleTableMsg msgHandlerConfig chanMsg)
 
 handleTableMsg :: MsgHandlerConfig -> MsgOut -> IO ()
@@ -246,8 +245,13 @@ subscribeToTableHandler (SubscribeToTable tableName) = do
       if username `notElem` subscribers
         then do
           liftIO $ atomically $ subscribeToTable tableName msgHandlerConfig
+          liftIO $
+            sendMsg clientConn (SuccessfullySubscribedToTable tableName game)
           return $ SuccessfullySubscribedToTable tableName game
-        else return $ ErrMsg $ AlreadySubscribedToTable tableName
+        else do
+          liftIO $
+            sendMsg clientConn (ErrMsg $ AlreadySubscribedToTable tableName)
+          return $ ErrMsg $ AlreadySubscribedToTable tableName
 
 subscribeToTable :: TableName -> MsgHandlerConfig -> STM ()
 subscribeToTable tableName MsgHandlerConfig {..} = do

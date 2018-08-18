@@ -44,9 +44,6 @@ initialLobby = do
   where
     maxChanLength = 10000
 
-unLobby :: Lobby -> Map TableName Table
-unLobby (Lobby lobby) = lobby
-
 joinGame :: Username -> Int -> Game -> Game
 joinGame (Username username) chips Game {..} =
   Game {_players = _players <> [player], ..}

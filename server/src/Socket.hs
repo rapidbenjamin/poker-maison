@@ -20,6 +20,7 @@ import Socket.Msg
 import Socket.Setup
 import Socket.Subscriptions
 import Socket.Types
+import Socket.Workers
 import Types
 
 import Data.Aeson
@@ -31,18 +32,6 @@ import qualified Data.Text.Lazy.Encoding as D
 
 initialServerState :: Lobby -> ServerState
 initialServerState lobby = ServerState {clients = M.empty, lobby = lobby}
-
-forkBackgroundJobs :: ConnectionString ->   -> TVar ServerState -> Lobby -> IO ()
-forkBackgroundJobs connString serverStateTVar lobby =  do
-    -- Periodically refill player chip balances when too low.
-    forkChipRefillDBWriter connString chipRefillInterval chipRefillThreshold
-    -- At the end of game write new game and player data to the DB.
-    forkGameDBWriters connString lobby
-    -- Create a thread for each table which broadcasts updates to clients listening for table and game updates.
-    forkAllNotifySubscribersThreads serverStateTVar
-  where
-    chipRefillInterval = 100000000 -- 2 mins
-    chipRefillThreshold = 2000
 
 -- Create the initial lobby holding all game state and then fork a new thread for each table in the lobby
 -- to write new game states to the DB
