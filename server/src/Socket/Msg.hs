@@ -204,7 +204,7 @@ progressGame ::
      ConnectionString -> TVar ServerState -> TableName -> Game -> IO ()
 progressGame connString serverStateTVar tableName game@Game {..} = do
   threadDelay stagePauseDuration
-  when (haveAllPlayersActed game) $ do
+  when (haveAllPlayersActed game && (length $ getActivePlayers _players) >= 2) $ do
     (errE, progressedGame) <- runStateT nextStage game
     --pPrint game
     print "haveAllPlayersActed:"
