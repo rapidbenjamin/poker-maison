@@ -16,9 +16,9 @@ export const SOCKET_CONN_ERR = 'SOCKET_CONN_ERR'
 
 /* Lobby Action Types */
 export const GET_LOBBY = 'server/GET_LOBBY'
-export const TAKE_SEAT = 'server/TAKE_SEAT'
 export const NEW_LOBBY = 'NEW_LOBBY'
-
+export const TAKE_SEAT = 'server/TAKE_SEAT'
+export const SUBSCRIBE_TO_TABLE = 'server/SUBSCRIBE_TO_TABLE'
 
 /* Game Action Types */
 export const NEW_GAME_STATE = 'NEW_GAME_STATE'

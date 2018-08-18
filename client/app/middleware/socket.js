@@ -8,7 +8,6 @@ import { newGameState } from '../actions/games'
 import * as types from '../actions/types'
 
 
-
 const SOCKET_API_URL = process.SOCKET_API_URL || 'ws://localhost:5000'
 
 function addHandlers(socket, authToken, dispatch) {
@@ -34,7 +33,7 @@ function addHandlers(socket, authToken, dispatch) {
       const tableList = parsedMsg.contents
       dispatch(newLobby(fromJS(tableList)))
     }
-    if (parsedMsg.tag === 'SuccessfullySatDown' || parsedMsg.tag === 'NewGameState') {
+    if (parsedMsg.tag === 'SuccessfullySatDown' || parsedMsg.tag === 'NewGameState' || parsedMsg.tag === 'SuccessfullySubscribedToTable') {
       const tableName = parsedMsg.contents[0]
       const gameState = parsedMsg.contents[1]
       dispatch(newGameState(tableName, fromJS(gameState)))

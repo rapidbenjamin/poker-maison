@@ -7,13 +7,15 @@ export const getLobby = () => ({ type: types.GET_LOBBY, data: { tag: 'GetTables'
 
 export const newLobby = lobby => ({ type: types.NEW_LOBBY, lobby })
 
-export function takeSeat(tableName, chips, history) {
-  history.push(`/game/${tableName}`)
-
-  return {
-    type: types.TAKE_SEAT,
-    data: {
-      "tag": "TakeSeat", "contents": [tableName, chips]
-    }
+export const takeSeat = (tableName, chips) => ({
+  type: types.TAKE_SEAT,
+  data: {
+    "tag": "TakeSeat", "contents": [tableName, chips]
   }
-}
+})
+
+export const subscribeToTable = tableName => ({
+  type: types.SUBSCRIBE_TO_TABLE,
+  data: { "tag": "SubscribeToTable", "contents": tableName }
+})
+

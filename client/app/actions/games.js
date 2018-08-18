@@ -41,11 +41,9 @@ export const fold = tableName => ({
   data: { "tag": "GameMove", "contents": [tableName, { "tag": "Fold" }] }
 })
 
-export const leaveSeat = (tableName) => {
-  return {
-    type: types.LEAVE_SEAT,
-    data: {
-      "tag": "LeaveSeat", "contents": tableName
-    }
+export const leaveSeat = (tableName) => ({
+  type: types.LEAVE_SEAT,
+  data: {
+    "tag": "LeaveSeat", "contents": tableName
   }
-}
+})

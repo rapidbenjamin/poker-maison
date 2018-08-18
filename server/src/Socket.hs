@@ -57,7 +57,10 @@ runSocketServer secretKey port connString redisConfig = do
 
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
--- updated with the newly authenticated client
+-- updated with the newly authenticated client.
+--
+-- After the client has been authenticated we fork a thread which writes
+-- the clients msgs to a channel.
 application ::
      Secret
   -> ConnectionString

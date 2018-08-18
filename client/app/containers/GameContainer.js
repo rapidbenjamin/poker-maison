@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 import Game from '../components/Game'
 import { getGame, getPlayerPosition, isTurnToAct } from '../selectors/games'
 import { call, bet, fold, raise, check, postBigBlind, postSmallBlind, leaveSeat } from '../actions/games'
+import { takeSeat } from '../actions/lobby'
 
 class GameContainer extends React.Component {
   constructor(props) {
@@ -36,10 +37,8 @@ const mapDispatchToProps = (dispatch, { match: { params: { tableName } } }) => (
   check: () => dispatch(check(tableName)),
   postSmallBlind: () => dispatch(postSmallBlind(tableName)),
   postBigBlind: () => dispatch(postBigBlind(tableName)),
-  leaveGame: () => {
-    debugger;
-    dispatch(leaveSeat(tableName))
-  }
+  sitDown: chips => dispatch(takeSeat(tableName, chips)),
+  leaveGameSeat: () => dispatch(leaveSeat(tableName))
 });
 
 

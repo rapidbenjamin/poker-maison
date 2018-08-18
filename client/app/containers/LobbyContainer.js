@@ -2,7 +2,7 @@ import React from 'react'
 import { connect } from "react-redux";
 import { withRouter } from 'react-router-dom'
 
-import { getLobby, takeSeat } from '../actions/lobby'
+import { getLobby, subscribeToTable } from '../actions/lobby'
 import { getLobbyState } from '../selectors/lobby'
 import Lobby from '../components/Lobby'
 
@@ -12,8 +12,8 @@ class LobbyContainer extends React.Component {
   }
 
   render() {
-    const { lobby, takeSeat } = this.props
-    return (<Lobby lobby={lobby} takeSeat={takeSeat} />)
+    const { lobby } = this.props
+    return (<Lobby {...this.props} />)
   }
 }
 
@@ -21,9 +21,9 @@ const mapStateToProps = state => ({
   lobby: getLobbyState(state)
 });
 
-const mapDispatchToProps = (dispatch, { history }) => ({
+const mapDispatchToProps = (dispatch) => ({
   getLobby: () => dispatch(getLobby()),
-  takeSeat: (tableName, chips) => dispatch(takeSeat(tableName, chips, history))
+  subscribeToATable: tableName => dispatch(subscribeToTable(tableName))
 });
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(LobbyContainer));
