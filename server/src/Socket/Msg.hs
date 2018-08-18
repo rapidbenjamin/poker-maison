@@ -201,10 +201,10 @@ progressGame connString serverStateTVar tableName game@Game {..} = do
         let currentStreet = progressedGame ^. street
         atomically $
           updateGameAndBroadcastT serverStateTVar tableName progressedGame
-        when
-          (currentStreet == Showdown)
-          (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
-        --pPrint progressedGame
+     --   when
+     --     (currentStreet == Showdown)
+     --     (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
+        pPrint progressedGame
         progressGame connString serverStateTVar tableName progressedGame
       Left err -> print $ "progressGameAlong Err" ++ show err
   where

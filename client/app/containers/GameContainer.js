@@ -6,8 +6,19 @@ import { getGame, getPlayerPosition, isTurnToAct } from '../selectors/games'
 import { call, bet, fold, raise, check, postBigBlind, postSmallBlind } from '../actions/games'
 
 class GameContainer extends React.Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      betValue: 0
+    }
+  }
+  handleChange = event => {
+    this.setState({ betValue: event.target.value });
+  }
+
   render() {
-    return (<Game {...this.props} />)
+    return (<Game handleChange={this.handleChange} betValue={this.state.betValue} {...this.props} />)
   }
 }
 

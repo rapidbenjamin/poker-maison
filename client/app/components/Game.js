@@ -1,6 +1,6 @@
 import React from 'react'
 
-const Game = ({ username, isTurnToAct, game, call, bet, fold, raise, check, postBigBlind, postSmallBlind }) => {
+const Game = ({ username, handleChange, betValue, isTurnToAct, game, call, bet, fold, raise, check, postBigBlind, postSmallBlind }) => {
   console.log('game', game)
   if (game) {
     const jsgame = game.toJS()
@@ -13,14 +13,13 @@ const Game = ({ username, isTurnToAct, game, call, bet, fold, raise, check, post
       <button type="button" onClick={() => postSmallBlind()} className="button">postSmallBlind</button>
       <button type="button" onClick={() => check()} className="button">check</button>
       <button type="button" onClick={() => call()} className="button">call</button>
-      <button type="button" onClick={() => bet(100)} className="button">Bet 100</button>
-      <button type="button" onClick={() => raise(100)} className="button">Raise 100</button>
+      <button type="button" onClick={() => bet(betValue)} className="button">Bet {betValue}</button>
+      <button type="button" onClick={() => raise(betValue)} className="button">Raise {betValue}</button>
       <button type="button" onClick={() => fold()} className="button">Fold</button>
+      <input type="text" value={betValue} onChange={handleChange} />
     </div>)
   }
-  else {
-    return <h2>no Game State</h2>
-  }
+  return <h2>no Game State</h2>
 }
 
 export default Game

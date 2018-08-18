@@ -220,6 +220,7 @@ data InvalidMoveErr
   | BlindAlreadyPosted Blind
   | OutOfTurn CurrentPlayerToActErr
   | CannotPostBlindOutsidePreDeal
+  | CannotPostNoBlind -- if player tries to apply postBlind with a value of NoBlind
   | InvalidActionForStreet
   | BetLessThanBigBlind
   | NotEnoughChipsForAction

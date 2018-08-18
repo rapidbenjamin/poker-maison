@@ -1,3 +1,7 @@
+--  TODO - should factor out the hasEnoughChips check for each action and then just sequence it 
+--  inside the parent validateAction function with >>
+--
+-- Second TODo - remove use of fromJust
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -28,6 +32,7 @@ validateAction game@Game {..} playerName =
   \case
     PostBlind blind ->
       checkPlayerSatAtTable game playerName >>
+      canPostBlind game playerName blind >>
       validateBlindAction game playerName blind
     Check -> isPlayerActingOutOfTurn game playerName >> canCheck playerName game
     Fold -> isPlayerActingOutOfTurn game playerName >> canFold playerName game
@@ -41,6 +46,22 @@ validateAction game@Game {..} playerName =
     SitDown plyr -> canSit plyr game
     ShowHand -> validateShowOrMuckHand game playerName ShowHand
     MuckHand -> validateShowOrMuckHand game playerName MuckHand
+
+canPostBlind :: Game -> PlayerName -> Blind -> Either GameErr ()
+canPostBlind game@Game {..} pName =
+  \case
+    Big ->
+      if chipCount < _bigBlind
+        then notEnoughChipsErr
+        else Right ()
+    Small ->
+      if chipCount < _smallBlind
+        then notEnoughChipsErr
+        else Right ()
+    NoBlind -> Left $ InvalidMove pName CannotPostNoBlind
+  where
+    chipCount = _chips $ fromJust $ getGamePlayer game pName
+    notEnoughChipsErr = Left $ InvalidMove pName NotEnoughChipsForAction
 
 -- | The first player to post their blinds in the predeal stage  can do it from any position
 -- Therefore the acting in turn rule wont apply for that first move.

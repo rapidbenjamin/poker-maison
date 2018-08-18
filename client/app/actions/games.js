@@ -18,12 +18,12 @@ export const postSmallBlind = tableName => ({
 
 export const bet = (tableName, amount) => ({
   type: types.BET,
-  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Bet", "contents": amount }] }
+  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Bet", "contents": Number(amount) }] }
 })
 
 export const raise = (tableName, amount) => ({
   type: types.RAISE,
-  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Raise", "contents": amount }] }
+  data: { "tag": "GameMove", "contents": [tableName, { "tag": "Raise", "contents": Number(amount) }] }
 })
 
 export const call = tableName => ({
