@@ -6,7 +6,7 @@ const Game = ({
   betValue,
   isTurnToAct,
   leaveGameSeat,
-  takeSeat,
+  sitDown,
   game,
   call,
   bet,
@@ -32,7 +32,7 @@ const Game = ({
       <button type="button" onClick={() => raise(betValue)} className="button">Raise {betValue}</button>
       <button type="button" onClick={() => fold()} className="button">Fold</button>
       <input type="text" value={betValue} onChange={handleChange} />
-      <button type="button" onClick={() => takeSeat(betValue)} className="button">SitDown {betValue}</button>
+      <button type="button" onClick={() => sitDown(betValue)} className="button">SitDown {betValue}</button>
       <button type="button" onClick={() => leaveGameSeat()} className="button">LeaveGame</button>
     </div>)
   }

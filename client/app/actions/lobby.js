@@ -10,7 +10,7 @@ export const newLobby = lobby => ({ type: types.NEW_LOBBY, lobby })
 export const takeSeat = (tableName, chips) => ({
   type: types.TAKE_SEAT,
   data: {
-    "tag": "TakeSeat", "contents": [tableName, chips]
+    "tag": "TakeSeat", "contents": [tableName, Number(chips)]
   }
 })
 
