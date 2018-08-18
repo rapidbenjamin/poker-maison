@@ -83,7 +83,6 @@ forkChipRefillDBWriter connString interval chipsThreshold =
 
 forkAllNotifySubscribersThreads :: TVar ServerState -> IO [Async ()]
 forkAllNotifySubscribersThreads serverState = do
-  print "f33333333333333f"
   ServerState {..} <- readTVarIO serverState
   let tableNames = M.keys $ unLobby lobby
   traverse (notifyTableSubscribersLoop serverState) tableNames

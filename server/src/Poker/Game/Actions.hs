@@ -124,4 +124,4 @@ joinWaitlist :: Player -> Game -> Game
 joinWaitlist plyr = waitlist %~ (:) (plyr ^. playerName)
 
 leaveSeat :: PlayerName -> Game -> Game
-leaveSeat plyrName = players %~ filter (\Player {..} -> plyrName == _playerName)
+leaveSeat plyrName = players %~ filter (\Player {..} -> plyrName /= _playerName)

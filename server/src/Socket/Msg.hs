@@ -345,7 +345,6 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
                       dbConn
                       (unUsername username)
                       chipsInPlay
-                  liftIO $ sendMsg clientConn (SuccessfullyLeftSeat tableName)
                   return $ NewGameState tableName newGame
 
 canTakeSeat ::
