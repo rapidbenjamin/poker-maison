@@ -1,3 +1,5 @@
+-- TODO - Factor out repetitive STM actions that lookup table and throw stm error if not found 
+-- with monadic composition
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
@@ -50,8 +52,10 @@ import Poker.Types hiding (LeaveSeat)
 import Schema
 import Socket.Clients
 import Socket.Lobby
+import Socket.Subscriptions
 import Socket.Types
 import Socket.Utils
+
 import System.Timeout
 import Types
 
@@ -98,11 +102,13 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
             return ()))
       (removeClient username serverStateTVar)
 
--- takes a channel and if the player in the thread is the current player to act in the room 
--- then if no valid game action is received within 30 secs then we run the Timeout action
--- against the game
-tableReceiveMsgLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
-tableReceiveMsgLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
+-- Duplicates the channel which reads messages from a users socket and writes the msgs
+-- to the table receive msg channel
+-- 
+-- By duplicating the channel we allow the use of timeout actions if a suitable game move is not 
+-- received from the users socket connection in a given time window
+tableMsgWriteLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
+tableMsgWriteLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
   msgReaderDup <- atomically $ dupTChan socketReadChan
   dupChan <- atomically $ dupTChan channel
   forever $ do
@@ -157,6 +163,13 @@ awaitValidAction game tableName playerName duration socketReadChan = do
         (GameMove _ action) -> isRight $ validateAction game playerName action
         _ -> False
 
+gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+gameMsgHandler GetTables {} = getTablesHandler
+gameMsgHandler msg@SubscribeToTable {} = subscribeToTableHandler msg
+gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
+gameMsgHandler msg@LeaveSeat {} = leaveSeatHandler msg
+gameMsgHandler msg@GameMove {} = gameActionHandler msg
+
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
 --  is possible. The game states which would lead to this scenario where the game 
@@ -170,7 +183,7 @@ updateGameAndBroadcastT :: TVar ServerState -> TableName -> Game -> STM ()
 updateGameAndBroadcastT serverStateTVar tableName newGame = do
   ServerState {..} <- readTVar serverStateTVar
   case M.lookup tableName $ unLobby lobby of
-    Nothing -> throwSTM $ TableDoesNotExistEx tableName
+    Nothing -> throwSTM $ TableDoesNotExistInLobby tableName
     Just table@Table {..} -> do
       writeTChan channel $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
@@ -210,13 +223,6 @@ progressGame connString serverStateTVar tableName game@Game {..} = do
   where
     stagePauseDuration = 5000000
 
-gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameMsgHandler GetTables {} = getTablesHandler
-gameMsgHandler msg@JoinTable {} = undefined
-gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
-gameMsgHandler msg@LeaveSeat {} = leaveSeatHandler msg
-gameMsgHandler msg@GameMove {} = gameActionHandler msg
-
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 getTablesHandler = do
   MsgHandlerConfig {..} <- ask
@@ -226,11 +232,47 @@ getTablesHandler = do
   liftIO $ sendMsg clientConn tableSummaries
   return tableSummaries
 
+-- First we check the table exists and if the user is not already subscribed then we add them to the list of subscribers
+-- Game and any other table updates will be propagated to those on the subscriber list
+subscribeToTableHandler ::
+     MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+subscribeToTableHandler (SubscribeToTable tableName) = do
+  msgHandlerConfig@MsgHandlerConfig {..} <- ask
+  ServerState {..} <- liftIO $ readTVarIO serverStateTVar
+  case M.lookup tableName $ unLobby lobby of
+    Nothing -> throwError $ TableDoesNotExist tableName
+    Just Table {..} -> do
+      liftIO $ print subscribers
+      if username `notElem` subscribers
+        then do
+          liftIO $ atomically $ subscribeToTable tableName msgHandlerConfig
+          return $ SuccessfullySubscribedToTable tableName game
+        else return $ ErrMsg $ AlreadySubscribedToTable tableName
+
+subscribeToTable :: TableName -> MsgHandlerConfig -> STM ()
+subscribeToTable tableName MsgHandlerConfig {..} = do
+  ServerState {..} <- readTVar serverStateTVar
+  let maybeTable = M.lookup tableName $ unLobby lobby
+  case maybeTable of
+    Nothing -> throwSTM $ TableDoesNotExistInLobby tableName
+    Just table@Table {..} ->
+      if username `notElem` subscribers
+        then do
+          let updatedTable = Table {subscribers = subscribers <> [username], ..}
+          let updatedLobby = updateTable tableName updatedTable lobby
+          let newServerState = ServerState {lobby = updatedLobby, ..}
+          swapTVar serverStateTVar newServerState
+          return ()
+        else throwSTM $ CannotAddAlreadySubscribed tableName
+
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
 -- We link the new thread to the current thread so on any exception in either then both threads are
 -- killed to prevent memory leaks.
+--
+---- If game is in predeal stage then add player to game else add to waitlist
+-- the waitlist is a queue awaiting the next predeal stage of the game
 takeSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
+takeSeatHandler (TakeSeat tableName chipsToSit) = do
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
@@ -260,11 +302,11 @@ takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
                       chipsToSit
                   when
                     (username `notElem` subscribers)
-                    (liftIO $ atomically $ joinTable tableName msgHandlerConfig)
+                    (liftIO $
+                     atomically $ subscribeToTable tableName msgHandlerConfig)
                   asyncGameReceiveLoop <-
                     liftIO $
-                    async
-                      (tableReceiveMsgLoop tableName channel msgHandlerConfig)
+                    async (tableMsgWriteLoop tableName channel msgHandlerConfig)
                   liftIO $ link asyncGameReceiveLoop
                   liftIO $
                     sendMsg clientConn (SuccessfullySatDown tableName newGame)
@@ -327,32 +369,6 @@ getPlayersAvailableChips = do
       Nothing -> Left $ UserDoesNotExistInDB (unUsername username)
       Just UserEntity {..} ->
         Right $ userEntityAvailableChips - userEntityChipsInPlay
-
--- If game is in predeal stage then add player to game else add to waitlist
--- the waitlist is a queue awaiting the next predeal stage of the game
-joinTable :: TableName -> MsgHandlerConfig -> STM ()
-joinTable tableName MsgHandlerConfig {..} = do
-  ServerState {..} <- readTVar serverStateTVar
-  let maybeRoom = M.lookup tableName $ unLobby lobby
-  case maybeRoom of
-    Nothing -> throwSTM $ TableDoesNotExistEx tableName
-    Just table@Table {..} ->
-      if canJoinGame game
-        then do
-          let updatedGame = joinGame username chipAmount game
-          let updatedTable = Table {game = updatedGame, ..}
-          let updatedLobby = updateTable tableName updatedTable lobby
-          let tableSubscribers = getTableSubscribers table
-          let newServerState = ServerState {lobby = updatedLobby, ..}
-          swapTVar serverStateTVar newServerState
-        else do
-          let updatedTable = joinTableWaitlist username table
-          let updatedLobby = updateTable tableName updatedTable lobby
-          let newServerState = ServerState {lobby = updatedLobby, ..}
-          swapTVar serverStateTVar newServerState
-      where gameStage = getGameStage game
-            chipAmount = 2500
-  return ()
 
 unUsername :: Username -> Text
 unUsername (Username username) = username

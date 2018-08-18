@@ -43,15 +43,23 @@ instance Show Lobby
 
 instance Show ServerState
 
-newtype TableDoesNotExistEx =
-  TableDoesNotExistEx Text
+-- exception when adding subscriber to table if subscriber already exists inside STM transaction
+newtype CannotAddAlreadySubscribed =
+  CannotAddAlreadySubscribed Text
   deriving (Show)
 
-instance Exception TableDoesNotExistEx
+instance Exception CannotAddAlreadySubscribed
+
+-- exception for cannot find a table with given TableName in Lobby inside STM transaction
+newtype TableDoesNotExistInLobby =
+  TableDoesNotExistInLobby Text
+  deriving (Show)
+
+instance Exception TableDoesNotExistInLobby
 
 data Table = Table
-  { subscribers :: [Username] -- not sat at table or on waitlist but observing game state
-  , waitlist :: [Username] -- waiting to join a full table  and subscribed to updates
+  { subscribers :: [Username] -- observing public game state includes players sat down
+  , waitlist :: [Username] -- waiting to join a full table
   , game :: Game
   , channel :: TChan MsgOut
   }
@@ -86,7 +94,7 @@ instance Eq Client where
 -- incoming messages from a ws client
 data MsgIn
   = GetTables
-  | JoinTable TableName
+  | SubscribeToTable TableName
   | LeaveTable
   | TakeSeat TableName
              Int
@@ -115,6 +123,8 @@ data MsgOut
   | SuccessfullySatDown TableName
                         Game
   | SuccessfullyLeftSeat TableName
+  | SuccessfullySubscribedToTable TableName
+                                  Game
   | PlayerJoined TableName
                  Text
   | NewGameState TableName

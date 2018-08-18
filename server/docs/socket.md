@@ -1,4 +1,4 @@
-{"tag":"JoinTable","contents":"Black"}
+{"tag":"subscribeToTable","contents":"Black"}
 
 {"tag":"TakeSeat","contents":["Black",3000]}
 

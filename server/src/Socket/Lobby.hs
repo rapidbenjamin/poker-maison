@@ -65,22 +65,11 @@ updateTable tableName newTable (Lobby lobby) =
 canJoinGame :: Game -> Bool
 canJoinGame Game {..} = length _players < _maxPlayers
 
-lookupTableSubscribers :: TableName -> Lobby -> [Username]
-lookupTableSubscribers tableName (Lobby lobby) =
-  case M.lookup tableName lobby of
-    Nothing -> []
-    Just Table {..} ->
-      (Username <$> getGamePlayerNames game) ++ waitlist ++ subscribers
-
 updateTableGame :: TableName -> Game -> Lobby -> Lobby
 updateTableGame tableName newGame (Lobby lobby) =
   Lobby $ M.adjust updateTable tableName lobby
   where
     updateTable Table {..} = Table {game = newGame, ..}
-
--- returns playernames of all observers , players in game and on waitlist
-getTableSubscribers Table {..} =
-  (Username <$> getGamePlayerNames game) ++ waitlist ++ subscribers
 
 summariseGame :: TableName -> Table -> TableSummary
 summariseGame tableName Table {game = Game {..}, ..} =
