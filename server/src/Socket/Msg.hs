@@ -102,25 +102,26 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
             return ()))
       (removeClient username serverStateTVar)
 
--- Duplicates the channel which reads messages from a users socket and writes the msgs
--- to the table receive msg channel
--- 
--- By duplicating the channel we allow the use of timeout actions if a suitable game move is not 
--- received from the users socket connection in a given time window
-tableMsgWriteLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
-tableMsgWriteLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
+-- | Forks a thread which timeouts the player when they dont act in sufficient time
+-- We add this thread once a player joins a table
+--
+-- TODO need to kill this thread if the player leads the table
+--
+-- Duplicates the channel which reads table updates and starts a timeout if it is the players turn to act
+-- If no valid game action is received from the socket msg read thread then we update the game with a special
+-- timeout action which will usually check or fold the player.
+playerTimeoutLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
+playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
   msgReaderDup <- atomically $ dupTChan socketReadChan
-  dupChan <- atomically $ dupTChan channel
+  dupTableChan <- atomically $ dupTChan channel
   forever $ do
-    chanMsg <- atomically $ readTChan dupChan
-    async (handleTableMsg msgHandlerConfig chanMsg)
-
-handleTableMsg :: MsgHandlerConfig -> MsgOut -> IO ()
-handleTableMsg msgHandlerConfig@MsgHandlerConfig {..} (NewGameState tableName game') =
-  when
-    (isPlayerToAct (unUsername username) game')
-    (awaitTimedPlayerAction socketReadChan game' tableName username)
-handleTableMsg msgHandlerConfig@MsgHandlerConfig {..} _ = return ()
+    dupTableChanMsg <- atomically $ readTChan dupTableChan
+    case dupTableChanMsg of
+      (NewGameState tableName newGame) ->
+        when
+          (isPlayerToAct (unUsername username) newGame)
+          (awaitTimedPlayerAction socketReadChan newGame tableName username)
+      _ -> return ()
 
 awaitTimedPlayerAction :: TChan MsgIn -> Game -> TableName -> Username -> IO ()
 awaitTimedPlayerAction socketReadChan game tableName username = do
@@ -310,7 +311,7 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                      atomically $ subscribeToTable tableName msgHandlerConfig)
                   asyncGameReceiveLoop <-
                     liftIO $
-                    async (tableMsgWriteLoop tableName channel msgHandlerConfig)
+                    async (playerTimeoutLoop tableName channel msgHandlerConfig)
                   liftIO $ link asyncGameReceiveLoop
                   liftIO $
                     sendMsg clientConn (SuccessfullySatDown tableName newGame)
