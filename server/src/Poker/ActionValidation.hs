@@ -48,17 +48,23 @@ validateAction game@Game {..} playerName =
     MuckHand -> validateShowOrMuckHand game playerName MuckHand
 
 canPostBlind :: Game -> PlayerName -> Blind -> Either GameErr ()
-canPostBlind game@Game {..} pName =
-  \case
-    Big ->
-      if chipCount < _bigBlind
-        then notEnoughChipsErr
-        else Right ()
-    Small ->
-      if chipCount < _smallBlind
-        then notEnoughChipsErr
-        else Right ()
-    NoBlind -> Left $ InvalidMove pName CannotPostNoBlind
+canPostBlind game@Game {..} pName blind
+  | length _players < 2 =
+    Left $
+    InvalidMove pName $
+    CannotPostBlind
+      "Cannot post blind unless at least two players are sat at table"
+  | otherwise =
+    case blind of
+      Big ->
+        if chipCount < _bigBlind
+          then notEnoughChipsErr
+          else Right ()
+      Small ->
+        if chipCount < _smallBlind
+          then notEnoughChipsErr
+          else Right ()
+      NoBlind -> Left $ InvalidMove pName CannotPostNoBlind
   where
     chipCount = _chips $ fromJust $ getGamePlayer game pName
     notEnoughChipsErr = Left $ InvalidMove pName NotEnoughChipsForAction
@@ -101,7 +107,11 @@ canBet pName amount game@Game {..}
   | amount > chipCount = Left $ InvalidMove pName NotEnoughChipsForAction
   | _street == Showdown || _street == PreDeal =
     Left $ InvalidMove pName InvalidActionForStreet
-  | _maxBet > 0 = Left $ InvalidMove pName CannotBetShouldRaiseInstead
+  | _maxBet > 0 =
+    Left $
+    InvalidMove pName $
+    CannotBetShouldRaiseInstead
+      "A bet can only be carried out if no preceding player has bet"
   | otherwise = Right ()
   where
     chipCount = _chips $ fromJust $ getGamePlayer game pName

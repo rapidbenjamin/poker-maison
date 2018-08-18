@@ -221,10 +221,11 @@ data InvalidMoveErr
   | OutOfTurn CurrentPlayerToActErr
   | CannotPostBlindOutsidePreDeal
   | CannotPostNoBlind -- if player tries to apply postBlind with a value of NoBlind
+  | CannotPostBlind Text
   | InvalidActionForStreet
   | BetLessThanBigBlind
   | NotEnoughChipsForAction
-  | CannotBetShouldRaiseInstead
+  | CannotBetShouldRaiseInstead Text
   | PlayerToActNotAtTable
   | CannotRaiseShouldBetInstead
   | RaiseAmountBelowMinRaise Int
