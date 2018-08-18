@@ -30,4 +30,4 @@ export const RAISE = 'server/RAISE'
 export const CHECK = 'server/CHECK'
 export const FOLD = 'server/FOLD'
 export const CALL = 'server/CALL'
-
+export const LEAVE_SEAT = 'server/LEAVE_SEAT'

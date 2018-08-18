@@ -1,6 +1,6 @@
 import React from 'react'
 
-const Game = ({ username, handleChange, betValue, isTurnToAct, game, call, bet, fold, raise, check, postBigBlind, postSmallBlind }) => {
+const Game = ({ username, handleChange, betValue, isTurnToAct, leaveSeat, game, call, bet, fold, raise, check, postBigBlind, postSmallBlind }) => {
   console.log('game', game)
   if (game) {
     const jsgame = game.toJS()
@@ -17,6 +17,7 @@ const Game = ({ username, handleChange, betValue, isTurnToAct, game, call, bet, 
       <button type="button" onClick={() => raise(betValue)} className="button">Raise {betValue}</button>
       <button type="button" onClick={() => fold()} className="button">Fold</button>
       <input type="text" value={betValue} onChange={handleChange} />
+      <button type="button" onClick={() => leaveSeat()} className="button">LeaveGame</button>
     </div>)
   }
   return <h2>no Game State</h2>

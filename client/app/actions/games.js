@@ -40,3 +40,14 @@ export const fold = tableName => ({
   type: types.FOLD,
   data: { "tag": "GameMove", "contents": [tableName, { "tag": "Fold" }] }
 })
+
+export const leaveSeat = (tableName, history) => {
+  history.push(`/lobby`)
+
+  return {
+    type: types.LEAVE_SEAT,
+    data: {
+      "tag": "GameMove", "contents": [tableName, { "tag": "LeaveSeat" }]
+    }
+  }
+}
