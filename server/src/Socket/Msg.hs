@@ -258,7 +258,9 @@ takeSeatHandler move@(TakeSeat tableName chipsToSit) = do
                       dbConn
                       (unUsername username)
                       chipsToSit
-                  liftIO $ atomically $ joinTable tableName msgHandlerConfig
+                  when
+                    (username `notElem` subscribers)
+                    (liftIO $ atomically $ joinTable tableName msgHandlerConfig)
                   asyncGameReceiveLoop <-
                     liftIO $
                     async
