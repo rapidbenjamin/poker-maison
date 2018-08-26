@@ -1,0 +1,27 @@
+.rank {
+  grid-column-start: 2;
+  grid-row-start: 2;
+    justify-self: center;
+}
+
+.suit {
+  grid-column-start: 2;
+  grid-row-start: 4;
+  justify-self: center;
+}
+
+.suit-icon { 
+  width: 100% 
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 2fr 2fr 0.75fr 2fr 2fr;
+  font-family: Roboto;
+  background-color: white;
+  font-weight: 400;
+  width: 71.428571%;
+  font-size: 6em;
+  border-radius: 20px;
+}

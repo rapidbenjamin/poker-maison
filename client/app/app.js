@@ -21,14 +21,6 @@ import AppContainer from 'containers/AppContainer'
 
 import { authSuccess } from './actions/auth'
 
-// Load the favicon
-/* eslint-disable import/no-webpack-loader-syntax */
-import '!file-loader?name=[name].[ext]!./images/favicon.ico'
-/* eslint-enable import/no-webpack-loader-syntax */
-
-// Tmport Bulma Style Customisations
-//import 'styles/bulma-overrides.scss'
-
 import 'styles/main.scss'
 
 import configureStore from './configureStore'
