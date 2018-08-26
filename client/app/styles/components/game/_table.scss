@@ -1,0 +1,10 @@
+/* Six Player Table */
+.gameTable {
+    background: blue;
+    width: 80%;
+    height: 80%;
+    justify-self: center;
+    border-radius: 150px;
+    grid-column-start: 2;
+    grid-row-start: 2;
+}

@@ -27,7 +27,9 @@ import '!file-loader?name=[name].[ext]!./images/favicon.ico'
 /* eslint-enable import/no-webpack-loader-syntax */
 
 // Tmport Bulma Style Customisations
-import 'styles/bulma-overrides.scss'
+//import 'styles/bulma-overrides.scss'
+
+import 'styles/main.scss'
 
 import configureStore from './configureStore'
 

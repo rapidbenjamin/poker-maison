@@ -3,50 +3,73 @@ import React from 'react'
 const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
   <nav role="navigation" className="navbar">
     <div className="navbar-brand">
-      <a className="navbar-item" onClick={() => history.push('/')}>
-        <img
-          src="https://bulma.io/images/bulma-logo.png"
-          alt="Bulma: a modern CSS framework based on Flexbox"
-          width="112"
-          height="28"
-        />
-      </a>
+      <div>
+        <a onClick={() => history.push('/')}>
+          <h2>PokerSpace</h2>
+        </a>
+      </div>
     </div>
     <div className="navbar-menu">
       <div className="navbar-start">
-        <a className="navbar-item" onClick={() => history.push('lobby')} >
-          Lobby
-        </a>
-        <a className="navbar-item" onClick={() => history.push('game')}>
-          Game
-        </a>
+        <div>
+          <div className="navbar-item">
+            <a onClick={() => history.push('lobby')} >
+              <h3>
+                Lobby
+              </h3>
+            </a>
+          </div>
+        </div>
+        <div className="navbar-item">
+          <a onClick={() => history.push('game')}>
+            <h3>
+              Game
+          </h3>
+          </a>
+        </div>
       </div>
       <div className="navbar-end">
         {isAuthenticated ? (
-          <a className="navbar-item" onClick={() => history.push('profile')}>
-            {username}
-          </a>
+          <div className="navbar-item">
+            <a onClick={() => history.push('profile')}>
+              <h3>
+                {username}
+              </h3>
+            </a>
+          </div>
         ) : (
             ''
           )}
         {isAuthenticated ? (
-          <a className="navbar-item" onClick={() => logoutUser()}>
-            Logout
+          <div className="navbar-item">
+            <a onClick={() => logoutUser()}>
+              <h3>
+                Logout
+              </h3>
             </a>
+          </div>
         ) : (
             ''
           )}
         {!isAuthenticated ? (
-          <a className="navbar-item" onClick={() => history.push('signin')}>
-            Login
-          </a>
+          <div className="navbar-item">
+            <a onClick={() => history.push('signin')}>
+              <h3>
+                Login
+              </h3>
+            </a>
+          </div>
         ) : (
             ''
           )}
         {!isAuthenticated ? (
-          <a className="navbar-item" onClick={() => history.push('signup')}>
-            Register
-          </a>
+          <div className="navbar-item">
+            <a onClick={() => history.push('signup')}>
+              <h3>
+                Register
+              </h3>
+            </a>
+          </div>
         ) : (
             ''
           )}

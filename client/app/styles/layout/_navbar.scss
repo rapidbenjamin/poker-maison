@@ -1,0 +1,33 @@
+.navbar {
+    display: flex;
+    text-align: center;
+    background: green;
+    padding-left: 2em;
+    padding-right: 2em;
+}
+
+.navbar-brand {
+    width: 9em;
+}
+
+.navbar-menu {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.navbar-start {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-end {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-item {
+    width: 7em;
+}

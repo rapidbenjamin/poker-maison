@@ -1,0 +1,36 @@
+@import 'navbar';
+
+%full-screen {
+  position: absolute;
+  height: 100%;
+  width: 100%
+}
+
+.app-wrapper {
+  @extend %full-screen;
+  display: grid;
+  grid-template-columns: auto;
+  grid-template-rows: 1fr 15fr 1fr;
+  grid-template-areas:
+    'navbar'
+    'main'
+    'footer';
+}
+
+.app {
+    @extend %full-screen;
+}
+
+.navbar {
+
+}
+
+.footer {
+    
+}
+
+.item1 { grid-area: header; }
+.item2 { grid-area: menu; }
+.item3 { grid-area: main; }
+.item4 { grid-area: right; }
+.item5 { grid-area: footer; }
