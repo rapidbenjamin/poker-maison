@@ -1,7 +1,28 @@
 import React from 'react'
-
+import { fromJS } from 'immutable'
 import ActionPanel from './ActionPanel'
 import Board from './Board'
+import Seat from './Seat'
+
+
+const getSeatedPlayer = (player, position) =>
+  <Seat
+    key={position}
+    position={position}
+    playerName={player.get('_playerName')}
+    chips={player.get('_chips')}
+  />
+
+const getSeats = (maxPlayers, players) =>
+  Array(maxPlayers).fill(null).map((_, i) => {
+    const player = players.get(i)
+
+    return player ? getSeatedPlayer(player, i) :
+      <Seat
+        key={i}
+        position={i}
+      />
+  })
 
 const Game = props => {
   const { game, username, isTurnToAct } = props
@@ -10,12 +31,15 @@ const Game = props => {
     const jsgame = game.toJS()
     jsgame._deck = undefined // hide deck
     console.log(jsgame)
+    const players = game.get('_players')
+    const maxPlayers = 6
 
     return (<div className='game'>
       <p style={{ height: '200px' }}>
         {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
       </p>
       <div className='game-container'>
+        {getSeats(maxPlayers, players)}
         <div className="table-container">
           <Board cards={game.get('_board')} />
         </div>
