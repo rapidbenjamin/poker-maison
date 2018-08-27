@@ -12,10 +12,13 @@ const Game = props => {
     console.log(jsgame)
 
     return (<div className='game'>
-      <p style={{ height: ' 500px' }}>{(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
+      <p style={{ height: '200px' }}>
+        {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
       </p>
-      <div className="gameTable">
-        <Board cards={game.get('_board')} />
+      <div className='game-container'>
+        <div className="table-container">
+          <Board cards={game.get('_board')} />
+        </div>
       </div>
       <ActionPanel {...props} />
 

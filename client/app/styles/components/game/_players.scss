@@ -1,0 +1,20 @@
+
+/*
+
+The real power of mixins comes when you pass them arguments. 
+Arguments are declared as a parenthesized, comma-separated list of variables. 
+
+Each of those variables is assigned a value each time the mixin is used.
+
+@mixin default-box($color, $boxModel, $padding) {
+  $borderColor: $color;
+  border: 1px solid $borderColor;
+  clear: both;
+  display: $boxModel;
+  margin: 5px 0;
+  padding: 5px $padding;
+}
+
+header{ @include default-box(#666, block, 10px); }
+footer{ @include default-box(#999, inline-block, 5px);
+*/

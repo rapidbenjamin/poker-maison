@@ -1,4 +1,8 @@
-@import 'layout';
+/* Main App Grid */
+@import 'layout/app';
 
+/* Components */
 @import 'components/game';
 @import 'components/footer';
+@import 'components/navbar';
+

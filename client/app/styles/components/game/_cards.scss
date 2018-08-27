@@ -1,7 +1,7 @@
 .rank {
   grid-column-start: 2;
   grid-row-start: 2;
-    justify-self: center;
+  justify-self: center;
 }
 
 .suit {
@@ -10,18 +10,25 @@
   justify-self: center;
 }
 
-.suit-icon { 
-  width: 100% 
+.suit > img {
+  height: 35px;
+  width: 35px;
 }
 
+.suit-icon { 
+  width: 100%
+}
+
+/* A poker cards dimensions are 63.5mm X 88.9mm */
 .card {
+  height: 95px;
+  width: 68.5px;
+  margin-left: 8px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 2fr 2fr 0.75fr 2fr 2fr;
-  font-family: Roboto;
   background-color: white;
-  font-weight: 400;
-  width: 71.428571%;
-  font-size: 6em;
-  border-radius: 20px;
+  font-weight: 800;
+  font-size: 2.2em;
+  border-radius: 10px;
 }

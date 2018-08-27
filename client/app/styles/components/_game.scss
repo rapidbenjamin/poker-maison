@@ -1,10 +1,10 @@
 @import 'game/table';
 @import 'game/actionPanel';
-@import 'game/card';
-
+@import 'game/boardCards';
+@import 'game/cards';
 
 .game {
     display: grid;
-    grid-template-columns: 1fr 4fr 1fr;
-    grid-template-rows: 1fr 2fr 1fr 1fr;
+    grid-template-columns: 1fr 900px 1fr;
+    grid-template-rows: 1fr 550px 1fr 1fr;
 }

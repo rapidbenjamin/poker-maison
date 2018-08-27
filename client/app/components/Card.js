@@ -1,7 +1,5 @@
 import React from 'react';
 
-import Heart from '../images/Hearts.svg';
-
 const showRank = rank => {
   switch (rank) {
     case 'Ace':
@@ -39,11 +37,8 @@ const Card = ({ rank, suit }) => (
       {showRank(rank)}
     </div>
     <div className="suit">
-      <Heart height={150} />
+      <img alt={suit} src={`http://localhost:9080/${suit}.svg`} />
     </div>
   </div>);
 
 export default Card;
-
-
-//      <img alt={suit} src={`${suit}.svg`} />

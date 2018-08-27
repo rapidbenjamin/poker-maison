@@ -1,10 +1,22 @@
 /* Six Player Table */
-.gameTable {
+.table-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 4fr 1fr 1fr;
+    grid-template-rows: repeat(5, 1fr);
     background: blue;
     width: 80%;
     height: 80%;
-    justify-self: center;
-    border-radius: 150px;
-    grid-column-start: 2;
-    grid-row-start: 2;
+    border-radius: 150px;   
+}
+
+.game-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  grid-column-start: 2;
+  grid-row-start: 2;
+}
+
+.board-cards {
+  width: 120px;
 }
