@@ -12,9 +12,8 @@
   @extend %full-screen;
   display: grid;
   grid-template-columns: auto;
-  grid-template-rows: 0.8fr 15fr 0.8fr;
+  grid-template-rows: 0.8fr 15fr;
   grid-template-areas:
     'navbar'
     'main'
-    'footer';
 }

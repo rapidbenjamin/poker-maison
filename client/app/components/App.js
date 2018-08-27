@@ -39,7 +39,6 @@ const App = ({ username }) => (
       <Route path="/game/:tableName" render={props => <GameContainer {...props} username={username} />} />
       <Route path="" component={NotFoundPage} />
     </Switch>
-    <Footer />
   </div>
 );
 
