@@ -1,5 +1,4 @@
 import React from 'react'
-import { fromJS } from 'immutable'
 import ActionPanel from './ActionPanel'
 import Board from './Board'
 import Seat from './Seat'
@@ -34,13 +33,13 @@ const Game = props => {
     const players = game.get('_players')
     const maxPlayers = 6
 
-    return (<div className='game'>
+    return (<div className='main'>
       <p style={{ height: '200px' }}>
         {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
       </p>
       <div className='game-container'>
-        {getSeats(maxPlayers, players)}
         <div className="table-container">
+          {getSeats(maxPlayers, players)}
           <Board cards={game.get('_board')} />
         </div>
       </div>

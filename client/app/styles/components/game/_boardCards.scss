@@ -1,6 +1,5 @@
 .board-cards {
   display: flex;
   width: 100%;
-  grid-column-start: 3;
-  grid-row-start: 3;
+  grid-area: 3/3/4/5;
 }

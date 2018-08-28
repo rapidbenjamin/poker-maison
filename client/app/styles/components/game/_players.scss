@@ -18,3 +18,43 @@ Each of those variables is assigned a value each time the mixin is used.
 header{ @include default-box(#666, block, 10px); }
 footer{ @include default-box(#999, inline-block, 5px);
 */
+
+
+%seat {
+    background: blanchedalmond;
+    display: grid;
+    height: 100%;
+    width: 100%;
+    justify-self: center;
+}
+
+.seat-0 {
+    @extend %seat;
+    grid-area: 5/3;
+}
+
+.seat-1 {
+    @extend %seat;
+    grid-area: 4/1;
+}
+
+.seat-2 {
+    @extend %seat;
+    grid-area: 2/1;
+}
+
+.seat-3 {
+    @extend %seat;
+    grid-area: 1/3;
+}
+
+.seat-4 {
+    @extend %seat;
+    grid-area: 2/5;
+}
+
+.seat-5 {
+    @extend %seat;
+    grid-area: 4/5;
+}
+

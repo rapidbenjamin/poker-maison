@@ -2,9 +2,10 @@
 @import 'game/actionPanel';
 @import 'game/boardCards';
 @import 'game/cards';
+@import 'game/players';
 
-.game {
+.main {
     display: grid;
-    grid-template-columns: 1fr 900px 1fr;
+    grid-template-columns: 1fr 4fr 1fr;
     grid-template-rows: 1fr 475px 1fr 1fr;
 }
