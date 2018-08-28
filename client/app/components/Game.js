@@ -9,6 +9,7 @@ const getSeatedPlayer = (player, position) =>
     key={position}
     position={position}
     playerName={player.get('_playerName')}
+    playerState={player.get('_playerState')}
     chips={player.get('_chips')}
   />
 
@@ -34,7 +35,7 @@ const Game = props => {
     const maxPlayers = 6
 
     return (<div className='game-view-grid'>
-      <p style={{ height: '100px' }}>
+      <p style={{ height: '300px', top: '80px', position: 'absolute' }}>
         {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
       </p>
       <div className='game-container'>

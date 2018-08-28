@@ -32,3 +32,23 @@
   font-size: 2.2em;
   border-radius: 10px;
 }
+
+
+/* cards behind player oval representing opponent pockets outwith showdown */
+.hidden-pocket-cards .card {
+    border-style: solid;
+    border-width: 1px;
+    position: absolute;
+    top: -70px;
+    height: 45px;
+    width: 30px;
+  }
+
+.pocket-one {
+  position: absolute;
+  right: 65%;
+}
+
+.hidden-pocket-cards {
+    position: relative;
+}
