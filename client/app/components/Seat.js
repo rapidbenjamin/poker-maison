@@ -3,8 +3,8 @@ import React from 'react';
 const Seat = ({ playerName, chips, isTurnToAct, position }) => (
   <div className={`seat-${position}-container`}>
     <div className={`seat-${position}`}>
-      <h3>{playerName || 'Seat'}</h3>
-      {chips || ''}
+      <h2>{playerName || 'Seat'}</h2>
+      {playerName ? <h2>{chips}</h2> : ''}
     </div>
   </div>);
 

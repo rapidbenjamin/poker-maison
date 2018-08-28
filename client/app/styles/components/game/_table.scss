@@ -7,6 +7,21 @@
     height: 100%;
 }
 
+.table-container h2 {
+    justify-self: center;
+    margin: 0;
+}
+
+
+/* 
+  Selects the chip count inside the player oval 
+  
+  Adds whitespace between player name and chip count
+*/
+.table-container h2+h2 {
+    padding: 0.7em 0 0 0;
+}
+
 .game-table {
   position: relative;
   background: red;
