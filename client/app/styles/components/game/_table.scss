@@ -13,9 +13,13 @@
   grid-area: 2/2/5/5;
   width: 120%;
   height: 120%;
-  left: -5%;
+  left: -6%;
   top: -6%;
-  border-radius: 20%;
+  border-radius: 100%;
   z-index: -1;
 }
 
+.pot-label {
+  grid-area: 2/3;
+  justify-self: center;
+}

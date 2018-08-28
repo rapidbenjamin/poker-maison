@@ -33,7 +33,7 @@ const Game = props => {
     const players = game.get('_players')
     const maxPlayers = 6
 
-    return (<div className='main'>
+    return (<div className='game-view-grid'>
       <p style={{ height: '100px' }}>
         {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
       </p>
@@ -42,6 +42,7 @@ const Game = props => {
           {getSeats(maxPlayers, players)}
           <div className='game-grid'>
             <Board cards={game.get('_board')} />
+            <h2 className='pot-label'>{`Pot $${game.get('_pot')}`}</h2>
           </div>
           <div className='game-table'>
           </div>
