@@ -1,8 +1,8 @@
 /* Six Player Table */
 .table-container {
     display: grid;
-    grid-template-columns: 20% auto 20%;
-    grid-template-rows: 20% auto 20%;
+    grid-template-columns: repeat(5, 20%);
+    grid-template-rows: repeat(5, 20%);
     width: 100%;
     height: 100%;
 }
@@ -14,7 +14,7 @@
   width: 120%;
   height: 120%;
   left: -5%;
-  top: -5%;
+  top: -6%;
   border-radius: 20%;
   z-index: -1;
 }

@@ -21,9 +21,11 @@ footer{ @include default-box(#999, inline-block, 5px);
 
 
 %seat {
+    margin: auto;
     background: blanchedalmond;
     display: grid;
-    width: 100%;
+    width: 11em;
+    height: 5em;
 }
 
 .seat-0 {
