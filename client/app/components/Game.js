@@ -34,13 +34,17 @@ const Game = props => {
     const maxPlayers = 6
 
     return (<div className='main'>
-      <p style={{ height: '200px' }}>
+      <p style={{ height: '100px' }}>
         {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
       </p>
       <div className='game-container'>
         <div className="table-container">
           {getSeats(maxPlayers, players)}
-          <Board cards={game.get('_board')} />
+          <div className='game-grid'>
+            <Board cards={game.get('_board')} />
+          </div>
+          <div className='game-table'>
+          </div>
         </div>
       </div>
       <ActionPanel {...props} />
