@@ -40,15 +40,17 @@
     border-width: 1px;
     position: absolute;
     top: -70px;
-    height: 45px;
-    width: 30px;
+    height: 100px;
+    width: 60px;
+    z-index: -1;
   }
 
 .pocket-one {
-  position: absolute;
   right: 65%;
 }
 
+
 .hidden-pocket-cards {
-    position: relative;
+  position: relative;
+  margin-left: 35%;
 }
