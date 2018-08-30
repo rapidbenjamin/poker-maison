@@ -8,18 +8,34 @@
 ---------------------------------
 */
 
+// Small tablets and large smartphones (landscape view)
+$sm: 576px;
+
+// Small tablets (portrait view)
+$md: 768px;
+
+// Tablets and small desktops
+$lg: 992px;
+
+// Large tablets and desktops
+$xl: 1200px;
+
 // Configure modular-scale plugin
 $modularscale: (
   base: 12px,
   ratio: 1.5,
-  400px: (
+  $sm: (
     ratio: 1.2,
   ),
-  900px: (
+  $md: (
     base: 15px,
     ratio: 1.3,
   ),
-  1200px: (
+  $lg: (
+    base: 15px,
+    ratio: 1.3,
+  ),
+  $xl: (
     base: 15px,
     ratio: 1.3,
   ),
