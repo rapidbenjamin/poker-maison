@@ -1,3 +1,5 @@
+@import '../common/mixins';
+
 %full-screen {
   position: absolute;
   height: 100%;
@@ -21,5 +23,11 @@
 .game-view-grid {
   display: grid;
   grid-template-columns: 1fr 4fr 1fr;
-  grid-template-rows: 1fr 5fr 1fr 1fr;
+  grid-template-rows: 1fr 5fr 2fr;
+
+   /* Prevents table Aspect Ratio from being too wide on wider screens. */
+   @include xl {
+        margin-left: 15vw;
+        margin-right: 15vw;
+    }
 }
