@@ -37,17 +37,21 @@ $border-light: solid 1px rgba(0, 0, 0, .05);
   Media queries
 ---------------------------------
 */
+
+// Very small devices such as small phones
+$screen-xs-min: 376px;
+
 // Small tablets and large smartphones (landscape view)
-$sm: 576px;
+$screen-sm-min: 576px;
 
 // Small tablets (portrait view)
-$md: 768px;
+$screen-md-min: 768px;
 
 // Tablets and small desktops
-$lg: 992px;
+$screen-lg-min: 992px;
 
 // Large tablets and desktops
-$xl: 1200px;
+$screen-xl-min: 1200px;
 
 /*
 ---------------------------------

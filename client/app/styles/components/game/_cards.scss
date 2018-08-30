@@ -31,11 +31,11 @@
 
 /* cards behind player oval representing opponent pockets outwith showdown */
 .hidden-pocket-cards .card {
-border-style: solid;
+    border-style: solid;
     border-width: 1px;
     position: absolute;
-    top: -2em;
-    height: 1.8em;
+    top: -7vh;
+    height: 7vh;
     width: 65%;
     z-index: -1;
   }

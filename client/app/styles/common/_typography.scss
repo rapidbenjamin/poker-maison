@@ -1,6 +1,7 @@
 // Import Modular Scale Plugin
 @import '~modularscale-sass/stylesheets/modularscale';
 
+@import 'variables';
 
 /*
 ---------------------------------
@@ -8,34 +9,23 @@
 ---------------------------------
 */
 
-// Small tablets and large smartphones (landscape view)
-$sm: 576px;
-
-// Small tablets (portrait view)
-$md: 768px;
-
-// Tablets and small desktops
-$lg: 992px;
-
-// Large tablets and desktops
-$xl: 1200px;
 
 // Configure modular-scale plugin
 $modularscale: (
   base: 12px,
   ratio: 1.5,
-  $sm: (
+  $screen-sm-min: (
     ratio: 1.2,
   ),
-  $md: (
+  $screen-md-min: (
     base: 15px,
     ratio: 1.3,
   ),
-  $lg: (
+  $screen-lg-min: (
     base: 15px,
     ratio: 1.3,
   ),
-  $xl: (
+  $screen-xl-min: (
     base: 15px,
     ratio: 1.3,
   ),
