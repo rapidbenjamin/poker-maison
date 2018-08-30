@@ -1,14 +1,21 @@
 
-/*** Parameters ***/
 
-// Colors
+/*** Variables ***/
+
+/*
+---------------------------------
+  Colours
+---------------------------------
+*/
+
+// App colours
 $color-primary: #666;
 $color-secondary: #888;
 $color-light: #e0e0e0;
 $color-lightest: #efefef;
 $color-brand: #239bf6;
 
-// Brand color
+// Brand colours
 $color-facebook: #3b5998;
 $color-feedly: #2bb24c;
 $color-github: #333;
@@ -23,6 +30,13 @@ $color-twitter: #55acee;
 
 // Borders
 $border-light: solid 1px rgba(0, 0, 0, .05);
+
+
+/*
+---------------------------------
+  Typography
+---------------------------------
+*/
 
 // Font Size
 $font-size-biggest: 2.8rem;
@@ -39,14 +53,35 @@ $spacing-double: 2rem;
 $spacing-triple: 3rem;
 $spacing-big: 6rem;
 
-// Media queries
-$desktop: 800px;
-$tablet: 600px;
-$mobile: 480px;
+
+/*
+---------------------------------
+  Media queries
+---------------------------------
+*/
+
+// Small tablets and large smartphones (landscape view)
+$screen-sm-min: 576px;
+
+// Small tablets (portrait view)
+$screen-md-min: 768px;
+
+// Tablets and small desktops
+$screen-lg-min: 992px;
+
+// Large tablets and desktops
+$screen-xl-min: 1200px;
 
 // Font Family
 $sans-serif: 'Roboto', sans-serif;
 $serif: 'Playfair Display', serif;
+
+
+/*
+---------------------------------
+  Animation
+---------------------------------
+*/
 
 // Animation
 $anime-in: .4s;

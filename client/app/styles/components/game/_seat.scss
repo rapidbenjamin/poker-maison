@@ -18,16 +18,18 @@ Each of those variables is assigned a value each time the mixin is used.
 header{ @include default-box(#666, block, 10px); }
 footer{ @include default-box(#999, inline-block, 5px);
 */
-
+/* Mixins */
+@import '../../common';
 
 %seat {
-    margin: 0;
+    margin: auto;
+    margin-top: 0;
     background: blanchedalmond;
     justify-content: center;
     align-content: center;
     display: grid;
     width: 100%;
-    height: 100%;
+    height: 80%;
     border-radius: 7em;
 }
 
