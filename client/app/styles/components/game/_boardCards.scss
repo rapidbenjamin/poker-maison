@@ -1,6 +1,14 @@
 .board-cards {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    grid-area: 3/2/4/5;
+    grid-area: 3/2/5/5;
+}
+
+.board-cards-container {
+  display: flex;
+  height:100%;
+  width: 100%
+}
+
+.board-cards .card {
+  margin-top: auto;
+  margin-bottom: auto;
 }

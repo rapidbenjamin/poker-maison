@@ -6350,6 +6350,10 @@ mixin-object@^2.0.1:
   dependencies:
     minimist "0.0.8"
 
+modularscale-sass@^3.0.5:
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/modularscale-sass/-/modularscale-sass-3.0.5.tgz#18847c3ae4fc506b7dfab0c0df3b398663c97b5f"
+
 moo@^0.4.3:
   version "0.4.3"
   resolved "https://registry.yarnpkg.com/moo/-/moo-0.4.3.tgz#3f847a26f31cf625a956a87f2b10fbc013bfd10e"
@@ -7426,10 +7430,6 @@ raf@^3.4.0:
 railroad-diagrams@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/railroad-diagrams/-/railroad-diagrams-1.0.0.tgz#eb7e6267548ddedfb899c1b90e57374559cddb7e"
-
-rambda@^1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/rambda/-/rambda-1.2.1.tgz#022921b51252c829a2022a153c0735efb03370a1"
 
 randexp@0.4.6:
   version "0.4.6"

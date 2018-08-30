@@ -1,9 +1,10 @@
 /* Main App Grid */
 @import 'layout/app';
 
+/* Improt common modules */
+@import 'common';
+
 /* Components */
 @import 'components/game';
 @import 'components/footer';
 @import 'components/navbar';
-
-@import 'typography';
