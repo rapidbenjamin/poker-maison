@@ -1,18 +1,15 @@
 .rank {
-  grid-column-start: 2;
-  grid-row-start: 2;
-  justify-self: center;
+   padding-top: 0.2em;
+
 }
 
 .suit {
-  grid-column-start: 2;
-  grid-row-start: 3;
-  justify-self: center;
 }
 
 .suit > img {
-  height: 25px;
-  width: 25px;
+  height: 0.75em;
+  width: 0.75em;
+  margin-bottom: 0.4em;
 }
 
 .suit-icon { 
@@ -24,9 +21,7 @@
   height: 2.5em;
   width: 1.7em;
   margin-left: 0.2em;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 50fr 0.5fr 0.5fr 50fr;
+  text-align: center;
   background-color: white;
   font-weight: 800;
   font-size: 2em;
