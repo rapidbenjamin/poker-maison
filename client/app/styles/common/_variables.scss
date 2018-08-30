@@ -54,6 +54,57 @@ $spacing-triple: 3rem;
 $spacing-big: 6rem;
 
 
+// FONT-FAMILY SETTINGS
+$font-georgia: (
+  stack: "Georgia, serif",
+  
+	x-small: (
+		font-size: 13,
+		line-height: 16
+	),
+
+	small: (
+		font-size: 14,
+		line-height: 20
+	),
+
+	base: (
+		font-size: 16,
+		line-height: 18
+	),
+  
+  mid: (
+    font-size: 18,
+    line-height: 22
+  ),
+
+	mid-large: (
+		font-size: 20,
+		line-height: 26
+	),
+
+	large: (
+		font-size: 25,
+		line-height: 30
+	),
+
+	x-large: (
+		font-size: 45,
+		line-height: 47
+	)
+);
+
+$font-verdana: (
+    stack: "Verdana, sans-serif", 
+  
+    x-small: (
+		  font-size: 12,
+  		line-height: 16
+    )
+ );
+
+$font-default: $font-georgia;
+
 /*
 ---------------------------------
   Media queries
@@ -71,11 +122,6 @@ $screen-lg-min: 992px;
 
 // Large tablets and desktops
 $screen-xl-min: 1200px;
-
-// Font Family
-$sans-serif: 'Roboto', sans-serif;
-$serif: 'Playfair Display', serif;
-
 
 /*
 ---------------------------------

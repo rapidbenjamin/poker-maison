@@ -31,6 +31,10 @@ footer{ @include default-box(#999, inline-block, 5px);
     width: 100%;
     height: 80%;
     border-radius: 7em;
+    
+    @include xl {
+        font-size: 120%;
+    } 
 }
 
 .seat-0 {
