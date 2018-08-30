@@ -8,8 +8,8 @@ const Seat = ({ playerName, chips, isTurnToAct, hasPocketCards, position }) => (
         <div className='card pocket-two' />
       </div> : ''}
     <div className={`seat-${position}`}>
-      <h4>{playerName || 'Seat'}</h4>
-      {playerName ? <h4>{chips}</h4> : ''}
+      <h4 className={playerName ? 'player-name' : ''}>{playerName || 'Seat'}</h4>
+      {playerName ? <h4 className='player-chip-count'>{chips}</h4> : ''}
     </div>
   </div>);
 
