@@ -58,7 +58,8 @@ loginHandler secretKey connString Login {..} = do
   maybe (throwError unAuthErr) createToken maybeUser
   where
     unAuthErr = err401 {errBody = "Incorrect email or password"}
-    createToken UserEntity {..} = signToken secretKey userEntityEmail
+    createToken UserEntity {..} =
+      signToken secretKey (Username userEntityUsername)
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
 
 -- when we register new user we check to see if email and username are already taken
@@ -86,4 +87,4 @@ registerUserHandler secretKey connString redisConfig Register {..} = do
     liftIO $ runExceptT $ dbRegisterUser connString redisConfig newUser
   case registrationResult of
     Left err -> throwError $ err401 {errBody = CL.pack $ T.unpack err}
-    _ -> signToken secretKey newUserEmail
+    _ -> signToken secretKey newUsername

@@ -37,6 +37,9 @@ const Game = props => {
 
     const gameStage = game.get('_street')
 
+    const userPlayer = game.get('_players').find(p => p.get('_playerName') === username)
+    const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
+    console.log(userPlayer)
     return (<div className='game-view-grid'>
       <p style={{ height: '300px', top: '80px', position: 'absolute' }}>
         {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
@@ -52,7 +55,7 @@ const Game = props => {
           </div>
         </div>
       </div>
-      <ActionPanel {...props} />
+      <ActionPanel {...props} cards={userPocketCards} />
 
     </div>)
   }

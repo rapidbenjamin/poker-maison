@@ -48,6 +48,9 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
     (Right UserEntity {..}) -> do
+      print username
+      print username
+      print username
       sendMsg conn AuthSuccess
       ServerState {..} <- readTVarIO state
       atomically $

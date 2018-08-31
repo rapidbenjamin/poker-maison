@@ -68,10 +68,11 @@ verifyToken ::
   -> Token
   -> ExceptT Text IO UserEntity
 verifyToken secretKey connString redisConfig token = do
-  (Username email) <- verifyJWTToken secretKey token
-  maybeUser <- liftIO $ fetchUserByEmail connString redisConfig email
+  username <- verifyJWTToken secretKey token
+  liftIO $ print username
+  maybeUser <- liftIO $ dbGetUserByUsername connString username
   case maybeUser of
-    Nothing -> throwError "No User with Given Email Exists in DB"
+    Nothing -> throwError "No User with Given Username Exists in DB"
     Just user -> return user
 
 getAlgorithm :: J.Algorithm
@@ -81,7 +82,7 @@ getNewToken :: J.Secret -> UserEntity -> Password -> Handler ReturnToken
 getNewToken secretKey UserEntity {..} password
   | password /= decodeUtf8 hashedPassword =
     throwError (err401 {errBody = "Password Invalid"})
-  | otherwise = signToken secretKey userEntityEmail
+  | otherwise = signToken secretKey (Username userEntityUsername)
   where
     hashedPassword = H.hash $ encodeUtf8 password
 
@@ -91,8 +92,8 @@ randomText = do
   let s = T.pack . take 128 $ filter isAlphaNum $ randomRs ('A', 'z') gen
   return s
 
-signToken :: J.Secret -> Text -> Handler ReturnToken
-signToken secretKey userId = do
+signToken :: J.Secret -> Username -> Handler ReturnToken
+signToken secretKey (Username userId) = do
   expTime <- liftIO $ createExpTime 60 -- expire at 1 hour
   let jwtClaimsSet =
         J.def {J.iss = J.stringOrURI userId, J.exp = J.numericDate expTime} -- iss is the issuer (username)
