@@ -27,7 +27,11 @@ $modularscale: (
   ),
   $screen-xl-min: (
     base: 15px,
-    ratio: 1.3,
+    ratio: 1.333,
+  ),
+   $screen-xxl-min: (
+    base: 15px,
+    ratio: 1.4,
   ),
 );
 
