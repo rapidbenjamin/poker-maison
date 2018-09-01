@@ -53,9 +53,6 @@ export function login(username, password, history) {
 export function register(username, email, password, history) {
   return async dispatch => {
     dispatch(authRequested())
-    console.log('email', email)
-    console.log('username', username)
-    console.log('skjnkjnkjnkjn')
     axios.post(`${AUTH_API_URL}/register`, {
       newUsername: username,
       newUserEmail: email,

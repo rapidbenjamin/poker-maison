@@ -40,10 +40,9 @@ const Game = props => {
     console.log(game.get('_players').toJS())
     console.log(username)
 
-    const userPlayer = game.get('_players').map(p => p.get('_playerName')).toJS()
+    const userPlayer = game.get('_players').find(p => p.get('_playerName') === username)
     console.log(userPlayer)
-    const userPocketCards = null
-    // userPlayer ? userPlayer.get('_pockets') : null
+    const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
 
     console.log(userPocketCards)
     return (<div className='game-view-grid'>
