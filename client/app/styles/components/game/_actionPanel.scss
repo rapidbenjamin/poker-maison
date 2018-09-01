@@ -3,8 +3,12 @@
     grid-column-start: 2;
     grid-row-start: 3;
     background-color: pink;
-    margin-top: 5em;
     display: flex;
+    margin-top: 2.5em;
+
+    @include sm {
+      margin-top: 5em;
+    }
 }
 
 .action-panel-left-container {
@@ -15,16 +19,27 @@
     align-items: center;
     justify-items: center;
 
+    @include xxl {
+      width: 40%;
+    }
 }
 
 .user-pocket-cards-container {
     margin: auto;
     background-color:red;
     height: 65%;
-    width: 65%;
+    width: 70%;
     display: flex;
+    align-items: center;
+}
+
+
+/* cards behind player oval representing opponent pockets outwith showdown */
+.user-pocket-cards-container .card {
+    font-size: 275%;
 }
 
 .user-actions-container {
+    
 
 }

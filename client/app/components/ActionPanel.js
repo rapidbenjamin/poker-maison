@@ -1,6 +1,7 @@
 import React from 'react'
 
 // TODO move to own component called pocket cards
+import Card from './Card'
 
 const getPocketCards = cards =>
   cards !== undefined && cards !== null ? cards.map(card => {
@@ -35,7 +36,17 @@ const ActionPanel = ({
   return (<div className='actionPanel'>
     <div className='action-panel-left-container'>
       <div className='user-pocket-cards-container'>
-        {/* cards ? getPocketCards(cards) : '' */}
+        {userPocketCards.map(card => {
+          console.log(card.toJS())
+          const rank = card.get('rank')
+          const suit = card.get('suit')
+
+          return (<Card
+            key={rank + suit}
+            rank={rank}
+            suit={suit}
+          />)
+        })}
       </div>
     </div>
     <div className='user-actions-container'>

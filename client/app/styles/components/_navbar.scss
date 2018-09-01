@@ -2,13 +2,16 @@
     display: flex;
     text-align: center;
     background: green;
-    padding: 1em 3em;
+        height: 3.5em;
+
+    
 }
 
 .navbar-brand {
-    width: 11em;
+    width: 25%;
     display: flex;
     align-items: center;
+    padding-left: 1.5em;
 }
 
 .navbar-menu {
@@ -27,6 +30,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding-right: 1.5em;
 }
 
 .navbar-item {

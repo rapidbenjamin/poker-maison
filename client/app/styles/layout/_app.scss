@@ -22,8 +22,13 @@
 
 .game-view-grid {
   display: grid;
-  grid-template-columns: 1fr 4fr 1fr;
   grid-template-rows: 1fr 5fr 2fr;
+      grid-template-columns: auto;
+
+  @include lg {
+      grid-template-columns: 1fr 4fr 1fr;
+
+  }
 
    /* Prevents table Aspect Ratio from being too wide on wider screens. */
    @include xxl {
