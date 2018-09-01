@@ -1,17 +1,17 @@
 
-.actionPanel {
+.action-panel {
     grid-column-start: 2;
     grid-row-start: 3;
     background-color: pink;
     display: flex;
     margin-top: 2.5em;
 
-    @include sm {
+    @include lg {
+        border-radius: 3em 3em 0 0;
     }
 }
 
 .action-panel-left-container {
-    background-color: blue;
     height: 100%;
     width: 50%;
     display: flex;
