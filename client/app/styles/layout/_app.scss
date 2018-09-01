@@ -23,16 +23,16 @@
 .game-view-grid {
   display: grid;
   grid-template-rows: 1fr 5fr 2fr;
-      grid-template-columns: auto;
+  grid-template-columns: max-content;
 
   @include lg {
-      grid-template-columns: 1fr 4fr 1fr;
-
+      margin-left: 14vw;
+      margin-right: 14vw;
   }
 
    /* Prevents table Aspect Ratio from being too wide on wider screens. */
    @include xxl {
-        margin-left: 11vw;
-        margin-right: 11vw;
+        margin-left: 22vw;
+        margin-right: 22vw;
     }
 }
