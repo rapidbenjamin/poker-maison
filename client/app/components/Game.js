@@ -1,4 +1,5 @@
 import React from 'react'
+
 import ActionPanel from './ActionPanel'
 import Board from './Board'
 import Seat from './Seat'
@@ -60,7 +61,7 @@ const Game = props => {
           </div>
         </div>
       </div>
-      <ActionPanel {...props} userPocketCards={userPocketCards} />
+      <ActionPanel {...props} gameStage={gameStage} userPocketCards={userPocketCards} />
 
     </div>)
   }

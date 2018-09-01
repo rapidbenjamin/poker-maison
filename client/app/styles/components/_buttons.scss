@@ -1,0 +1,15 @@
+@import '../common';
+
+.button {
+    border-radius: 3em;
+    width: 7em;
+    margin: 0.5em;
+    padding: 0.5em;
+    font-weight: 600;
+    border: 0;
+    font-size: 123.33%;
+}
+
+.button:hover {
+  background-color: red;
+}

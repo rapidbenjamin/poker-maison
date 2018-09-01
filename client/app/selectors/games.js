@@ -1,4 +1,3 @@
-import Immutable from 'immutable';
 import { createSelector } from 'reselect'
 
 export const getGames = state => state.get('global').get('games')
@@ -9,10 +8,19 @@ export const getGame = tableName =>
 export const getCurrentPlayerToAct = tableName => createSelector(
   getGame(tableName),
   game => {
-    if (!game) return null
-    const currentPosToAct = game.get('_currentPostToAct')
+    if (!game) {
+      return null
+    }
 
-    return game.get('_players').get(currentPosToAct)
+    const currentPosToAct = game.get('_currentPosToAct')
+
+    if (Number.isInteger(currentPosToAct)) {
+      const player = game.get('_players').get(currentPosToAct)
+
+      if (player) return player.get('_playerName')
+    }
+
+    return null
   }
 )
 
