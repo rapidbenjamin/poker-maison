@@ -35,7 +35,7 @@ const ActionPanel = ({
 
   return (<div className='actionPanel'>
     <div className='action-panel-left-container'>
-      {userPocketCards.map(card => {
+      {userPocketCards ? userPocketCards.map(card => {
         console.log(card.toJS())
         const rank = card.get('rank')
         const suit = card.get('suit')
@@ -45,7 +45,7 @@ const ActionPanel = ({
           rank={rank}
           suit={suit}
         />)
-      })}
+      }) : ''}
     </div>
     <div className='user-actions-container'>
       <div>

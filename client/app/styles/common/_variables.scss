@@ -8,12 +8,20 @@
 ---------------------------------
 */
 
+$prussian-blue:  #003049;  
+$dark-cerulean:  #064789;  
+$orioles-orange: #F34213;  
+$eerie-black:    #161925;  
+$lavender-mist:  #ECE5F0;  
+
 // App colours
-$color-primary: #666;
-$color-secondary: #888;
-$color-light: #e0e0e0;
-$color-lightest: #efefef;
-$color-brand: #239bf6;
+$color-primary: $prussian-blue;
+$color-secondary: $dark-cerulean; 
+$color-accent: $orioles-orange;
+$color-lightest: $lavender-mist;
+$color-darkest: $eerie-black;
+
+$color-brand: $prussian-blue;
 
 // Brand colours
 $color-facebook: #3b5998;
