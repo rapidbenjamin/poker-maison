@@ -6,7 +6,7 @@
     display: flex;
     margin-top: 2.5em;
 
-    @include lg {
+    @include xl {
         border-radius: 3em 3em 0 0;
     }
 }

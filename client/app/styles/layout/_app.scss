@@ -25,7 +25,7 @@
   grid-template-rows: 1fr 5fr 2fr;
   grid-template-columns: max-content;
 
-  @include lg {
+  @include xl {
       margin-left: 14vw;
       margin-right: 14vw;
   }
