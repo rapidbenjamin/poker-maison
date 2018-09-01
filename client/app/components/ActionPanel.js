@@ -28,11 +28,15 @@ const ActionPanel = ({
   postBigBlind,
   sitDown,
   leaveGameSeat,
-  cards
-}) =>
-  (<div className='actionPanel'>
-    <div className='user-pocket-cards-container'>
-      {/* cards ? getPocketCards(cards) : '' */}
+  userPocketCards
+}) => {
+  console.log(userPocketCards)
+
+  return (<div className='actionPanel'>
+    <div className='action-panel-left-container'>
+      <div className='user-pocket-cards-container'>
+        {/* cards ? getPocketCards(cards) : '' */}
+      </div>
     </div>
     <div className='user-actions-container'>
       <div>
@@ -84,6 +88,7 @@ const ActionPanel = ({
       </div>
     </div>
   </div>)
+}
 
 
 export default ActionPanel

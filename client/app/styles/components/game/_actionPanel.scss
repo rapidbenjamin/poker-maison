@@ -4,9 +4,27 @@
     grid-row-start: 3;
     background-color: pink;
     margin-top: 5em;
-    display: grid;
+    display: flex;
+}
+
+.action-panel-left-container {
+    background-color: blue;
+    height: 100%;
+    width: 50%;
+    display: flex;
+    align-items: center;
+    justify-items: center;
+
 }
 
 .user-pocket-cards-container {
+    margin: auto;
+    background-color:red;
+    height: 65%;
+    width: 65%;
+    display: flex;
+}
+
+.user-actions-container {
 
 }

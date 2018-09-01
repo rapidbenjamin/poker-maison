@@ -53,8 +53,8 @@ export function login(username, password, history) {
 export function register(username, email, password, history) {
   return async dispatch => {
     dispatch(authRequested())
-    console.log(email)
-    console.log(username)
+    console.log('email', email)
+    console.log('username', username)
     console.log('skjnkjnkjnkjn')
     axios.post(`${AUTH_API_URL}/register`, {
       newUsername: username,
@@ -62,7 +62,7 @@ export function register(username, email, password, history) {
       newUserPassword: password
     }).then(({ data }) => {
       const { access_token } = data
-      dispatch(authSuccess(email))
+      dispatch(authSuccess(username))
       dispatch(connectSocket(access_token));
       localStorage.setItem('token', JSON.stringify({ ...data, username }))
       history.push('/profile')
