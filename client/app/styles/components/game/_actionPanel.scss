@@ -7,7 +7,6 @@
     margin-top: 2.5em;
 
     @include sm {
-      margin-top: 5em;
     }
 }
 
@@ -16,28 +15,31 @@
     height: 100%;
     width: 50%;
     display: flex;
+    justify-content: center;
     align-items: center;
-    justify-items: center;
 
     @include xxl {
       width: 40%;
     }
 }
 
-.user-pocket-cards-container {
-    margin: auto;
-    background-color:red;
-    height: 65%;
-    width: 70%;
-    display: flex;
-    align-items: center;
-}
-
-
 /* cards behind player oval representing opponent pockets outwith showdown */
-.user-pocket-cards-container .card {
-    font-size: 275%;
+.action-panel-left-container .card {
+    font-size: 2.2em;
 }
+
+.action-panel-left-container:first-child {
+    margin-left: 0;
+}
+
+.action-panel-left-container:last-child {
+    margin-right: 0.2em;
+
+    @include sm {
+      margin-left: 0;
+    }
+}
+
 
 .user-actions-container {
     
