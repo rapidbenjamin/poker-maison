@@ -22,7 +22,7 @@
 
 .game-view-grid {
   display: grid;
-  grid-template-rows: 1fr 5fr 2fr;
+//  grid-template-rows: 1fr 5fr 2fr;
   grid-template-columns: max-content;
 
   @include xl {

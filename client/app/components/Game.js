@@ -48,10 +48,10 @@ const Game = props => {
     console.log(userPocketCards)
     return (<div className='game-view-grid'>
       <p style={{ height: '300px', top: '80px', position: 'absolute' }}>
-        {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
+        {/*(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))*/}
       </p>
       <div className='game-container'>
-        <div className="table-container">
+        <div className='table-container'>
           {getSeats(maxPlayers, players, gameStage)}
           <div className='game-grid'>
             <Board cards={game.get('_board')} />
@@ -62,7 +62,6 @@ const Game = props => {
         </div>
       </div>
       <ActionPanel {...props} gameStage={gameStage} userPocketCards={userPocketCards} />
-
     </div>)
   }
   return <h2>no Game State</h2>
