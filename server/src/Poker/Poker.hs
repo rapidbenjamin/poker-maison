@@ -27,9 +27,6 @@ import Poker.Game.Hands
 import Poker.Game.Utils
 import Poker.Types
 
-newGame :: Game -> State Game (Maybe GameErr)
-newGame initState = state $ const (Nothing, initialGameState)
-
 -- this is public api of the poker module 
 -- the function takes a player action and returns either a new game for a valid 
 -- player action or an err signifying an invalid player action with the reason why
@@ -104,3 +101,25 @@ progressGame game@Game {..}
   | otherwise = return game
   where
     activePlayersCount = length $ getActivePlayers _players
+
+initialGameState :: IO Game
+initialGameState = do
+  shuffledDeck <- shuffle initialDeck
+  return
+    Game
+      { _players = []
+      , _waitlist = []
+      , _minBuyInChips = 1500
+      , _maxBuyInChips = 3000
+      , _maxPlayers = 5
+      , _dealer = 0
+      , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
+      , _board = []
+      , _deck = shuffledDeck
+      , _smallBlind = 25
+      , _bigBlind = 50
+      , _pot = 0
+      , _street = PreDeal
+      , _maxBet = 50
+      , _winners = NoWinners
+      }

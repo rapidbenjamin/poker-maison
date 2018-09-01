@@ -256,26 +256,6 @@ allButOneFolded game@Game {..} = _street /= PreDeal && length playersInHand <= 1
   where
     playersInHand = filter ((== In) . (^. playerState)) _players
 
-initialGameState :: Game
-initialGameState =
-  Game
-    { _players = []
-    , _waitlist = []
-    , _minBuyInChips = 1500
-    , _maxBuyInChips = 3000
-    , _maxPlayers = 5
-    , _dealer = 0
-    , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
-    , _board = []
-    , _deck = initialDeck
-    , _smallBlind = 25
-    , _bigBlind = 50
-    , _pot = 0
-    , _street = PreDeal
-    , _maxBet = 50
-    , _winners = NoWinners
-    }
-
 -- initially a players state is set to None to denote that they havent posted their blinds yet
 getPlayer :: Text -> Int -> Player
 getPlayer playerName chips =

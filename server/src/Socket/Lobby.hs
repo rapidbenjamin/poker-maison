@@ -30,16 +30,13 @@ import Types
 initialLobby :: IO Lobby
 initialLobby = do
   chan <- atomically newBroadcastTChan
+  newGame <- initialGameState
   return $
     Lobby $
     M.fromList
       [ ( "Black"
         , Table
-            { subscribers = []
-            , waitlist = []
-            , game = initialGameState
-            , channel = chan
-            })
+            {subscribers = [], waitlist = [], game = newGame, channel = chan})
       ]
   where
     maxChanLength = 10000
