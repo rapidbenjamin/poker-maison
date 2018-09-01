@@ -13,13 +13,13 @@
 // Configure modular-scale plugin
 $modularscale: (
   base: 12px,
-  ratio: 1.5,
+  ratio: 1.3,
   $screen-sm-min: (
     ratio: 1.2,
   ),
   $screen-md-min: (
     base: 15px,
-    ratio: 1.3,
+    ratio: 1.2,
   ),
   $screen-lg-min: (
     base: 15px,
@@ -31,7 +31,7 @@ $modularscale: (
   ),
    $screen-xxl-min: (
     base: 15px,
-    ratio: 1.4,
+    ratio: 1.5,
   ),
 );
 
@@ -47,6 +47,7 @@ h1, .h1 {
 
 h2, .h2 {
   @include ms-respond(font-size, 2);
+  letter-spacing: 0.7px;
 }
 
 h3, .h3 {
@@ -54,9 +55,11 @@ h3, .h3 {
 }
 
 h4, .h4 {
-  @include ms-respond(font-size, 2);
+  @include ms-respond(font-size, 1);
+  letter-spacing: 0.8px;
 }
 
 body, .body {
   @include ms-respond(font-size, 1);
+  letter-spacing: 0.7px;
 }

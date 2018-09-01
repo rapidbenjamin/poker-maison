@@ -4,8 +4,10 @@ const Seat = ({ playerName, chips, isTurnToAct, hasPocketCards, position }) => (
   <div className={`seat-${position}-container`}>
     {hasPocketCards ?
       <div className='hidden-pocket-cards' >
-        <div className='card pocket-one' />
-        <div className='card pocket-two' />
+        <div className='hidden-pocket-cards-container' >
+          <div className='card pocket-one' />
+          <div className='card pocket-two' />
+        </div>
       </div> : ''}
     <div className={`seat-${position}`}>
       <h4 className={playerName ? 'player-name' : ''}>{playerName || 'Seat'}</h4>

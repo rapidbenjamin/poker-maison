@@ -5,7 +5,7 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
     <div className="navbar-brand">
       <div>
         <a onClick={() => history.push('/')}>
-          <h2>PokerSpace</h2>
+          <h2>Pokerspace</h2>
         </a>
       </div>
     </div>
@@ -14,17 +14,17 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
         <div>
           <div className="navbar-item">
             <a onClick={() => history.push('lobby')} >
-              <h3>
+              <h4>
                 Lobby
-              </h3>
+              </h4>
             </a>
           </div>
         </div>
         <div className="navbar-item">
           <a onClick={() => history.push('game')}>
-            <h3>
+            <h4>
               Game
-          </h3>
+          </h4>
           </a>
         </div>
       </div>
@@ -32,9 +32,9 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
         {isAuthenticated ? (
           <div className="navbar-item">
             <a onClick={() => history.push('profile')}>
-              <h3>
+              <h4>
                 {username}
-              </h3>
+              </h4>
             </a>
           </div>
         ) : (
@@ -43,9 +43,9 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
         {isAuthenticated ? (
           <div className="navbar-item">
             <a onClick={() => logoutUser()}>
-              <h3>
+              <h4>
                 Logout
-              </h3>
+              </h4>
             </a>
           </div>
         ) : (
@@ -54,9 +54,9 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
         {!isAuthenticated ? (
           <div className="navbar-item">
             <a onClick={() => history.push('signin')}>
-              <h3>
+              <h4>
                 Login
-              </h3>
+              </h4>
             </a>
           </div>
         ) : (
@@ -65,9 +65,9 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
         {!isAuthenticated ? (
           <div className="navbar-item">
             <a onClick={() => history.push('signup')}>
-              <h3>
+              <h4>
                 Register
-              </h3>
+              </h4>
             </a>
           </div>
         ) : (

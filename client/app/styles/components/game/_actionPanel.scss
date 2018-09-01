@@ -5,6 +5,7 @@
     background-color: pink;
     display: flex;
     margin-top: 2.5em;
+    background-color: $color-light;
 
     @include xl {
         border-radius: 3em 3em 0 0;
