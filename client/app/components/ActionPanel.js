@@ -49,11 +49,12 @@ const ActionPanel = ({
         }) : ''}
       </div>
       <div className='user-actions-container'>
-        <input
-          type="text"
-          value={betValue}
-          onChange={handleChange}
-        />
+        {gameStage === 'PreDeal' || (gameStage !== 'PreDeal' && isTurnToAct) ?
+          <input
+            type="text"
+            value={betValue}
+            onChange={handleChange}
+          /> : ''}
         {gameStage === 'PreDeal' ?
           <React.Fragment>
             <button
@@ -67,14 +68,12 @@ const ActionPanel = ({
               onClick={() => postBigBlind()} className="button">
               postBigBlind
           </button>
-
             <button
               type="button"
               onClick={() => leaveGameSeat()}
               className="button">
               LeaveGame
           </button>
-
             <button
               type="button" onClick={() => postSmallBlind()} className="button">
               postSmallBlind

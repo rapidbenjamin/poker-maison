@@ -3,9 +3,6 @@
 
 }
 
-.suit {
-}
-
 .suit > img {
   height: 0.75em;
   width: 0.75em;
@@ -36,15 +33,13 @@
     position: absolute;
     top: -1.1em;
     z-index: -1;
-
-     height: 2em;
-      width: 1.3em;
+    height: 2em;
+    width: 1.3em;
 
     @include sm {
       height: 2.5em;
       width: 1.7em;
-    } 
-
+    }
 }
 
 .pocket-one {
