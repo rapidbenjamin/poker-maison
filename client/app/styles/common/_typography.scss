@@ -9,6 +9,20 @@
 ---------------------------------
 */
 
+@font-face {
+     font-family: 'Gotham-Narrow-Book';
+     src:
+       url('http://localhost:9080/fonts/GothamPro/Gotham-Narrow-Book.ttf') format('ttf'),
+}
+
+
+@font-face {
+     font-family: 'GothamPro-Black';
+     src:
+       url('http://localhost:9080/fonts/GothamPro/GothamPro-Black.woff2') format('woff2'),
+       url('http://localhost:9080/fonts/GothamPro/GothamPro-Black.ttf') format('ttf'); 
+     font-weight: 800;
+}
 
 
 @font-face {
@@ -104,4 +118,13 @@ body, .body {
   @include ms-respond(font-size, 0);
   font-family: 'GothamPro-Book', sans-serif;
   letter-spacing: 0.7px;
+}
+
+.brand-title {
+  letter-spacing: 1.4px;
+  font-family: 'GothamPro-Bold', sans-serif;
+}
+
+.seat h5, .seat h4 {
+  font-family: 'Gotham-Narrow-Book', sans-serif;
 }
