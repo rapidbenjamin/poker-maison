@@ -1,0 +1,29 @@
+@import 'variables';
+
+// Main Layout Colours
+body {
+  background-color: $color-primary;
+  color: $anti-flash-white;
+}
+
+.card {
+    background-color: $anti-flash-white;
+}
+
+.navbar {
+    background-color: $color-secondary;
+}
+
+// Game Colours
+
+.hidden-pocket-cards .card {
+    background-color: $anti-flash-white;
+}
+
+.game-table {
+    background-color: $color-secondary;
+}
+
+%seat {
+    background-color: $color-light;
+}

@@ -5,21 +5,23 @@ import Board from './Board'
 import Seat from './Seat'
 
 
-const getSeatedPlayer = (player, gameStage, position) =>
+const getSeatedPlayer = (player, gameStage, position, isTurnToAct) =>
   <Seat
     key={position}
     position={position}
     playerName={player.get('_playerName')}
     chips={player.get('_chips')}
     hasPocketCards={player.get('_playerState') === 'In' && gameStage !== 'PreDeal'}
+    isTurnToAct={isTurnToAct && gameStage !== 'preDeal' && gameStage !== 'Showdown'}
   />
 
 
-const getSeats = (maxPlayers, players, gameStage) =>
+const getSeats = (maxPlayers, players, gameStage, currentPosToAct) =>
   Array(maxPlayers).fill(null).map((_, i) => {
     const player = players.get(i)
+    const isTurnToAct = i === currentPosToAct
 
-    return player ? getSeatedPlayer(player, gameStage, i) :
+    return player ? getSeatedPlayer(player, gameStage, i, isTurnToAct) :
       <Seat
         key={i}
         position={i}
@@ -44,6 +46,7 @@ const Game = props => {
     const userPlayer = game.get('_players').find(p => p.get('_playerName') === username)
     console.log(userPlayer)
     const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
+    const currentPosToAct = game.get('_currentPosToAct')
 
     console.log(userPocketCards)
     return (<div className='game-view-grid'>
@@ -52,7 +55,7 @@ const Game = props => {
       </p>
       <div className='game-container'>
         <div className='table-container'>
-          {getSeats(maxPlayers, players, gameStage)}
+          {getSeats(maxPlayers, players, gameStage, currentPosToAct)}
           <div className='game-grid'>
             <Board cards={game.get('_board')} />
             <h4 className='pot-label'>{`Pot $${game.get('_pot')}`}</h4>
