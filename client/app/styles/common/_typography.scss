@@ -62,6 +62,13 @@
      font-family: 'Aktiv-Grotesk-Bold';
      src:
        url('http://localhost:9080/fonts/aktivgrotesk-bold.ttf') format('ttf');
+     font-weight: 600;
+}
+
+@font-face {
+     font-family: 'Aktiv-Grotesk-Black';
+     src:
+       url('http://localhost:9080/fonts/aktivgrotesk-black.ttf') format('ttf');
      font-weight: 800;
 }
 
@@ -122,14 +129,14 @@ h4, .h4 {
 h5, .h5 {
   @include ms-respond(font-size, 1);
   letter-spacing: 1px;
-  font-family: 'GothamPro-Book', sans-serif;
-  font-weight: 600;
+  font-family: 'GothamPro-Narrow-Book', sans-serif;
+  font-weight: 400;
 }
   
 
 body, .body {
   @include ms-respond(font-size, 0);
-  font-family: 'GothamPro-Book', sans-serif;
+  font-family: 'GothamPro-Medium', sans-serif;
   letter-spacing: 0.7px;
 }
 
@@ -140,13 +147,17 @@ body, .body {
 
 // We need to minimise the space taken by labels inside the player ovals
 // so a narrow font it used
-.seat h5, .seat h4 {
-  //font-family: 'Gotham-Narrow-Book', sans-serif;
-  font-family: 'Aktiv-Grotesk-Bold', sans-serif;
-
-}
+//.seat h5, .seat h4 {
+//  //font-family: 'Gotham-Narrow-Book', sans-serif;
+//  font-family: 'Aktiv-Grotesk', sans-serif;
+//}
 
 .card {
   font-size: 1.6em;
     font-family: 'GothamPro-Black', sans-serif;
+
+}
+
+button {
+    font-family: 'GothamPro-Medium', sans-serif;
 }

@@ -61,32 +61,32 @@ const ActionPanel = ({
               type="button"
               onClick={() => sitDown(betValue)}
               className="button">
-              SitDown {betValue}
+              Sit Down {betValue}
             </button>
             <button
               type="button"
               onClick={() => postBigBlind()} className="button">
-              postBigBlind
+              Post Big Blind
           </button>
             <button
               type="button"
               onClick={() => leaveGameSeat()}
               className="button">
-              LeaveGame
+              Leave Seat
           </button>
             <button
               type="button" onClick={() => postSmallBlind()} className="button">
-              postSmallBlind
+              post Small Blind
           </button>
           </React.Fragment>
           : ''}
         {gameStage !== 'Showdown' && gameStage !== 'PreDeal' && isTurnToAct ?
           <React.Fragment>
             <button type="button" onClick={() => check()} className="button">
-              check
+              Check
           </button>
             <button type="button" onClick={() => call()} className="button">
-              call</button>
+              Call</button>
             <button
               type="button"
               onClick={() => bet(betValue)} className="button">Bet {betValue}</button>
