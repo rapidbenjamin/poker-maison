@@ -63,7 +63,7 @@ $modularscale: (
 );
 
 
-h1, h2, h3, h4 {
+h1, h2, h3, h4, h5 {
   margin: 0;
 }
 
@@ -81,7 +81,7 @@ h2, .h2 {
 
 h3, .h3 {
   @include ms-respond(font-size, 3);
-    letter-spacing: 0.8px;
+    letter-spacing: 1.3px;
    font-family: 'GothamPro-Bold', sans-serif;
 }
 
@@ -91,6 +91,14 @@ h4, .h4 {
      font-family: 'GothamPro-Medium', sans-serif;
 
 }
+
+h5, .h5 {
+  @include ms-respond(font-size, 1);
+  letter-spacing: 1px;
+  font-family: 'GothamPro-Book', sans-serif;
+    font-weight: 600;
+}
+  
 
 body, .body {
   @include ms-respond(font-size, 0);
