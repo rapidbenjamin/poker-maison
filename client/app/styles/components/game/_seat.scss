@@ -26,10 +26,6 @@ footer{ @include default-box(#999, inline-block, 5px);
     margin-top: 0.5em;
 }
 
-.empty-seat {
-    opacity: 0.92;
-}
-
 // current seated player's turn to act 
 .active-player {
   border: 0.25em;
