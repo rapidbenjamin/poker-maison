@@ -25,13 +25,13 @@
 //  grid-template-rows: 1fr 5fr 2fr;
   grid-template-columns: max-content;
 
-  @include xl {
+  @include md {
       margin-left: 19vw;
       margin-right: 19vw;
   }
 
    /* Prevents table Aspect Ratio from being too wide on wider screens. */
-   @include xxl {
+   @include xl {
         margin-left: 27vw;
         margin-right: 27vw;
     }

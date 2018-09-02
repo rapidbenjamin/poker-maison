@@ -10,6 +10,32 @@
 */
 
 
+
+@font-face {
+     font-family: 'GothamPro-Bold';
+     src:
+       url('http://localhost:9080/fonts/GothamPro/GothamPro-Bold.woff2') format('woff2'),
+       url('http://localhost:9080/fonts/GothamPro/GothamPro-Bold.ttf') format('ttf'); 
+     font-weight: 600;
+}
+
+@font-face {
+     font-family: 'GothamPro-Medium';
+     src:
+       url('http://localhost:9080/fonts/GothamPro/GothamPro-Medium.woff2') format('woff2'),
+       url('http://localhost:9080/fonts/GothamPro/GothamPro-Medium.ttf') format('ttf'); 
+     font-weight: 400;
+}
+
+@font-face {
+     font-family: 'GothamPro-Light';
+     src:
+       url('http://localhost:9080/fonts/GothamPro/GothamPro-Light.woff2') format('woff2'),
+       url('http://localhost:9080/fonts/GothamPro/GothamPro-Light.ttf') format('ttf'); 
+     font-weight: 200;
+}
+
+
 // Configure modular-scale plugin
 $modularscale: (
   base: 0.7em,
@@ -38,30 +64,36 @@ $modularscale: (
 
 
 h1, h2, h3, h4 {
-  font-weight: 900;
   margin: 0;
 }
 
 h1, .h1 {
   @include ms-respond(font-size, 5);
+     font-family: 'GothamPro-Bold', sans-serif;
+
 }
 
 h2, .h2 {
   @include ms-respond(font-size, 4);
+     font-family: 'GothamPro-Bold', sans-serif;
+
 }
 
 h3, .h3 {
   @include ms-respond(font-size, 3);
     letter-spacing: 0.8px;
-
+   font-family: 'GothamPro-Bold', sans-serif;
 }
 
 h4, .h4 {
-  @include ms-respond(font-size, 2);
+  @include ms-respond(font-size, 1);
   letter-spacing: 0.8px;
+     font-family: 'GothamPro-Medium', sans-serif;
+
 }
 
 body, .body {
   @include ms-respond(font-size, 0);
+  font-family: 'GothamPro-Book', sans-serif;
   letter-spacing: 0.7px;
 }
