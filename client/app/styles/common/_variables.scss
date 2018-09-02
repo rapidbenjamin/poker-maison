@@ -8,11 +8,16 @@
 ---------------------------------
 */
 
+// table gradient should comprise of mixed palette colours
+
 $prussian-blue:  #003049;  
 $dark-cerulean:  #064789;  
-$orioles-orange: #F34213;  
 $eerie-black:    #161925;  
 $deep-space-purple:  #415A77;  
+
+$outer-space-grey: #424B54;
+// or 
+$orioles-orange: #F34213;  // perhaps busies the palette too much
 
 // App colours
 $color-primary: $prussian-blue;
@@ -56,7 +61,7 @@ $screen-sm-min: 576px;
 $screen-md-min: 798px;
 
 // Tablets and small desktops
-$screen-lg-min: 972px;
+$screen-lg-min: 1072px;
 
 // Large tablets and desktops
 $screen-xl-min: 1200px;

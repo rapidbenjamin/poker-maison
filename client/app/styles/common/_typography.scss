@@ -12,54 +12,56 @@
 
 // Configure modular-scale plugin
 $modularscale: (
-  base: 12px,
-  ratio: 1.3,
+  base: 0.7em,
+  ratio: 1.25,
   $screen-sm-min: (
-    ratio: 1.2,
+    base: 0.8em,
+    ratio: 1.25,
   ),
   $screen-md-min: (
-    base: 15px,
-    ratio: 1.2,
+    base: 0.9em,
+    ratio: 1.25,
   ),
   $screen-lg-min: (
-    base: 15px,
-    ratio: 1.3,
+    base: 0.9em,
+    ratio: 1.333,
   ),
   $screen-xl-min: (
-    base: 15px,
+    base: 0.9em,
     ratio: 1.333,
   ),
    $screen-xxl-min: (
-    base: 15px,
-    ratio: 1.5,
+    base: 0.9em,
+    ratio: 1.333,
   ),
 );
 
 
 h1, h2, h3, h4 {
-  font-weight: bold;
+  font-weight: 900;
   margin: 0;
 }
 
 h1, .h1 {
-  @include ms-respond(font-size, 3);
+  @include ms-respond(font-size, 5);
 }
 
 h2, .h2 {
-  @include ms-respond(font-size, 2);
-  letter-spacing: 0.7px;
+  @include ms-respond(font-size, 4);
 }
 
 h3, .h3 {
-  @include ms-respond(font-size, 2);
+  @include ms-respond(font-size, 3);
+    letter-spacing: 0.8px;
+
 }
 
 h4, .h4 {
-  @include ms-respond(font-size, 1);
+  @include ms-respond(font-size, 2);
   letter-spacing: 0.8px;
 }
 
 body, .body {
-  @include ms-respond(font-size, 1);
+  @include ms-respond(font-size, 0);
   letter-spacing: 0.7px;
 }

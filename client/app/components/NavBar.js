@@ -5,7 +5,7 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
     <div className="navbar-brand">
       <div>
         <a onClick={() => history.push('/')}>
-          <h2>Pokerspace</h2>
+          <h4>Pokerspace</h4>
         </a>
       </div>
     </div>

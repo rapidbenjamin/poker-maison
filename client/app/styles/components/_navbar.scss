@@ -2,14 +2,13 @@
     display: flex;
     text-align: center;
     background: green;
-    height: 3.5em;
+    min-height: 4em;
 }
 
 .navbar-brand {
-    width: 11em;
-    display: flex;
-    align-items: center;
-    padding-left: 1.5em;
+    width: 14em;
+    margin: auto;
+    padding-left: 2.5em;
 }
 
 .navbar-menu {
@@ -28,9 +27,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-right: 1.5em;
+    padding-right: 2.5em;
 }
 
 .navbar-item {
-    width: 7em;
+    width: 10em;
 }

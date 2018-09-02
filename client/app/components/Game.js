@@ -55,7 +55,7 @@ const Game = props => {
           {getSeats(maxPlayers, players, gameStage)}
           <div className='game-grid'>
             <Board cards={game.get('_board')} />
-            <h2 className='pot-label'>{`Pot $${game.get('_pot')}`}</h2>
+            <h4 className='pot-label'>{`Pot $${game.get('_pot')}`}</h4>
           </div>
           <div className='game-table'>
           </div>
