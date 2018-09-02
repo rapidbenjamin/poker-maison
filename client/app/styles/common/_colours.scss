@@ -17,11 +17,16 @@ body {
 // Game Colours
 
 .hidden-pocket-cards .card {
-    background-color: $anti-flash-white;
+    background-color: $dark-imperial-blue
 }
 
 .game-table {
-    background-color: $color-secondary;
+    background: $witching-hour;
+ 
+ //background: $namn;
+ 
+ //background: $night-hawk
+   //background: $red-mist;
 }
 
 %seat {
