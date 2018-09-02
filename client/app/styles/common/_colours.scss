@@ -8,15 +8,13 @@ body {
 
 .card {
     background-color: $anti-flash-white;
-     //   background-color: $color-primary;
-        color: $eerie-black;
+    color: $eerie-black;
 }
 
-.navbar {
+.navbar, .action-panel  {
     background-color: $color-secondary;
 }
 
-// Game Colours
 
 .hidden-pocket-cards .card {
     background-color: $dark-imperial-blue;
@@ -27,7 +25,6 @@ body {
     box-shadow: 1em 1em 3em #240b36;
  
  //background: $namn;
- 
  //background: $night-hawk
    //background: $red-mist;
 }
@@ -38,10 +35,8 @@ body {
 
 .empty-seat {
     opacity: 0.5;
-   // background-color: rgba($color-light, 0.4);
 }
 
 .empty-seat:hover {
     opacity: 0.88;
-   // background-color: rgba($color-light, 0.4);
 }

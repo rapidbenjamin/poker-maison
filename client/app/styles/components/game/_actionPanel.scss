@@ -2,10 +2,8 @@
 .action-panel {
     grid-column-start: 2;
     grid-row-start: 3;
-    background-color: pink;
     display: flex;
     margin-top: 11em;
-    background-color: $color-light;
 
     @include xl {
         border-radius: 3em 3em 0 0;
