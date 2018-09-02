@@ -32,3 +32,13 @@ body {
 %seat {
     background-color: $color-light;
 }
+
+
+.button {
+    background: $color-primary;
+}
+
+.button:hover {
+  background-color: $color-light;
+  animation: ease-in-out 0.2s;
+}
