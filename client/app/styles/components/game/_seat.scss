@@ -85,3 +85,16 @@ footer{ @include default-box(#999, inline-block, 5px);
 .seat-5-container {
     grid-area: 4/5;
 }
+
+
+.empty-seat {
+    opacity: 0.4;
+    color: transparent;
+}
+
+.empty-seat:hover {
+    height: 100%;
+    opacity: 0.88;
+    transition: ease-in-out 0.10s;
+    color: white;
+}

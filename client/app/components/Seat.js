@@ -10,7 +10,7 @@ const Seat = ({ playerName, chips, isTurnToAct, hasPocketCards, position }) => (
         </div>
       </div> : ''}
     <div className={`seat-${position} ${playerName ? '' : 'empty-seat'}`}>
-      <h5 className={playerName ? 'player-name' : ''}>{playerName || 'Seat'}</h5>
+      <h5 className={playerName ? 'player-name' : ''}>{playerName || 'Take Seat'}</h5>
       {playerName ? <h5 className='player-chip-count'>{chips}</h5> : ''}
     </div>
   </div>);
