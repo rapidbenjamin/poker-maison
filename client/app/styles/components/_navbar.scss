@@ -6,8 +6,9 @@
 }
 
 .navbar-brand {
-    width: 20em;
+    width: 16em;
     margin: auto;
+    text-align: left;
     padding-left: 2.5em;
 }
 
@@ -32,6 +33,10 @@
 
 .navbar-item {
     width: 6em;
+}
+
+.navbar-item h4 {
+    font-weight: 400;
 }
 
 .brand-title {

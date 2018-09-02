@@ -38,8 +38,8 @@
 
 // Configure modular-scale plugin
 $modularscale: (
-  base: 0.7em,
-  ratio: 1.25,
+  base: 0.6em,
+  ratio: 1.15,
   $screen-sm-min: (
     base: 0.8em,
     ratio: 1.25,
@@ -50,11 +50,11 @@ $modularscale: (
   ),
   $screen-lg-min: (
     base: 0.9em,
-    ratio: 1.333,
+    ratio: 1.25,
   ),
   $screen-xl-min: (
     base: 0.9em,
-    ratio: 1.333,
+    ratio: 1.25,
   ),
    $screen-xxl-min: (
     base: 0.9em,
