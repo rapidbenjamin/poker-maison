@@ -17,9 +17,13 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics
 import Poker.ActionValidation
-import Poker.Game.Game (initialDeck)
+import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
+
+import Poker.Game.Utils
+
+initialGameState' = initialGameState initialDeck
 
 player1 =
   Player
@@ -85,7 +89,7 @@ spec = do
     let game =
           (currentPosToAct .~ 0) .
           (street .~ PreFlop) . (players .~ playerFixtures) $
-          initialGameState
+          initialGameState'
     it
       "returns Just OutOfTurn Error if given player is not in current position to act" $ do
       let playerName = "player3"
@@ -106,7 +110,7 @@ spec = do
                 (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
                  player2
              ]) $
-            initialGameState
+            initialGameState'
       let playerName = "player1"
       isPlayerActingOutOfTurn game playerName `shouldBe` Right ()
       let game2 =
@@ -120,7 +124,7 @@ spec = do
                 (actedThisTurn .~ False) . (bet .~ 25) . (committed .~ 25))
                  player2
              ]) $
-            initialGameState
+            initialGameState'
       let playerName2 = "player2"
       isPlayerActingOutOfTurn game2 playerName2 `shouldBe` Right ()
     it "return no Error if player is acting in turn" $
@@ -133,7 +137,7 @@ spec = do
     it
       "should return NotEnoughChipsForAction InvalidMoveErr if raise value is greater than remaining chips" $ do
       let game2 =
-            (players .~ playerFixtures2) . (street .~ Flop) $ initialGameState
+            (players .~ playerFixtures2) . (street .~ Flop) $ initialGameState'
           playerName = "player3"
           amount = 10000
           expectedErr = Left $ InvalidMove playerName $ NotEnoughChipsForAction
@@ -142,16 +146,18 @@ spec = do
       "should return CannotBetShouldRaiseInstead InvalidMoveErr if players have already bet or raised already" $ do
       let game2 =
             (players .~ playerFixtures) . (street .~ Flop) . (maxBet .~ 100) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 50
+      let errMsg =
+            "A bet can only be carried out if no preceding player has bet"
       let expectedErr =
-            Left $ InvalidMove playerName $ CannotBetShouldRaiseInstead
+            Left $ InvalidMove playerName $ CannotBetShouldRaiseInstead errMsg
       canBet playerName amount game2 `shouldBe` expectedErr
     it
       "should return BetLessThanBigBlind InvalidMoveErr if bet is less than the current big blind" $ do
       let game2 =
-            (players .~ playerFixtures2) . (street .~ Flop) $ initialGameState
+            (players .~ playerFixtures2) . (street .~ Flop) $ initialGameState'
       let playerName = "player3"
       let amount = 2
       let expectedErr = Left $ InvalidMove playerName $ BetLessThanBigBlind
@@ -159,7 +165,7 @@ spec = do
     it "should not return an error if player can bet" $ do
       let game2 =
             (players .~ playerFixtures2) . (maxBet .~ 0) . (street .~ Flop) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       canBet playerName amount game2 `shouldBe` Right ()
@@ -167,7 +173,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
@@ -176,7 +182,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
       let showdownGame =
             (street .~ Showdown) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
@@ -186,14 +192,15 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
       canBet playerName amount preDealGame `shouldBe` expectedErr
     it "should return InvalidActionForStreet if game stage is PreDeal" $ do
       let game =
-            (street .~ PreDeal) . (players .~ playerFixtures) $ initialGameState
+            (street .~ PreDeal) . (players .~ playerFixtures) $
+            initialGameState'
       let playerName = "player3"
       let amount = 50
       let minRaise = 400
@@ -203,7 +210,7 @@ spec = do
       "should be able to raise all in when chip count is less than minimum raise amount" $ do
       let game =
             (street .~ PreFlop) . (players .~ playerFixtures) . (maxBet .~ 200) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 300
       canRaise playerName amount game `shouldBe` Right ()
@@ -211,7 +218,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
@@ -220,7 +227,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
       let showdownGame =
             (street .~ Showdown) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
@@ -230,7 +237,7 @@ spec = do
       "should return CannotCheckShouldCallRaiseOrFold InvalidMoveErr if maxBet is greater than zero and player bet is not equal to maxBet" $ do
       let game =
             (street .~ PreFlop) . (players .~ playerFixtures) . (maxBet .~ 200) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let expectedErr =
             Left $ InvalidMove playerName $ CannotCheckShouldCallRaiseOrFold
@@ -247,14 +254,14 @@ spec = do
                 (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
                  player2
              ]) $
-            initialGameState
+            initialGameState'
       let playerName = "player2"
       canCheck playerName game `shouldBe` Right ()
     it
       "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
@@ -263,7 +270,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
       let showdownGame =
             (street .~ Showdown) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
@@ -273,7 +280,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
@@ -282,7 +289,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
       let showdownGame =
             (street .~ Showdown) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
@@ -291,7 +298,7 @@ spec = do
       "should return CannotCallZeroAmountCheckOrBetInstead InvalidMoveErr if game stage is not Preflop" $ do
       let game =
             (street .~ Flop) . (maxBet .~ 0) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player5"
       let expectedErr =
             Left $
@@ -300,7 +307,7 @@ spec = do
     it "should not return error if call bigBlind during Preflop" $ do
       let game =
             (street .~ PreFlop) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player5"
       let expectedErr = CannotCallZeroAmountCheckOrBetInstead
       canCall playerName game `shouldBe` Right ()
@@ -309,7 +316,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
       canFold playerName preDealGame `shouldBe` expectedErr
@@ -317,7 +324,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr if game stage is Showdown" $ do
       let showdownGame =
             (street .~ Showdown) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
       canFold playerName showdownGame `shouldBe` expectedErr
@@ -325,7 +332,7 @@ spec = do
     it "should return InvalidMoveErr if game stage is not Showdown" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
       canShowOrMuckHand playerName preDealGame `shouldBe` expectedErr
@@ -339,7 +346,7 @@ spec = do
              [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
              , (((playerState .~ In) . (actedThisTurn .~ True)) player5)
              ]) $
-            initialGameState
+            initialGameState'
       let playerName = "player5"
       let expectedErr =
             Left $
@@ -358,7 +365,7 @@ spec = do
              [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
              , (((playerState .~ Folded) . (actedThisTurn .~ True)) player5)
              ]) $
-            initialGameState
+            initialGameState'
       let playerName = "player5"
       let expectedErr =
             Left $
@@ -376,7 +383,7 @@ spec = do
              [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
              , (((playerState .~ Folded) . (actedThisTurn .~ True)) player5)
              ]) $
-            initialGameState
+            initialGameState'
       let playerName = "player4"
       canShowOrMuckHand playerName showdownGame `shouldBe` Right ()
   describe "canTimeout" $ do
@@ -384,7 +391,7 @@ spec = do
       "should return InvalidActionForStreet InvalidMoveErr for Timeout if player is acting out of turn" $ do
       let preFlopGame =
             (street .~ PreFlop) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let expectedErr =
             Left $
@@ -393,22 +400,21 @@ spec = do
     it "should return no error for Timeout when acting in turn" $ do
       let preFlopGame =
             (street .~ PreFlop) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player5"
       validateAction preFlopGame playerName Timeout `shouldBe` Right ()
     it
       "should return InvalidActionForStreet InvalidMoveErr if Timeout action occurs during Showdown" $ do
       let showDownGame =
             (street .~ Showdown) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let expectedErr = Left $ InvalidMove playerName InvalidActionForStreet
       validateAction showDownGame playerName Timeout `shouldBe` expectedErr
-  describe "canTimeout" $ do
     it "should return err for LeaveSeat if game state is not PreDeal" $ do
       let preFlopGame =
             (street .~ PreFlop) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       let expectedErr = InvalidMove "player3" CannotLeaveSeatOutsidePreDeal
       validateAction preFlopGame playerName LeaveSeat' `shouldBe`
@@ -416,7 +422,7 @@ spec = do
     it "should return err for LeaveSeat if player is not sat at Table" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "playerX"
       let expectedErr = NotAtTable playerName
       validateAction preDealGame playerName LeaveSeat' `shouldBe`
@@ -425,6 +431,6 @@ spec = do
       "should return no err for leave seat if player is sat at table during PreDeal" $ do
       let preDealGame =
             (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState
+            initialGameState'
       let playerName = "player3"
       validateAction preDealGame playerName LeaveSeat' `shouldBe` Right ()

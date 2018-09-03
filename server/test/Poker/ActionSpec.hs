@@ -20,8 +20,11 @@ import Arbitrary ()
 import Poker.ActionValidation
 import Poker.Game.Actions
 import Poker.Game.Game
+import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
+
+initialGameState' = initialGameState initialDeck
 
 player1 =
   Player
@@ -90,11 +93,11 @@ player6 =
     }
 
 bettingFinishedGame =
-  ((players .~ [player1, player2]) . (street .~ PreFlop)) initialGameState
+  ((players .~ [player1, player2]) . (street .~ PreFlop)) initialGameState'
 
 bettingNotFinishedGame =
   ((players .~ [player1, player2, player3, player4]) . (street .~ PreFlop))
-    initialGameState
+    initialGameState'
 
 spec = do
   describe "postBlind" $ do
@@ -102,7 +105,7 @@ spec = do
       let game =
             (street .~ PreDeal) .
             (players .~ [(committed .~ 0) player1, player3]) $
-            initialGameState
+            initialGameState'
           pName = "player1"
           blind = Small
           newGame = postBlind blind pName game
@@ -122,7 +125,7 @@ spec = do
     it "should add blind bet to pot" $ do
       let game =
             (street .~ PreDeal) . (players .~ [player1, player3]) $
-            initialGameState
+            initialGameState'
           pName = "player1"
           blind = Small
           newGame = postBlind blind pName game
@@ -132,7 +135,7 @@ spec = do
     it "should update player attributes correctly" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
-            initialGameState
+            initialGameState'
           betValue = 200
           pName = "player1"
           newGame = makeBet betValue pName game
@@ -151,7 +154,7 @@ spec = do
     it "should add bet amount to pot" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
-            initialGameState
+            initialGameState'
           betValue = 200
           pName = "player1"
           newGame = makeBet betValue pName game
@@ -159,7 +162,7 @@ spec = do
     it "should update maxBet if amount greater than current maxBet" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
-            initialGameState
+            initialGameState'
           betValue = 200
           pName = "player1"
           newGame = makeBet betValue pName game
@@ -167,7 +170,7 @@ spec = do
     it "should update player attributes correctly when bet all in" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
-            initialGameState
+            initialGameState'
           betValue = player1 ^. chips
           pName = "player1"
           newGame = makeBet betValue pName game
@@ -187,7 +190,7 @@ spec = do
       let game =
             (street .~ PreFlop) . (currentPosToAct .~ 0) .
             (players .~ [player1, player2, player3]) $
-            initialGameState
+            initialGameState'
           betValue = 200
           pName = "player1"
           newGame = makeBet betValue pName game
@@ -198,7 +201,7 @@ spec = do
     it "should update player attributes correctly" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
-            initialGameState
+            initialGameState'
           pName = "player1"
           newGame = foldCards pName game
           playerWhoFolded = newGame ^? players . ix 0
@@ -217,7 +220,7 @@ spec = do
       let game =
             (street .~ PreFlop) . (currentPosToAct .~ 0) .
             (players .~ [player1, player2, player3]) $
-            initialGameState
+            initialGameState'
           pName = "player1"
           newGame = foldCards pName game
           newPositionToAct = newGame ^. currentPosToAct
@@ -228,7 +231,7 @@ spec = do
       let game =
             (street .~ PreFlop) . (maxBet .~ 400) .
             (players .~ [player1, player6]) $
-            initialGameState
+            initialGameState'
           pName = "player6"
           newGame = call pName game
           playerWhoCalled = newGame ^? players . ix 1
@@ -247,7 +250,7 @@ spec = do
       let game' =
             (street .~ PreFlop) . (maxBet .~ 4000) .
             (players .~ [player5, player1]) $
-            initialGameState
+            initialGameState'
           pName' = "player1"
           newGame' = call pName' game'
           playerWhoCalled' = newGame' ^? players . ix 1
@@ -266,7 +269,7 @@ spec = do
       let game =
             (street .~ PreFlop) . (currentPosToAct .~ 0) .
             (players .~ [player1, player2, player3]) $
-            initialGameState
+            initialGameState'
           pName = "player1"
           newGame = call pName game
           newPositionToAct = newGame ^. currentPosToAct
@@ -276,7 +279,7 @@ spec = do
     it "should update player attributes correctly" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2]) $
-            initialGameState
+            initialGameState'
           pName = "player1"
           expectedPlayers = [player1, player2, player3]
           newGame = check pName game
@@ -287,7 +290,7 @@ spec = do
       let game =
             (street .~ PreFlop) . (currentPosToAct .~ 0) .
             (players .~ [player1, player3]) $
-            initialGameState
+            initialGameState'
           pName = "player1"
           newGame = check pName game
           newPositionToAct = newGame ^. currentPosToAct
@@ -296,7 +299,7 @@ spec = do
   describe "leaveSeat" $ it "should remove player from players list" $ do
     let game =
           (street .~ PreDeal) . (players .~ [player1, player6]) $
-          initialGameState
+          initialGameState'
         pName = "player6"
         newGame = leaveSeat pName game
     not (any (\Player {..} -> pName /= _playerName) (_players newGame))

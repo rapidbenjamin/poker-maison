@@ -24,8 +24,11 @@ import Test.QuickCheck.Modifiers
 import Arbitrary ()
 import Poker.ActionValidation
 import Poker.Game.Game
+import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
+
+initialGameState' = initialGameState initialDeck
 
 player1 =
   Player
@@ -126,11 +129,11 @@ spec = do
   describe "dealBoardCards" $ do
     it "should deal correct number of cards to board" $ property $ \(Positive n) -> do
       n < 52 ==> do
-        let newGame = dealBoardCards n initialGameState
+        let newGame = dealBoardCards n initialGameState'
         length (newGame ^. board) `shouldBe` n
     it "should remove dealt cards from deck" $ property $ \(Positive n) -> do
       n < 52 ==> do
-        let newGame = dealBoardCards n initialGameState
+        let newGame = dealBoardCards n initialGameState'
         length (newGame ^. deck) `shouldBe` (length initialDeck - n)
   describe "haveAllPlayersActed" $ do
     it
@@ -148,13 +151,13 @@ spec = do
                 (committed .~ 50))
                  player6
              ]) $
-            initialGameState
+            initialGameState'
       haveAllPlayersActed game `shouldBe` True
     it
       "should return False when not all players acted during PreDeal for Three Players" $ do
       let unfinishedBlindsGame =
             (street .~ PreDeal) . (players .~ [player1, player4, player6]) $
-            initialGameState
+            initialGameState'
       haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
     it
       "should return True when all players have acted during preFlop for Two Players" $ do
@@ -166,31 +169,31 @@ spec = do
              , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 0))
                  player2
              ]) $
-            initialGameState
+            initialGameState'
       haveAllPlayersActed game `shouldBe` True
     it
       "should return False when not all players acted during PreFlop for Two Players" $ do
       let unfinishedBlindsGame =
             (street .~ PreDeal) . (players .~ [player1, player4]) $
-            initialGameState
+            initialGameState'
       haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
   describe "allButOneFolded" $ do
     it "should return True when all but one player " $ do
       let game =
             (street .~ PreFlop) .
             (players .~ [((playerState .~ Folded) player1), player2]) $
-            initialGameState
+            initialGameState'
       allButOneFolded game `shouldBe` True
     it "should return False when not all players acted" $ do
       let unfinishedBlindsGame =
             (street .~ PreFlop) . (players .~ [player1, player3]) $
-            initialGameState
+            initialGameState'
       allButOneFolded unfinishedBlindsGame `shouldBe` False
     it "should always return False for PreDeal (blinds) stage" $ do
       let unfinishedBlindsGame =
             (street .~ PreDeal) .
             (players .~ [((playerState .~ Folded) player1), player2]) $
-            initialGameState
+            initialGameState'
       allButOneFolded unfinishedBlindsGame `shouldBe` False
   describe "progressToPreFlop" $ do
     let preDealGame =
@@ -200,7 +203,7 @@ spec = do
            [ (((chips .~ 1000) . (committed .~ 25) . (bet .~ 25)) player5)
            , (((chips .~ 1000) . (committed .~ 50) . (bet .~ 50)) player2)
            ]) $
-          initialGameState
+          initialGameState'
     let preFlopGame = progressToPreFlop preDealGame
     it "should update street to PreFlop" $ preFlopGame ^. street `shouldBe`
       PreFlop
@@ -212,7 +215,7 @@ spec = do
           (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
           (deck .~ initialDeck) .
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
-          initialGameState
+          initialGameState'
     let flopGame = progressToFlop preFlopGame
     it "should update street to Turn" $ flopGame ^. street `shouldBe` Flop
     it "should reset maxBet" $ flopGame ^. maxBet `shouldBe` 0
@@ -224,7 +227,7 @@ spec = do
           (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
           (deck .~ initialDeck) .
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
-          initialGameState
+          initialGameState'
     let turnGame = progressToTurn flopGame
     it "should update street to Turn" $ turnGame ^. street `shouldBe` Turn
     it "should reset maxBet" $ turnGame ^. maxBet `shouldBe` 0
@@ -236,7 +239,7 @@ spec = do
           (street .~ Turn) . (maxBet .~ 1000) . (pot .~ 1000) .
           (deck .~ initialDeck) .
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
-          initialGameState
+          initialGameState'
     let riverGame = progressToRiver turnGame
     it "should update street to River" $ riverGame ^. street `shouldBe` River
     it "should reset maxBet" $ riverGame ^. maxBet `shouldBe` 0
@@ -245,7 +248,7 @@ spec = do
             (street .~ Turn) . (maxBet .~ 1000) . (pot .~ 1000) .
             (deck .~ initialDeck) .
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
-            initialGameState
+            initialGameState'
       let riverGame = progressToRiver turnGame
       let playerBets = (^. bet) <$> _players riverGame
       playerBets `shouldBe` [0, 0]
@@ -253,7 +256,7 @@ spec = do
     let riverGame =
           (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
-          initialGameState
+          initialGameState'
     let showdownGame = progressToShowdown riverGame
     it "should update street to Turn" $ showdownGame ^. street `shouldBe`
       Showdown
@@ -264,7 +267,7 @@ spec = do
       let riverGame =
             (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
             (players .~ [((chips .~ 1000) player1), ((chips .~ 1000) player2)]) $
-            initialGameState
+            initialGameState'
       let showdownGame = progressToShowdown riverGame
       let playerChipCounts =
             (\Player {..} -> _chips) <$> (_players showdownGame)
@@ -275,7 +278,7 @@ spec = do
           (deck .~ initialDeck) .
           (dealer .~ 1) .
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
-          initialGameState
+          initialGameState'
     let preDealGame = getNextHand showdownGame []
     it "should update street to PreDeal" $ preDealGame ^. street `shouldBe`
       PreDeal
@@ -293,7 +296,7 @@ spec = do
              [ (((playerState .~ In) . (actedThisTurn .~ False)) player1)
              , (((playerState .~ In) . (actedThisTurn .~ True)) player3)
              ]) $
-            initialGameState
+            initialGameState'
       isEveryoneAllIn preFlopGame' `shouldBe` False
     it
       "should return True for two player game if a player has called the other player all in" $ do
@@ -310,7 +313,7 @@ spec = do
                 (chips .~ 3000))
                  player3
              ]) $
-            initialGameState
+            initialGameState'
       isEveryoneAllIn preFlopGame `shouldBe` True
     it
       "should return False for two player game if a player bet all in and the other has folded" $ do
@@ -328,7 +331,7 @@ spec = do
                 (chips .~ 3000))
                  player3
              ]) $
-            initialGameState
+            initialGameState'
       isEveryoneAllIn preFlopGame `shouldBe` False
     it
       "should return False for three player game if only one short stacked player all in" $ do
@@ -349,7 +352,7 @@ spec = do
                 (chips .~ 3000))
                  player3
              ]) $
-            initialGameState
+            initialGameState'
       isEveryoneAllIn preFlopGame `shouldBe` False
     it "should return True for three player game if everyone is all in" $ do
       let flopGame =
@@ -369,7 +372,7 @@ spec = do
                 (chips .~ 0))
                  player3
              ]) $
-            initialGameState
+            initialGameState'
       isEveryoneAllIn flopGame `shouldBe` True
     it "should return False for four player game if one player not all in" $ do
       let flopGame =
@@ -393,14 +396,14 @@ spec = do
                 (chips .~ 800))
                  player3
              ]) $
-            initialGameState
+            initialGameState'
       isEveryoneAllIn flopGame `shouldBe` False
   describe "isPlayerToAct" $ do
     it "should return True for an active player in position" $ do
       let game =
             (street .~ Flop) . (dealer .~ 0) .
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
-            initialGameState
+            initialGameState'
       isPlayerToAct (_playerName player2) game `shouldBe` True
       isPlayerToAct (_playerName player5) game `shouldBe` False
     it "should return False for non-active players" $ do
@@ -412,6 +415,6 @@ spec = do
              , ((playerState .~ None) player3)
              , ((chips .~ 1000) player2)
              ]) $
-            initialGameState
+            initialGameState'
       isPlayerToAct (_playerName player3) game `shouldBe` False
       isPlayerToAct (_playerName player4) game `shouldBe` False

@@ -20,8 +20,11 @@ import Poker.ActionValidation
 import Poker.Game.Actions
 import Poker.Game.Blinds
 import Poker.Game.Utils
+import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
+
+initialGameState' = initialGameState initialDeck
 
 twoPlayerGame =
   Game
@@ -229,37 +232,37 @@ spec = do
         let testPlayers =
               (playerState .~ In) <$>
               (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
+        let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player2" `shouldBe` Small
       it "returns Big if player position is dealer + 2 for three players" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
+        let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player3" `shouldBe` Big
       it
         "returns NoBlind if player position is dealer for three players and playerState is In" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
+        let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
       it
         "returns Big if player position is dealer for three players and playerState is None" $ do
         let testPlayers =
               (playerState .~ None) <$>
               (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
+        let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
       it "returns Small if player position is dealer for two players" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (getPlayer <$> ["Player1", "Player2"] <*> [100])
-        let game = players .~ testPlayers $ initialGameState
+        let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` Small
       it "returns Big if player position is dealer + 1 for two players" $ do
         let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
-        let game = players .~ testPlayers $ initialGameState
+        let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player2" `shouldBe` Big
     context "Players with PlayerState set to None" $
       it "should always require bigBlind" $
