@@ -27,6 +27,8 @@ import Poker.Game.Hands
 import Poker.Game.Utils
 import Poker.Types
 
+-- TODO remove sitdowm from playerMoves and then
+-- can use  checkPlayerSatAtTable on validateAction
 validateAction :: Game -> PlayerName -> PlayerAction -> Either GameErr ()
 validateAction game@Game {..} playerName =
   \case
@@ -44,6 +46,7 @@ validateAction game@Game {..} playerName =
     Timeout -> canTimeout playerName game
     LeaveSeat' -> canLeaveSeat playerName game
     SitDown plyr -> canSit plyr game
+    SitOut -> checkPlayerSatAtTable game playerName >> canSitOut playerName game
     ShowHand -> validateShowOrMuckHand game playerName ShowHand
     MuckHand -> validateShowOrMuckHand game playerName MuckHand
 
@@ -174,6 +177,15 @@ canSit player@Player {..} game@Game {..}
   | _chips > _maxBuyInChips = Left $ OverMaxChipsBuyIn _playerName
   | length _players < _maxPlayers = Right ()
   | otherwise = Left $ CannotSitAtFullTable _playerName
+
+canSitOut :: PlayerName -> Game -> Either GameErr ()
+canSitOut pName game@Game {..}
+  | _street /= PreDeal = Left $ InvalidMove pName CannotSitOutOutsidePreDeal
+  | currentState == Nothing = Left $ NotAtTable pName
+  | currentState == (Just None) = Left $ InvalidMove pName AlreadySatOut
+  | otherwise = Right ()
+  where
+    currentState = getGamePlayerState game pName
 
 canLeaveSeat :: PlayerName -> Game -> Either GameErr ()
 canLeaveSeat playerName game@Game {..}

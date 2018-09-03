@@ -23,6 +23,10 @@ import Control.Monad
 import Data.Array.IO
 import System.Random
 
+-- | A standard deck of cards.
+initialDeck :: [Card]
+initialDeck = Card <$> [minBound ..] <*> [minBound ..]
+
 shuffle :: [a] -> IO [a]
 shuffle xs = do
   ar <- newArray n xs
@@ -81,6 +85,11 @@ getGamePlayers game = game ^. players
 getGamePlayer :: Game -> PlayerName -> Maybe Player
 getGamePlayer game playerName =
   find (\Player {..} -> _playerName == playerName) $ _players game
+
+getGamePlayerState :: Game -> PlayerName -> Maybe PlayerState
+getGamePlayerState game playerName = do
+  Player {..} <- getGamePlayer game playerName
+  return _playerState
 
 getGamePlayerNames :: Game -> [Text]
 getGamePlayerNames game = _playerName <$> _players game

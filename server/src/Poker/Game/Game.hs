@@ -22,10 +22,6 @@ import Poker.Game.Hands
 import Poker.Game.Utils
 import Poker.Types
 
--- | A standard deck of cards.
-initialDeck :: [Card]
-initialDeck = Card <$> [minBound ..] <*> [minBound ..]
-
 -- | Returns both the dealt players and remaining cards left in deck.
 -- We need to have the remaining cards in the deck for dealing
 -- board cards over the next stages.

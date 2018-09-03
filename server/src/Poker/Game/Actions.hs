@@ -117,6 +117,11 @@ check pName game@Game {..} =
       _players
     nextPosToAct = incPosToAct _currentPosToAct game
 
+-- Sitout flips playerState to None 
+-- In order to sit in again the player must post a blind
+sitOut :: PlayerName -> Game -> Game
+sitOut pName game@Game {..} = undefined
+
 seatPlayer :: Player -> Game -> Game
 seatPlayer plyr = players <>~ [plyr]
 

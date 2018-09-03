@@ -91,6 +91,7 @@ data HandRank
 
 type Bet = Int
 
+-- TODO - replace None with SatOut
 data PlayerState
   = None -- none denotes a player that will not be dealt cards unless they send a postblinds action to the server
   | Folded
@@ -188,6 +189,7 @@ data PlayerAction
   | Bet Int
   | ShowHand
   | MuckHand
+  | SitOut
   | Timeout
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
@@ -203,16 +205,11 @@ data GameErr
                 InvalidMoveErr
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
--- ToDO
--- errors for each player action should be defined as follows
--- cannotBet Text
--- cannotFold Text
--- so Text would be the error message giving information
--- if player takes an invalid move we need to inform the client and include the reason why
+-- ToDO -- ONLY ONE ERR MSG FOR EACH POSSIBLE ACTION 
 --
--- Also more generic actions such as InvalidActionForStreet just take a second Text argument
--- detailing which street would be valid for the action in question - also this error
--- doesn't tell us which action the error refers to
+-- additional text field for more detailed info
+-- 
+-- i.e cannotBet "Cannot Bet Should Raise Instead - bets can only be made if there have been zero bets this street"
 data InvalidMoveErr
   = BlindNotRequired
   | BlindRequired Blind
@@ -234,6 +231,8 @@ data InvalidMoveErr
   | CannotShowHandOrMuckHand Text
   | CannotLeaveSeatOutsidePreDeal
   | CannotSitDownOutsidePreDeal
+  | AlreadySatOut -- cannot sitout when already satout
+  | CannotSitOutOutsidePreDeal
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype CurrentPlayerToActErr =

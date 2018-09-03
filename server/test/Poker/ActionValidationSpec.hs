@@ -434,3 +434,64 @@ spec = do
             initialGameState'
       let playerName = "player3"
       validateAction preDealGame playerName LeaveSeat' `shouldBe` Right ()
+  describe "canSitOut" $ do
+    it
+      "should allow player to sit out of the game during the PreDeal street if sat in" $ do
+      let preDealGame =
+            (street .~ PreDeal) .
+            (players .~
+             [ ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 0) . (committed .~ 0))
+                 player1
+             , ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 0) . (committed .~ 0))
+                 player2
+             ]) $
+            initialGameState'
+      let playerName = "player1"
+      validateAction preDealGame playerName SitOut `shouldBe` Right ()
+    it "should return error if player is not at table" $ do
+      let preDealGame =
+            (street .~ PreFlop) .
+            (players .~
+             [ ((playerState .~ In) .
+                (actedThisTurn .~ True) . (bet .~ 50) . (committed .~ 50))
+                 player1
+             , ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
+                 player2
+             ]) $
+            initialGameState'
+      let playerName = "player3"
+      let expectedErr = Left $ NotAtTable playerName
+      validateAction preDealGame playerName SitOut `shouldBe` expectedErr
+    it "should not allow player to sit out of the game if already sat out" $ do
+      let preDealGame =
+            (street .~ PreDeal) .
+            (players .~
+             [ ((playerState .~ None) .
+                (actedThisTurn .~ False) . (bet .~ 0) . (committed .~ 0))
+                 player1
+             , ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 0) . (committed .~ 0))
+                 player2
+             ]) $
+            initialGameState'
+      let playerName = "player1"
+      let expectedErr = Left $ InvalidMove playerName AlreadySatOut
+      validateAction preDealGame playerName SitOut `shouldBe` expectedErr
+    it "should not allow player to sit out unless street is PreDeal" $ do
+      let preDealGame =
+            (street .~ PreFlop) .
+            (players .~
+             [ ((playerState .~ In) .
+                (actedThisTurn .~ True) . (bet .~ 50) . (committed .~ 50))
+                 player1
+             , ((playerState .~ In) .
+                (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
+                 player2
+             ]) $
+            initialGameState'
+      let playerName = "player2"
+      let expectedErr = Left $ InvalidMove playerName CannotSitOutOutsidePreDeal
+      validateAction preDealGame playerName SitOut `shouldBe` expectedErr

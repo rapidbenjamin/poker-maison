@@ -72,14 +72,23 @@ handlePlayerAction game@Game {..} playerName =
       validateAction game playerName action $> check playerName game
     action@(Bet amount) ->
       validateAction game playerName action $> makeBet amount playerName game
-    action@Timeout ->
-      if isRight $ canCheck playerName game
-        then validateAction game playerName action $> check playerName game
-        else validateAction game playerName action $> foldCards playerName game
+    action@Timeout -> handlePlayerTimeout playerName game
     action@(SitDown player) ->
       validateAction game playerName action $> seatPlayer player game
     action@LeaveSeat' ->
       validateAction game playerName action $> leaveSeat playerName game
+
+handlePlayerTimeout :: PlayerName -> Game -> Either GameErr Game
+handlePlayerTimeout playerName game@Game {..}
+  | playerCanCheck && handStarted =
+    validateAction game playerName Timeout $> check playerName game
+  | not playerCanCheck && handStarted =
+    validateAction game playerName Timeout $> foldCards playerName game
+  | not handStarted =
+    validateAction game playerName SitOut $> sitOut playerName game
+  where
+    handStarted = _street == PreDeal
+    playerCanCheck = isRight $ canCheck playerName game
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
@@ -102,24 +111,22 @@ progressGame game@Game {..}
   where
     activePlayersCount = length $ getActivePlayers _players
 
-initialGameState :: IO Game
-initialGameState = do
-  shuffledDeck <- shuffle initialDeck
-  return
-    Game
-      { _players = []
-      , _waitlist = []
-      , _minBuyInChips = 1500
-      , _maxBuyInChips = 3000
-      , _maxPlayers = 5
-      , _dealer = 0
-      , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
-      , _board = []
-      , _deck = shuffledDeck
-      , _smallBlind = 25
-      , _bigBlind = 50
-      , _pot = 0
-      , _street = PreDeal
-      , _maxBet = 50
-      , _winners = NoWinners
-      }
+initialGameState :: [Card] -> Game
+initialGameState shuffledDeck =
+  Game
+    { _players = []
+    , _waitlist = []
+    , _minBuyInChips = 1500
+    , _maxBuyInChips = 3000
+    , _maxPlayers = 5
+    , _dealer = 0
+    , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
+    , _board = []
+    , _deck = shuffledDeck
+    , _smallBlind = 25
+    , _bigBlind = 50
+    , _pot = 0
+    , _street = PreDeal
+    , _maxBet = 50
+    , _winners = NoWinners
+    }

@@ -30,13 +30,17 @@ import Types
 initialLobby :: IO Lobby
 initialLobby = do
   chan <- atomically newBroadcastTChan
-  newGame <- initialGameState
+  shuffledDeck <- shuffle initialDeck
   return $
     Lobby $
     M.fromList
       [ ( "Black"
         , Table
-            {subscribers = [], waitlist = [], game = newGame, channel = chan})
+            { subscribers = []
+            , waitlist = []
+            , game = initialGameState shuffledDeck
+            , channel = chan
+            })
       ]
   where
     maxChanLength = 10000
