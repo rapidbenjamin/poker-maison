@@ -303,3 +303,12 @@ spec = do
         pName = "player6"
         newGame = leaveSeat pName game
     not (any (\Player {..} -> pName /= _playerName) (_players newGame))
+  describe "SitOut" $ it "should set playerState to None" $ do
+    let game =
+          (street .~ PreDeal) . (players .~ [player1, player6]) $
+          initialGameState'
+        pName = "player6"
+        expectedPlayer = (playerState .~ None) player6
+        newGame = sitOut pName game
+        playerWhoChecked = newGame ^? players . ix 1
+    playerWhoChecked `shouldBe` Just expectedPlayer
