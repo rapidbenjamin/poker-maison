@@ -60,7 +60,8 @@ const ActionPanel = ({
               type="button"
               onClick={() => sitDown(betValue)}
               className="button">
-              Sit Down {betValue}
+              Sit Down Bet <span className='monospaced-font'>
+                {betValue}</span>
             </button>
             <button
               type="button"
@@ -88,7 +89,8 @@ const ActionPanel = ({
               Call</button>
             <button
               type="button"
-              onClick={() => bet(betValue)} className="button">Bet {betValue}</button>
+              onClick={() => bet(betValue)} className="button">Bet <span className='monospaced-font'>
+                {betValue}</span></button>
             <button
               type="button"
               onClick={() => raise(betValue)}

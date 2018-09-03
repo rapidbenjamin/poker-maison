@@ -38,6 +38,7 @@ const Game = props => {
     const players = game.get('_players')
     const maxPlayers = 6
     const gameStage = game.get('_street')
+    const potSize = game.get('_pot')
     const userPlayer = game.get('_players').find(p => p.get('_playerName') === username)
     const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
     const currentPosToAct = game.get('_currentPosToAct')
@@ -51,7 +52,8 @@ const Game = props => {
           {getSeats(maxPlayers, players, gameStage, currentPosToAct)}
           <div className='game-grid'>
             <Board cards={game.get('_board')} />
-            <h4 className='pot-label'>{`Pot $${game.get('_pot')}`}</h4>
+            <h4 className='pot-label'> <span className='monospaced-font'>
+              {`$${potSize}`}</span></h4>
           </div>
           <div className='game-table'>
           </div>

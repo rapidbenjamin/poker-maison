@@ -14,6 +14,7 @@ import qualified Data.List.Safe as Safe
 import qualified Data.Text as T
 
 import Control.Lens hiding (Fold)
+import Control.Monad
 import Control.Monad.State.Lazy
 
 import Data.List
@@ -33,6 +34,7 @@ validateAction :: Game -> PlayerName -> PlayerAction -> Either GameErr ()
 validateAction game@Game {..} playerName =
   \case
     PostBlind blind ->
+      when (_maxBet > 0) (isPlayerActingOutOfTurn game playerName) >>
       checkPlayerSatAtTable game playerName >>
       canPostBlind game playerName blind >>
       validateBlindAction game playerName blind

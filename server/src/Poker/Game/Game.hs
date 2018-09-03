@@ -265,13 +265,18 @@ getPlayer playerName chips =
     , _chips = chips
     }
 
+-- During PreDeal we start timing out players who do not post their respective blinds
+-- in turn after an initial blind has been posted
 isPlayerToAct :: Text -> Game -> Bool
-isPlayerToAct playerName game
+isPlayerToAct playerName game@Game {..}
   | isNothing maybePlyr = False
+  | _street == PreDeal && (_maxBet > 0) =
+    let plyr = fromJust maybePlyr
+     in _playerName plyr == playerName
   | otherwise =
     let plyr = fromJust maybePlyr
-     in (_street game /= PreDeal && _street game /= Showdown) &&
+     in (_street /= PreDeal && _street /= Showdown) &&
         _playerName plyr == playerName &&
         _playerState plyr == In && not (isEveryoneAllIn game)
   where
-    maybePlyr = _players game Safe.!! _currentPosToAct game
+    maybePlyr = _players Safe.!! _currentPosToAct

@@ -14,7 +14,19 @@
 @font-face {
      font-family: 'Gotham-Narrow-Book';
      src:
-       url('http://localhost:9080/fonts/GothamPro/Gotham-Narrow-Book.ttf') format('ttf'),
+       url('http://localhost:9080/fonts/GothamPro/GothamNarrow-Book.ttf') format('ttf'),
+}
+
+@font-face {
+     font-family: 'Gotham-Narrow-Medium';
+     src:
+       url('http://localhost:9080/fonts/GothamPro/GothamNarrow-Medium.ttf') format('ttf'),
+}
+
+@font-face {
+     font-family: 'Gotham-Narrow-Bold';
+     src:
+       url('http://localhost:9080/fonts/GothamPro/GothamNarrow-Bold.ttf') format('ttf'),
 }
 
 
@@ -70,6 +82,26 @@
      src:
        url('http://localhost:9080/fonts/aktivgrotesk-black.ttf') format('ttf');
      font-weight: 800;
+}
+
+$monospaced-font: 'Gotham-Narrow-Bold', sans-serif;
+
+.monospaced-font {
+  font-family: $monospaced-font;
+}
+
+.player-name {
+  font-family: $monospaced-font;
+  font-weight: 400;
+}
+
+.button {
+  font-family: $monospaced-font;
+  font-weight: 400;
+}
+
+.pot-label {
+  font-weight: 700;
 }
 
 // Configure modular-scale plugin
@@ -129,7 +161,7 @@ h4, .h4 {
 h5, .h5 {
   @include ms-respond(font-size, 1);
   letter-spacing: 1px;
-  font-family: 'GothamPro-Narrow-Book', sans-serif;
+  font-family: 'GothamPro-Medium', sans-serif;
   font-weight: 400;
 }
   

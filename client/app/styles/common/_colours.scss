@@ -1,9 +1,10 @@
 @import 'variables';
 
 // Main Layout Colours
-body {
-  background-color: $color-primary;
+html {
   color: white;
+  background: $gotham;
+  height: 100%;
 }
 
 .card {
@@ -22,7 +23,8 @@ body {
 
 .game-table {
     background: $witching-hour;
-    box-shadow: 1em 1em 3em #240b36;
+    box-shadow: 0em 1em 7em #00030491;
+    // 1em 1em 3em #240b36;
  
  //background: $namn;
  //background: $night-hawk
