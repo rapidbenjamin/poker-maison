@@ -86,6 +86,9 @@
 
 $monospaced-font: 'Gotham-Narrow-Bold', sans-serif;
 
+$monospaced-font2: 'Gotham-Narrow-Book', sans-serif;
+
+
 .monospaced-font {
   font-family: $monospaced-font;
 }
@@ -98,6 +101,11 @@ $monospaced-font: 'Gotham-Narrow-Bold', sans-serif;
 .button {
   font-family: $monospaced-font;
   font-weight: 400;
+}
+
+.navbar-username {
+    font-family: $monospaced-font2;
+    font-weight: 300;
 }
 
 .pot-label {

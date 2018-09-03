@@ -33,7 +33,7 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
           <div className="navbar-item">
             <a onClick={() => history.push('profile')}>
               <h4>
-                {username}
+                <span className='navbar-username'>{username}</span>
               </h4>
             </a>
           </div>
