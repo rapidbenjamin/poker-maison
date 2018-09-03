@@ -81,13 +81,13 @@ handlePlayerAction game@Game {..} playerName =
 handlePlayerTimeout :: PlayerName -> Game -> Either GameErr Game
 handlePlayerTimeout playerName game@Game {..}
   | playerCanCheck && handStarted =
-    validateAction game playerName Timeout $> check playerName game
+    validateAction game playerName Check $> check playerName game
   | not playerCanCheck && handStarted =
     validateAction game playerName Timeout $> foldCards playerName game
   | not handStarted =
     validateAction game playerName SitOut $> sitOut playerName game
   where
-    handStarted = _street == PreDeal
+    handStarted = _street /= PreDeal
     playerCanCheck = isRight $ canCheck playerName game
 
 -- | Just get the identity function if not all players acted otherwise we return 
@@ -95,7 +95,7 @@ handlePlayerTimeout playerName game@Game {..}
 -- toDO - make function pure by taking stdGen as an arg
 progressGame :: Game -> IO Game
 progressGame game@Game {..}
-  | _street == Showdown = return game
+  | _street == Showdown = getNextHand game <$> shuffle initialDeck
   | haveAllPlayersActed game &&
       (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
     case getNextStreet _street of
@@ -105,7 +105,7 @@ progressGame game@Game {..}
       River -> return $ progressToRiver game
       Showdown -> return $ progressToShowdown game
       PreDeal -> getNextHand game <$> shuffle initialDeck
-  | allButOneFolded game && not (_street == PreDeal || _street == Showdown) = do
+  | allButOneFolded game && _street /= Showdown = do
     print "dddddddddddddddddddddddddddddddddddd allbutonefolded"
     return $ progressToShowdown game
   | otherwise = return game
