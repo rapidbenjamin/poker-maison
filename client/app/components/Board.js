@@ -6,7 +6,6 @@ const Board = ({ cards }) => (
   <div className="board-cards">
     <div className='board-cards-container'>
       {cards.map(card => {
-        console.log(card.toJS())
         const rank = card.get('rank')
         const suit = card.get('suit')
 

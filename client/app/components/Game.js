@@ -37,21 +37,14 @@ const Game = props => {
     console.log(jsgame)
     const players = game.get('_players')
     const maxPlayers = 6
-
     const gameStage = game.get('_street')
-
-    console.log(game.get('_players').toJS())
-    console.log(username)
-
     const userPlayer = game.get('_players').find(p => p.get('_playerName') === username)
-    console.log(userPlayer)
     const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
     const currentPosToAct = game.get('_currentPosToAct')
 
-    console.log(userPocketCards)
     return (<div className='game-view-grid'>
       <p style={{ height: '300px', top: '80px', position: 'absolute' }}>
-        {/*(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))*/}
+        {(JSON.stringify({ ...jsgame, isTurnToAct, username }, undefined, '\n'))}
       </p>
       <div className='game-container'>
         <div className='table-container'>
