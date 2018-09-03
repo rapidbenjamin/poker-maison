@@ -11,12 +11,32 @@ import Data.Char (toLower)
 import Data.List
 import qualified Data.List.Safe as Safe
 import Data.Maybe
+import Data.Monoid
 import Data.Text (Text)
 import Text.Read (readMaybe)
 
 import Poker.Game.Utils
 import Poker.Types
 import Prelude
+
+-- Gets the player position where the next required blind is
+-- This function always us timeout players in the blinds stage if they don't post
+-- the required blinds in order
+-- 
+-- TODO - abstract out the duplication from incPosToAct
+getPosNextBlind :: Int -> Game -> Int
+getPosNextBlind currIx game@Game {..} = nextIx
+  where
+    iplayers = zip [0 ..] _players
+    iplayers' =
+      let (a, b) = splitAt currIx iplayers
+       in b <> a
+    (nextIx, nextPlayer) =
+      fromJust $
+      find
+        (\(_, p@Player {..}) ->
+           blindRequiredByPlayer game _playerName /= NoBlind)
+        (tail iplayers')
 
 haveRequiredBlindsBeenPosted :: Game -> Bool
 haveRequiredBlindsBeenPosted game@Game {..} =
@@ -69,7 +89,7 @@ getSmallBlindPosition playersSatIn dealerPos =
 -- blind is required either if player is sitting in bigBlind or smallBlind position relative to dealer
 -- or if their current playerState is set to Out 
 -- If no blind is required for the player to remain In for the next hand then we will return Nothing
-blindRequiredByPlayer :: Game -> Text -> Blind
+blindRequiredByPlayer :: Game -> PlayerName -> Blind
 blindRequiredByPlayer game playerName
   | playerPosition == smallBlindPos = Small
   | playerPosition == bigBlindPos = Big

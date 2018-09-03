@@ -247,6 +247,7 @@ resetPlayerCardsAndBets Player {..} =
         then In
         else None
 
+-- The game should go straight to showdown if all but one players is In hand
 allButOneFolded :: Game -> Bool
 allButOneFolded game@Game {..} = _street /= PreDeal && length playersInHand <= 1
   where
@@ -269,7 +270,8 @@ getPlayer playerName chips =
 -- in turn after an initial blind has been posted
 isPlayerToAct :: Text -> Game -> Bool
 isPlayerToAct playerName game@Game {..}
-  | isNothing maybePlyr = False
+  | isNothing maybePlyr || _street == Showdown = False
+  | _street == PreDeal && (_maxBet == 0) = True
   | _street == PreDeal && (_maxBet > 0) =
     let plyr = fromJust maybePlyr
      in _playerName plyr == playerName

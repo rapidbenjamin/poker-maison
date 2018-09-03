@@ -16,6 +16,7 @@ import Data.Maybe
 import Data.Monoid
 
 import Poker.ActionValidation
+import Poker.Game.Blinds
 import Poker.Game.Utils
 import Poker.Types
 
@@ -44,7 +45,9 @@ markInForHand = playerState .~ In
 
 postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
-  game & (players .~ newPlayers) . (pot +~ blindValue)
+  game &
+  (players .~ newPlayers) .
+  (pot +~ blindValue) . (currentPosToAct .~ nextRequiredBlindPos)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -58,6 +61,7 @@ postBlind blind pName game@Game {..} =
       if blind == Small
         then _smallBlind
         else _bigBlind
+    nextRequiredBlindPos = getPosNextBlind _currentPosToAct game
 
 makeBet :: Int -> PlayerName -> Game -> Game
 makeBet amount pName game@Game {..} =
