@@ -78,6 +78,10 @@ handlePlayerAction game@Game {..} playerName =
     action@LeaveSeat' ->
       validateAction game playerName action $> leaveSeat playerName game
 
+-- TODO - "Except" or ExceptT Identity has a more reliable Alternative instance.
+-- Use except and remove the guards and just use <|> to combine all the 
+-- eithers and return the first right. I.e try each action in turn and return the first
+-- valid action. 
 handlePlayerTimeout :: PlayerName -> Game -> Either GameErr Game
 handlePlayerTimeout playerName game@Game {..}
   | playerCanCheck && handStarted =
