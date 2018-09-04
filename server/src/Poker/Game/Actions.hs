@@ -47,7 +47,8 @@ postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
   game &
   (players .~ newPlayers) .
-  (pot +~ blindValue) . (currentPosToAct .~ nextRequiredBlindPos)
+  (pot +~ blindValue) .
+  (currentPosToAct .~ nextRequiredBlindPos) . (maxBet .~ newMaxBet)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -61,6 +62,10 @@ postBlind blind pName game@Game {..} =
       if blind == Small
         then _smallBlind
         else _bigBlind
+    newMaxBet =
+      if blindValue > _maxBet
+        then blindValue
+        else _maxBet
     nextRequiredBlindPos = getPosNextBlind _currentPosToAct game
 
 makeBet :: Int -> PlayerName -> Game -> Game

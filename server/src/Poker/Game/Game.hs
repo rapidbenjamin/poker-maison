@@ -277,7 +277,7 @@ isPlayerToAct playerName game@Game {..}
 --  | _street == PreDeal && (_maxBet == 0) && atLeastOneOtherActive =
 --    (maybe False (/= None) (getGamePlayerState game playerName)) &&
 --    currentPlayerNameToAct == playerName
-  | _street == PreDeal && (_maxBet > 0) =
+  | _street == PreDeal && (_maxBet > 0) && atLeastOneOtherActive =
     currentPlayerNameToAct == playerName &&
     (blindRequiredByPlayer game playerName /= NoBlind)
   | otherwise =
