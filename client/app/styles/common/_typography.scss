@@ -84,10 +84,25 @@
      font-weight: 800;
 }
 
+@font-face {
+     font-family: 'Sentinel-Book';
+     src:
+       url('http://localhost:9080/fonts/sentinel-book.ttf') format('ttf');
+     font-weight: 400;
+}
+
+@font-face {
+     font-family: 'Sentinel-Light';
+     src:
+       url('http://localhost:9080/fonts/sentinel-light.ttf') format('ttf');
+     font-weight: 300;
+}
+
+
+
 $monospaced-font: 'Gotham-Narrow-Bold', sans-serif;
 
 $monospaced-font2: 'Gotham-Narrow-Book', sans-serif;
-
 
 .monospaced-font {
   font-family: $monospaced-font;
@@ -104,8 +119,8 @@ $monospaced-font2: 'Gotham-Narrow-Book', sans-serif;
 }
 
 .navbar-username {
-    font-family: $monospaced-font2;
-    font-weight: 300;
+  font-family: $monospaced-font2;
+  font-weight: 300;
 }
 
 .pot-label {
@@ -176,8 +191,8 @@ h5, .h5 {
 
 body, .body {
   @include ms-respond(font-size, 0);
-  font-family: 'GothamPro-Medium', sans-serif;
-  letter-spacing: 0.7px;
+  font-family: 'Sentinel-Light', sans-serif;
+  letter-spacing: 1px;
 }
 
 .brand-title {
@@ -185,20 +200,13 @@ body, .body {
   font-family: 'GothamPro-Bold', sans-serif;
 }
 
-// We need to minimise the space taken by labels inside the player ovals
-// so a narrow font it used
-//.seat h5, .seat h4 {
-//  //font-family: 'Gotham-Narrow-Book', sans-serif;
-//  font-family: 'Aktiv-Grotesk', sans-serif;
-//}
-
 .card {
   font-size: 1.6em;
-    font-family: 'GothamPro-Black', sans-serif;
-
+  font-family: 'GothamPro-Black', sans-serif;
 }
 
-button {
-    font-family: 'GothamPro-Medium', sans-serif;
-    letter-spacing: 0.08em;
+.button {
+    font-family: 'Gotham-Narrow-Medium', sans-serif;
+    letter-spacing: 0.09em;
+
 }

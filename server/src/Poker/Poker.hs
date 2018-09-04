@@ -109,16 +109,12 @@ progressGame game@Game {..}
       River -> return $ progressToRiver game
       Showdown -> return $ progressToShowdown game
       PreDeal -> getNextHand game <$> shuffle initialDeck
-  | allButOneFolded game && _street /= Showdown = do
-    print "dddddddddddddddddddddddddddddddddddd allbutonefolded"
+  | allButOneFolded game && _street /= Showdown =
     return $ progressToShowdown game
   | otherwise = return game
   where
     activePlayersCount = length $ getActivePlayers _players
 
---  | activePlayersCount < 2 && _street == Showdown = do
---    print "dddddddddddddddddddddddddddddddddddd activePlayersCount"
---    return game
 initialGameState :: [Card] -> Game
 initialGameState shuffledDeck =
   Game
@@ -135,6 +131,6 @@ initialGameState shuffledDeck =
     , _bigBlind = 50
     , _pot = 0
     , _street = PreDeal
-    , _maxBet = 50
+    , _maxBet = 0
     , _winners = NoWinners
     }

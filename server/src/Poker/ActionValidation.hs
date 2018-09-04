@@ -58,7 +58,7 @@ canPostBlind game@Game {..} pName blind
     Left $
     InvalidMove pName $
     CannotPostBlind
-      "Cannot post blind unless at least two players are sat at table"
+      "Cannot post blind unless at least one other players is seated"
   | otherwise =
     case blind of
       Big ->

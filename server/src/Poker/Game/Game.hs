@@ -163,7 +163,7 @@ getNextHand :: Game -> [Card] -> Game
 getNextHand Game {..} newDeck =
   Game
     { _waitlist = newWaitlist
-    , _maxBet = _bigBlind
+    , _maxBet = 0
     , _players = newPlayers
     , _board = []
     , _deck = newDeck
@@ -268,17 +268,28 @@ getPlayer playerName chips =
 
 -- During PreDeal we start timing out players who do not post their respective blinds
 -- in turn after an initial blind has been posted
+--
+-- No player is forced to post first blind during predeal
 isPlayerToAct :: Text -> Game -> Bool
 isPlayerToAct playerName game@Game {..}
-  | isNothing maybePlyr || _street == Showdown = False
-  | _street == PreDeal && (_maxBet == 0) = True
+  | _street == Showdown || isEveryoneAllIn game = False
+  | _street == PreDeal && (_maxBet == 0) && not atLeastOneOtherActive = False
+  | _street == PreDeal && (_maxBet == 0) && atLeastOneOtherActive =
+    (maybe False (/= None) (getGamePlayerState game playerName)) &&
+    currentPlayerNameToAct == playerName
   | _street == PreDeal && (_maxBet > 0) =
-    let plyr = fromJust maybePlyr
-     in _playerName plyr == playerName
+    currentPlayerNameToAct == playerName &&
+    (blindRequiredByPlayer game playerName /= NoBlind)
   | otherwise =
-    let plyr = fromJust maybePlyr
-     in (_street /= PreDeal && _street /= Showdown) &&
-        _playerName plyr == playerName &&
-        _playerState plyr == In && not (isEveryoneAllIn game)
+    (_street /= PreDeal && _street /= Showdown) &&
+    _playerName currentPlyrToAct == playerName &&
+    _playerState currentPlyrToAct == In
   where
-    maybePlyr = _players Safe.!! _currentPosToAct
+    currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh fromjust safe pointless
+    currentPlayerNameToAct = _playerName currentPlyrToAct
+    atLeastOneOtherActive =
+      (> 0) $
+      length $
+      filter
+        (\Player {..} -> _playerName /= playerName && _playerState == In)
+        _players
