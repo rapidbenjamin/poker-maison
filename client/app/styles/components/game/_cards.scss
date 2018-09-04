@@ -50,7 +50,6 @@
   margin: auto;
 }
 
-
 .pocket-one {
   right: 65%;
 }
@@ -58,4 +57,57 @@
 .hidden-pocket-cards {
   position: relative;
   margin: auto;
+}
+
+
+/* Cards displayed at showdown  */
+
+.showdown-pocket-cards-container {
+    width: 100%;
+    margin: auto;
+    display: flex;
+}
+
+.showdown-pocket-cards-container:first-child {
+    margin-right: 0.15em;
+
+}
+
+.showdown-pocket-cards-container:last-child {
+    margin-right: 0.15em;
+}
+
+.showdown-pocket-cards-0 {
+    @extend %showdown-pocket-cards;
+    grid-area: 4/3;
+}
+
+.showdown-pocket-cards-1 {
+    @extend %showdown-pocket-cards;
+    grid-area: 3/1;
+}
+
+.showdown-pocket-cards-2 {
+    @extend %showdown-pocket-cards;  
+    grid-area: 1/1;
+}
+
+.showdown-pocket-cards-3 {
+    @extend %showdown-pocket-cards;
+    grid-area: 1/3;
+}
+
+.showdown-pocket-cards-4 {
+    @extend %showdown-pocket-cards;
+    grid-area: 1/5;
+}
+
+.showdown-pocket-cards-5 {
+    @extend %showdown-pocket-cards;
+    grid-area: 3/5;
+}
+
+.showdown-pocket-cards-6 {
+    @extend %showdown-pocket-cards;
+    grid-area: 1/3;
 }

@@ -273,10 +273,10 @@ getPlayer playerName chips =
 isPlayerToAct :: Text -> Game -> Bool
 isPlayerToAct playerName game@Game {..}
   | _street == Showdown || isEveryoneAllIn game = False
-  | _street == PreDeal && (_maxBet == 0) && not atLeastOneOtherActive = False
-  | _street == PreDeal && (_maxBet == 0) && atLeastOneOtherActive =
-    (maybe False (/= None) (getGamePlayerState game playerName)) &&
-    currentPlayerNameToAct == playerName
+--  | _street == PreDeal && (_maxBet == 0) && not atLeastOneOtherActive = False
+--  | _street == PreDeal && (_maxBet == 0) && atLeastOneOtherActive =
+--    (maybe False (/= None) (getGamePlayerState game playerName)) &&
+--    currentPlayerNameToAct == playerName
   | _street == PreDeal && (_maxBet > 0) =
     currentPlayerNameToAct == playerName &&
     (blindRequiredByPlayer game playerName /= NoBlind)

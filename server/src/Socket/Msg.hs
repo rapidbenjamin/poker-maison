@@ -137,7 +137,7 @@ awaitTimedPlayerAction socketReadChan game tableName username = do
       atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
     Just _ -> print maybeMsg
   where
-    timeoutDuration = 8000000
+    timeoutDuration = 6500000
 
 -- We duplicate the channel reading the socket msgs and start a timeout
 -- The thread will be blocked until either a valid action is received 

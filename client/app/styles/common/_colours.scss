@@ -2,9 +2,9 @@
 
 // Main Layout Colours
 html {
-  color: white;
-  background: $gotham;
-  height: 100%;
+    color: white;
+    background: $gotham;
+    height: 100%;
 }
 
 .card {
@@ -23,12 +23,7 @@ html {
 
 .game-table {
     background: $witching-hour;
-    box-shadow: 0em 1em 7em #00030491;
-    // 1em 1em 3em #240b36;
- 
- //background: $namn;
- //background: $night-hawk
-   //background: $red-mist;
+    box-shadow: 0em 1em 7em #00030491; 
 }
 
 %seat {

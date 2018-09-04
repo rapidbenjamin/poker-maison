@@ -3,7 +3,7 @@ import React from 'react'
 import ActionPanel from './ActionPanel'
 import Board from './Board'
 import Seat from './Seat'
-
+import Card from './Card'
 
 const getSeatedPlayer = (player, gameStage, position, isTurnToAct) =>
   <Seat
@@ -11,10 +11,9 @@ const getSeatedPlayer = (player, gameStage, position, isTurnToAct) =>
     position={position}
     playerName={player.get('_playerName')}
     chips={player.get('_chips')}
-    hasPocketCards={player.get('_playerState') === 'In' && gameStage !== 'PreDeal'}
+    hasPocketCards={player.get('_playerState') === 'In' && gameStage !== 'PreDeal' && gameStage !== 'Showdown'}
     isTurnToAct={isTurnToAct && gameStage !== 'preDeal' && gameStage !== 'Showdown'}
   />
-
 
 const getSeats = (maxPlayers, players, gameStage, currentPosToAct) =>
   Array(maxPlayers).fill(null).map((_, i) => {
@@ -27,6 +26,23 @@ const getSeats = (maxPlayers, players, gameStage, currentPosToAct) =>
         position={i}
       />
   })
+
+const getShowdownCards = players => players.map((p, i) =>
+  <div className={`showdown-pocket-cards-${i}`} key={p.get('_playerName')} >
+    <div className='showdown-pocket-cards-container' >
+      {p.get('_pockets').map(card => {
+        const rank = card.get('rank')
+        const suit = card.get('suit')
+
+        return (<Card
+          key={rank + suit}
+          rank={rank}
+          suit={suit}
+        />)
+      })}
+    </div>
+  </div>
+)
 
 const Game = props => {
   const { game, username, isTurnToAct } = props
@@ -49,6 +65,7 @@ const Game = props => {
       </p>
       <div className='game-container'>
         <div className='table-container'>
+          {gameStage === 'Showdown' ? getShowdownCards(players) : ''}
           {getSeats(maxPlayers, players, gameStage, currentPosToAct)}
           <div className='game-grid'>
             <Board cards={game.get('_board')} />
