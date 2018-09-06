@@ -100,6 +100,8 @@ handlePlayerTimeout playerName game@Game {..}
 progressGame :: Game -> IO Game
 progressGame game@Game {..}
   | _street == Showdown = getNextHand game <$> shuffle initialDeck
+  | _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2 =
+    getNextHand game <$> shuffle initialDeck
   | haveAllPlayersActed game &&
       (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
     case getNextStreet _street of
@@ -113,7 +115,7 @@ progressGame game@Game {..}
     return $ progressToShowdown game
   | otherwise = return game
   where
-    activePlayersCount = length $ getActivePlayers _players
+    numberPlayersSatIn = length $ getActivePlayers _players
 
 initialGameState :: [Card] -> Game
 initialGameState shuffledDeck =

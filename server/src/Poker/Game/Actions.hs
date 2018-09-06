@@ -142,7 +142,7 @@ sitOut plyrName =
   (<$>)
     (\p@Player {..} ->
        if _playerName == plyrName
-         then Player {_playerState = None, ..}
+         then Player {_playerState = None, _actedThisTurn = True, ..}
          else p)
 
 seatPlayer :: Player -> Game -> Game

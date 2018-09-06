@@ -277,14 +277,14 @@ getPlayer playerName chips =
 -- the scope of this function.
 doesPlayerHaveToAct :: Text -> Game -> Bool
 doesPlayerHaveToAct playerName game@Game {..}
-  | _street == Showdown || isEveryoneAllIn game || (numberPlayersSatIn < 2) =
-    False
+  | _street == Showdown ||
+      isEveryoneAllIn game ||
+      (numberPlayersSatIn < 2) ||
+      haveAllPlayersActed game || _playerState currentPlyrToAct /= In = False
   | _street == PreDeal =
     currentPlayerNameToAct == playerName &&
     (blindRequiredByPlayer game playerName /= NoBlind)
-  | otherwise =
-    _playerName currentPlyrToAct == playerName &&
-    _playerState currentPlyrToAct == In
+  | otherwise = _playerName currentPlyrToAct == playerName
   where
     currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh?! fromjust safe pointless
     currentPlayerNameToAct = _playerName currentPlyrToAct
