@@ -119,7 +119,7 @@ playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
     case dupTableChanMsg of
       (NewGameState tableName newGame) ->
         when
-          (isPlayerToAct (unUsername username) newGame)
+          (doesPlayerHaveToAct (unUsername username) newGame)
           (awaitTimedPlayerAction socketReadChan newGame tableName username)
       _ -> return ()
 

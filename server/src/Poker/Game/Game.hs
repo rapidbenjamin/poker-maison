@@ -269,27 +269,24 @@ getPlayer playerName chips =
 -- During PreDeal we start timing out players who do not post their respective blinds
 -- in turn after an initial blind has been posted
 --
--- No player is forced to post first blind during predeal
-isPlayerToAct :: Text -> Game -> Bool
-isPlayerToAct playerName game@Game {..}
-  | _street == Showdown || isEveryoneAllIn game = False
---  | _street == PreDeal && (_maxBet == 0) && not atLeastOneOtherActive = False
---  | _street == PreDeal && (_maxBet == 0) && atLeastOneOtherActive =
---    (maybe False (/= None) (getGamePlayerState game playerName)) &&
---    currentPlayerNameToAct == playerName
-  | _street == PreDeal && (_maxBet > 0) && atLeastOneOtherActive =
+-- No player is forced to post first blind during predeal if < 2 players sat in
+--
+-- Important to note that this function is mainly for asserting whether we need to
+-- time a player's action. Player actions which are not mandatory such as posting a blind
+-- to start a game will not be timed actions. Those kinds of optional actions fall outwith
+-- the scope of this function.
+doesPlayerHaveToAct :: Text -> Game -> Bool
+doesPlayerHaveToAct playerName game@Game {..}
+  | _street == Showdown || isEveryoneAllIn game || (numberPlayersSatIn < 2) =
+    False
+  | _street == PreDeal =
     currentPlayerNameToAct == playerName &&
     (blindRequiredByPlayer game playerName /= NoBlind)
   | otherwise =
-    (_street /= PreDeal && _street /= Showdown) &&
     _playerName currentPlyrToAct == playerName &&
     _playerState currentPlyrToAct == In
   where
-    currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh fromjust safe pointless
+    currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh?! fromjust safe pointless
     currentPlayerNameToAct = _playerName currentPlyrToAct
-    atLeastOneOtherActive =
-      (> 0) $
-      length $
-      filter
-        (\Player {..} -> _playerName /= playerName && _playerState == In)
-        _players
+    numberPlayersSatIn =
+      length $ filter (\Player {..} -> _playerState == In) _players

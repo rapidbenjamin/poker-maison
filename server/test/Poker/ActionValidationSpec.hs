@@ -102,6 +102,7 @@ spec = do
       let game =
             (street .~ PreFlop) .
             (dealer .~ 0) .
+            (currentPosToAct .~ 1) .
             (players .~
              [ ((playerState .~ In) .
                 (actedThisTurn .~ False) . (bet .~ 25) . (committed .~ 25))

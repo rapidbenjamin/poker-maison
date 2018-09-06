@@ -282,12 +282,11 @@ spec = do
     let preDealGame = getNextHand showdownGame []
     it "should update street to PreDeal" $ preDealGame ^. street `shouldBe`
       PreDeal
-    it "should set maxBet to bigBlind" $ preDealGame ^. maxBet `shouldBe`
-      _bigBlind showdownGame
+    it "should reset maxBet" $ preDealGame ^. maxBet `shouldBe` 0
     it "should reset all player bets" $ do
       let playerBets = (\Player {..} -> _bet) <$> _players preDealGame
       playerBets `shouldBe` [0, 0]
-    it "should increment dealer position" $ preDealGame ^. dealer `shouldBe` 1
+    it "should increment dealer position" $ preDealGame ^. dealer `shouldBe` 0
   describe "isEveryoneAllIn" $ do
     it "should return False for two player game if no one all in" $ do
       let preFlopGame' =
@@ -398,14 +397,14 @@ spec = do
              ]) $
             initialGameState'
       isEveryoneAllIn flopGame `shouldBe` False
-  describe "isPlayerToAct" $ do
+  describe "doesPlayerHaveToAct" $ do
     it "should return True for an active player in position" $ do
       let game =
             (street .~ Flop) . (dealer .~ 0) .
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
             initialGameState'
-      isPlayerToAct (_playerName player2) game `shouldBe` True
-      isPlayerToAct (_playerName player5) game `shouldBe` False
+      doesPlayerHaveToAct (_playerName player2) game `shouldBe` True
+      doesPlayerHaveToAct (_playerName player5) game `shouldBe` False
     it "should return False for non-active players" $ do
       let game =
             (street .~ Flop) . (dealer .~ 0) .
@@ -416,5 +415,137 @@ spec = do
              , ((chips .~ 1000) player2)
              ]) $
             initialGameState'
-      isPlayerToAct (_playerName player3) game `shouldBe` False
-      isPlayerToAct (_playerName player4) game `shouldBe` False
+      doesPlayerHaveToAct (_playerName player3) game `shouldBe` False
+      doesPlayerHaveToAct (_playerName player4) game `shouldBe` False
+  describe "Heads Up Game" $ do
+    describe "PreDeal" $ do
+      describe "When 0 players sat in" $ do
+        let game' =
+              (street .~ PreDeal) . (maxBet .~ 0) . (pot .~ 0) .
+              (deck .~ initialDeck) .
+              (currentPosToAct .~ 1) .
+              (dealer .~ 0) .
+              (players .~
+               [ ((actedThisTurn .~ False) . (playerState .~ None) . (bet .~ 0) .
+                  (chips .~ 2000) .
+                  (committed .~ 0))
+                   player1
+               , ((actedThisTurn .~ False) . (playerState .~ None) . (bet .~ 0) .
+                  (committed .~ 0) .
+                  (chips .~ 2000))
+                   player2
+               ]) $
+              initialGameState'
+        it "No player should have to act first" $ do
+          doesPlayerHaveToAct (_playerName player1) game' `shouldBe` False
+          doesPlayerHaveToAct (_playerName player2) game' `shouldBe` False
+      describe "When 1 player is sat in" $ do
+        let game' =
+              (street .~ PreDeal) .
+              (players .~
+               [ ((actedThisTurn .~ False) . (playerState .~ None) . (bet .~ 0) .
+                  (chips .~ 2000) .
+                  (committed .~ 0))
+                   player1
+               , ((actedThisTurn .~ False) . (playerState .~ In) . (bet .~ 0) .
+                  (committed .~ 0) .
+                  (chips .~ 2000))
+                   player2
+               ]) $
+              initialGameState'
+        it "No player should have to act first" $ do
+          doesPlayerHaveToAct (_playerName player1) game' `shouldBe` False
+          doesPlayerHaveToAct (_playerName player2) game' `shouldBe` False
+      describe "When 2 players are both sat in" $ do
+        let game' =
+              (street .~ PreDeal) . (maxBet .~ 0) . (pot .~ 0) .
+              (deck .~ initialDeck) .
+              (currentPosToAct .~ 1) .
+              (dealer .~ 0) .
+              (players .~
+               [ ((actedThisTurn .~ False) . (playerState .~ In) . (bet .~ 0) .
+                  (chips .~ 2000) .
+                  (committed .~ 0))
+                   player1
+               , ((actedThisTurn .~ False) . (playerState .~ In) . (bet .~ 0) .
+                  (committed .~ 0) .
+                  (chips .~ 2000))
+                   player2
+               ]) $
+              initialGameState'
+        it "Player1 should not have to act" $
+          doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
+          False
+        it "Player2 should have to act" $
+          doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
+          True
+      describe "When one player has already posted blinds" $ do
+        let game' =
+              (street .~ PreDeal) . (maxBet .~ 50) . (pot .~ 50) .
+              (deck .~ initialDeck) .
+              (currentPosToAct .~ 0) .
+              (dealer .~ 0) .
+              (players .~
+               [ ((actedThisTurn .~ False) . (playerState .~ In) . (bet .~ 0) .
+                  (chips .~ 2000) .
+                  (committed .~ 0))
+                   player1
+               , ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 50) .
+                  (committed .~ 50) .
+                  (chips .~ 1950))
+                   player2
+               ]) $
+              initialGameState'
+        it "Player1 should have to act" $
+          doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
+          True
+        it "Player2 should not have to act" $
+          doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
+          False
+    describe "PreFlop" $ do
+      describe "First play" $ do
+        let game' =
+              (street .~ PreFlop) . (maxBet .~ 50) . (pot .~ 0) .
+              (deck .~ initialDeck) .
+              (currentPosToAct .~ 0) .
+              (dealer .~ 0) .
+              (players .~
+               [ ((actedThisTurn .~ False) . (playerState .~ In) . (bet .~ 0) .
+                  (chips .~ 1975) .
+                  (committed .~ 25))
+                   player1
+               , ((actedThisTurn .~ False) . (playerState .~ In) . (bet .~ 0) .
+                  (committed .~ 50) .
+                  (chips .~ 1950))
+                   player2
+               ]) $
+              initialGameState'
+        it "Player1 should have to act" $
+          doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
+          True
+        it "Player2 should not have to act" $
+          doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
+          False
+      describe "Second play" $ do
+        let game' =
+              (street .~ PreFlop) . (maxBet .~ 50) . (pot .~ 0) .
+              (deck .~ initialDeck) .
+              (currentPosToAct .~ 1) .
+              (dealer .~ 0) .
+              (players .~
+               [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 25) .
+                  (chips .~ 1950) .
+                  (committed .~ 50))
+                   player1
+               , ((actedThisTurn .~ False) . (playerState .~ In) . (bet .~ 0) .
+                  (committed .~ 50) .
+                  (chips .~ 1950))
+                   player2
+               ]) $
+              initialGameState'
+        it "Player1 should not have to act" $
+          doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
+          False
+        it "Player2 should have to act" $
+          doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
+          True

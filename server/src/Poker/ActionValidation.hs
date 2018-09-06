@@ -23,7 +23,7 @@ import Data.Monoid
 import Data.Text (Text)
 
 import Poker.Game.Blinds
-import Poker.Game.Game (getWinners, isPlayerToAct)
+import Poker.Game.Game (doesPlayerHaveToAct, getWinners)
 import Poker.Game.Hands
 import Poker.Game.Utils
 import Poker.Types
@@ -74,16 +74,19 @@ canPostBlind game@Game {..} pName blind
     chipCount = _chips $ fromJust $ getGamePlayer game pName
     notEnoughChipsErr = Left $ InvalidMove pName NotEnoughChipsForAction
 
--- | The first player to post their blinds in the predeal stage  can do it from any position
--- Therefore the acting in turn rule wont apply for that first move.
+-- | The first player to post their blinds in the predeal stage  can do it from any 
+-- position as long as there aren't enough players sat in to start a game 
+-- Therefore the acting in turn rule wont apply for that first move 
+-- when (< 2 players state set to sat in)
 isPlayerActingOutOfTurn :: Game -> PlayerName -> Either GameErr ()
 isPlayerActingOutOfTurn game@Game {..} playerName
-  | _street == PreDeal && not haveBetsBeenMade = Right () -- first predeal blind bet can be done from any position
+  | _street == PreDeal && not haveBetsBeenMade && numberOfPlayersSatIn < 2 =
+    Right () -- first predeal blind bet can be done from any position
   | otherwise =
     case playerName `elemIndex` gamePlayerNames of
       Nothing -> Left $ NotAtTable playerName
       Just pos ->
-        if isPlayerToAct playerName game
+        if doesPlayerHaveToAct playerName game
           then Right ()
           else Left $
                InvalidMove playerName $
@@ -92,6 +95,8 @@ isPlayerActingOutOfTurn game@Game {..} playerName
   where
     haveBetsBeenMade = sum ((\Player {..} -> _bet) <$> _players) == 0
     gamePlayerNames = getGamePlayerNames game
+    numberOfPlayersSatIn =
+      length $ filter (\Player {..} -> _playerState == In) _players
 
 checkPlayerSatAtTable :: Game -> PlayerName -> Either GameErr ()
 checkPlayerSatAtTable game@Game {..} pName

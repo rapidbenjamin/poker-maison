@@ -43,6 +43,12 @@ updateMaxBet amount = maxBet %~ max amount
 markInForHand :: Player -> Player
 markInForHand = playerState .~ In
 
+-- Will increment the game's current position to act to the next position
+-- where a blind is required. Skipping players that do not have to post blinds
+-- during the PreDeal phase of the game is desirable as by definition 
+-- the only possible players actions during the PreDeal phase are to either:
+--   1. Sit out of the game
+--   2. Post a blind.
 postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
   game &
@@ -66,7 +72,9 @@ postBlind blind pName game@Game {..} =
       if blindValue > _maxBet
         then blindValue
         else _maxBet
-    nextRequiredBlindPos = getPosNextBlind _currentPosToAct game
+    positionOfBlindPoster =
+      fromJust $ findIndex ((== pName) . (^. playerName)) _players
+    nextRequiredBlindPos = getPosNextBlind positionOfBlindPoster game
 
 makeBet :: Int -> PlayerName -> Game -> Game
 makeBet amount pName game@Game {..} =
