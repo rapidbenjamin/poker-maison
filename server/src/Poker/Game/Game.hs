@@ -71,7 +71,7 @@ progressToPreFlop game@Game {..} =
     playerCount = length $ getActivePlayers _players
     incAmount = 2
     firstPosToAct =
-      if playerCount == 3
+      if playerCount == 2
         then _dealer
         else modInc incAmount _dealer (playerCount - 1)
 

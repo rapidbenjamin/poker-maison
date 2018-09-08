@@ -515,21 +515,20 @@ spec = do
         describe "PreFlop" $ do
           describe "First Turn" $ do
             let game' =
-                  (street .~ PreFlop) . (maxBet .~ 50) . (pot .~ 0) .
-                  (deck .~ initialDeck) .
+                  (street .~ PreFlop) . (maxBet .~ 50) . (deck .~ initialDeck) .
                   (smallBlind .~ 25) .
                   (smallBlind .~ 50) .
-                  (pot .~ 75) .
+                  (pot .~ 100) .
                   (currentPosToAct .~ 0) .
-                  (dealer .~ 0) .
+                  (dealer .~ 1) .
                   (players .~
                    [ ((actedThisTurn .~ False) . (playerState .~ In) .
-                      (bet .~ 0) .
+                      (bet .~ 50) .
                       (chips .~ 1975) .
-                      (committed .~ 25))
+                      (committed .~ 50))
                        player1
-                   , ((actedThisTurn .~ False) . (playerState .~ In) .
-                      (bet .~ 0) .
+                   , ((actedThisTurn .~ True) . (playerState .~ In) .
+                      (bet .~ 50) .
                       (committed .~ 50) .
                       (chips .~ 1950))
                        player2
