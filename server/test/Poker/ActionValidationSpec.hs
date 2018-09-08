@@ -112,22 +112,23 @@ spec = do
                  player2
              ]) $
             initialGameState'
-      let playerName = "player1"
-      isPlayerActingOutOfTurn game playerName `shouldBe` Right ()
+      let playerName2 = "player2"
+      isPlayerActingOutOfTurn game playerName2 `shouldBe` Right ()
       let game2 =
             (street .~ PreFlop) .
             (dealer .~ 1) .
+            (currentPosToAct .~ 0) .
             (players .~
              [ ((playerState .~ In) .
                 (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
                  player1
              , ((playerState .~ In) .
-                (actedThisTurn .~ False) . (bet .~ 25) . (committed .~ 25))
+                (actedThisTurn .~ True) . (bet .~ 50) . (committed .~ 50))
                  player2
              ]) $
             initialGameState'
-      let playerName2 = "player2"
-      isPlayerActingOutOfTurn game2 playerName2 `shouldBe` Right ()
+      let playerName1 = "player1"
+      isPlayerActingOutOfTurn game2 playerName1 `shouldBe` Right ()
     it "return no Error if player is acting in turn" $
       isPlayerActingOutOfTurn game "player1" `shouldBe` Right ()
     it
@@ -310,7 +311,6 @@ spec = do
             (street .~ PreFlop) . (players .~ playerFixtures2) $
             initialGameState'
       let playerName = "player5"
-      let expectedErr = CannotCallZeroAmountCheckOrBetInstead
       canCall playerName game `shouldBe` Right ()
   describe "canFold" $ do
     it
@@ -496,3 +496,52 @@ spec = do
       let playerName = "player2"
       let expectedErr = Left $ InvalidMove playerName CannotSitOutOutsidePreDeal
       validateAction preDealGame playerName SitOut `shouldBe` expectedErr
+  describe "validateBlindAction" $ do
+    describe "Heads Up Game" $ do
+      let game' =
+            (street .~ PreDeal) .
+            (maxBet .~ 0) .
+            (pot .~ 0) .
+            (deck .~ initialDeck) .
+            (currentPosToAct .~ 1) .
+            (dealer .~ 0) .
+            (players .~
+             [ ((actedThisTurn .~ False) .
+                (playerState .~ In) .
+                (bet .~ 0) . (chips .~ 2000) . (committed .~ 0))
+                 player1
+             , ((actedThisTurn .~ False) .
+                (playerState .~ In) .
+                (bet .~ 0) . (committed .~ 0) . (chips .~ 2000))
+                 player2
+             ]) $
+            initialGameState'
+      it "Player1 should require small blind" $
+        validateBlindAction game' (_playerName player1) Small `shouldBe`
+        Right ()
+      it "Player2 should require bigBlind" $
+        validateBlindAction game' (_playerName player2) Big `shouldBe` Right ()
+  describe "canPostBlind" $ do
+    describe "Heads Up Game" $ do
+      let game' =
+            (street .~ PreDeal) .
+            (maxBet .~ 0) .
+            (pot .~ 0) .
+            (deck .~ initialDeck) .
+            (currentPosToAct .~ 1) .
+            (dealer .~ 0) .
+            (players .~
+             [ ((actedThisTurn .~ False) .
+                (playerState .~ In) .
+                (bet .~ 0) . (chips .~ 2000) . (committed .~ 0))
+                 player1
+             , ((actedThisTurn .~ False) .
+                (playerState .~ In) .
+                (bet .~ 0) . (committed .~ 0) . (chips .~ 2000))
+                 player2
+             ]) $
+            initialGameState'
+      it "Player1 should be able to post small blind" $
+        canPostBlind game' (_playerName player1) Small `shouldBe` Right ()
+      it "Player2 should be able to post big blind" $
+        canPostBlind game' (_playerName player2) Big `shouldBe` Right ()

@@ -519,43 +519,18 @@ spec = do
                   (smallBlind .~ 25) .
                   (smallBlind .~ 50) .
                   (pot .~ 100) .
-                  (currentPosToAct .~ 0) .
+                  (currentPosToAct .~ 1) .
                   (dealer .~ 1) .
                   (players .~
-                   [ ((actedThisTurn .~ False) . (playerState .~ In) .
+                   [ ((actedThisTurn .~ True) . (playerState .~ In) .
+                      (bet .~ 50) .
+                      (committed .~ 50) .
+                      (chips .~ 1950))
+                       player1
+                   , ((actedThisTurn .~ False) . (playerState .~ In) .
                       (bet .~ 50) .
                       (chips .~ 1975) .
                       (committed .~ 50))
-                       player1
-                   , ((actedThisTurn .~ True) . (playerState .~ In) .
-                      (bet .~ 50) .
-                      (committed .~ 50) .
-                      (chips .~ 1950))
-                       player2
-                   ]) $
-                  initialGameState'
-            it "Player1 should have to act" $
-              doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
-              True
-            it "Player2 should not have to act" $
-              doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
-              False
-          describe "Second Turn" $ do
-            let game' =
-                  (street .~ PreFlop) . (maxBet .~ 50) . (pot .~ 0) .
-                  (deck .~ initialDeck) .
-                  (currentPosToAct .~ 1) .
-                  (dealer .~ 0) .
-                  (players .~
-                   [ ((actedThisTurn .~ True) . (playerState .~ In) .
-                      (bet .~ 25) .
-                      (chips .~ 1950) .
-                      (committed .~ 50))
-                       player1
-                   , ((actedThisTurn .~ False) . (playerState .~ In) .
-                      (bet .~ 0) .
-                      (committed .~ 50) .
-                      (chips .~ 1950))
                        player2
                    ]) $
                   initialGameState'
@@ -565,3 +540,77 @@ spec = do
             it "Player2 should have to act" $
               doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
               True
+          describe "Second Turn" $ do
+            let game' =
+                  (street .~ PreFlop) . (maxBet .~ 50) . (pot .~ 0) .
+                  (deck .~ initialDeck) .
+                  (currentPosToAct .~ 0) .
+                  (dealer .~ 1) .
+                  (players .~
+                   [ ((playerState .~ In) . (bet .~ 0) . (committed .~ 50) .
+                      (chips .~ 1950))
+                       player1
+                   , ((actedThisTurn .~ True) . (playerState .~ In) .
+                      (bet .~ 25) .
+                      (chips .~ 1950) .
+                      (committed .~ 50) .
+                      (actedThisTurn .~ False))
+                       player2
+                   ]) $
+                  initialGameState'
+            it "Player1 should have to act" $
+              doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
+              True
+            it "Player2 should not have to act" $
+              doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
+              False
+        describe "Flop" $ do
+          describe "First turn" $ do
+            let game' =
+                  (street .~ Flop) . (maxBet .~ 0) . (pot .~ 100) .
+                  (deck .~ initialDeck) .
+                  (currentPosToAct .~ 1) .
+                  (dealer .~ 0) .
+                  (players .~
+                   [ ((actedThisTurn .~ False) . (playerState .~ In) .
+                      (bet .~ 0) .
+                      (chips .~ 2000) .
+                      (committed .~ 50))
+                       player1
+                   , ((actedThisTurn .~ False) . (playerState .~ In) .
+                      (bet .~ 0) .
+                      (committed .~ 50) .
+                      (chips .~ 2000))
+                       player2
+                   ]) $
+                  initialGameState'
+            it "Player1 should not have to act" $
+              doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
+              False
+            it "Player2 should have to act" $
+              doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
+              True
+          describe "Second turn" $ do
+            let game' =
+                  (street .~ Flop) . (maxBet .~ 0) . (pot .~ 100) .
+                  (deck .~ initialDeck) .
+                  (currentPosToAct .~ 0) .
+                  (dealer .~ 0) .
+                  (players .~
+                   [ ((actedThisTurn .~ False) . (playerState .~ In) .
+                      (bet .~ 0) .
+                      (chips .~ 2000) .
+                      (committed .~ 50))
+                       player1
+                   , ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 0) .
+                      (committed .~ 50) .
+                      (chips .~ 2000))
+                       player2
+                   ]) $
+                  initialGameState'
+            it "Player1 should have to act" $
+              doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
+              True
+            it "Player2 should not have to act" $
+              doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
+              False
