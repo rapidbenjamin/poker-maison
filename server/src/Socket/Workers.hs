@@ -69,8 +69,8 @@ writeNewGameStatesToDB connString chan tableKey = do
   forever $ do
     chanMsg <- atomically $ readTChan dupChan
     case chanMsg of
-      (NewGameState tableName game) ->
-        void (dbInsertGame connString game tableKey)
+      (NewGameState tableName game) -> return ()
+      --  void (dbInsertGame connString game tableKey)
       _ -> return ()
 
 -- Fork a thread which refills low player chips balances in DB at a given interval

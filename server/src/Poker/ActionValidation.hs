@@ -49,16 +49,19 @@ validateAction game@Game {..} playerName =
     LeaveSeat' -> canLeaveSeat playerName game
     SitDown plyr -> canSit plyr game
     SitOut -> checkPlayerSatAtTable game playerName >> canSitOut playerName game
+    SitIn -> checkPlayerSatAtTable game playerName >> canSitIn playerName game
     ShowHand -> validateShowOrMuckHand game playerName ShowHand
     MuckHand -> validateShowOrMuckHand game playerName MuckHand
 
+-- Cannot post a blind to start a game unless at least two active players are present.
+-- An active player is one whose playerState is set to In.
 canPostBlind :: Game -> PlayerName -> Blind -> Either GameErr ()
 canPostBlind game@Game {..} pName blind
-  | length _players < 2 =
+  | activePlayersCount < 2 =
     Left $
     InvalidMove pName $
     CannotPostBlind
-      "Cannot post blind unless at least one other players is seated"
+      "Cannot post blind unless a minimum of two active players are sat at table"
   | otherwise =
     case blind of
       Big ->
@@ -72,6 +75,7 @@ canPostBlind game@Game {..} pName blind
       NoBlind -> Left $ InvalidMove pName CannotPostNoBlind
   where
     chipCount = _chips $ fromJust $ getGamePlayer game pName
+    activePlayersCount = length $ getActivePlayers _players
     notEnoughChipsErr = Left $ InvalidMove pName NotEnoughChipsForAction
 
 -- | The first player to post their blinds in the predeal stage  can do it from any 
@@ -190,6 +194,15 @@ canSitOut pName game@Game {..}
   | _street /= PreDeal = Left $ InvalidMove pName CannotSitOutOutsidePreDeal
   | currentState == Nothing = Left $ NotAtTable pName
   | currentState == (Just None) = Left $ InvalidMove pName AlreadySatOut
+  | otherwise = Right ()
+  where
+    currentState = getGamePlayerState game pName
+
+canSitIn :: PlayerName -> Game -> Either GameErr ()
+canSitIn pName game@Game {..}
+  | _street /= PreDeal = Left $ InvalidMove pName CannotSitInOutsidePreDeal
+  | currentState == Nothing = Left $ NotAtTable pName
+  | currentState == (Just In) = Left $ InvalidMove pName AlreadySatIn
   | otherwise = Right ()
   where
     currentState = getGamePlayerState game pName

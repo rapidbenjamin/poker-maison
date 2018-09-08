@@ -47,3 +47,8 @@ export const leaveSeat = (tableName) => ({
     "tag": "LeaveSeat", "contents": tableName
   }
 })
+
+export const sitIn = tableName => ({
+  type: types.SIT_IN,
+  data: { "tag": "GameMove", "contents": [tableName, { "tag": "SitIn" }] }
+})

@@ -66,14 +66,14 @@ handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
     msg <- atomically $ readTChan socketReadChan
-    print msg
+  --  print msg
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
     either
       (sendMsg clientConn . ErrMsg)
       (handleNewGameState dbConn serverStateTVar)
       msgOutE
-    print "socketReadChannel"
-    pPrint msgOutE
+  --  print "socketReadChannel"
+  --  pPrint msgOutE
     return ()
 
 -- This function writes msgs received from the websocket to the socket threads msgReader channel 
@@ -88,10 +88,10 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
       (catch
          (forever $ do
             msg <- WS.receiveData clientConn
-            print msg
+       --     print msg
             let parsedMsg = parseMsgFromJSON msg
-            print "parsed msg:"
-            print parsedMsg
+        --    print "parsed msg:"
+        --    print parsedMsg
             for_ parsedMsg $ atomically . writeTChan socketReadChan)
          (\e -> do
             let err = show (e :: IOException)
@@ -118,26 +118,37 @@ playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
     dupTableChanMsg <- atomically $ readTChan dupTableChan
     case dupTableChanMsg of
       (NewGameState tableName newGame) ->
-        when
-          (doesPlayerHaveToAct (unUsername username) newGame)
-          (awaitTimedPlayerAction socketReadChan newGame tableName username)
+        let playerHasToAct = (doesPlayerHaveToAct (unUsername username) newGame)
+         in when playerHasToAct $ do
+              asyncPlayerTimer <-
+                (awaitTimedPlayerAction
+                   socketReadChan
+                   newGame
+                   tableName
+                   username)
+              print "awaiting asyncPlayerTimer to complete"
+              wait asyncPlayerTimer
+              print "cancelled asyncPlayerTimer"
+              cancel asyncPlayerTimer
       _ -> return ()
 
-awaitTimedPlayerAction :: TChan MsgIn -> Game -> TableName -> Username -> IO ()
-awaitTimedPlayerAction socketReadChan game tableName username = do
-  maybeMsg <-
-    awaitValidAction
-      game
-      tableName
-      (unUsername username)
-      timeoutDuration
-      socketReadChan
-  case maybeMsg of
-    Nothing ->
-      atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
-    Just _ -> print maybeMsg
+awaitTimedPlayerAction ::
+     TChan MsgIn -> Game -> TableName -> Username -> IO (Async ())
+awaitTimedPlayerAction socketReadChan game tableName username =
+  async $ do
+    maybeMsg <-
+      awaitValidAction
+        game
+        tableName
+        (unUsername username)
+        timeoutDuration
+        socketReadChan
+    case maybeMsg of
+      Nothing ->
+        atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
+      Just _ -> return () --  print maybeMsg
   where
-    timeoutDuration = 6500000
+    timeoutDuration = 6500000 --6500000
 
 -- We duplicate the channel reading the socket msgs and start a timeout
 -- The thread will be blocked until either a valid action is received 
@@ -196,8 +207,9 @@ handleNewGameState connString serverStateTVar (NewGameState tableName newGame) =
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
   async (progressGame connString serverStateTVar tableName newGame)
   return ()
-handleNewGameState _ _ msg = do
-  print msg
+handleNewGameState _ _ msg
+  --print msg
+ = do
   return ()
 
 progressGame ::
@@ -210,10 +222,10 @@ progressGame connString serverStateTVar tableName game@Game {..} = do
      ((length $ getActivePlayers _players) < 2 && haveAllPlayersActed game) ||
      (haveAllPlayersActed game && (length $ getActivePlayers _players) >= 2)) $ do
     (errE, progressedGame) <- runStateT nextStage game
-    pPrint "PROGRESED GAME"
-    pPrint progressedGame
-    print "haveAllPlayersActed:"
-    print (haveAllPlayersActed progressedGame)
+   -- pPrint "PROGRESED GAME"
+   -- pPrint progressedGame
+   -- print "haveAllPlayersActed:"
+   -- print (haveAllPlayersActed progressedGame)
     case errE of
       Right () -> do
         let currentStreet = progressedGame ^. street
@@ -222,7 +234,7 @@ progressGame connString serverStateTVar tableName game@Game {..} = do
  --       when
  --         (currentStreet == Showdown)
  --         (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
-        pPrint progressedGame
+ --       pPrint progressedGame
         progressGame connString serverStateTVar tableName progressedGame
       Left err -> print $ "progressGameAlong Err" ++ show err
   where
@@ -404,6 +416,7 @@ gameActionHandler gameMove@(GameMove tableName playerAction) = do
                   game
               case errE of
                 Left gameErr -> throwError $ GameErr gameErr
-                Right () -> do
-                  liftIO $ pPrint newGame
+                Right ()
+                 -- liftIO $ pPrint newGame
+                 -> do
                   return $ NewGameState tableName newGame

@@ -190,6 +190,7 @@ data PlayerAction
   | ShowHand
   | MuckHand
   | SitOut
+  | SitIn
   | Timeout
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
@@ -231,6 +232,8 @@ data InvalidMoveErr
   | CannotShowHandOrMuckHand Text
   | CannotLeaveSeatOutsidePreDeal
   | CannotSitDownOutsidePreDeal
+  | CannotSitInOutsidePreDeal
+  | AlreadySatIn
   | AlreadySatOut -- cannot sitout when already satout
   | CannotSitOutOutsidePreDeal
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)

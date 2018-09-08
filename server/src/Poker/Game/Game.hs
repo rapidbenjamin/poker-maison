@@ -253,13 +253,12 @@ allButOneFolded game@Game {..} = _street /= PreDeal && length playersInHand <= 1
   where
     playersInHand = filter ((== In) . (^. playerState)) _players
 
--- initially a players state is set to None to denote that they havent posted their blinds yet
 getPlayer :: Text -> Int -> Player
 getPlayer playerName chips =
   Player
     { _pockets = []
     , _bet = 0
-    , _playerState = None
+    , _playerState = In
     , _playerName = playerName
     , _committed = 0
     , _actedThisTurn = False
@@ -269,18 +268,31 @@ getPlayer playerName chips =
 -- During PreDeal we start timing out players who do not post their respective blinds
 -- in turn after an initial blind has been posted
 --
--- No player is forced to post first blind during predeal if < 2 players sat in
+-- No player is forced to post first blind during PreDeal (blind betting stage).
 --
 -- Important to note that this function is mainly for asserting whether we need to
 -- time a player's action. Player actions which are not mandatory such as posting a blind
--- to start a game will not be timed actions. Those kinds of optional actions fall outwith
--- the scope of this function.
+-- to start a game will not be timed actions. 
+--
+-- All possible player actions are either compulsary or optional. For example SitIn as a player is never forced to play a game. However if a player is already active in an 
+-- ongoing hand then all future actions for this hand will be mandatory and therefore timed so that a given
+-- player cannot postpone the game through inactivity for an indefinite amount of time.
+--
+-- Optional actions as as SitIn (changing player state to In to denote that they are active this hand) 
+-- would return False in this function.
+--
+-- PostBlind actions are trickier. Depending on the context they will be compulsary or optional.
+-- True is for a situation where the continued progression
+-- of the game in a satisfactory timeframe is determined by the expediancy of the current
+-- player's action. 
 doesPlayerHaveToAct :: Text -> Game -> Bool
 doesPlayerHaveToAct playerName game@Game {..}
   | _street == Showdown ||
       isEveryoneAllIn game ||
-      (numberPlayersSatIn < 2) ||
-      haveAllPlayersActed game || _playerState currentPlyrToAct /= In = False
+      (activePlayerCount < 2) ||
+      haveAllPlayersActed game ||
+      _playerState currentPlyrToAct /= In ||
+      (_street == PreDeal && _maxBet == 0) = False
   | _street == PreDeal =
     currentPlayerNameToAct == playerName &&
     (blindRequiredByPlayer game playerName /= NoBlind)
@@ -288,5 +300,5 @@ doesPlayerHaveToAct playerName game@Game {..}
   where
     currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh?! fromjust safe pointless
     currentPlayerNameToAct = _playerName currentPlyrToAct
-    numberPlayersSatIn =
+    activePlayerCount =
       length $ filter (\Player {..} -> _playerState == In) _players

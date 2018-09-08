@@ -30,6 +30,7 @@ const ActionPanel = ({
   leaveGameSeat,
   userPocketCards,
   gameStage,
+  sitIn,
   isTurnToAct
 }) => {
 
@@ -104,6 +105,12 @@ const ActionPanel = ({
           </button>
           </React.Fragment>
           : ''}
+        <button
+          type="button"
+          onClick={() => sitIn()}
+          className="button">
+          Sit In
+          </button>
 
       </div>
     </div>)

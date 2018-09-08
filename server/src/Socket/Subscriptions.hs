@@ -55,12 +55,13 @@ notifyTableSubscribersLoop serverState tableName = do
     Nothing -> do
       atomically $ throwSTM $ TableDoesNotExistInLobby tableName
     Just table@Table {..} ->
-      async $ do
-        print "TABLE SUBSCRIPTION LOOP FORKED!!!!!!!!!!!!!!!!!-------"
+      async $
+      --  print "TABLE SUBSCRIPTION LOOP FORKED!!!!!!!!!!!!!!!!!-------"
+       do
         dupTableChan <- atomically $ dupTChan channel
         forever $ do
           tableUpdateMsgOut <- atomically $ readTChan dupTableChan
           ServerState {..} <- readTVarIO serverState
           let tableSubscribers = getTableSubscribers tableName lobby
-          print "TABLE SUBSCRIPTION LOOP CALLED!!!!!!!!!!!!!!!!!-------"
+     --     print "TABLE SUBSCRIPTION LOOP CALLED!!!!!!!!!!!!!!!!!-------"
           broadcastMsg clients tableSubscribers tableUpdateMsgOut

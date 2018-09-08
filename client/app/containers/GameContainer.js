@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 
 import Game from '../components/Game'
 import { getGame, getPlayerPosition, isTurnToAct } from '../selectors/games'
-import { call, bet, fold, raise, check, postBigBlind, postSmallBlind, leaveSeat } from '../actions/games'
+import { call, bet, fold, raise, check, postBigBlind, postSmallBlind, sitIn, leaveSeat } from '../actions/games'
 import { takeSeat } from '../actions/lobby'
 
 class GameContainer extends React.Component {
@@ -38,6 +38,7 @@ const mapDispatchToProps = (dispatch, { match: { params: { tableName } } }) => (
   postSmallBlind: () => dispatch(postSmallBlind(tableName)),
   postBigBlind: () => dispatch(postBigBlind(tableName)),
   sitDown: chips => dispatch(takeSeat(tableName, chips)),
+  sitIn: () => dispatch(sitIn(tableName)),
   leaveGameSeat: () => dispatch(leaveSeat(tableName))
 });
 

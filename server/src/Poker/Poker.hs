@@ -75,6 +75,8 @@ handlePlayerAction game@Game {..} playerName =
     action@Timeout -> handlePlayerTimeout playerName game
     action@(SitDown player) ->
       validateAction game playerName action $> seatPlayer player game
+    action@SitIn ->
+      validateAction game playerName action $> sitIn playerName game
     action@LeaveSeat' ->
       validateAction game playerName action $> leaveSeat playerName game
 
