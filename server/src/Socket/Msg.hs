@@ -103,13 +103,14 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
       (removeClient username serverStateTVar)
 
 -- | Forks a thread which timeouts the player when they dont act in sufficient time
--- We add this thread once a player joins a table
---
--- TODO need to kill this thread if the player leads the table
+-- We fork this thread using async once a player sits down at a table
 --
 -- Duplicates the channel which reads table updates and starts a timeout if it is the players turn to act
 -- If no valid game action is received from the socket msg read thread then we update the game with a special
 -- timeout action which will usually check or fold the player.
+--
+-- Note that timeouts are only enforced when the expediency of the player's action is required
+-- to avoid halting the progress of the game.
 playerTimeoutLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
 playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
   msgReaderDup <- atomically $ dupTChan socketReadChan
@@ -138,37 +139,44 @@ playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
               wait asyncPlayerTimer
               print "cancelled asyncPlayerTimer"
               killThread loo
-              pure $ killThread $ asyncThreadId asyncPlayerTimer
+         --     pure $ killThread $ asyncThreadId asyncPlayerTimer
               cancel asyncPlayerTimer
       _ -> return ()
 
-readM :: Game -> PlayerName -> TChan MsgIn -> STM ()
-readM game playerName dupChan = do
+-- We read from a duplicate of the channel which reads msgs from the client socket.
+-- We use a duplicate to listen to the client so as to not consume messages intended for other tables
+awaitValidPlayerAction ::
+     TableName -> Game -> PlayerName -> TChan MsgIn -> STM MsgIn
+awaitValidPlayerAction tableName game playerName dupChan = do
   (readTChan dupChan >>= \msg ->
-     traceShow
-       msg
-       (if (isValidAction game playerName msg)
-          then (return ())
-          else readM game playerName dupChan))
+     if (isValidAction game playerName msg)
+       then (return msg)
+       else awaitValidPlayerAction tableName game playerName dupChan)
   where
     isValidAction game playerName =
       \case
-        (GameMove _ action) -> isRight $ validateAction game playerName action
+        (GameMove tableName' action) ->
+          (isRight $ validateAction game playerName action) &&
+          tableName == tableName'
         _ -> False
 
+-- Race the timer and the blocking read call which awaits a valid player msg.
+-- The race results in an Either where the Left signals a timeout and a 
+-- Right denotes a valid game action was received from the client in sufficient
+-- time.
 awaitTimedPlayerAction ::
      TChan MsgIn -> Game -> TableName -> Username -> IO (Async ())
 awaitTimedPlayerAction socketReadChan game tableName (Username playerName) =
   async $ do
     delayTVar <- registerDelay timeoutDuration
     dupChan <- atomically $ dupTChan socketReadChan
-    msgReadFromChan <- async $ atomically $ readM game playerName dupChan
-    timeout <- async $ atomically $ readTVar delayTVar >>= check
-    msgE <- waitEitherCancel timeout msgReadFromChan
-    case msgE of
-      Left () ->
-        atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
-      Right () -> return ()
+    validPlayerAction <-
+      async $
+      atomically $ awaitValidPlayerAction tableName game playerName dupChan
+    timer <- async $ atomically $ readTVar delayTVar >>= check
+    msgInOrTimedOut <- waitEitherCancel timer validPlayerAction
+    when (isLeft msgInOrTimedOut) $
+      atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
   where
     timeoutDuration = 6500000
 
