@@ -126,29 +126,51 @@ playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
                    newGame
                    tableName
                    username)
-              print "awaiting asyncPlayerTimer to complete"
+              let id = asyncThreadId asyncPlayerTimer
+              loo <-
+                forkIO $
+                forever $
+                threadDelay 500000 >>
+                (print $
+                 show id ++
+                 ": awaiting " ++
+                 (show $ username) ++ " during " ++ (show (_street newGame)))
               wait asyncPlayerTimer
               print "cancelled asyncPlayerTimer"
+              killThread loo
+              pure $ killThread $ asyncThreadId asyncPlayerTimer
               cancel asyncPlayerTimer
       _ -> return ()
 
+readM :: Game -> PlayerName -> TChan MsgIn -> STM ()
+readM game playerName dupChan = do
+  (readTChan dupChan >>= \msg ->
+     traceShow
+       msg
+       (if (isValidAction game playerName msg)
+          then (return ())
+          else readM game playerName dupChan))
+  where
+    isValidAction game playerName =
+      \case
+        (GameMove _ action) -> isRight $ validateAction game playerName action
+        _ -> False
+
 awaitTimedPlayerAction ::
      TChan MsgIn -> Game -> TableName -> Username -> IO (Async ())
-awaitTimedPlayerAction socketReadChan game tableName username =
+awaitTimedPlayerAction socketReadChan game tableName (Username playerName) =
   async $ do
-    maybeMsg <-
-      awaitValidAction
-        game
-        tableName
-        (unUsername username)
-        timeoutDuration
-        socketReadChan
-    case maybeMsg of
-      Nothing ->
+    delayTVar <- registerDelay timeoutDuration
+    dupChan <- atomically $ dupTChan socketReadChan
+    msgReadFromChan <- async $ atomically $ readM game playerName dupChan
+    timeout <- async $ atomically $ readTVar delayTVar >>= check
+    msgE <- waitEitherCancel timeout msgReadFromChan
+    case msgE of
+      Left () ->
         atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
-      Just _ -> return () --  print maybeMsg
+      Right () -> return ()
   where
-    timeoutDuration = 6500000 --6500000
+    timeoutDuration = 6500000
 
 -- We duplicate the channel reading the socket msgs and start a timeout
 -- The thread will be blocked until either a valid action is received 
@@ -159,17 +181,21 @@ awaitTimedPlayerAction socketReadChan game tableName username =
 -- If a valid gameMove player action was received then we
 -- wrap the msgIn in a Just
 awaitValidAction ::
-     Game -> TableName -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
+     Game
+  -> TableName
+  -> PlayerName
+  -> Int
+  -> TChan MsgIn
+  -> IO (Either Bool ())
 awaitValidAction game tableName playerName duration socketReadChan = do
   delayTVar <- registerDelay duration
   dupChan <- atomically $ dupTChan socketReadChan
-  atomically $
-    (Just <$>
-     (readTChan dupChan >>= \msg ->
-        if (isValidAction game playerName msg)
-          then return msg
-          else retry)) `orElse`
-    (Nothing <$ (readTVar delayTVar >>= check))
+  let playerRead =
+        atomically $
+        (readTChan dupChan >>= \msg ->
+           unless (isValidAction game playerName msg) (pure ()))
+  let tim = atomically $ readTVar delayTVar
+  race tim playerRead
   where
     isValidAction game playerName =
       \case

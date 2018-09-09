@@ -522,7 +522,7 @@ spec = do
                   (currentPosToAct .~ 1) .
                   (dealer .~ 1) .
                   (players .~
-                   [ ((actedThisTurn .~ True) . (playerState .~ In) .
+                   [ ((actedThisTurn .~ False) . (playerState .~ In) .
                       (bet .~ 50) .
                       (committed .~ 50) .
                       (chips .~ 1950))
@@ -541,6 +541,33 @@ spec = do
               doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
               True
           describe "Second Turn" $ do
+            let game' =
+                  (street .~ PreFlop) . (maxBet .~ 50) . (deck .~ initialDeck) .
+                  (smallBlind .~ 25) .
+                  (smallBlind .~ 50) .
+                  (pot .~ 100) .
+                  (currentPosToAct .~ 1) .
+                  (dealer .~ 1) .
+                  (players .~
+                   [ ((actedThisTurn .~ True) . (playerState .~ In) .
+                      (bet .~ 50) .
+                      (committed .~ 50) .
+                      (chips .~ 1950))
+                       player1
+                   , ((actedThisTurn .~ False) . (playerState .~ In) .
+                      (bet .~ 50) .
+                      (chips .~ 1975) .
+                      (committed .~ 50))
+                       player2
+                   ]) $
+                  initialGameState'
+            it "Player1 should not have to act" $
+              doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
+              False
+            it "Player2 should have to act" $
+              doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
+              True
+          describe "Third Turn" $ do
             let game' =
                   (street .~ PreFlop) . (maxBet .~ 50) . (pot .~ 0) .
                   (deck .~ initialDeck) .
