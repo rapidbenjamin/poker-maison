@@ -166,7 +166,9 @@ awaitValidAction game tableName playerName duration socketReadChan = do
   atomically $
     (Just <$>
      (readTChan dupChan >>= \msg ->
-        guard (isValidAction game playerName msg) $> msg)) `orElse`
+        if (isValidAction game playerName msg)
+          then return msg
+          else retry)) `orElse`
     (Nothing <$ (readTVar delayTVar >>= check))
   where
     isValidAction game playerName =
@@ -174,6 +176,34 @@ awaitValidAction game tableName playerName duration socketReadChan = do
         (GameMove _ action) -> isRight $ validateAction game playerName action
         _ -> False
 
+-- We duplicate the channel reading the socket msgs and start a timeout
+-- The thread will be blocked until either a valid action is received 
+-- or the timeout finishes 
+--
+-- A return value of Nothing denotes that no valid action
+-- was received in the given time period.
+-- If a valid gameMove player action was received then we
+-- wrap the msgIn in a Just
+--awaitValidAction ::
+--     Game -> TableName -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
+--awaitValidAction game tableName playerName duration socketReadChan = do
+--  delayTVar <- registerDelay duration
+--  dupChan <- atomically $ dupTChan socketReadChan
+--  let awaitTimeout = Nothing <$ readTVar delayTVar >>= check
+--  let awaitValidPlayerAction =
+--        readTChan dupChan >>= \msg ->
+--          if (isValidAction game playerName msg)
+--            then retry
+--            else return msg
+--  playerActionE <- atomically race awaitTimeout awaitValidPlayerAction
+--  case playerActionE of
+--    Left _ -> return Nothing
+--    Right validPlayerAction -> return $ Just validPlayerAction
+--  where
+--    isValidAction game playerName =
+--      \case
+--        (GameMove _ action) -> isRight $ validateAction game playerName action
+--        _ -> False
 gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler GetTables {} = getTablesHandler
 gameMsgHandler msg@SubscribeToTable {} = subscribeToTableHandler msg
