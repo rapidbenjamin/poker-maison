@@ -147,11 +147,11 @@ playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
 -- We use a duplicate to listen to the client so as to not consume messages intended for other tables
 awaitValidPlayerAction ::
      TableName -> Game -> PlayerName -> TChan MsgIn -> STM MsgIn
-awaitValidPlayerAction tableName game playerName dupChan = do
-  (readTChan dupChan >>= \msg ->
-     if (isValidAction game playerName msg)
-       then (return msg)
-       else awaitValidPlayerAction tableName game playerName dupChan)
+awaitValidPlayerAction tableName game playerName dupChan =
+  readTChan dupChan >>= \msg ->
+    if isValidAction game playerName msg
+      then return msg
+      else awaitValidPlayerAction tableName game playerName dupChan
   where
     isValidAction game playerName =
       \case
