@@ -108,7 +108,7 @@ data Street
   deriving (Eq, Ord, Show, Read, Bounded, Enum, Generic, ToJSON, FromJSON)
 
 data Player = Player
-  { _pockets :: [Card]
+  { _pockets :: PocketCards
   , _chips :: Int
   , _bet :: Bet
   , _playerState :: PlayerState
@@ -116,6 +116,13 @@ data Player = Player
   , _committed :: Bet
   , _actedThisTurn :: Bool
   } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+newtype PocketCards =
+  PocketCards [Card]
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+unPocketCards :: PocketCards -> [Card]
+unPocketCards (PocketCards pocketCards) = pocketCards
 
 -- Folded To Signifies a a single player pot where everyone has
 -- folded to them in this case the hand ranking is irrelevant 

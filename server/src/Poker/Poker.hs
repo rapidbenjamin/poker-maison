@@ -96,14 +96,17 @@ handlePlayerTimeout playerName game@Game {..}
     handStarted = _street /= PreDeal
     playerCanCheck = isRight $ canCheck playerName game
 
+newDeck :: IO Deck
+newDeck = shuffle initialDeck >>= return . Deck
+
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 -- toDO - make function pure by taking stdGen as an arg
 progressGame :: Game -> IO Game
 progressGame game@Game {..}
-  | _street == Showdown = getNextHand game <$> shuffle initialDeck
+  | _street == Showdown = getNextHand game <$> newDeck
   | _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2 =
-    getNextHand game <$> shuffle initialDeck
+    getNextHand game <$> newDeck
   | haveAllPlayersActed game &&
       (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
     case getNextStreet _street of
@@ -112,14 +115,14 @@ progressGame game@Game {..}
       Turn -> return $ progressToTurn game
       River -> return $ progressToRiver game
       Showdown -> return $ progressToShowdown game
-      PreDeal -> getNextHand game <$> shuffle initialDeck
+      PreDeal -> getNextHand game <$> newDeck
   | allButOneFolded game && _street /= Showdown =
     return $ progressToShowdown game
   | otherwise = return game
   where
     numberPlayersSatIn = length $ getActivePlayers _players
 
-initialGameState :: [Card] -> Game
+initialGameState :: Deck -> Game
 initialGameState shuffledDeck =
   Game
     { _players = []
@@ -130,7 +133,7 @@ initialGameState shuffledDeck =
     , _dealer = 0
     , _currentPosToAct = 1 -- position here refers to the zero indexed set of active users
     , _board = []
-    , _deck = Deck shuffledDeck
+    , _deck = shuffledDeck
     , _smallBlind = 25
     , _bigBlind = 50
     , _pot = 0

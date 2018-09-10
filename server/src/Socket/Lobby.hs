@@ -38,7 +38,7 @@ initialLobby = do
         , Table
             { subscribers = []
             , waitlist = []
-            , game = initialGameState shuffledDeck
+            , game = initialGameState $ Deck shuffledDeck
             , channel = chan
             })
       ]

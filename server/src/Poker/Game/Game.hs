@@ -25,13 +25,14 @@ import Poker.Types
 -- | Returns both the dealt players and remaining cards left in deck.
 -- We need to have the remaining cards in the deck for dealing
 -- board cards over the next stages.
-dealToPlayers :: [Card] -> [Player] -> ([Card], [Player])
+dealToPlayers :: Deck -> [Player] -> (Deck, [Player])
 dealToPlayers =
   mapAccumL
-    (\cards player ->
+    (\(Deck cards) player ->
        if player ^. playerState == In
-         then (drop 2 cards, (pockets .~ take 2 cards) player)
-         else (cards, player))
+         then ( Deck $ drop 2 cards
+              , (pockets .~ (PocketCards $ take 2 cards)) player)
+         else (Deck cards, player))
 
 dealBoardCards :: Int -> Game -> Game
 dealBoardCards n game@Game {..} =
@@ -40,10 +41,9 @@ dealBoardCards n game@Game {..} =
     (boardCards, newDeck) = splitAt n (unDeck _deck)
 
 deal :: Game -> Game
-deal game@Game {..} =
-  Game {_players = dealtPlayers, _deck = Deck remainingDeck, ..}
+deal game@Game {..} = Game {_players = dealtPlayers, _deck = remainingDeck, ..}
   where
-    (remainingDeck, dealtPlayers) = dealToPlayers (unDeck _deck) _players
+    (remainingDeck, dealtPlayers) = dealToPlayers (_deck) _players
 
 getNextStreet :: Street -> Street
 getNextStreet Showdown = minBound
@@ -160,14 +160,14 @@ isEveryoneAllIn game@Game {..}
 -- new players can of course post their blinds early. In the case of an early posting the initial
 -- blind must be the big blind. After this 'early' blind or the posting of a normal blind in turn the 
 -- new player will be removed from the newBlindNeeded field and can play normally.
-getNextHand :: Game -> [Card] -> Game
+getNextHand :: Game -> Deck -> Game
 getNextHand Game {..} newDeck =
   Game
     { _waitlist = newWaitlist
     , _maxBet = 0
     , _players = newPlayers
     , _board = []
-    , _deck = Deck newDeck
+    , _deck = newDeck
     , _winners = NoWinners
     , _street = PreDeal
     , _dealer = newDealer
@@ -220,12 +220,15 @@ getWinners game@Game {..} =
 getHandRankings :: [Player] -> [Card] -> [((HandRank, [Card]), PlayerName)]
 getHandRankings plyrs boardCards =
   (\(cs, Player {..}) -> (cs, _playerName)) <$>
-  map (value . (++ boardCards) . view pockets &&& id) remainingPlayersInHand
+  map
+    (value . (++ boardCards) . unPocketCards . view pockets &&& id)
+    remainingPlayersInHand
   where
     remainingPlayersInHand =
       filter
         (\Player {..} ->
-           (_playerState /= Folded) || (_playerState /= None) || null _pockets)
+           (_playerState /= Folded) ||
+           (_playerState /= None) || null (unPocketCards _pockets))
         plyrs
 
 -- PlayerState reset to In if Folded. However we don't reset None
@@ -235,7 +238,7 @@ getHandRankings plyrs boardCards =
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _playerState = newPlayerState
     , _bet = 0
     , _committed = 0
@@ -257,7 +260,7 @@ allButOneFolded game@Game {..} = _street /= PreDeal && length playersInHand <= 1
 getPlayer :: Text -> Int -> Player
 getPlayer playerName chips =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _bet = 0
     , _playerState = In
     , _playerName = playerName
