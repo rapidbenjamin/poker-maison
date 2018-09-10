@@ -35,14 +35,15 @@ dealToPlayers =
 
 dealBoardCards :: Int -> Game -> Game
 dealBoardCards n game@Game {..} =
-  Game {_board = _board <> boardCards, _deck = newDeck, ..}
+  Game {_board = _board <> boardCards, _deck = Deck newDeck, ..}
   where
-    (boardCards, newDeck) = splitAt n _deck
+    (boardCards, newDeck) = splitAt n (unDeck _deck)
 
 deal :: Game -> Game
-deal game@Game {..} = Game {_players = dealtPlayers, _deck = remainingDeck, ..}
+deal game@Game {..} =
+  Game {_players = dealtPlayers, _deck = Deck remainingDeck, ..}
   where
-    (remainingDeck, dealtPlayers) = dealToPlayers _deck _players
+    (remainingDeck, dealtPlayers) = dealToPlayers (unDeck _deck) _players
 
 getNextStreet :: Street -> Street
 getNextStreet Showdown = minBound
@@ -166,7 +167,7 @@ getNextHand Game {..} newDeck =
     , _maxBet = 0
     , _players = newPlayers
     , _board = []
-    , _deck = newDeck
+    , _deck = Deck newDeck
     , _winners = NoWinners
     , _street = PreDeal
     , _dealer = newDealer

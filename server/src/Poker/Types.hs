@@ -130,6 +130,14 @@ data Winners
   | NoWinners
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
+newtype Deck =
+  Deck [Card]
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+unDeck :: Deck -> [Card]
+unDeck (Deck deck) = deck
+
+--newtype PocketCards = [Card] deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 data Game = Game
   { _players :: [Player]
   , _minBuyInChips :: Int
@@ -138,7 +146,7 @@ data Game = Game
   , _board :: [Card]
   , _winners :: Winners
   , _waitlist :: [PlayerName]
-  , _deck :: [Card]
+  , _deck :: Deck
   , _smallBlind :: Int
   , _bigBlind :: Int
   , _street :: Street
@@ -160,6 +168,10 @@ instance Show Game where
     "\n _board: " <>
     show _board
 
+-- Pocket cards and card deck excluded
+--newtype PrivateGame = PrivateGame {
+--
+--}
 type PlayerName = Text
 
 data Blind
