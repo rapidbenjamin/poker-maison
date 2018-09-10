@@ -217,9 +217,11 @@ getWinners game@Game {..} =
 --
 -- If more than one plays holds the same winning hand then the second part of the tuple
 -- will consist of all the players holding the hand
-getHandRankings :: [Player] -> [Card] -> [((HandRank, [Card]), PlayerName)]
+getHandRankings ::
+     [Player] -> [Card] -> [((HandRank, PlayerShowdownHand), PlayerName)]
 getHandRankings plyrs boardCards =
-  (\(cs, Player {..}) -> (cs, _playerName)) <$>
+  (\(showdownHand, Player {..}) ->
+     ((_2 %~ PlayerShowdownHand) showdownHand, _playerName)) <$>
   map
     (value . (++ boardCards) . unPocketCards . view pockets &&& id)
     remainingPlayersInHand

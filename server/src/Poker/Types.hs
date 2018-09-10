@@ -122,7 +122,16 @@ newtype PocketCards =
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 unPocketCards :: PocketCards -> [Card]
-unPocketCards (PocketCards pocketCards) = pocketCards
+unPocketCards (PocketCards cards) = cards
+
+-- Highest ranking hand for a given Player that is in the game
+-- during the Showdown stage of the game (last stage)
+newtype PlayerShowdownHand =
+  PlayerShowdownHand [Card]
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+unPlayerShowdownHand :: PlayerShowdownHand -> [Card]
+unPlayerShowdownHand (PlayerShowdownHand cards) = cards
 
 -- Folded To Signifies a a single player pot where everyone has
 -- folded to them in this case the hand ranking is irrelevant 
@@ -132,7 +141,7 @@ unPocketCards (PocketCards pocketCards) = pocketCards
 -- Whereas in a MultiPlayer showdown all players must show their cards
 -- as hand rankings are needed to ascertain the winner of the pot.
 data Winners
-  = MultiPlayerShowdown [((HandRank, [Card]), PlayerName)]
+  = MultiPlayerShowdown [((HandRank, PlayerShowdownHand), PlayerName)]
   | SinglePlayerShowdown PlayerName -- occurs when everyone folds to one player
   | NoWinners
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
@@ -142,7 +151,7 @@ newtype Deck =
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 unDeck :: Deck -> [Card]
-unDeck (Deck deck) = deck
+unDeck (Deck cards) = cards
 
 --newtype PocketCards = [Card] deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 data Game = Game
