@@ -21,6 +21,15 @@ import Poker.Types
 instance Arbitrary Card where
   arbitrary = genericArbitrary
 
+instance Arbitrary PocketCards where
+  arbitrary = genericArbitrary
+
+instance Arbitrary Deck where
+  arbitrary = genericArbitrary
+
+instance Arbitrary PlayerShowdownHand where
+  arbitrary = genericArbitrary
+
 instance Arbitrary PlayerState where
   arbitrary = genericArbitrary
 
@@ -65,7 +74,10 @@ instance Arbitrary Player where
     _bet <-
       suchThat chooseAny (\x -> (x >= 0) && x <= _chips && x <= _committed)
     _playerName <- suchThat arbitrary (\n -> T.length n > 0)
-    _pockets <- suchThat arbitrary (\cards -> null cards || length cards == 2)
+    _pockets <-
+      suchThat
+        arbitrary
+        (\(PocketCards cards) -> null cards || length cards == 2)
     _playerState <-
       suchThat arbitrary (\s -> (s == None && (_committed > 0)) || s /= None)
     _actedThisTurn <- arbitrary

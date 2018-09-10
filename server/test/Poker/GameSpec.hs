@@ -35,9 +35,10 @@ initialGameState' = initialGameState initialDeck
 player1 =
   Player
     { _pockets =
-        [ Card {rank = Three, suit = Diamonds}
-        , Card {rank = Four, suit = Spades}
-        ]
+        PocketCards
+          [ Card {rank = Three, suit = Diamonds}
+          , Card {rank = Four, suit = Spades}
+          ]
     , _chips = 2000
     , _bet = 50
     , _playerState = In
@@ -49,7 +50,8 @@ player1 =
 player2 =
   Player
     { _pockets =
-        [Card {rank = Three, suit = Clubs}, Card {rank = Four, suit = Hearts}]
+        PocketCards
+          [Card {rank = Three, suit = Clubs}, Card {rank = Four, suit = Hearts}]
     , _chips = 2000
     , _bet = 0
     , _playerState = In
@@ -60,7 +62,7 @@ player2 =
 
 player3 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 0
     , _playerState = In
@@ -71,7 +73,7 @@ player3 =
 
 player4 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 0
     , _playerState = None
@@ -83,7 +85,10 @@ player4 =
 player5 =
   Player
     { _pockets =
-        [Card {rank = King, suit = Diamonds}, Card {rank = Four, suit = Spades}]
+        PocketCards
+          [ Card {rank = King, suit = Diamonds}
+          , Card {rank = Four, suit = Spades}
+          ]
     , _chips = 2000
     , _bet = 50
     , _playerState = In
@@ -94,7 +99,7 @@ player5 =
 
 player6 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 0
     , _playerState = None
@@ -112,22 +117,22 @@ spec = do
       (all
          (\Player {..} ->
             if _playerState == In
-              then length _pockets == 2
-              else null _pockets)
+              then length (unPocketCards _pockets) == 2
+              else null $ unPocketCards _pockets)
          newPlayers) `shouldBe`
         True
     it "should preserve ordering of players" $ property $ \(players) ->
       length players <= 21 ==> do
         let players' = players :: [Player]
-        let (remainingDeck, players) = dealToPlayers initialDeck players'
+        let (_, players) = dealToPlayers initialDeck players'
         (_playerName <$> players) == (_playerName <$> players')
     it "the resulting set of cards should contain no duplicates" $ property $ \(players) -> do
       length players <= 21 ==> do
         let players' -- deal to players that have no pocket cards already
-             = (players :: [Player]) & traverse . pockets .~ ([] :: [Card])
+             = (players :: [Player]) & traverse . pockets .~ (PocketCards [])
         let (remainingDeck, players) = dealToPlayers initialDeck players'
-        let playerCards = concat $ _pockets <$> players
-        null $ playerCards `intersect` remainingDeck
+        let playerCards = concat $ (unPocketCards . _pockets) <$> players
+        null $ playerCards `intersect` (unDeck remainingDeck)
   describe "dealBoardCards" $ do
     it "should deal correct number of cards to board" $ property $ \(Positive n) -> do
       n < 52 ==> do
@@ -136,7 +141,8 @@ spec = do
     it "should remove dealt cards from deck" $ property $ \(Positive n) -> do
       n < 52 ==> do
         let newGame = dealBoardCards n initialGameState'
-        length (newGame ^. deck) `shouldBe` (length initialDeck - n)
+        length (unDeck (newGame ^. deck)) `shouldBe`
+          ((length $ unDeck initialDeck) - n)
   describe "haveAllPlayersActed" $ do
     it
       "should return True when all players have acted during PreDeal for Three Players" $ do
@@ -281,7 +287,7 @@ spec = do
           (dealer .~ 1) .
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
           initialGameState'
-    let preDealGame = getNextHand showdownGame []
+    let preDealGame = getNextHand showdownGame $ Deck []
     it "should update street to PreDeal" $ preDealGame ^. street `shouldBe`
       PreDeal
     it "should reset maxBet" $ preDealGame ^. maxBet `shouldBe` 0

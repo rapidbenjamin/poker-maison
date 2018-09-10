@@ -30,7 +30,7 @@ twoPlayerGame =
   Game
     { _players =
         [ Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 1950
             , _bet = 50
             , _playerState = In
@@ -39,7 +39,7 @@ twoPlayerGame =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 2000
             , _bet = 0
             , _playerState = None
@@ -51,7 +51,7 @@ twoPlayerGame =
     , _maxPlayers = 5
     , _board = []
     , _waitlist = []
-    , _deck = []
+    , _deck = Deck []
     , _smallBlind = 25
     , _bigBlind = 50
     , _street = PreDeal
@@ -68,7 +68,7 @@ twoPlayerGameAllBlindsPosted =
   Game
     { _players =
         [ Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 1950
             , _bet = 25
             , _playerState = In
@@ -77,7 +77,7 @@ twoPlayerGameAllBlindsPosted =
             , _actedThisTurn = True
             }
         , Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 2000
             , _bet = 50
             , _playerState = In
@@ -89,7 +89,7 @@ twoPlayerGameAllBlindsPosted =
     , _maxPlayers = 5
     , _board = []
     , _waitlist = []
-    , _deck = []
+    , _deck = Deck []
     , _smallBlind = 25
     , _bigBlind = 50
     , _street = PreDeal
@@ -106,7 +106,7 @@ threePlayerGame =
   Game
     { _players =
         [ Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 1950
             , _bet = 0
             , _playerState = None
@@ -115,7 +115,7 @@ threePlayerGame =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 2000
             , _bet = 0
             , _playerState = None
@@ -124,7 +124,7 @@ threePlayerGame =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 2000
             , _bet = 0
             , _playerState = None
@@ -136,7 +136,7 @@ threePlayerGame =
     , _maxPlayers = 5
     , _board = []
     , _waitlist = []
-    , _deck = []
+    , _deck = Deck []
     , _smallBlind = 25
     , _bigBlind = 50
     , _street = PreDeal
@@ -153,7 +153,7 @@ threePlayerGameAllBlindsPosted =
   Game
     { _players =
         [ Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 1950
             , _bet = 0
             , _playerState = None
@@ -162,7 +162,7 @@ threePlayerGameAllBlindsPosted =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 2000
             , _bet = 25
             , _playerState = In
@@ -171,7 +171,7 @@ threePlayerGameAllBlindsPosted =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = []
+            { _pockets = PocketCards []
             , _chips = 2000
             , _bet = 50
             , _playerState = In
@@ -183,7 +183,7 @@ threePlayerGameAllBlindsPosted =
     , _maxPlayers = 5
     , _board = []
     , _waitlist = []
-    , _deck = []
+    , _deck = Deck []
     , _smallBlind = 25
     , _bigBlind = 50
     , _street = PreDeal

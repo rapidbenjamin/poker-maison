@@ -27,7 +27,7 @@ initialGameState' = initialGameState initialDeck
 
 player1 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 200
     , _playerState = In
@@ -38,7 +38,7 @@ player1 =
 
 player2 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 0
     , _playerState = Folded
@@ -49,7 +49,7 @@ player2 =
 
 player3 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 300
     , _bet = 0
     , _playerState = In
@@ -60,7 +60,7 @@ player3 =
 
 player4 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 0
     , _playerState = None
@@ -71,7 +71,7 @@ player4 =
 
 player5 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 0
     , _playerState = In
@@ -342,7 +342,8 @@ spec = do
             (street .~ Showdown) .
             (pot .~ 1000) .
             (deck .~ initialDeck) .
-            (winners .~ MultiPlayerShowdown [((Pair, []), "player4")]) .
+            (winners .~
+             MultiPlayerShowdown [((Pair, PlayerShowdownHand []), "player4")]) .
             (players .~
              [ (((playerState .~ In) . (actedThisTurn .~ True)) player4)
              , (((playerState .~ In) . (actedThisTurn .~ True)) player5)

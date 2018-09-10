@@ -24,9 +24,10 @@ import Poker.Types
 player1 =
   Player
     { _pockets =
-        [ Card {rank = Three, suit = Diamonds}
-        , Card {rank = Four, suit = Spades}
-        ]
+        PocketCards
+          [ Card {rank = Three, suit = Diamonds}
+          , Card {rank = Four, suit = Spades}
+          ]
     , _chips = 2000
     , _bet = 50
     , _playerState = In
@@ -38,7 +39,8 @@ player1 =
 player2 =
   Player
     { _pockets =
-        [Card {rank = Three, suit = Clubs}, Card {rank = Four, suit = Hearts}]
+        PocketCards
+          [Card {rank = Three, suit = Clubs}, Card {rank = Four, suit = Hearts}]
     , _chips = 0
     , _bet = 0
     , _playerState = In
@@ -49,7 +51,7 @@ player2 =
 
 player3 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 0
     , _playerState = In
@@ -60,7 +62,7 @@ player3 =
 
 player4 =
   Player
-    { _pockets = []
+    { _pockets = PocketCards []
     , _chips = 2000
     , _bet = 0
     , _playerState = None
@@ -72,7 +74,10 @@ player4 =
 player5 =
   Player
     { _pockets =
-        [Card {rank = King, suit = Diamonds}, Card {rank = Four, suit = Spades}]
+        PocketCards
+          [ Card {rank = King, suit = Diamonds}
+          , Card {rank = Four, suit = Spades}
+          ]
     , _chips = 2000
     , _bet = 50
     , _playerState = In
