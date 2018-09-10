@@ -24,8 +24,12 @@ import Data.Array.IO
 import System.Random
 
 -- | A standard deck of cards.
-initialDeck :: [Card]
-initialDeck = Card <$> [minBound ..] <*> [minBound ..]
+initialDeck :: Deck
+initialDeck = Deck $ Card <$> [minBound ..] <*> [minBound ..]
+
+-- Get a shuffled deck of cards.
+newDeck :: IO Deck
+newDeck = shuffle (unDeck initialDeck) >>= return . Deck
 
 shuffle :: [a] -> IO [a]
 shuffle xs = do

@@ -30,7 +30,7 @@ import Types
 initialLobby :: IO Lobby
 initialLobby = do
   chan <- atomically newBroadcastTChan
-  shuffledDeck <- shuffle initialDeck
+  shuffledDeck <- newDeck
   return $
     Lobby $
     M.fromList
@@ -38,7 +38,7 @@ initialLobby = do
         , Table
             { subscribers = []
             , waitlist = []
-            , game = initialGameState $ Deck shuffledDeck
+            , game = initialGameState shuffledDeck
             , channel = chan
             })
       ]

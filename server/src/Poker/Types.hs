@@ -153,7 +153,6 @@ newtype Deck =
 unDeck :: Deck -> [Card]
 unDeck (Deck cards) = cards
 
---newtype PocketCards = [Card] deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 data Game = Game
   { _players :: [Player]
   , _minBuyInChips :: Int
@@ -184,10 +183,6 @@ instance Show Game where
     "\n _board: " <>
     show _board
 
--- Pocket cards and card deck excluded
---newtype PrivateGame = PrivateGame {
---
---}
 type PlayerName = Text
 
 data Blind

@@ -237,10 +237,7 @@ getHandRankings plyrs boardCards =
            (_playerState /= None) || null (unPocketCards _pockets))
         plyrs
 
--- PlayerState reset to In if Folded. However we don't reset None
--- states as this gives the information that the player needs to post a big blind
--- if they dont want to wait for the dealer button to pass - this should probably be refactored
--- if it needs a comment to explain it
+-- Update active players states to prepare them for the next hand.
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =
   Player

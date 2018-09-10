@@ -96,9 +96,6 @@ handlePlayerTimeout playerName game@Game {..}
     handStarted = _street /= PreDeal
     playerCanCheck = isRight $ canCheck playerName game
 
-newDeck :: IO Deck
-newDeck = shuffle initialDeck >>= return . Deck
-
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 -- toDO - make function pure by taking stdGen as an arg
