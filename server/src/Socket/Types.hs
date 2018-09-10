@@ -76,6 +76,7 @@ instance Ord Table where
 
 data Client = Client
   { email :: Text
+  , clientUsername :: Text
   , conn :: WS.Connection
   }
 

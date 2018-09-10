@@ -34,6 +34,8 @@ import Types
 import Data.Maybe
 import System.Timeout
 
+import Poker.Game.Privacy (excludeAllPlayerCards, excludeOtherPlayerCards)
+
 authClient ::
      Secret
   -> TVar ServerState
@@ -56,7 +58,11 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
           (ServerState
              { clients =
                  addClient
-                   Client {conn = conn, email = userEntityEmail}
+                   Client
+                     { conn = conn
+                     , clientUsername = userEntityUsername
+                     , email = userEntityEmail
+                     }
                    username
                    clients
              , ..
@@ -114,6 +120,21 @@ getClientConn Client {..} = conn
 
 broadcastMsg :: Map Username Client -> [Username] -> MsgOut -> IO ()
 broadcastMsg clients usernames msg =
-  forM_ conns (\Client {..} -> sendMsg conn msg)
+  forM_
+    conns
+    (\Client {..} -> sendMsg conn $ filterPrivateGameData clientUsername msg)
   where
     conns = clients `M.restrictKeys` Set.fromList usernames
+
+-- Filter out private data such as other players cards which is not
+-- intended for the client.
+filterPrivateGameData :: Text -> MsgOut -> MsgOut
+filterPrivateGameData username (SuccessfullySatDown tableName game) =
+  SuccessfullySatDown tableName (excludeOtherPlayerCards username game)
+filterPrivateGameData username (SuccessfullySubscribedToTable tableName game) =
+  SuccessfullySubscribedToTable
+    tableName
+    (excludeOtherPlayerCards username game)
+filterPrivateGameData username (NewGameState tableName game) =
+  NewGameState tableName (excludeOtherPlayerCards username game)
+filterPrivateGameData _ unfilteredMsg = unfilteredMsg

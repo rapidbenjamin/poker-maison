@@ -61,6 +61,13 @@ import Types
 
 import Database
 
+gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+gameMsgHandler GetTables {} = getTablesHandler
+gameMsgHandler msg@SubscribeToTable {} = subscribeToTableHandler msg
+gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
+gameMsgHandler msg@LeaveSeat {} = leaveSeatHandler msg
+gameMsgHandler msg@GameMove {} = gameActionHandler msg
+
 -- process msgs sent by the client socket
 handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
@@ -119,7 +126,7 @@ playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
     dupTableChanMsg <- atomically $ readTChan dupTableChan
     case dupTableChanMsg of
       (NewGameState tableName newGame) ->
-        let playerHasToAct = (doesPlayerHaveToAct (unUsername username) newGame)
+        let playerHasToAct = doesPlayerHaveToAct (unUsername username) newGame
          in when playerHasToAct $ do
               asyncPlayerTimer <-
                 (awaitTimedPlayerAction
@@ -180,71 +187,6 @@ awaitTimedPlayerAction socketReadChan game tableName (Username playerName) =
   where
     timeoutDuration = 6500000
 
--- We duplicate the channel reading the socket msgs and start a timeout
--- The thread will be blocked until either a valid action is received 
--- or the timeout finishes 
---
--- A return value of Nothing denotes that no valid action
--- was received in the given time period.
--- If a valid gameMove player action was received then we
--- wrap the msgIn in a Just
-awaitValidAction ::
-     Game
-  -> TableName
-  -> PlayerName
-  -> Int
-  -> TChan MsgIn
-  -> IO (Either Bool ())
-awaitValidAction game tableName playerName duration socketReadChan = do
-  delayTVar <- registerDelay duration
-  dupChan <- atomically $ dupTChan socketReadChan
-  let playerRead =
-        atomically $
-        (readTChan dupChan >>= \msg ->
-           unless (isValidAction game playerName msg) (pure ()))
-  let tim = atomically $ readTVar delayTVar
-  race tim playerRead
-  where
-    isValidAction game playerName =
-      \case
-        (GameMove _ action) -> isRight $ validateAction game playerName action
-        _ -> False
-
--- We duplicate the channel reading the socket msgs and start a timeout
--- The thread will be blocked until either a valid action is received 
--- or the timeout finishes 
---
--- A return value of Nothing denotes that no valid action
--- was received in the given time period.
--- If a valid gameMove player action was received then we
--- wrap the msgIn in a Just
---awaitValidAction ::
---     Game -> TableName -> PlayerName -> Int -> TChan MsgIn -> IO (Maybe MsgIn)
---awaitValidAction game tableName playerName duration socketReadChan = do
---  delayTVar <- registerDelay duration
---  dupChan <- atomically $ dupTChan socketReadChan
---  let awaitTimeout = Nothing <$ readTVar delayTVar >>= check
---  let awaitValidPlayerAction =
---        readTChan dupChan >>= \msg ->
---          if (isValidAction game playerName msg)
---            then retry
---            else return msg
---  playerActionE <- atomically race awaitTimeout awaitValidPlayerAction
---  case playerActionE of
---    Left _ -> return Nothing
---    Right validPlayerAction -> return $ Just validPlayerAction
---  where
---    isValidAction game playerName =
---      \case
---        (GameMove _ action) -> isRight $ validateAction game playerName action
---        _ -> False
-gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameMsgHandler GetTables {} = getTablesHandler
-gameMsgHandler msg@SubscribeToTable {} = subscribeToTableHandler msg
-gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
-gameMsgHandler msg@LeaveSeat {} = leaveSeatHandler msg
-gameMsgHandler msg@GameMove {} = gameActionHandler msg
-
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
 --  is possible. The game states which would lead to this scenario where the game 
@@ -271,9 +213,7 @@ handleNewGameState connString serverStateTVar (NewGameState tableName newGame) =
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
   async (progressGame connString serverStateTVar tableName newGame)
   return ()
-handleNewGameState _ _ msg
-  --print msg
- = do
+handleNewGameState _ _ msg = do
   return ()
 
 progressGame ::

@@ -80,6 +80,7 @@ library:
     - Poker.Game.Blinds
     - Poker.Game.Game
     - Poker.Game.Utils
+    - Poker.Game.Privacy
     - Socket
 
 executables:
