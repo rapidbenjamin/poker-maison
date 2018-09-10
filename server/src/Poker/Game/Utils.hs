@@ -126,3 +126,7 @@ incPosToAct currIx Game {..} = nextIx
        in b <> a
     (nextIx, nextPlayer) =
       fromJust $ find (\(_, p) -> _playerState p == In) (tail iplayers')
+
+isMultiPlayerShowdown :: Winners -> Bool
+isMultiPlayerShowdown (MultiPlayerShowdown _) = True
+isMultiPlayerShowdown _ = False

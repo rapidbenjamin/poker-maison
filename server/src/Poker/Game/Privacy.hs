@@ -15,6 +15,7 @@ import Data.Monoid
 import Control.Lens
 
 import Poker.Game.Game (isEveryoneAllIn)
+import Poker.Game.Utils
 import Poker.Types
 
 -- For players that are sat in game
@@ -36,23 +37,30 @@ excludeAllPlayerCards = excludePrivateCards Nothing
 -- Game state (his pocket cards)
 --
 -- If everyone in the game is AllIn then their pocket cards should all be visible.
+--
+---- We show all active players cards in the case of every active player being all in
+-- or during the final showdown stage of the game
+--
+-- If they are
+-- then all the pocket cards held by players whose _playerState 
+-- is set to In (active and) are public and therefore not removed.
 excludePrivateCards :: Maybe PlayerName -> Game -> Game
 excludePrivateCards maybePlayerName game =
   game & (players %~ (<$>) pocketCardsPrivacyModifier) . (deck .~ Deck [])
   where
     everyoneAllIn = isEveryoneAllIn game
+    multiplayerShowdown =
+      _street game == Showdown && isMultiPlayerShowdown (_winners game)
+    showAllActivesCards = everyoneAllIn || multiplayerShowdown
     pocketCardsPrivacyModifier =
       maybe
-        (updatePocketCardsForSpectator everyoneAllIn)
-        (updatePocketCardsForPlayer everyoneAllIn)
+        (updatePocketCardsForSpectator showAllActivesCards)
+        (updatePocketCardsForPlayer showAllActivesCards)
         maybePlayerName
 
--- Takes a boolean denoting if everyone is all in. If they are
--- then all the pocket cards helld by players whose _playerState 
--- is set to In (active and) are public and therefore not removed.
 updatePocketCardsForSpectator :: Bool -> (Player -> Player)
-updatePocketCardsForSpectator isEveryoneAllIn
-  | isEveryoneAllIn =
+updatePocketCardsForSpectator showAllActivesCards
+  | showAllActivesCards =
     (\player@Player {..} ->
        if _playerState == In
          then player
@@ -60,8 +68,8 @@ updatePocketCardsForSpectator isEveryoneAllIn
   | otherwise = (\Player {..} -> Player {_pockets = PocketCards [], ..})
 
 updatePocketCardsForPlayer :: Bool -> PlayerName -> (Player -> Player)
-updatePocketCardsForPlayer isEveryoneAllIn playerName
-  | isEveryoneAllIn =
+updatePocketCardsForPlayer showAllActivesCards playerName
+  | showAllActivesCards =
     (\player@Player {..} ->
        if _playerState == In
          then player
