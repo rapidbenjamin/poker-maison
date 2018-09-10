@@ -250,9 +250,11 @@ resetPlayerCardsAndBets Player {..} =
     }
   where
     newPlayerState =
-      if _playerState == Folded || _playerState == In
-        then In
-        else None
+      if _chips == 0
+        then None
+        else if _playerState == Folded || _playerState == In
+               then In
+               else None
 
 -- The game should go straight to showdown if all but one players is In hand
 allButOneFolded :: Game -> Bool

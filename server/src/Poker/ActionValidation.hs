@@ -121,7 +121,7 @@ canBet pName amount game@Game {..}
   | amount > chipCount = Left $ InvalidMove pName NotEnoughChipsForAction
   | _street == Showdown || _street == PreDeal =
     Left $ InvalidMove pName InvalidActionForStreet
-  | _maxBet > 0 =
+  | _maxBet > 0 && _street /= PreFlop =
     Left $
     InvalidMove pName $
     CannotBetShouldRaiseInstead
@@ -173,7 +173,6 @@ canCall pName game@Game {..}
     Left $ InvalidMove pName CannotCallZeroAmountCheckOrBetInstead
   | otherwise = Right ()
   where
-    minRaise = 2 * _maxBet
     p = fromJust (getGamePlayer game pName)
     chipCount = _chips p
     amountNeededToCall = _maxBet - _bet p
