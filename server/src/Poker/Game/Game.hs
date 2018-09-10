@@ -23,8 +23,8 @@ import Poker.Game.Utils
 import Poker.Types
 
 -- | Returns both the dealt players and remaining cards left in deck.
--- We need to have the remaining cards in the deck for dealing
--- board cards over the next stages.
+-- We return the new deck for the purposes of dealing the board cards 
+-- over the remaining course of the hand.
 dealToPlayers :: Deck -> [Player] -> (Deck, [Player])
 dealToPlayers =
   mapAccumL
@@ -45,6 +45,9 @@ deal game@Game {..} = Game {_players = dealtPlayers, _deck = remainingDeck, ..}
   where
     (remainingDeck, dealtPlayers) = dealToPlayers (_deck) _players
 
+-- Gets the next data constructor of the Street which represents
+-- the name of the next game stage.
+-- The term Street is poker terminology for hand stage.
 getNextStreet :: Street -> Street
 getNextStreet Showdown = minBound
 getNextStreet _street = succ _street
