@@ -12,6 +12,8 @@ import Data.List
 import Data.Maybe
 import Data.Monoid
 
+import Debug.Trace
+
 import Control.Lens
 
 import Poker.Game.Game (isEveryoneAllIn)

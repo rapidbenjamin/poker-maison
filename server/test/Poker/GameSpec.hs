@@ -510,8 +510,6 @@ spec = do
                      player2
                  ]) $
                 initialGameState'
-          traceShowM ((_players game') !! 1)
-          traceShowM (blindRequiredByPlayer game' "player2")
           it "Player1 should not have to act" $
             doesPlayerHaveToAct (_playerName player1) game' `shouldBe`
             False
