@@ -213,10 +213,11 @@ getWinners game@Game {..} =
          filter (\Player {..} -> _playerState == In) _players
     else MultiPlayerShowdown $ maximums $ getHandRankings _players _board
 
--- Get the best hand for each active player (AllIn or In)/
+-- Return the best hands and the active players (playerState of In) who hold
+-- those hands.
 --
--- If more than one plays holds the same winning hand then the second part of the tuple
--- will consist of all the players holding the hand
+-- If more than one player holds the same winning hand then the second part 
+-- of the tuple will consist of all the players holding the hand
 getHandRankings ::
      [Player] -> [Card] -> [((HandRank, PlayerShowdownHand), PlayerName)]
 getHandRankings plyrs boardCards =
