@@ -59,6 +59,13 @@ const Game = props => {
     const userPlayer = game.get('_players').find(p => p.get('_playerName') === username)
     const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
     const currentPosToAct = game.get('_currentPosToAct')
+    const isMultiplayerShowdown = game.get('_winners').get('tag') == 'MultiPlayerShowdown'
+    const showdownPots = game.get('_winners').get('contents')
+    const mainShowdownPot = showdownPots ? showdownPots.get(0) : null
+    const mainShowdownPotHandRanking = mainShowdownPot ? mainShowdownPot.get(0).get(0) : null
+    const mainShowdownPotHandCards = mainShowdownPot ? mainShowdownPot.get(0).get(1) : null
+    const mainShowdownPotHandPlayers = mainShowdownPot ? mainShowdownPot.get(1) : null
+    const playerNamesWinnersOfMainShowdownPot = mainShowdownPot ? mainShowdownPot.get(1) : null
 
     return (<div className='game-view-grid'>
       <p style={{ height: '300px', top: '80px', position: 'absolute' }}>
@@ -72,6 +79,9 @@ const Game = props => {
             <Board cards={game.get('_board')} />
             <h4 className='pot-label'> <span className='monospaced-font'>
               {`$${potSize}`}</span></h4>
+            <p className='winners-label'>
+              {`${mainShowdownPotHandPlayers} wins with ${mainShowdownPotHandRanking}`}
+            </p>
           </div>
           <div className='game-table'>
           </div>

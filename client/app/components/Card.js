@@ -32,7 +32,7 @@ const showRank = rank => {
 }
 
 const Card = ({ rank, suit }) => (
-  <div className="card">
+  <div className='card'>
     <div className="rank">
       {showRank(rank)}
     </div>

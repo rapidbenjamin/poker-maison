@@ -42,3 +42,10 @@
   grid-area: 2/2/2/5;
   justify-self: center;
 }
+
+.winners-label {
+    grid-area: 2/1/4/7;
+    justify-self: center;
+    top: 0.75em;
+    position: relative;
+}

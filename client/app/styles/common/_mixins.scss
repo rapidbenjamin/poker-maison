@@ -65,3 +65,16 @@
     margin-bottom: 0;
     padding-top: 0.3em;
 }
+
+/* A poker cards dimensions are 63.5mm X 88.9mm */
+%card {
+  height: 2.5em;
+  width: 1.7em;
+  margin-left: 0.2em;
+  text-align: center;
+  font-weight: 800;
+  background-color: white;
+  font-size: 2em;
+  border-radius: 0.25em;
+  color: black;
+}
