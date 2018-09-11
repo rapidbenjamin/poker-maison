@@ -23,17 +23,17 @@
 /* cards behind player oval representing opponent pockets outwith showdown */
 .hidden-pocket-cards .card {
     position: absolute;
-    top: -1.5em;
+   // top: -1.5em;
     z-index: -1;
-    height: 2.2em;
-    width: 1.3em;
+  //  height: 2.2em;
+  //  width: 1.3em;
     margin: 0;
 
-    @include sm {
+//    @include sm {
       height: 2.5em;
       width: 1.8em;
       top: -1 * (2.1vh * 2.45);
-    }
+  //  }
 }
 
 .hidden-pocket-cards-container {
