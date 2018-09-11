@@ -110,6 +110,10 @@ sendMsgs :: [WS.Connection] -> MsgOut -> IO ()
 sendMsgs conns msg = forM_ conns $ \conn -> sendMsg conn msg
 
 sendMsg :: WS.Connection -> MsgOut -> IO ()
+sendMsg conn (SuccessfullySubscribedToTable tableName game) =
+  let msg' =
+        SuccessfullySubscribedToTable tableName (excludeAllPlayerCards game)
+   in WS.sendTextData conn (encodeMsgToJSON msg')
 sendMsg conn msg = WS.sendTextData conn (encodeMsgToJSON msg)
 
 sendMsgX :: WS.Connection -> MsgIn -> IO ()

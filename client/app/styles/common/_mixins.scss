@@ -78,3 +78,11 @@
   border-radius: 0.25em;
   color: black;
 }
+
+%dealer-btn {
+  height: 1.5em;
+  width: 1.5em;
+  border-radius: 1.5em;
+  background-color: $color-light;
+  align-self: center
+}

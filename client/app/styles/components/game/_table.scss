@@ -49,3 +49,39 @@
     top: 0.75em;
     position: relative;
 }
+
+.dealer-btn-pos-0 {
+    @extend %dealer-btn;
+    grid-area: 6/2;
+    justify-self: left;
+}
+
+.dealer-btn-pos-1 {
+    @extend %dealer-btn;
+    grid-area: 5/1;
+    justify-self: center;
+}
+
+.dealer-btn-pos-2 {
+    @extend %dealer-btn;
+    grid-area: 2/1;
+    justify-self: center;
+}
+
+.dealer-btn-pos-3 {
+    @extend %dealer-btn;
+    grid-area: 1/4;
+    justify-self: center;
+}
+
+.dealer-btn-pos-4 {
+    @extend %dealer-btn;
+    grid-area: 2/5;
+    justify-self: center;
+}
+
+.dealer-btn-pos-5 {
+  @extend %dealer-btn;
+  grid-area: 5/5;
+  justify-self: center;
+}

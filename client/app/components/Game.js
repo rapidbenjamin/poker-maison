@@ -50,9 +50,9 @@ const Game = props => {
 
   if (game) {
     const jsgame = game.toJS()
-    jsgame._deck = undefined // hide deck
     console.log(jsgame)
     const players = game.get('_players')
+    const dealerPos = game.get('_dealer')
     const maxPlayers = 6
     const gameStage = game.get('_street')
     const potSize = game.get('_pot')
@@ -61,7 +61,7 @@ const Game = props => {
     const currentPosToAct = game.get('_currentPosToAct')
     const isMultiplayerShowdown = game.get('_winners').get('tag') == 'MultiPlayerShowdown'
     const showdownPots = game.get('_winners').get('contents')
-    const mainShowdownPot = showdownPots ? showdownPots.get(0) : null
+    const mainShowdownPot = showdownPots ? showdownPots.get ? showdownPots.get(0) : null : null
     const mainShowdownPotHandRanking = mainShowdownPot ? mainShowdownPot.get(0).get(0) : null
     const mainShowdownPotHandCards = mainShowdownPot ? mainShowdownPot.get(0).get(1) : null
     const mainShowdownPotHandPlayers = mainShowdownPot ? mainShowdownPot.get(1) : null
@@ -76,12 +76,19 @@ const Game = props => {
           {getPocketCards(players)}
           {getSeats(username, maxPlayers, players, gameStage, currentPosToAct)}
           <div className='game-grid'>
+            {players ? players.count() > 1 ?
+              <div className={`dealer-btn-pos-${dealerPos}`}>
+              </div>
+              : '' : ''}
             <Board cards={game.get('_board')} />
-            <h4 className='pot-label'> <span className='monospaced-font'>
-              {`$${potSize}`}</span></h4>
-            <p className='winners-label'>
+            <h4 className='pot-label'>
+              <span className='monospaced-font'>
+                {`$${potSize}`}
+              </span>
+            </h4>
+            {mainShowdownPot ? <p className='winners-label'>
               {`${mainShowdownPotHandPlayers} wins with ${mainShowdownPotHandRanking}`}
-            </p>
+            </p> : ''}
           </div>
           <div className='game-table'>
           </div>
