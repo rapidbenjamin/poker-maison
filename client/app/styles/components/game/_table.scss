@@ -85,3 +85,91 @@
   grid-area: 5/5;
   justify-self: center;
 }
+
+.player-bet-label  {
+    margin-right: 0.25em;
+    margin-left: 0.25em;
+    height: 1.25em;
+    width: 2.25em;
+}
+
+
+
+.player-bet-chip {
+    background-color: $color-primary;
+    height: 1.25em;
+    width: 1.25em;
+    border-radius: 1.25em;    
+}
+
+.player-bet-container-pos-0 {
+    grid-area: 4/3;
+}
+
+.player-bet-pos-0 {
+    display: flex;
+    justify-content: center;
+}
+
+.player-bet-container-pos-1 {
+    grid-area: 4/2;
+}
+
+.player-bet-pos-1 {
+       text-align: right;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: right;
+}
+
+.player-bet-container-pos-2 {   
+    grid-area: 2/2;
+    position: relative;
+}
+
+.player-bet-pos-2 {
+   text-align: right;
+    display: flex;
+    flex-direction: row-reverse;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.player-bet-container-pos-3 {
+    margin-top: 10%;
+    grid-area: 2/3;
+}
+
+
+.player-bet-pos-3 {
+    display: flex;
+    justify-content: center;
+}
+
+
+.player-bet-container-pos-4 {
+    grid-area: 2/4;
+    position: relative;
+}
+
+
+.player-bet-pos-4 {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+}
+
+
+.player-bet-container-pos-5 {
+    grid-area: 4/4;
+    position: relative;
+}
+
+
+.player-bet-pos-5 {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+}

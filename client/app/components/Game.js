@@ -5,6 +5,8 @@ import Board from './Board'
 import Seat from './Seat'
 import Card from './Card'
 
+import { fromJS } from 'immutable'
+
 const getSeatedPlayer = (username, player, gameStage, position, isTurnToAct) =>
   <Seat
     key={position}
@@ -45,6 +47,27 @@ const getPocketCards = players => players.map((p, i) =>
     </div>) : ''
 )
 
+const playmock = fromJS([
+  { "_bet": 50, "_playerState": "In", "_committed": 50, "_pockets": [{ "suit": "Hearts", "rank": "Five" }, { "suit": "Diamonds", "rank": "Six" }], "_playerName": "45gdfgdsfgbdg", "_actedThisTurn": true, "_chips": 1950 }, { "_bet": 50, "_playerState": "In", "_committed": 50, "_pockets": [], "_playerName": "dfgdf", "_actedThisTurn": false, "_chips": 1950 }
+  ,
+  { "_bet": 50, "_playerState": "In", "_committed": 50, "_pockets": [{ "suit": "Hearts", "rank": "Five" }, { "suit": "Diamonds", "rank": "Six" }], "_playerName": "45gdfgdsfgbdg", "_actedThisTurn": true, "_chips": 1950 }, { "_bet": 50, "_playerState": "In", "_committed": 50, "_pockets": [], "_playerName": "dfgdf", "_actedThisTurn": false, "_chips": 1950 }
+  ,
+  { "_bet": 50, "_playerState": "In", "_committed": 50, "_pockets": [{ "suit": "Hearts", "rank": "Five" }, { "suit": "Diamonds", "rank": "Six" }], "_playerName": "45gdfgdsfgbdg", "_actedThisTurn": true, "_chips": 1950 }, { "_bet": 50, "_playerState": "In", "_committed": 50, "_pockets": [], "_playerName": "dfgdf", "_actedThisTurn": false, "_chips": 1950 }
+  ,
+  { "_bet": 50, "_playerState": "In", "_committed": 50, "_pockets": [{ "suit": "Hearts", "rank": "Five" }, { "suit": "Diamonds", "rank": "Six" }], "_playerName": "45gdfgdsfgbdg", "_actedThisTurn": true, "_chips": 1950 }, { "_bet": 50, "_playerState": "In", "_committed": 50, "_pockets": [], "_playerName": "dfgdf", "_actedThisTurn": false, "_chips": 1950 }
+])
+
+const getPlayerBets = players => playmock.map((p, i) => p.get('_bet') > 0 ?
+  <div className={`player-bet-container-pos-${i}`}>
+    <div className={`player-bet-pos-${i}`}>
+      <div className='player-bet-chip'></div>
+      <div className='player-bet-label'>{`$${p.get('_bet')}`}</div>
+    </div>
+  </div> : ''
+)
+
+
+
 const Game = props => {
   const { game, username, isTurnToAct } = props
 
@@ -75,6 +98,7 @@ const Game = props => {
         <div className='table-container'>
           {getPocketCards(players)}
           {getSeats(username, maxPlayers, players, gameStage, currentPosToAct)}
+          {getPlayerBets(players)}
           <div className='game-grid'>
             {players ? players.count() > 1 ?
               <div className={`dealer-btn-pos-${dealerPos}`}>
