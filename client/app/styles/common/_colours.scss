@@ -1,12 +1,5 @@
 @import 'variables';
 
-// Main Layout Colours
-html {
-    color: white;
-    background: $gotham;
-    height: 100%;
-}
-
 .card {
     background-color: $anti-flash-white;
     color: $eerie-black;
@@ -19,11 +12,6 @@ html {
 
 .hidden-pocket-cards .card {
     background-color: $dark-imperial-blue;
-}
-
-.game-table {
-    background: $witching-hour;
-    box-shadow: 0em 1em 7em #00030491; 
 }
 
 %seat {

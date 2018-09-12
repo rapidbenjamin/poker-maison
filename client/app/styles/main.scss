@@ -9,3 +9,11 @@
 @import 'components/footer';
 @import 'components/navbar';
 @import 'components/buttons';
+
+
+// Main Layout Colours
+html {
+    color: white;
+    background: $gotham;
+    height: 100%;
+}

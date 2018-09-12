@@ -31,6 +31,7 @@ footer{ @include default-box(#999, inline-block, 5px);
   border: 0.20em;
   border-style: solid;
   border-color: white;
+
 }
 
 .seat-0 {
@@ -91,7 +92,6 @@ footer{ @include default-box(#999, inline-block, 5px);
 }
 
 .empty-seat:hover {
-    height: 100%;
     opacity: 0.88;
     transition: ease-in-out 0.10s;
     color: white;
