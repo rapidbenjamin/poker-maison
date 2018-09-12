@@ -1,3 +1,60 @@
-language: haskell
-ghc:
-  - "8.4"
+
+matrix:
+  include:
+    - language: node_js
+      before_install: cd client
+      os: osx
+
+      node_js:
+        - 8
+        - 6
+      
+      before_install:
+        - npm i yarn -g
+        
+      script:
+        - npm build
+
+      cache:
+        yarn: true
+        directories:
+          - node_modules
+      
+      deploy:
+        # Deploy Front End to AWS S3 on successful build of master branch.
+        on:
+          branch: master
+        provider: s3
+        # You can refer to environment variables from Travis repo settings!
+        access_key_id: $AWS_ACCESS_KEY_ID
+        secret_access_key: $AWS_SECRET_ACCESS_KEY
+        # Name of the S3 bucket to which your site should be uploaded.
+        bucket: gotham-poker-client
+        # Prevent Travis from deleting your built site so it can be uploaded.
+        skip_cleanup: true
+        # Path to a directory containing your built site.
+        local_dir: build
+        # Set the Cache-Control header.
+        cache_control: "max-age=21600"
+
+    - sudo: false
+
+      addons:
+        apt:
+          packages:
+            - libgmp-dev
+
+      # Caching so the next build will be fast too.
+      cache:
+        directories:
+        - $HOME/.stack
+
+      before_install:
+        - cd server
+        # Download and unpack the stack executable
+        - mkdir -p ~/.local/bin
+        - export PATH=$HOME/.local/bin:$PATH
+        - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+      script:
+        - stack setup && stack --no-terminal --skip-ghc-check test
