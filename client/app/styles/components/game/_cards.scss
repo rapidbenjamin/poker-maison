@@ -25,7 +25,7 @@
     margin: 0;
     height: 2.5em;
     width: 1.8em;
-    top: -1 * (2.1vh * 2.45);
+    top: -1em;
 }
 
 .hidden-pocket-cards-container {
@@ -38,14 +38,15 @@
   margin-left: 0;
 }
 
+/* Pocket cards held by opponents that are face down */
 .hidden-pocket-cards {
   position: relative;
   margin: auto;
+  width: 0;
 }
 
 
 /* Cards displayed at showdown  */
-
 .showdown-pocket-cards-container {
     width: 100%;
     margin: auto;

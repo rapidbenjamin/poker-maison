@@ -38,7 +38,6 @@ footer{ @include default-box(#999, inline-block, 5px);
 }
 
 .seat-0-container {
-    @extend %seat;
     grid-area: 5/3;
 }
 
@@ -47,7 +46,6 @@ footer{ @include default-box(#999, inline-block, 5px);
 }
 
 .seat-1-container {
-    @extend %seat;
     grid-area: 4/1;
 }
 
