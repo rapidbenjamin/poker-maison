@@ -2,24 +2,26 @@
 matrix:
   include:
     - language: node_js
-      before_install: cd client
       os: osx
 
       node_js:
         - 8
-        - 6
       
       before_install:
+        - cd client
         - npm i yarn -g
         
       script:
-        - npm build
+        - yarn build
 
       cache:
         yarn: true
         directories:
           - node_modules
       
+      before_deploy:
+        - yarn run copy-static
+
       deploy:
         # Deploy Front End to AWS S3 on successful build of master branch.
         on:
@@ -29,7 +31,7 @@ matrix:
         access_key_id: $AWS_ACCESS_KEY_ID
         secret_access_key: $AWS_SECRET_ACCESS_KEY
         # Name of the S3 bucket to which your site should be uploaded.
-        bucket: gotham-poker-client
+        bucket: $S3_PRODUCTION_BUCKET_NAME
         # Prevent Travis from deleting your built site so it can be uploaded.
         skip_cleanup: true
         # Path to a directory containing your built site.

@@ -296,13 +296,6 @@ spec = do
           newPositionToAct = newGame ^. currentPosToAct
           expectedNewPositionToAct = 1
       newPositionToAct `shouldBe` expectedNewPositionToAct
-  describe "leaveSeat" $ it "should remove player from players list" $ do
-    let game =
-          (street .~ PreDeal) . (players .~ [player1, player6]) $
-          initialGameState'
-        pName = "player6"
-        newGame = leaveSeat pName game
-    not (any (\Player {..} -> pName /= _playerName) (_players newGame))
   describe "SitOut" $ it "should set playerState to None" $ do
     let game =
           (street .~ PreDeal) . (players .~ [player1, player6]) $

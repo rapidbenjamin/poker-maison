@@ -20,6 +20,8 @@
     "start": "cross-env NODE_ENV=development node server",
     "start:production": "npm run test && npm run build && npm run start:prod",
     "start:prod": "cross-env NODE_ENV=production node server",
+    "copy-static": "cp -r static build/static",
+    "deploy": "rm -r build && yarn run copy-static && yarn run build && aws s3 sync build/ s3://gotham-poker-client --delete",
     "clean": "npm run test:clean && npm run build:clean",
     "lint": "npm run lint:eslint",
     "lint:eslint": "eslint .",
