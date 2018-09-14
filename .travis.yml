@@ -1,8 +1,10 @@
+services:
+  - docker
 
 matrix:
   include:
     - language: node_js
-      os: osx
+      os: linux
 
       node_js:
         - 8
@@ -10,7 +12,7 @@ matrix:
       before_install:
         - cd client
         - npm i yarn -g
-        
+
       script:
         - yarn build
 
@@ -20,6 +22,8 @@ matrix:
           - node_modules
       
       before_deploy:
+        - sudo -H pip install awscli --upgrade
+        - aws s3 rm s3://${S3_PRODUCTION_BUCKET_NAME} --recursive
         - yarn run copy-static
 
       deploy:
@@ -30,6 +34,7 @@ matrix:
         # You can refer to environment variables from Travis repo settings!
         access_key_id: $AWS_ACCESS_KEY_ID
         secret_access_key: $AWS_SECRET_ACCESS_KEY
+        region: $AWS_REGION
         # Name of the S3 bucket to which your site should be uploaded.
         bucket: $S3_PRODUCTION_BUCKET_NAME
         # Prevent Travis from deleting your built site so it can be uploaded.
@@ -38,25 +43,44 @@ matrix:
         local_dir: build
         # Set the Cache-Control header.
         cache_control: "max-age=21600"
+        acl: public_read
 
     - sudo: false
+      language: c
+      os: linux
 
       addons:
         apt:
           packages:
             - libgmp-dev
+            - libffi-dev
+            - libssl-dev
+            - python-dev
 
       # Caching so the next build will be fast too.
       cache:
         directories:
-        - $HOME/.stack
+          - $HOME/.ghc
+          - $HOME/.cabal
+          - $HOME/.stack
+          - $HOME/.stack-work
 
       before_install:
         - cd server
-        # Download and unpack the stack executable
         - mkdir -p ~/.local/bin
-        - export PATH=$HOME/.local/bin:$PATH
+          # Download and unpack the stack executable
         - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-
+        - export PATH=$PATH:$HOME/.local/bin
+      
       script:
         - stack setup && stack --no-terminal --skip-ghc-check test
+        - stack install # build and copies binary executable to build dir
+
+      after_success:
+        - test $TRAVIS_BRANCH = "master" && test $TRAVIS_PULL_REQUEST = "false"
+          && sudo -H pip install --upgrade pip
+          && sudo -H pip install 'requests[security]' --upgrade \
+          && sudo -H pip install aws-cli ansible --upgrade \
+          && cd ansible \
+          && ansible-playbook -i push-new-image.yml \
+          && ansible-playbook -i deploy-image.yml

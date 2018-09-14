@@ -1,0 +1,15 @@
+## AWS Elastic Container Registry for storing Docker Images
+ECRrepo: "532711686004.dkr.ecr.eu-west-2.amazonaws.com"
+repoName: "poker-server"
+repoVersion: "latest"
+
+## Server Variables
+secret: "secret"
+dbConnStr: "host=poker-db-production.cxsvikyslmc2.eu-west-2.rds.amazonaws.com port=5432 user=postgres dbname=poker_production password=postgres"
+authAPIPort: "8000"
+socketAPIPort: "3000"
+
+## Server Logging to Cloudwatch
+#DOCKER_LOGS_AWS_ACCESS_KEY_ID
+    ##  - $AWS_SECRET_ACCESS_KEY
+    ##  - $AWS_DEFAULT_REGION

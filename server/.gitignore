@@ -2,3 +2,4 @@
 poker-server.cabal
 *~
 .env
+build

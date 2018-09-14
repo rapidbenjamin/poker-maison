@@ -5,3 +5,4 @@ allow-newer: true
 extra-deps:
 - servant-options-0.1.0.0
 resolver: lts-11.13
+local-bin-path: build

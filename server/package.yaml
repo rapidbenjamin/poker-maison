@@ -29,7 +29,6 @@ dependencies:
   - mtl
   - array
   - stm
-  - generic-random
   - ekg
   - containers
   - cryptohash
@@ -39,11 +38,8 @@ dependencies:
   - persistent-template
   - servant
   - time
-  - servant-client
-  - servant-options
   - servant-server
   - transformers
-  - servant-js
   - random
   - text
   - wai
@@ -52,16 +48,13 @@ dependencies:
   - wai-cors
   - websockets
   - pretty-simple
-  - random-shuffle
   - split
-  - monad-loops
-  - generic-arbitrary
   - MonadRandom
   - mtl
   - wuss
-  - warp
   - servant-docs
   - listsafe
+  - warp
   - jwt
   - lens
   - async

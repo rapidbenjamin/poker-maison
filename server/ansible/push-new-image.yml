@@ -1,0 +1,29 @@
+---
+##  Must be run with sudo otherwise will fail to connect to Docker daemon socket
+- name: Build and Push New Server Docker Image to AWS ECR Registry 
+  hosts: localhost
+  pre_tasks:
+    - include_vars: deploy-variables.yml
+    
+  tasks:
+    - name: Start Docker service, if not running
+      service:
+        name: docker
+        state: started
+
+    ## Ensure that following environment variables are set for login:
+    ##  - $AWS_ACCESS_KEY_ID
+    ##  - $AWS_SECRET_ACCESS_KEY
+    ##  - $AWS_DEFAULT_REGION
+    - name: Login to AWS Elastic Container Registry (ECR)
+      raw: eval $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+
+    - name: Build server Docker image and push to AWS ECR
+      docker_image:
+        path: ../
+        name: "{{ ECRrepo }}/{{ repoName }}"
+        tag: "{{ repoVersion }}"
+        buildargs:
+          dbConnStr: "{{ dbConnStr }}"
+          secret: "{{ secret }}"
+        push: yes
