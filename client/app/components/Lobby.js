@@ -1,14 +1,14 @@
 import React from 'react';
 
 const Lobby = ({ lobby, history, subscribeToATable }) =>
-  <table className="table">
+  <table className="table game-table-list">
     <thead>
       <tr>
         <th>Name</th>
         <th>Players</th>
         <th>Waitlist</th>
-        <th>Min BuyIn</th>
-        <th>Max BuyIn</th>
+        <th>Min Buy In</th>
+        <th>Max Buy In</th>
         <th>Big Blind</th>
       </tr>
     </thead>
@@ -17,7 +17,8 @@ const Lobby = ({ lobby, history, subscribeToATable }) =>
         const tableName = table.get('_tableName')
 
         return <tr
-          key={tableName} onClick={() => {
+          key={tableName}
+          onClick={() => {
             subscribeToATable(tableName)
             history.push(`/game/${tableName}`)
           }}>

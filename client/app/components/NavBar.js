@@ -11,18 +11,23 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
     </div>
     <div className="navbar-menu">
       <div className="navbar-start">
-        <div>
-          <div className="navbar-item">
-            <a onClick={() => history.push('/lobby')}>
-              <h4>Lobby</h4>
-            </a>
-          </div>
-        </div>
-        <div className="navbar-item">
-          <a onClick={() => history.push('/game')}>
-            <h4>Game</h4>
-          </a>
-        </div>
+        {isAuthenticated ? (
+          <React.Fragment>
+            <div className="navbar-item">
+              <a onClick={() => history.push('/lobby')}>
+                <h4>Lobby</h4>
+              </a>
+            </div>
+
+            <div className="navbar-item">
+              <a onClick={() => history.push('/game')}>
+                <h4>Game</h4>
+              </a>
+            </div>
+          </React.Fragment>
+        ) : (
+          ''
+        )}
       </div>
       <div className="navbar-end">
         {isAuthenticated ? (
