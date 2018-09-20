@@ -56,8 +56,12 @@ if (module.hot) {
 const token = localStorage.getItem('token')
 
 if (token) {
-  const { username } = JSON.parse(localStorage.getItem('token'))
-  store.dispatch(authSuccess(username))
+  try {
+    const { username } = JSON.parse(localStorage.getItem('token'))
+    store.dispatch(authSuccess(username))
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 render()

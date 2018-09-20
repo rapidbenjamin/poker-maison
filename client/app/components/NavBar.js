@@ -5,7 +5,7 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
     <div className="navbar-brand">
       <div>
         <a onClick={() => history.push('/')}>
-          <h4 className='brand-title'>Gotham Poker</h4>
+          <h4 className="brand-title">Gotham Poker</h4>
         </a>
       </div>
     </div>
@@ -13,66 +13,56 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
       <div className="navbar-start">
         <div>
           <div className="navbar-item">
-            <a onClick={() => history.push('lobby')} >
-              <h4>
-                Lobby
-              </h4>
+            <a onClick={() => history.push('/lobby')}>
+              <h4>Lobby</h4>
             </a>
           </div>
         </div>
         <div className="navbar-item">
-          <a onClick={() => history.push('game')}>
-            <h4>
-              Game
-          </h4>
+          <a onClick={() => history.push('/game')}>
+            <h4>Game</h4>
           </a>
         </div>
       </div>
       <div className="navbar-end">
         {isAuthenticated ? (
           <div className="navbar-item">
-            <a onClick={() => history.push('profile')}>
+            <a onClick={() => history.push('/profile')}>
               <h4>
-                <span className='navbar-username'>{username}</span>
+                <span className="navbar-username">{username}</span>
               </h4>
             </a>
           </div>
         ) : (
-            ''
-          )}
+          ''
+        )}
         {isAuthenticated ? (
           <div className="navbar-item">
             <a onClick={() => logoutUser()}>
-              <h4>
-                Logout
-              </h4>
+              <h4>Logout</h4>
             </a>
           </div>
         ) : (
-            ''
-          )}
+          ''
+        )}
         {!isAuthenticated ? (
           <div className="navbar-item">
-            <a onClick={() => history.push('signin')}>
-              <h4>
-                Login
-              </h4>
+            <a onClick={() => history.push('/signin')}>
+              <h4>Login</h4>
             </a>
           </div>
         ) : (
-            ''
-          )}
+          ''
+        )}
         {!isAuthenticated ? (
           <div className="navbar-item">
-            <a onClick={() => history.push('signup')}>
-              <h4>
-                Register
-              </h4>
+            <a onClick={() => history.push('/signup')}>
+              <h4>Register</h4>
             </a>
           </div>
         ) : (
-            ''
-          )}
+          ''
+        )}
       </div>
     </div>
   </nav>

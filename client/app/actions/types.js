@@ -1,10 +1,15 @@
 /* Actions prefixed with /server denote actions which trigger the sending of a websocket msg to server*/
 
 /* User API Types */
-export const AUTH_REQUESTED = 'AUTH_REQUESTED';
-export const AUTHENTICATED = 'AUTHENTICATED';
-export const UNAUTHENTICATED = 'UNAUTHENTICATED';
-export const AUTHENTICATION_ERROR = 'AUTHENTICATION_ERROR';
+export const AUTH_REQUESTED = 'AUTH_REQUESTED'
+export const AUTHENTICATED = 'AUTHENTICATED'
+export const UNAUTHENTICATED = 'UNAUTHENTICATED'
+export const AUTHENTICATION_ERROR = 'AUTHENTICATION_ERROR'
+
+/* Retrieve User Profile */
+export const GET_PROFILE_REQUEST = 'GET_PROFILE_REQUEST'
+export const GET_PROFILE_SUCCESS = 'GET_PROFILE_SUCCESS'
+export const GET_PROFILE_ERR = 'GET_PROFILE_ERR'
 
 /* Websocket Action Types */
 export const CONNECT_SOCKET = 'CONNECT_SOCKET'
