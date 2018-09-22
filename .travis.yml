@@ -1,86 +1,66 @@
 services:
-  - docker
+- docker
 
 matrix:
   include:
-    - language: node_js
-      os: linux
+  # client
+  - language: node_js
+    os: linux
+    node_js:
+    - 8
+    before_install:
+    - cd client
+    - npm i yarn -g
+    script:
+    - yarn build
+    cache:
+      yarn: true
+      directories:
+      - node_modules
+    before_deploy:
+    - sudo -H pip install awscli --upgrade
+    - aws s3 rm s3://${S3_PRODUCTION_BUCKET_NAME} --recursive
+    - yarn run copy-static
+    deploy:
+      on:
+        branch: master
+      provider: s3
+      access_key_id: "$AWS_ACCESS_KEY_ID"
+      secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+      region: "$AWS_REGION"
+      bucket: "$S3_PRODUCTION_BUCKET_NAME"
+      skip_cleanup: true
+      local_dir: build
+      cache_control: max-age=21600
+      acl: public_read
 
-      node_js:
-        - 8
-      
-      before_install:
-        - cd client
-        - npm i yarn -g
-
-      script:
-        - yarn build
-
-      cache:
-        yarn: true
-        directories:
-          - node_modules
-      
-      before_deploy:
-        - sudo -H pip install awscli --upgrade
-        - aws s3 rm s3://${S3_PRODUCTION_BUCKET_NAME} --recursive
-        - yarn run copy-static
-
-      deploy:
-        # Deploy Front End to AWS S3 on successful build of master branch.
-        on:
-          branch: master
-        provider: s3
-        # You can refer to environment variables from Travis repo settings!
-        access_key_id: $AWS_ACCESS_KEY_ID
-        secret_access_key: $AWS_SECRET_ACCESS_KEY
-        region: $AWS_REGION
-        # Name of the S3 bucket to which your site should be uploaded.
-        bucket: $S3_PRODUCTION_BUCKET_NAME
-        # Prevent Travis from deleting your built site so it can be uploaded.
-        skip_cleanup: true
-        # Path to a directory containing your built site.
-        local_dir: build
-        # Set the Cache-Control header.
-        cache_control: "max-age=21600"
-        acl: public_read
-
-    - sudo: false
-      language: c
-      os: linux
-
-      addons:
-        apt:
-          packages:
-            - libgmp-dev
-            - libffi-dev
-            - libssl-dev
-            - python-dev
-
-      # Caching so the next build will be fast too.
-      cache:
-        directories:
-          - $HOME/.ghc
-          - $HOME/.cabal
-          - $HOME/.stack
-          - $HOME/.stack-work
-
-      before_install:
-        - cd server
-        - mkdir -p ~/.local/bin
-          # Download and unpack the stack executable
-        - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-        - export PATH=$PATH:$HOME/.local/bin
-      
-      script:
-        - stack setup && stack --no-terminal --skip-ghc-check test
-        - stack install # build and copies binary executable to build dir
-
-      after_success:
-        - test $TRAVIS_BRANCH = "master" && test $TRAVIS_PULL_REQUEST = "false"
-          && sudo -H pip install --upgrade pip
-          && sudo -H pip install 'requests[security]' --upgrade \
-          && sudo -H pip install aws-cli ansible --upgrade \
-          && cd ansible \
-          && ansible-playbook -i push-new-image.yml \
-          && ansible-playbook -i deploy-image.yml
+  # server
+  - sudo: false
+    language: c
+    os: linux
+    addons:
+      apt:
+        packages:
+        - libgmp-dev
+        - libffi-dev
+        - libssl-dev
+        - python-dev
+    cache:
+      directories:
+      - "$HOME/.ghc"
+      - "$HOME/.cabal"
+      - "$HOME/.stack"
+      - "$HOME/.stack-work"
+    before_install:
+    - cd server
+    - mkdir -p ~/.local/bin
+    - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards
+      --strip-components=1 -C ~/.local/bin '*/stack'
+    - export PATH=$PATH:$HOME/.local/bin
+    script:
+    - stack setup && stack --no-terminal --skip-ghc-check test
+    - stack install
+    after_success:
+    - openssl aes-256-cbc -K $encrypted_988909d5662c_key -iv $encrypted_988909d5662c_iv -in travis-deploy-key.pem.enc -out travis-deploy-key.pem -d
+    - test $TRAVIS_BRANCH = "master" && test $TRAVIS_PULL_REQUEST = "false" && sudo
+      chmod +x ./deploy-server.sh && sudo ./deploy-server.sh travis-deploy-key.pem

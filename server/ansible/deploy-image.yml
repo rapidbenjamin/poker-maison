@@ -12,11 +12,6 @@
     - include_vars: deploy-variables.yml
 
   tasks:
-    - name: Install Python
-      apt:
-        name: python3
-        state: present
-        update_cache: yes
 
     - name: Start Docker service, If Not Running
       service:
@@ -41,24 +36,21 @@
       shell: eval $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
 
     - name: Pull Latest Image
-      docker_image:
-        name: "{{ ECRrepo }}/{{ repoName }}"
-
-   # - name: Create Poker Server Container
-   #   docker_container:
-   #    name: poker-server
-   #    image: "{{ ECRrepo }}/{{ repoName }}"
+      shell: "docker pull {{ ECRrepo }}/{{ repoName }}"
 
     - name: Start Poker Server Container
       docker_container:
         name: poker-server
         image: "{{ ECRrepo }}/{{ repoName }}"
         ports:
-          - "{{ authAPIPort }}"
-          - "{{ socketAPIPort }}"
+          - "{{ authAPIPort }}:{{ authAPIPort }}"
+          - "{{ socketAPIPort }}:{{ socketAPIPort }}"
+          - "{{ dbPort }}:{{ dbPort }}"
+          - "{{ redisPort }}:{{ redisPort }}"
         env:
           secret: "{{ secret }}"
           dbConnStr: "{{ dbConnStr }}"
+          redisHost: "{{ redisHost }}"
         restart_policy: on-failure
     #    log_driver: awslogs
     #    log_options:

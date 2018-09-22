@@ -12,6 +12,12 @@
     - name: Install python 2
       raw: test -e /usr/bin/python || (apt install -y python-minimal)
 
+    - name: Install Python
+      apt:
+        name: python3
+        state: present
+        update_cache: yes
+
     - name: Install AWS CLI
       pip:
         name: awscli

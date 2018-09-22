@@ -1,11 +1,17 @@
 import React from 'react'
 
-const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
+const NavBar = ({
+  isAuthenticated,
+  currRoute,
+  username,
+  history,
+  logoutUser
+}) => (
   <nav role="navigation" className="navbar">
     <div className="navbar-brand">
       <div>
         <a onClick={() => history.push('/')}>
-          <h4 className="brand-title">Gotham Poker</h4>
+          <h4 className="brand-title">Fae Poker</h4>
         </a>
       </div>
     </div>
@@ -13,13 +19,19 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
       <div className="navbar-start">
         {isAuthenticated ? (
           <React.Fragment>
-            <div className="navbar-item">
+            <div
+              className={`navbar-item${
+                currRoute === '/lobby' ? '-active' : ''
+              }`}
+            >
               <a onClick={() => history.push('/lobby')}>
                 <h4>Lobby</h4>
               </a>
             </div>
 
-            <div className="navbar-item">
+            <div
+              className={`navbar-item${currRoute === '/game' ? '-active' : ''}`}
+            >
               <a onClick={() => history.push('/game')}>
                 <h4>Game</h4>
               </a>
@@ -31,7 +43,12 @@ const NavBar = ({ isAuthenticated, username, history, logoutUser }) => (
       </div>
       <div className="navbar-end">
         {isAuthenticated ? (
-          <div className="navbar-item">
+          <div
+            className={`navbar-item${
+              currRoute === '/profile' ? '-active' : ''
+            }`}
+          >
+            {' '}
             <a onClick={() => history.push('/profile')}>
               <h4>
                 <span className="navbar-username">{username}</span>

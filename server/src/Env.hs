@@ -3,14 +3,18 @@
 module Env where
 
 import qualified Data.ByteString.Char8 as C
+import Data.Either
 import Data.Maybe
 import Data.Text (pack)
 import Database.Redis
   ( ConnectInfo
+  , HostName
   , Redis
   , connect
+  , connectHost
   , connectPort
   , defaultConnectInfo
+  , parseConnectInfo
   , runRedis
   , setex
   )
@@ -20,8 +24,19 @@ import Text.Read
 import Types
 import Web.JWT (secret)
 
-redisConnectInfo :: RedisConfig
-redisConnectInfo = defaultConnectInfo
+getRedisHostFromEnv :: HostName -> IO ConnectInfo
+getRedisHostFromEnv defaultHostName = do
+  maybeConnInfo <- lookupEnv "redisHost"
+  case maybeConnInfo of
+    Nothing -> do
+      print "couldn't parse redishost from env default used"
+      return defaultRedisConn
+    (Just hostname) -> do
+      print "hostName from env is: "
+      print hostname
+      return $ defaultConnectInfo {connectHost = hostname}
+  where
+    defaultRedisConn = defaultConnectInfo {connectHost = defaultHostName}
 
 -- get the postgres connection string from dbConnStr env variable
 getDBConnStrFromEnv :: IO C.ByteString

@@ -1,6 +1,6 @@
 import Immutable from 'immutable'
 import { createSelector } from 'reselect'
 
-export const profile = state => state.get('global').get('profile')
+export const profile = state => ({})
 
-export const getProfile = createSelector(profile, state => state.get('profile'))
+export const getProfileSelector = createSelector(profile, profile => ({}))

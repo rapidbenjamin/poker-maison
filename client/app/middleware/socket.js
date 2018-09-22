@@ -7,8 +7,8 @@ import { newGameState } from '../actions/games'
 
 import * as types from '../actions/types'
 
-
-const SOCKET_API_URL = process.SOCKET_API_URL || 'ws://localhost:5000'
+const SOCKET_API_URL = process.env.NODE_ENV === 'production' ?
+  (process.env.SOCKET_API_URL || 'ws://18.130.171.128:5000') : (process.env.SOCKET_API_URL || 'ws://localhost:5000')
 
 function addHandlers(socket, authToken, dispatch) {
   socket.onopen = event => {

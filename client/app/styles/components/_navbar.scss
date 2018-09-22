@@ -1,45 +1,61 @@
 .navbar {
-    display: flex;
-    text-align: center;
-    background: green;
-    min-height: 4em;
+  display: flex;
+  text-align: center;
+  background: green;
+  min-height: 4em;
 }
 
 .navbar-brand {
-    width: 16em;
-    margin: auto;
-    text-align: left;
-    padding-left: 2.5em;
+  width: 16em;
+  margin: auto;
+  text-align: left;
+  padding-left: 2.5em;
 }
 
 .navbar-menu {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .navbar-start {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .navbar-end {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-right: 2.5em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 2.5em;
 }
 
 .navbar-item {
-    width: 7em;
-    margin: 7%;
+  width: 7em;
+  margin: 7%;
 }
 
 .navbar-item h4 {
-    font-weight: 400;
+  font-weight: 400;
+}
+
+.navbar-item:hover {
+  color: $eerie-black;
+  transition: color 0.08s linear;
+}
+
+.navbar-item-active {
+  width: 7em;
+  margin: 7%;
+  color: $eerie-black;
+}
+
+.brand-title:hover {
+  color: $eerie-black;
+  transition: color 0.08s linear;
 }
 
 .brand-title {
-    letter-spacing: 0.1em;
+  letter-spacing: 0.1em;
 }

@@ -2,13 +2,14 @@ import React from 'react'
 import { connect } from 'react-redux'
 
 import { getUsername } from '../selectors/auth'
-import { getProfile } from '../selectors/profile'
+import { getProfileSelector } from '../selectors/profile'
 
+import { getProfile } from '../actions/profile'
 import Profile from '../components/Profile'
 
 class ProfileContainer extends React.Component {
   componentDidMount() {
-    // this.getProfile()
+    this.props.getProfile()
   }
 
   render() {
@@ -18,7 +19,7 @@ class ProfileContainer extends React.Component {
 
 const mapStateToProps = state => ({
   username: getUsername(state),
-  profile: getProfile(state)
+  profile: getProfileSelector(state)
 })
 
 const mapDispatchToProps = (dispatch, { username }) => ({

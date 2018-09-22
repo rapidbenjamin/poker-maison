@@ -3,7 +3,7 @@ import Immutable from 'immutable'
 import * as types from '../actions/types'
 
 const initialState = Immutable.Map({
-  profile: undefined,
+  profile: null,
   isLoading: false,
   error: null
 })
@@ -14,7 +14,7 @@ export default function(state = initialState, action) {
       return state.set('isLoading', true)
     case types.GET_PROFILE_SUCCESS:
       return state
-        .set('username', action.profile)
+        .set('profile', action.profile)
         .set('isLoading', false)
         .set('error', null)
     case types.GET_PROFILE_ERR:

@@ -41,7 +41,7 @@ runSocketServer secretKey port connString redisConfig = do
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   forkBackgroundJobs connString serverStateTVar lobby
   print $ "Socket server listening on " ++ (show port :: String)
-  WS.runServer "127.0.0.1" port $
+  WS.runServer "0.0.0.0" port $
     application secretKey connString redisConfig serverStateTVar
 
 -- New WS connections are expected to supply an access token as an initial msg

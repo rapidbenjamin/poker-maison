@@ -1,5 +1,3 @@
-
-
 /*** Variables ***/
 
 /*
@@ -9,22 +7,22 @@
 */
 
 // table gradient should comprise of mixed palette colours
-$dark-imperial-blue: #003E60;
+$dark-imperial-blue: #003e60;
 
 $anti-flash-white: white; // #F0EFF4;
 
-$prussian-blue:  #003049;  
-$dark-cerulean:  #064789;  
-$eerie-black:    #161925;  
-$deep-space-purple:  #415A77;  
+$prussian-blue: #003049;
+$dark-cerulean: #064789;
+$eerie-black: #161925;
+$deep-space-purple: #415a77;
 
-$outer-space-grey: #424B54;
-// or 
-$orioles-orange: #F34213;  // perhaps busies the palette too much
+$outer-space-grey: #424b54;
+// or
+$orioles-orange: #f34213; // perhaps busies the palette too much
 
 // App colours
 $color-primary: $prussian-blue;
-$color-secondary: #003e60; 
+$color-secondary: $dark-imperial-blue;
 $color-accent: $orioles-orange;
 $color-light: $deep-space-purple;
 $color-darkest: $eerie-black;
@@ -32,13 +30,12 @@ $color-darkest: $eerie-black;
 $color-brand: $prussian-blue;
 
 // gradients
-$gotham: radial-gradient(#240b36,#003e60);
+$gotham: radial-gradient(#240b36, $dark-imperial-blue);
 
-
-$witching-hour: radial-gradient(#c31432, #240b36); 
-$night-hawk: radial-gradient(#2980b9,#2c3e50);
+$witching-hour: radial-gradient(#c31432, #240b36);
+$night-hawk: radial-gradient(#2980b9, #2c3e50);
 $red-mist: radial-gradient(#e74c3c, #000000);
-$namn:  linear-gradient(#a73737, #7a2828);
+$namn: linear-gradient(#a73737, #7a2828);
 
 // Brand colours
 $color-facebook: #3b5998;
@@ -54,8 +51,7 @@ $color-spotify: #2ebd59;
 $color-twitter: #55acee;
 
 // Borders
-$border-light: solid 1px rgba(0, 0, 0, .05);
-
+$border-light: solid 1px rgba(0, 0, 0, 0.05);
 
 /*
 ---------------------------------
@@ -88,5 +84,5 @@ $screen-xxl-min: 1600px;
 */
 
 // Animation
-$anime-in: .4s;
-$anime-out: .5s;
+$anime-in: 0.4s;
+$anime-out: 0.5s;
