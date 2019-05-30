@@ -11,7 +11,7 @@
     "node": ">=5"
   },
   "author": "therewillbecode",
-  "license": "MIT",
+  "license": "Unlicense",
   "scripts": {
     "serve-static-dev": "npm i -g http-server && cd static-server && http-server -a localhost -p 9080",
     "prebuild": "npm run build:clean",

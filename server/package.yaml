@@ -1,10 +1,10 @@
 name: poker-server
 version: 0.1.0.0
 github: "githubuser/poker-server"
-license: BSD3
-author: "Author name here"
-maintainer: "example@example.com"
-copyright: "2018 Author name here"
+license: Unlicense
+author: "therewillbecode"
+maintainer: "tom.chambrier@consensys.net"
+copyright: "2018 Consensys"
 
 extra-source-files:
   - README.md
