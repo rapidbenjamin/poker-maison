@@ -1,4 +1,4 @@
-No longer actively maintained.
+THIS REPOSITORY IS NO LONGER ACTIVELY MAINTAINED
 
 ## License
 
