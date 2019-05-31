@@ -96,7 +96,5 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - poker-server
-      - generic-arbitrary
       - hspec
-      - QuickCheck
-      - quickcheck-instances
+      - hedgehog
