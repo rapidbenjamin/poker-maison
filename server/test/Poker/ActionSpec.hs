@@ -11,11 +11,8 @@ import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Test.Hspec
-import Test.QuickCheck hiding (Big, Small)
-import Test.QuickCheck.Arbitrary.Generic
-import Test.QuickCheck.Gen
 
-import Arbitrary ()
+
 
 import Poker.ActionValidation
 import Poker.Game.Actions

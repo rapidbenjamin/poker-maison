@@ -7,9 +7,7 @@ import Control.Lens
 import Data.List
 import Data.Text (Text)
 import Test.Hspec
-import Test.QuickCheck hiding (Big, Small)
 
-import Arbitrary ()
 import Control.Lens
 import Control.Monad.State hiding (state)
 import Data.List.Lens

@@ -8,9 +8,7 @@ import Data.List.Lens
 import Data.Text (Text)
 import qualified Data.Text as T
 import Test.Hspec
-import Test.QuickCheck hiding (Big, Small)
-import Test.QuickCheck.Arbitrary.Generic
-import Test.QuickCheck.Gen
+
 
 import Poker.ActionValidation
 import Poker.Game.Utils
@@ -97,8 +95,6 @@ spec = do
     modInc 1 0 2 `shouldBe` 1
     modInc 1 1 1 `shouldBe` 0
     modInc 1 6 7 `shouldBe` 7
-  context "When Incrementing Modulo" $ it "should never exceed upper bound" $
-    property $ \(NonNegative x) (NonNegative y) -> y > x ==> (modInc 1 x y) <= y
   describe "incPosToAct" $ do
     it "should modulo increment position for two players who are both In" $ do
       let game =

@@ -12,9 +12,7 @@ import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Test.Hspec
-import Test.QuickCheck hiding (Big, Small)
 
-import Arbitrary ()
 import Poker.ActionValidation
 import Poker.Game.Actions
 import Poker.Game.Game

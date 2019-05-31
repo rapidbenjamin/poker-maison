@@ -19,10 +19,8 @@ import Debug.Trace
 import GHC.Generics
 import System.IO.Unsafe
 import Test.Hspec
-import Test.QuickCheck hiding (Big, Small)
-import Test.QuickCheck.Modifiers
 
-import Arbitrary ()
+
 import Poker.ActionValidation
 import Poker.Game.Blinds
 import Poker.Game.Game
@@ -121,28 +119,6 @@ spec = do
               else null $ unPocketCards _pockets)
          newPlayers) `shouldBe`
         True
-    it "should preserve ordering of players" $ property $ \(players) ->
-      length players <= 21 ==> do
-        let players' = players :: [Player]
-        let (_, players) = dealToPlayers initialDeck players'
-        (_playerName <$> players) == (_playerName <$> players')
-    it "the resulting set of cards should contain no duplicates" $ property $ \(players) -> do
-      length players <= 21 ==> do
-        let players' -- deal to players that have no pocket cards already
-             = (players :: [Player]) & traverse . pockets .~ (PocketCards [])
-        let (remainingDeck, players) = dealToPlayers initialDeck players'
-        let playerCards = concat $ (unPocketCards . _pockets) <$> players
-        null $ playerCards `intersect` (unDeck remainingDeck)
-  describe "dealBoardCards" $ do
-    it "should deal correct number of cards to board" $ property $ \(Positive n) -> do
-      n < 52 ==> do
-        let newGame = dealBoardCards n initialGameState'
-        length (newGame ^. board) `shouldBe` n
-    it "should remove dealt cards from deck" $ property $ \(Positive n) -> do
-      n < 52 ==> do
-        let newGame = dealBoardCards n initialGameState'
-        length (unDeck (newGame ^. deck)) `shouldBe`
-          ((length $ unDeck initialDeck) - n)
   describe "haveAllPlayersActed" $ do
     it
       "should return True when all players have acted during PreDeal for Three Players" $ do

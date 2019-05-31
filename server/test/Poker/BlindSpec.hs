@@ -12,9 +12,7 @@ import Data.Text (Text)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Test.Hspec
-import Test.QuickCheck hiding (Big, Small)
 
-import Arbitrary ()
 import Data.Aeson
 import Poker.ActionValidation
 import Poker.Game.Actions
@@ -264,15 +262,6 @@ spec = do
         let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player2" `shouldBe` Big
-    context "Players with PlayerState set to None" $
-      it "should always require bigBlind" $
-      property $ \game@Game {..} playerName -> do
-        let player = (\Player {..} -> _playerName == playerName) `find` _players
-        case player of
-          Just Player {..} -> do
-            let result = blindRequiredByPlayer game playerName
-            (_playerState == None && result == Big) || _playerState /= None
-          Nothing -> True
   describe "haveRequiredBlindsBeenPosted" $ do
     it
       "should return False when not all players have posted blinds in 2 player game" $
