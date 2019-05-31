@@ -66,8 +66,8 @@ updatePocketCardsForSpectator showAllActivesCards
     (\player@Player {..} ->
        if _playerState == In
          then player
-         else Player {_pockets = PocketCards [], ..})
-  | otherwise = (\Player {..} -> Player {_pockets = PocketCards [], ..})
+         else Player {_pockets = Nothing, ..})
+  | otherwise = (\Player {..} -> Player {_pockets = Nothing, ..})
 
 updatePocketCardsForPlayer :: Bool -> PlayerName -> (Player -> Player)
 updatePocketCardsForPlayer showAllActivesCards playerName
@@ -77,9 +77,9 @@ updatePocketCardsForPlayer showAllActivesCards playerName
          then player
          else if _playerName == playerName
                 then player
-                else Player {_pockets = PocketCards [], ..})
+                else Player {_pockets = Nothing, ..})
   | otherwise =
     (\player@Player {..} ->
        if _playerName == playerName
          then player
-         else Player {_pockets = PocketCards [], ..})
+         else Player {_pockets = Nothing, ..})

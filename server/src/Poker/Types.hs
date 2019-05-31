@@ -108,7 +108,7 @@ data Street
   deriving (Eq, Ord, Show, Read, Bounded, Enum, Generic, ToJSON, FromJSON)
 
 data Player = Player
-  { _pockets :: PocketCards
+  { _pockets :: Maybe PocketCards
   , _chips :: Int
   , _bet :: Bet
   , _playerState :: PlayerState
@@ -117,12 +117,13 @@ data Player = Player
   , _actedThisTurn :: Bool
   } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
-newtype PocketCards =
-  PocketCards [Card]
+data PocketCards =
+  PocketCards Card Card
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
+
 unPocketCards :: PocketCards -> [Card]
-unPocketCards (PocketCards cards) = cards
+unPocketCards (PocketCards c1 c2) = [c1, c2]
 
 -- Highest ranking hand for a given Player that is in the game
 -- during the Showdown stage of the game (last stage)

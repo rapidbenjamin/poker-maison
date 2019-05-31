@@ -49,7 +49,7 @@ joinGame :: Username -> Int -> Game -> Game
 joinGame (Username username) chips Game {..} =
   Game {_players = _players <> [player], ..}
   where
-    player = getPlayer username chips
+    player = initPlayer username chips
 
 joinTableWaitlist :: Username -> Table -> Table
 joinTableWaitlist username Table {..} =

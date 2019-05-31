@@ -5,7 +5,7 @@
 
 module Poker.Poker
   ( initialGameState
-  , getPlayer
+  , initPlayer
   , nextStage
   , runPlayerAction
   ) where

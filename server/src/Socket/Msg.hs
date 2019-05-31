@@ -290,7 +290,7 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
           case hasEnoughChipsErrE of
             Left err -> throwError err
             Right () -> do
-              let player = getPlayer (unUsername username) chipsToSit
+              let player = initPlayer (unUsername username) chipsToSit
                   takeSeatAction = GameMove tableName $ SitDown player
               (errE, newGame) <-
                 liftIO $

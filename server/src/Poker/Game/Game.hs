@@ -28,12 +28,18 @@ import Poker.Types
 dealToPlayers :: Deck -> [Player] -> (Deck, [Player])
 dealToPlayers =
   mapAccumL
-    (\(Deck cards) player ->
+    (\deck player ->
        if player ^. playerState == In
-         then ( Deck $ drop 2 cards
-              , (pockets .~ (PocketCards $ take 2 cards)) player)
-         else (Deck cards, player))
+         then let (pocketCs, remainingDeck) = dealPockets deck in
+             (remainingDeck, (pockets .~ (Just pocketCs)) player)
+         else (deck, player))
 
+  
+dealPockets :: Deck -> (PocketCards, Deck)
+dealPockets (Deck cs) = (PocketCards fstC sndC, Deck remainingDeck) 
+    where ([fstC, sndC ], remainingDeck) = splitAt 2 cs
+
+             
 dealBoardCards :: Int -> Game -> Game
 dealBoardCards n game@Game {..} =
   Game {_board = _board <> boardCards, _deck = Deck newDeck, ..}
@@ -227,21 +233,21 @@ getHandRankings plyrs boardCards =
   (\(showdownHand, Player {..}) ->
      ((_2 %~ PlayerShowdownHand) showdownHand, _playerName)) <$>
   map
-    (value . (++ boardCards) . unPocketCards . view pockets &&& id)
+    (\plyr@Player{..} -> let showHand = (++boardCards) $ unPocketCards $ fromJust _pockets in (value showHand, plyr))
     remainingPlayersInHand
   where
     remainingPlayersInHand =
       filter
         (\Player {..} ->
            (_playerState /= Folded) ||
-           (_playerState /= None) || null (unPocketCards _pockets))
+           (_playerState /= None) || isNothing _pockets)
         plyrs
 
 -- Update active players states to prepare them for the next hand.
 resetPlayerCardsAndBets :: Player -> Player
 resetPlayerCardsAndBets Player {..} =
   Player
-    { _pockets = PocketCards []
+    { _pockets = Nothing
     , _playerState = newPlayerState
     , _bet = 0
     , _committed = 0
@@ -262,10 +268,10 @@ allButOneFolded game@Game {..} = _street /= PreDeal && length playersInHand <= 1
   where
     playersInHand = filter ((== In) . (^. playerState)) _players
 
-getPlayer :: Text -> Int -> Player
-getPlayer playerName chips =
+initPlayer :: Text -> Int -> Player
+initPlayer playerName chips =
   Player
-    { _pockets = PocketCards []
+    { _pockets = Nothing
     , _bet = 0
     , _playerState = In
     , _playerName = playerName
