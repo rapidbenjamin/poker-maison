@@ -1,4 +1,5 @@
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Poker.Game.Hands
   ( value
@@ -11,46 +12,55 @@ import Data.Ord
 
 import Poker.Types
 
+type RankGroup = Int
+
 value :: [Card] -> (HandRank, [Card])
-value h = maybe ifNotFlush ifFlush (maybeFlush h)
-  where
-    ifFlush cs = maybe (Flush, take 5 cs) (StraightFlush, ) (maybeStraight cs)
-    ifNotFlush = maybe (checkGroups h) (Straight, ) (maybeStraight h)
+value hand = maybe (ifNotFlush hand) ifFlush (maybeFlush hand)
+
+ifNotFlush :: [Card] -> (HandRank, [Card])
+ifNotFlush hand = maybe (checkGroups hand) (Straight, ) (maybeStraight hand)
+
+ifFlush :: [Card] -> (HandRank, [Card])
+ifFlush hand = maybe (Flush, take 5 hand) (StraightFlush, ) (maybeStraight hand)
+
+lastNelems :: Int -> [a] -> [a]
+lastNelems n xs = foldl' (const . drop 1) xs (drop n xs)
 
 maybeFlush :: [Card] -> Maybe [Card]
-maybeFlush cs =
-  if length cs' >= 5
-    then Just cs'
-    else Nothing
+maybeFlush cs 
+    | length cs' >= 5 = Just cs'
+    | otherwise = Nothing
   where
-    groupBySuit = groupBy ((==) `on` suit)
     sortBySuit = sortBy (comparing suit <> flip compare)
+    groupBySuit = groupBy ((==) `on` suit)
     cs' = head $ sortByLength $ groupBySuit $ sortBySuit cs
 
 maybeStraight :: [Card] -> Maybe [Card]
-maybeStraight cs =
-  if length cs'' >= 5
-    then Just (lastN' 5 cs'')
-    else maybeWheel cs'
+maybeStraight cards
+    | length cs'' >= 5 = Just (lastNelems 5 cs'')
+    | otherwise = maybeWheel cardsUniqRanks
   where
-    cs' = nubBy ((==) `on` rank) cs
-    cs'' = head $ sortByLength $ groupBySucc $ sort cs'
+    cardsUniqRanks = nubBy ((==) `on` rank) cards
+    cs'' = head $ sortByLength $ groupBySuccCards $ sort cardsUniqRanks
 
 maybeWheel :: [Card] -> Maybe [Card]
-maybeWheel cs =
-  if length cs' == 5
-    then Just cs'
-    else Nothing
+maybeWheel cards
+    | length filteredCards == 5 = Just filteredCards 
+    | otherwise = Nothing
   where
-    cs' = filter (flip elem [Ace, Two, Three, Four, Five] . rank) cs
+    filteredCards = (flip elem [Ace, Two, Three, Four, Five] . rank) `filter` cards
 
 checkGroups :: [Card] -> (HandRank, [Card])
-checkGroups h = (hr, cs)
+checkGroups hand = (hRank, cards)
   where
-    gs = sortByLength $ groupBy ((==) `on` rank) $ sort h
-    cs = take 5 $ concat gs
-    hr =
-      case map length gs of
+    groups = sortByLength $ groupBy ((==) `on` rank) $ sort hand
+    cards = take 5 $ concat groups
+    groupedRankLengths = length <$> groups
+    hRank = evalGroupedRanks groupedRankLengths
+
+evalGroupedRanks :: [RankGroup] -> HandRank
+evalGroupedRanks = 
+     \case
         (4:_) -> Quads
         (3:2:_) -> FullHouse
         (3:_) -> Trips
@@ -58,17 +68,14 @@ checkGroups h = (hr, cs)
         (2:_) -> Pair
         _ -> HighCard
 
-groupBySucc :: [Card] -> [[Card]]
-groupBySucc = foldr f []
+groupBySuccCards :: [Card] -> [[Card]]
+groupBySuccCards = foldr f []
   where
+    f :: Card -> [[Card]] -> [[Card]]
     f a [] = [[a]]
-    f a xs@(x:xs') =
-      if succ (rank a) == rank (head x)
-        then (a : x) : xs'
-        else [a] : xs
+    f a xs@(x:xs')
+        | succ (rank a) == rank (head x) = (a : x) : xs'
+        | otherwise = [a] : xs
 
 sortByLength :: Ord a => [[a]] -> [[a]]
 sortByLength = sortBy (flip (comparing length) <> flip compare)
-
-lastN' :: Int -> [a] -> [a]
-lastN' n = foldl' (const . tail) <*> drop n
