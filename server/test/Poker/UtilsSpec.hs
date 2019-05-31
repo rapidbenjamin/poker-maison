@@ -9,11 +9,16 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Test.Hspec
 
+import HaskellWorks.Hspec.Hedgehog
+import           Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 
 import Poker.ActionValidation
 import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
+
 
 initialGameState' = initialGameState initialDeck
 
@@ -91,10 +96,15 @@ bettingNotFinishedGame =
     initialGameState'
 
 spec = do
-  describe "ModInc" $ it "should increment in modulo fashion" $ do
-    modInc 1 0 2 `shouldBe` 1
-    modInc 1 1 1 `shouldBe` 0
-    modInc 1 6 7 `shouldBe` 7
+  describe "ModInc" $ do
+    it "should increment in modulo fashion" $ do
+      modInc 1 0 2 `shouldBe` 1
+      modInc 1 1 1 `shouldBe` 0
+      modInc 1 6 7 `shouldBe` 7
+    it "result should always be greater than zero" $ do
+      requireProperty $ do
+        i <- forAll $ Gen.int $ Range.linear 0 9
+        (modInc 1 i 9 >= 0) === True
   describe "incPosToAct" $ do
     it "should modulo increment position for two players who are both In" $ do
       let game =

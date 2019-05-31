@@ -12,7 +12,10 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Test.Hspec
 
-
+import HaskellWorks.Hspec.Hedgehog
+import           Hedgehog hiding (check)
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 
 import Poker.ActionValidation
 import Poker.Game.Actions

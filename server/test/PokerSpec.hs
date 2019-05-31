@@ -13,6 +13,11 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Test.Hspec
 
+import HaskellWorks.Hspec.Hedgehog
+import           Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+
 import Poker.ActionValidation
 import Poker.Game.Actions
 import Poker.Game.Game

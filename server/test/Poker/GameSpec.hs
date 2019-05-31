@@ -20,6 +20,10 @@ import GHC.Generics
 import System.IO.Unsafe
 import Test.Hspec
 
+import HaskellWorks.Hspec.Hedgehog
+import           Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 
 import Poker.ActionValidation
 import Poker.Game.Blinds
