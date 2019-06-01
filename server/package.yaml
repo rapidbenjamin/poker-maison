@@ -57,6 +57,7 @@ dependencies:
   - warp
   - lens
   - async
+  - vector
 
 library:
   source-dirs: src
@@ -71,6 +72,7 @@ library:
     - Poker.Types
     - Poker.Game.Blinds
     - Poker.Game.Game
+    - Poker.Game.Hands
     - Poker.Game.Utils
     - Poker.Game.Privacy
     - Socket
@@ -98,3 +100,4 @@ tests:
       - poker-server
       - hspec
       - hedgehog
+      - hw-hspec-hedgehog
