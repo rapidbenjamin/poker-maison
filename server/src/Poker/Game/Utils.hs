@@ -28,8 +28,8 @@ initialDeck :: Deck
 initialDeck = Deck $ Card <$> [minBound ..] <*> [minBound ..]
 
 -- Get a shuffled deck of cards.
-newDeck :: IO Deck
-newDeck = shuffle (unDeck initialDeck) >>= return . Deck
+shuffledDeck :: IO Deck
+shuffledDeck = shuffle (unDeck initialDeck) >>= return . Deck
 
 shuffle :: [a] -> IO [a]
 shuffle xs = do

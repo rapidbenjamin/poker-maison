@@ -42,9 +42,9 @@ dealPockets (Deck cs) = (PocketCards fstC sndC, Deck remainingDeck)
              
 dealBoardCards :: Int -> Game -> Game
 dealBoardCards n game@Game {..} =
-  Game {_board = _board <> boardCards, _deck = Deck newDeck, ..}
+  Game {_board = _board <> boardCards, _deck = Deck shuffledDeck, ..}
   where
-    (boardCards, newDeck) = splitAt n (unDeck _deck)
+    (boardCards, shuffledDeck) = splitAt n (unDeck _deck)
 
 deal :: Game -> Game
 deal game@Game {..} = Game {_players = dealtPlayers, _deck = remainingDeck, ..}
@@ -170,13 +170,13 @@ isEveryoneAllIn game@Game {..}
 -- blind must be the big blind. After this 'early' blind or the posting of a normal blind in turn the 
 -- new player will be removed from the newBlindNeeded field and can play normally.
 getNextHand :: Game -> Deck -> Game
-getNextHand Game {..} newDeck =
+getNextHand Game {..} shuffledDeck =
   Game
     { _waitlist = newWaitlist
     , _maxBet = 0
     , _players = newPlayers
     , _board = []
-    , _deck = newDeck
+    , _deck = shuffledDeck
     , _winners = NoWinners
     , _street = PreDeal
     , _dealer = newDealer

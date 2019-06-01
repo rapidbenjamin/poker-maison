@@ -28,7 +28,7 @@ initialGameState' = initialGameState initialDeck
 
 player1 =
   Player
-    { _pockets = PocketCards []
+    { _pockets = Nothing
     , _chips = 2000
     , _bet = 0
     , _playerState = In
@@ -39,7 +39,7 @@ player1 =
 
 player2 =
   Player
-    { _pockets = PocketCards []
+    { _pockets = Nothing
     , _chips = 2000
     , _bet = 0
     , _playerState = Folded
@@ -50,7 +50,7 @@ player2 =
 
 player3 =
   Player
-    { _pockets = PocketCards []
+    { _pockets = Nothing
     , _chips = 2000
     , _bet = 0
     , _playerState = In
@@ -61,7 +61,7 @@ player3 =
 
 player4 =
   Player
-    { _pockets = PocketCards []
+    { _pockets = Nothing
     , _chips = 2000
     , _bet = 0
     , _playerState = In
@@ -72,7 +72,7 @@ player4 =
 
 player5 =
   Player
-    { _pockets = PocketCards []
+    { _pockets = Nothing
     , _chips = 4000
     , _bet = 4000
     , _playerState = In
@@ -83,7 +83,7 @@ player5 =
 
 player6 =
   Player
-    { _pockets = PocketCards []
+    { _pockets = Nothing
     , _chips = 2000
     , _bet = 200
     , _playerState = In
@@ -113,7 +113,7 @@ spec = do
           smallBlindValue = _smallBlind game
           expectedPlayer =
             Player
-              { _pockets = PocketCards []
+              { _pockets = Nothing
               , _chips = 2000 - smallBlindValue
               , _bet = smallBlindValue
               , _playerState = In
@@ -142,7 +142,7 @@ spec = do
           playerWhoBet = newGame ^? players . ix 0
           expectedPlayer =
             Player
-              { _pockets = PocketCards []
+              { _pockets = Nothing
               , _chips = 2000 - betValue
               , _bet = betValue
               , _playerState = In
@@ -177,7 +177,7 @@ spec = do
           playerWhoBet = newGame ^? players . ix 0
           expectedPlayer =
             Player
-              { _pockets = PocketCards []
+              { _pockets = Nothing
               , _chips = 0
               , _bet = betValue
               , _playerState = In
@@ -207,7 +207,7 @@ spec = do
           playerWhoFolded = newGame ^? players . ix 0
           expectedPlayer =
             Player
-              { _pockets = PocketCards []
+              { _pockets = Nothing
               , _chips = 2000
               , _bet = 0
               , _playerState = Folded
@@ -237,7 +237,7 @@ spec = do
           playerWhoCalled = newGame ^? players . ix 1
           expectedPlayer =
             Player
-              { _pockets = PocketCards []
+              { _pockets = Nothing
               , _chips = 1800
               , _bet = 400
               , _playerState = In
@@ -256,7 +256,7 @@ spec = do
           playerWhoCalled' = newGame' ^? players . ix 1
           expectedPlayer' =
             Player
-              { _pockets = PocketCards []
+              { _pockets = Nothing
               , _chips = 0
               , _bet = 2000
               , _playerState = In

@@ -101,9 +101,9 @@ handlePlayerTimeout playerName game@Game {..}
 -- toDO - make function pure by taking stdGen as an arg
 progressGame :: Game -> IO Game
 progressGame game@Game {..}
-  | _street == Showdown = getNextHand game <$> newDeck
+  | _street == Showdown = getNextHand game <$> shuffledDeck
   | _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2 =
-    getNextHand game <$> newDeck
+    getNextHand game <$> shuffledDeck
   | haveAllPlayersActed game &&
       (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
     case getNextStreet _street of
@@ -112,7 +112,7 @@ progressGame game@Game {..}
       Turn -> return $ progressToTurn game
       River -> return $ progressToRiver game
       Showdown -> return $ progressToShowdown game
-      PreDeal -> getNextHand game <$> newDeck
+      PreDeal -> getNextHand game <$> shuffledDeck
   | allButOneFolded game && _street /= Showdown =
     return $ progressToShowdown game
   | otherwise = return game

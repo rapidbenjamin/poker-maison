@@ -30,7 +30,7 @@ import Types
 initialLobby :: IO Lobby
 initialLobby = do
   chan <- atomically newBroadcastTChan
-  shuffledDeck <- newDeck
+  shuffledDeck <- shuffledDeck
   return $
     Lobby $
     M.fromList

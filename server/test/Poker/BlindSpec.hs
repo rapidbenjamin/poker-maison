@@ -33,7 +33,7 @@ twoPlayerGame =
   Game
     { _players =
         [ Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 1950
             , _bet = 50
             , _playerState = In
@@ -42,7 +42,7 @@ twoPlayerGame =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 2000
             , _bet = 0
             , _playerState = None
@@ -71,7 +71,7 @@ twoPlayerGameAllBlindsPosted =
   Game
     { _players =
         [ Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 1950
             , _bet = 25
             , _playerState = In
@@ -80,7 +80,7 @@ twoPlayerGameAllBlindsPosted =
             , _actedThisTurn = True
             }
         , Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 2000
             , _bet = 50
             , _playerState = In
@@ -109,7 +109,7 @@ threePlayerGame =
   Game
     { _players =
         [ Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 1950
             , _bet = 0
             , _playerState = None
@@ -118,7 +118,7 @@ threePlayerGame =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 2000
             , _bet = 0
             , _playerState = None
@@ -127,7 +127,7 @@ threePlayerGame =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 2000
             , _bet = 0
             , _playerState = None
@@ -156,7 +156,7 @@ threePlayerGameAllBlindsPosted =
   Game
     { _players =
         [ Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 1950
             , _bet = 0
             , _playerState = None
@@ -165,7 +165,7 @@ threePlayerGameAllBlindsPosted =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 2000
             , _bet = 25
             , _playerState = In
@@ -174,7 +174,7 @@ threePlayerGameAllBlindsPosted =
             , _actedThisTurn = False
             }
         , Player
-            { _pockets = PocketCards []
+            { _pockets = Nothing
             , _chips = 2000
             , _bet = 50
             , _playerState = In
@@ -234,37 +234,37 @@ spec = do
       it "returns Small if player position is dealer + 1 for three players" $ do
         let testPlayers =
               (playerState .~ In) <$>
-              (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+              (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player2" `shouldBe` Small
       it "returns Big if player position is dealer + 2 for three players" $ do
         let testPlayers =
               (playerState .~ In) <$>
-              (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+              (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player3" `shouldBe` Big
       it
         "returns NoBlind if player position is dealer for three players and playerState is In" $ do
         let testPlayers =
               (playerState .~ In) <$>
-              (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+              (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
       it
         "returns Big if player position is dealer for three players and playerState is None" $ do
         let testPlayers =
               (playerState .~ None) <$>
-              (getPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
+              (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
       it "returns Small if player position is dealer for two players" $ do
         let testPlayers =
               (playerState .~ In) <$>
-              (getPlayer <$> ["Player1", "Player2"] <*> [100])
+              (initPlayer <$> ["Player1", "Player2"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` Small
       it "returns Big if player position is dealer + 1 for two players" $ do
-        let testPlayers = getPlayer <$> ["Player1", "Player2"] <*> [100]
+        let testPlayers = initPlayer <$> ["Player1", "Player2"] <*> [100]
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player2" `shouldBe` Big
   describe "haveRequiredBlindsBeenPosted" $ do

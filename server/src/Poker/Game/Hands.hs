@@ -1,9 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Poker.Game.Hands
-  ( value
-  ) where
+module Poker.Game.Hands where
 
 import Data.Function
 import Data.List

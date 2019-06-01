@@ -35,7 +35,7 @@ forkBackgroundJobs connString serverStateTVar lobby = do
   forkAllNotifySubscribersThreads serverStateTVar -- Create a thread for each table which broadcasts updates to clients listening for table and game updates.
   where
     chipRefillInterval = 100000000 -- 2 mins
-    chipRefillThreshold = 2000 -- any lower chip count will be topped up on refill to this amount
+    chipRefillThreshold = 200000 -- any lower chip count will be topped up on refill to this amount
 
 -- Fork a new thread for each table that writes game updates received from the table channel to the DB
 forkGameDBWriters :: ConnectionString -> Lobby -> IO [Async ()]
