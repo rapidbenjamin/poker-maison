@@ -52,6 +52,7 @@ dependencies:
   - mtl
   - wuss
   - jwt
+  - singletons
   - servant-docs
   - listsafe
   - warp
