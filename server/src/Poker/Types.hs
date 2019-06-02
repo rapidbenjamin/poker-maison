@@ -144,7 +144,7 @@ unPlayerShowdownHand (PlayerShowdownHand cards) = cards
 data Winners
   = MultiPlayerShowdown [((HandRank, PlayerShowdownHand), PlayerName)]
   | SinglePlayerShowdown PlayerName -- occurs when everyone folds to one player
-  | NoWinners
+  | NoWinners -- todo - remove this and wrap whole type in a Maybe
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 newtype Deck =
