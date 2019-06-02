@@ -76,7 +76,7 @@ genPlayer possibleStates position = do
   _committed <- Gen.int $ Range.linear 0 10000
   _bet <- Gen.int $ Range.linear 0 _committed
   _actedThisTurn <- Gen.bool
-  _pockets <- genPockets
+  _pockets <- if _playerState == None then genNoPockets else genPockets
   return Player {..}
     where _playerName = "player" <> (T.pack $ show position) 
 
