@@ -134,7 +134,7 @@ check pName game@Game {..} =
       _players
     nextPosToAct = incPosToAct _currentPosToAct game
 
--- Sets state of a given player to None (sat-out)
+-- Sets state of a given player to SatOut (sat-out)
 -- In order to sit in again the player must post a blind
 sitOut :: PlayerName -> Game -> Game
 sitOut plyrName =
@@ -142,7 +142,7 @@ sitOut plyrName =
   (<$>)
     (\p@Player {..} ->
        if _playerName == plyrName
-         then Player {_playerState = None, _actedThisTurn = True, ..}
+         then Player {_playerState = SatOut, _actedThisTurn = True, ..}
          else p)
 
 sitIn :: PlayerName -> Game -> Game

@@ -72,7 +72,7 @@ getActivePlayers = filter (\Player {..} -> _playerState == In)
 
 -- get all players who are not currently sat out
 getPlayersSatIn :: [Player] -> [Player]
-getPlayersSatIn = filter ((/= None) . (^. playerState))
+getPlayersSatIn = filter ((/= SatOut) . (^. playerState))
 
 -- player position is the order of a given player in the set of all players with a 
 -- playerState of In or in other words the players that are both sat at the table and active 

@@ -192,7 +192,7 @@ canSitOut :: PlayerName -> Game -> Either GameErr ()
 canSitOut pName game@Game {..}
   | _street /= PreDeal = Left $ InvalidMove pName CannotSitOutOutsidePreDeal
   | currentState == Nothing = Left $ NotAtTable pName
-  | currentState == (Just None) = Left $ InvalidMove pName AlreadySatOut
+  | currentState == (Just SatOut) = Left $ InvalidMove pName AlreadySatOut
   | otherwise = Right ()
   where
     currentState = getGamePlayerState game pName

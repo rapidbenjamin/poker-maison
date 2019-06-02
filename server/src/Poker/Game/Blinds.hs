@@ -85,7 +85,7 @@ getSmallBlindPosition playersSatIn dealerPos =
     incAmount = 1
 
 -- if a player does not post their blind at the appropriate time then their state will be changed to 
--- None signifying that they have a seat but are now sat out
+-- SatOut signifying that they have a seat but are now sat out
 -- blind is required either if player is sitting in bigBlind or smallBlind position relative to dealer
 -- or if their current playerState is set to Out 
 -- If no blind is required for the player to remain In for the next hand then we will return Nothing

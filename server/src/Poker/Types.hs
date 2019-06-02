@@ -91,9 +91,9 @@ data HandRank
 
 type Bet = Int
 
--- TODO - replace None with SatOut
+-- TODO - replace SatOut with SatOut
 data PlayerState
-  = None -- none denotes a player that will not be dealt cards unless they send a postblinds action to the server
+  = SatOut -- SatOut denotes a player that will not be dealt cards unless they send a postblinds action to the server
   | Folded
   | In
   deriving (Eq, Show, Ord, Read, Generic, ToJSON, FromJSON)
@@ -169,7 +169,7 @@ data Game = Game
   , _pot :: Int
   , _maxBet :: Bet
   , _dealer :: Int
-  , _currentPosToAct :: Int -- position here refes to the zero indexed set of active players that have a playerState not set to None
+  , _currentPosToAct :: Int -- position here refes to the zero indexed set of active players that have a playerState not set to SatOut
   } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Game where

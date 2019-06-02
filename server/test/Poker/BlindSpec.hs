@@ -45,7 +45,7 @@ twoPlayerGame =
             { _pockets = Nothing
             , _chips = 2000
             , _bet = 0
-            , _playerState = None
+            , _playerState = SatOut
             , _playerName = "player2"
             , _committed = 0
             , _actedThisTurn = False
@@ -112,7 +112,7 @@ threePlayerGame =
             { _pockets = Nothing
             , _chips = 1950
             , _bet = 0
-            , _playerState = None
+            , _playerState = SatOut
             , _playerName = "player1"
             , _committed = 0
             , _actedThisTurn = False
@@ -121,7 +121,7 @@ threePlayerGame =
             { _pockets = Nothing
             , _chips = 2000
             , _bet = 0
-            , _playerState = None
+            , _playerState = SatOut
             , _playerName = "player2"
             , _committed = 0
             , _actedThisTurn = False
@@ -130,7 +130,7 @@ threePlayerGame =
             { _pockets = Nothing
             , _chips = 2000
             , _bet = 0
-            , _playerState = None
+            , _playerState = SatOut
             , _playerName = "player3"
             , _committed = 0
             , _actedThisTurn = False
@@ -159,7 +159,7 @@ threePlayerGameAllBlindsPosted =
             { _pockets = Nothing
             , _chips = 1950
             , _bet = 0
-            , _playerState = None
+            , _playerState = SatOut
             , _playerName = "player1"
             , _committed = 0
             , _actedThisTurn = False
@@ -251,9 +251,9 @@ spec = do
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
       it
-        "returns Big if player position is dealer for three players and playerState is None" $ do
+        "returns Big if player position is dealer for three players and playerState is SatOut" $ do
         let testPlayers =
-              (playerState .~ None) <$>
+              (playerState .~ SatOut) <$>
               (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
@@ -295,4 +295,4 @@ spec = do
       "should return correct player states for two players when not all blinds posted" $ do
       let newGame = updatePlayersInHand twoPlayerGame
       let playerStates = (\Player {..} -> _playerState) <$> _players newGame
-      playerStates `shouldBe` [In, None]
+      playerStates `shouldBe` [In, SatOut]

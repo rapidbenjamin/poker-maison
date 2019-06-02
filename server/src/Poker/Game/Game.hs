@@ -240,7 +240,7 @@ getHandRankings plyrs boardCards =
       filter
         (\Player {..} ->
            (_playerState /= Folded) ||
-           (_playerState /= None) || isNothing _pockets)
+           (_playerState /= SatOut) || isNothing _pockets)
         plyrs
 
 -- Update active players states to prepare them for the next hand.
@@ -257,10 +257,10 @@ resetPlayerCardsAndBets Player {..} =
   where
     newPlayerState =
       if _chips == 0
-        then None
+        then SatOut
         else if _playerState == Folded || _playerState == In
                then In
-               else None
+               else SatOut
 
 -- The game should go straight to showdown if all but one players is In hand
 allButOneFolded :: Game -> Bool

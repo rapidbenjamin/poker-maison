@@ -61,7 +61,7 @@ player4 =
     { _pockets = Nothing
     , _chips = 2000
     , _bet = 0
-    , _playerState = None
+    , _playerState = SatOut
     , _playerName = "player4"
     , _committed = 0
     , _actedThisTurn = False
@@ -469,7 +469,7 @@ spec = do
       let preDealGame =
             (street .~ PreDeal) .
             (players .~
-             [ ((playerState .~ None) .
+             [ ((playerState .~ SatOut) .
                 (actedThisTurn .~ False) . (bet .~ 0) . (committed .~ 0))
                  player1
              , ((playerState .~ In) .

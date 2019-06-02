@@ -296,12 +296,12 @@ spec = do
           newPositionToAct = newGame ^. currentPosToAct
           expectedNewPositionToAct = 1
       newPositionToAct `shouldBe` expectedNewPositionToAct
-  describe "SitOut" $ it "should set playerState to None" $ do
+  describe "SitOut" $ it "should set playerState to SatOut" $ do
     let game =
           (street .~ PreDeal) . (players .~ [player1, player6]) $
           initialGameState'
         pName = "player6"
-        expectedPlayer = (playerState .~ None) player6
+        expectedPlayer = (playerState .~ SatOut) player6
         newGame = sitOut pName game
         playerWhoChecked = newGame ^? players . ix 1
     playerWhoChecked `shouldBe` Just expectedPlayer

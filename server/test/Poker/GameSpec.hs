@@ -78,7 +78,7 @@ player4 =
     { _pockets = Nothing
     , _chips = 2000
     , _bet = 0
-    , _playerState = None
+    , _playerState = SatOut
     , _playerName = "player4"
     , _committed = 0
     , _actedThisTurn = False
@@ -103,7 +103,7 @@ player6 =
     { _pockets = Nothing
     , _chips = 2000
     , _bet = 0
-    , _playerState = None
+    , _playerState = SatOut
     , _playerName = "player6"
     , _committed = 0
     , _actedThisTurn = False
@@ -398,7 +398,7 @@ spec = do
             (players .~
              [ ((chips .~ 1000) player5)
              , ((playerState .~ Folded) player4)
-             , ((playerState .~ None) player3)
+             , ((playerState .~ SatOut) player3)
              , ((chips .~ 1000) player2)
              ]) $
             initialGameState'
@@ -413,13 +413,13 @@ spec = do
                 (currentPosToAct .~ 1) .
                 (dealer .~ 0) .
                 (players .~
-                 [ ((actedThisTurn .~ False) . (playerState .~ None) .
+                 [ ((actedThisTurn .~ False) . (playerState .~ SatOut) .
                     (bet .~ 0) .
                     (chips .~ 2000) .
                     (committed .~ 0) .
                     (bet .~ 0))
                      player1
-                 , ((actedThisTurn .~ False) . (playerState .~ None) .
+                 , ((actedThisTurn .~ False) . (playerState .~ SatOut) .
                     (bet .~ 0) .
                     (committed .~ 0) .
                     (bet .~ 0) .
@@ -434,7 +434,7 @@ spec = do
           let game' =
                 (street .~ PreDeal) .
                 (players .~
-                 [ ((actedThisTurn .~ False) . (playerState .~ None) .
+                 [ ((actedThisTurn .~ False) . (playerState .~ SatOut) .
                     (bet .~ 0) .
                     (chips .~ 2000) .
                     (committed .~ 0))
