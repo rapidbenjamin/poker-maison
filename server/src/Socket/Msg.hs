@@ -190,38 +190,32 @@ handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
 handleNewGameState connString serverStateTVar (NewGameState tableName newGame) = do
   newServerState <-
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
-  async (progressGame connString serverStateTVar tableName newGame)
+  async (progressGame' connString serverStateTVar tableName newGame)
   return ()
 handleNewGameState _ _ msg = do
   return ()
 
-progressGame ::
+
+progressGame' ::
      ConnectionString -> TVar ServerState -> TableName -> Game -> IO ()
-progressGame connString serverStateTVar tableName game@Game {..} = do
+progressGame' connString serverStateTVar tableName game@Game {..} = do
   threadDelay stagePauseDuration
   when
-    (_street == Showdown ||
-     _street == PreDeal && haveAllPlayersActed game ||
-     ((length $ getActivePlayers _players) < 2 && haveAllPlayersActed game) ||
-     (haveAllPlayersActed game && (length $ getActivePlayers _players) >= 2)) $ do
-    (errE, progressedGame) <- runStateT nextStage game
-   -- pPrint "PROGRESED GAME"
-   -- pPrint progressedGame
-   -- print "haveAllPlayersActed:"
-   -- print (haveAllPlayersActed progressedGame)
-    case errE of
-      Right () -> do
-        let currentStreet = progressedGame ^. street
-        atomically $
-          updateGameAndBroadcastT serverStateTVar tableName progressedGame
- --       when
- --         (currentStreet == Showdown)
- --         (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
- --       pPrint progressedGame
-        progressGame connString serverStateTVar tableName progressedGame
-      Left err -> print $ "progressGameAlong Err" ++ show err
-  where
-    stagePauseDuration = 5000000
+    (canProgressGame game) $ do
+      progressedGame <- progressGame game
+        -- pPrint "PROGRESED GAME"
+        -- pPrint progressedGame
+        -- print "haveAllPlayersActed:"
+        -- print (haveAllPlayersActed progressedGame)
+    
+      let currentStreet = progressedGame ^. street
+      atomically $ updateGameAndBroadcastT serverStateTVar tableName progressedGame
+   --        when
+   --          (currentStreet == Showdown)
+   --          (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
+   --        pPrint progressedGame
+      progressGame' connString serverStateTVar tableName progressedGame
+  where stagePauseDuration = 5000000
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 getTablesHandler = do
@@ -292,14 +286,12 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
             Right () -> do
               let player = initPlayer (unUsername username) chipsToSit
                   takeSeatAction = GameMove tableName $ SitDown player
-              (errE, newGame) <-
+              eitherProgressedGame <-
                 liftIO $
-                runStateT
-                  (runPlayerAction (unUsername username) (SitDown player))
-                  game
-              case errE of
+                  (runPlayerAction game (unUsername username) (SitDown player))
+              case eitherProgressedGame of
                 Left gameErr -> throwError $ GameErr gameErr
-                Right () -> do
+                Right newGame -> do
                   liftIO $
                     dbDepositChipsIntoPlay
                       dbConn
@@ -327,12 +319,10 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
       if unUsername username `notElem` getGamePlayerNames game
         then throwError $ NotSatInGame tableName
         else do
-          (errE, newGame) <-
-            liftIO $
-            runStateT (runPlayerAction (unUsername username) LeaveSeat') game
-          case errE of
+          eitherProgressedGame <- liftIO $ (runPlayerAction game (unUsername username) LeaveSeat')
+          case eitherProgressedGame of
             Left gameErr -> throwError $ GameErr gameErr
-            Right () -> do
+            Right newGame -> do
               let maybePlayer =
                     find
                       (\Player {..} -> unUsername username == _playerName)
@@ -392,14 +382,10 @@ gameActionHandler gameMove@(GameMove tableName playerAction) = do
        in if not satAtTable
             then throwError $ NotSatAtTable tableName
             else do
-              (errE, newGame) <-
-                liftIO $
-                runStateT
-                  (runPlayerAction (unUsername username) playerAction)
-                  game
-              case errE of
+              eitherNewGame <- liftIO $ runPlayerAction game (unUsername username) playerAction
+              case eitherNewGame of
                 Left gameErr -> throwError $ GameErr gameErr
-                Right ()
+                Right newGame
                  -- liftIO $ pPrint newGame
                  -> do
                   return $ NewGameState tableName newGame

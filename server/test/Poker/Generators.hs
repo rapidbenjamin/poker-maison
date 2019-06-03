@@ -46,21 +46,37 @@ import Data.Tuple
 allPStates :: [PlayerState]
 allPStates = [SatOut ..]
 
+
 allPStreets :: [Street]
 allPStreets = [PreDeal ..] 
+
+
+numBoardCards :: Street -> Int
+numBoardCards = 
+     \case
+       PreDeal  -> 0
+       PreFlop  -> 0
+       Flop     -> 3
+       Turn     -> 4
+       River    -> 5
+       Showdown -> 5
+       
 
 genShuffledCards :: Int -> Gen [Card]
 genShuffledCards n = do 
      cs <- Gen.shuffle $ unDeck initialDeck
      return $ take n cs
 
+
 genShuffledDeck :: Gen Deck
 genShuffledDeck = do 
     cs <- Gen.shuffle $ unDeck initialDeck 
     return $ Deck cs
 
+
 genSuit :: Gen Suit
 genSuit = Gen.enum Diamonds Spades
+
 
 genSameSuitCards :: Int -> Gen [Card]
 genSameSuitCards n = do
@@ -68,16 +84,16 @@ genSameSuitCards n = do
      cs <- Gen.shuffle $ filter ((== suit') . suit) (unDeck initialDeck)
      return $ take n cs
 
+
 genDealPockets :: [Card] -> Gen (Maybe PocketCards, [Card])
 genDealPockets cs = do
      let ([c1, c2], remainingCs) = splitAt 2 cs
      return (Just $ PocketCards c1 c2, remainingCs)
 
+
 genNoPockets :: [Card] -> Gen (Maybe PocketCards, [Card])
 genNoPockets cs = return (Nothing, cs)
 
-
-  --Card <$> [minBound ..] 
 
 genPlayers :: Int -> [PlayerState] -> Int -> [Card] -> Gen ([Player], [Card])
 genPlayers requiredInPlayers possibleStates playerCount cs = do
@@ -100,7 +116,7 @@ dealPlayersGen ps cs = _2 %~ nameByPos $ mapAccumR (\cs p ->
          | otherwise = (,) Player {_pockets = Just $ PocketCards c1 c2, .. } remainingCs'
              where ([c1, c2], remainingCs') = splitAt 2 cs
 
-
+     
 genPlayer' :: [PlayerState] -> Int -> [Card] -> Gen (Player, [Card])
 genPlayer' possibleStates position cs = do
      pState <- Gen.element possibleStates
@@ -151,13 +167,3 @@ genGame possibleStreets = do
     _dealer <- Gen.int $ Range.linear 0 (playerCount - 1)
     _currentPosToAct <- Gen.int $ Range.linear 0 (playerCount - 1)
     return Game {..}
-
-numBoardCards :: Street -> Int
-numBoardCards = 
-     \case
-       PreDeal  -> 0
-       PreFlop  -> 0
-       Flop     -> 3
-       Turn     -> 4
-       River    -> 5
-       Showdown -> 5

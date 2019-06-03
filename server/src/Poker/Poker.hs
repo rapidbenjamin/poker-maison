@@ -6,12 +6,15 @@
 module Poker.Poker
   ( initialGameState
   , initPlayer
-  , nextStage
+  , progressGame
+  , canProgressGame
   , runPlayerAction
+  , handlePlayerTimeout
   ) where
 
 import Control.Lens hiding (Fold)
-import Control.Monad.State.Lazy
+import Control.Concurrent.STM.TVar
+
 import Data.Either
 import Data.Functor
 import Data.List
@@ -33,18 +36,25 @@ import Poker.Types
 -- if the current game stage is showdown then the next game state will have a newly shuffled
 -- deck and pocket cards/ bets reset
 runPlayerAction ::
-     PlayerName -> PlayerAction -> StateT Game IO (Either GameErr ())
-runPlayerAction playerName action =
-  StateT $ \currGame@Game {..} ->
+     Game -> PlayerName -> PlayerAction -> IO (Either GameErr Game)
+runPlayerAction currGame@Game {..} playerName action =
     case handlePlayerAction currGame playerName action of
-      Left err -> return (Left err, currGame)
+      Left err -> return $ Left err
       Right newGameState ->
         case action of
-          SitDown _ -> return (Right (), newGameState)
-          LeaveSeat' -> return (Right (), newGameState)
-          _ -> do
-            game' <- progressGame newGameState
-            return (Right (), game')
+          SitDown _ -> return $ Right newGameState
+          LeaveSeat' -> return $ Right newGameState
+          _ -> do 
+              nextStage <- progressGame newGameState
+              return $ Right nextStage
+
+  
+canProgressGame :: Game -> Bool
+canProgressGame game@Game{..} = 
+  (_street == Showdown ||
+  _street == PreDeal && haveAllPlayersActed game ||
+  ((length $ getActivePlayers _players) < 2 && haveAllPlayersActed game) ||
+  (haveAllPlayersActed game && (length $ getActivePlayers _players) >= 2))
 
 -- when no player action is possible we can can call this function to get the game 
 -- to the next stage.
@@ -52,11 +62,30 @@ runPlayerAction playerName action =
 -- to progress the game to the next hand.
 -- A similar situation occurs when no further player action is possible but  the game is not over
 -- - in other words more than one players are active and all or all but one are all in
-nextStage :: StateT Game IO (Either GameErr ())
-nextStage =
-  StateT $ \currGame@Game {..} -> do
-    game' <- progressGame currGame
-    return (Right (), game')
+
+
+-- | Just get the identity function if not all players acted otherwise we return 
+-- the function necessary to progress the game to the next stage.
+-- toDO - make function pure by taking stdGen as an arg
+progressGame :: Game -> IO Game
+progressGame game@Game {..}
+  | _street == Showdown = getNextHand game <$> shuffledDeck
+  | _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2 =
+    getNextHand game <$> shuffledDeck
+  | haveAllPlayersActed game &&
+      (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
+    case getNextStreet _street of
+      PreFlop -> return $ progressToPreFlop game
+      Flop -> return $ progressToFlop game
+      Turn -> return $ progressToTurn game
+      River -> return $ progressToRiver game
+      Showdown -> return $ progressToShowdown game
+      PreDeal -> getNextHand game <$> shuffledDeck
+  | allButOneFolded game && _street /= Showdown =
+    return $ progressToShowdown game
+  | otherwise = return game
+  where
+    numberPlayersSatIn = length $ getActivePlayers _players
 
 handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
 handlePlayerAction game@Game {..} playerName =
@@ -96,28 +125,6 @@ handlePlayerTimeout playerName game@Game {..}
     handStarted = _street /= PreDeal
     playerCanCheck = isRight $ canCheck playerName game
 
--- | Just get the identity function if not all players acted otherwise we return 
--- the function necessary to progress the game to the next stage.
--- toDO - make function pure by taking stdGen as an arg
-progressGame :: Game -> IO Game
-progressGame game@Game {..}
-  | _street == Showdown = getNextHand game <$> shuffledDeck
-  | _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2 =
-    getNextHand game <$> shuffledDeck
-  | haveAllPlayersActed game &&
-      (not (allButOneFolded game) || (_street == PreDeal || _street == Showdown)) =
-    case getNextStreet _street of
-      PreFlop -> return $ progressToPreFlop game
-      Flop -> return $ progressToFlop game
-      Turn -> return $ progressToTurn game
-      River -> return $ progressToRiver game
-      Showdown -> return $ progressToShowdown game
-      PreDeal -> getNextHand game <$> shuffledDeck
-  | allButOneFolded game && _street /= Showdown =
-    return $ progressToShowdown game
-  | otherwise = return game
-  where
-    numberPlayersSatIn = length $ getActivePlayers _players
 
 initialGameState :: Deck -> Game
 initialGameState shuffledDeck =
