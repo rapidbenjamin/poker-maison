@@ -32,6 +32,9 @@ import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
 
+import Poker.Generators
+
+
 initialGameState' = initialGameState initialDeck
 
 player1 =
@@ -111,7 +114,19 @@ player6 =
 
 initPlayers = [player1, player2, player3]
 
+prop_f :: Property
+prop_f = property $ do 
+  Gen.print genGame
+
+prop_p :: Property
+prop_p = property $ do 
+  Gen.print $ genPlayers allPStates 7 (unDeck initialDeck)
+
 spec = do
+  focus $ describe " game generator" $ do 
+    it "samples games" $ require prop_f
+  describe "players generator" $ do 
+      it "samples players" $ require prop_p
   describe "dealToPlayers" $ do
     it "should deal correct number of cards" $ do
       let (_, newPlayers) = dealToPlayers initialDeck [player1, player3]

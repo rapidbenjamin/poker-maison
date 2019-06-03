@@ -174,15 +174,27 @@ data Game = Game
 
 instance Show Game where
   show Game {..} =
-    show _players <> show _board <> "\n dealer: " <> show _dealer <>
+    "\n dealer: " <> show _dealer <>
     "\n _currentPosToAct: " <>
     show _currentPosToAct <>
+    "\n _smallBlind: " <>
+    show _smallBlind <>
+    "\n _big_blind: " <>
+    show _bigBlind <>
+    "\n _minBuyin: " <>
+    show _minBuyInChips <>
+    "\n _maxBuyin: " <>
+    show _maxBuyInChips <>
+    "\n _pot: " <>
+    show _pot <>
     "\n _street: " <>
     show _street <>
     "\n _winners: " <>
     show _winners <>
     "\n _board: " <>
-    show _board
+    show _board <>
+    "\n _players: " <>
+    show _players
 
 type PlayerName = Text
 

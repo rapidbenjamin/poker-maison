@@ -12,6 +12,8 @@ import           Control.Monad
 import qualified Data.List as List
 import qualified Data.Text as Text
 
+
+
 import Data.Proxy
 import Data.Maybe
 
@@ -39,6 +41,7 @@ import Poker.Poker
 import Poker.Types
 import Poker.Game.Hands
 import GHC.Enum
+import Data.Tuple
 
 allPStates :: [PlayerState]
 allPStates = [SatOut, Folded, In]
@@ -78,20 +81,29 @@ genNoPockets cs = return (Nothing, cs)
 --  passing an accumulating parameter from right to left,
 --     and returning a final value of this accumulator together with the new structure.
 genPlayers :: [PlayerState] -> Int -> [Card] -> Gen ([Player], [Card])
-genPlayers possibleStates playerCount cards =
-     (flip . (runStateT .) . traverse . (StateT .) . flip) f cards []
-        >>= \(ps, cs) -> return $ (concat ps, cs) 
-       where
-          f :: [Card] -> [Player] -> Gen ([Player], [Card])
-          f cs ps = do
-               (p, remainingCs) <- genPlayer' possibleStates (length ps + 1) cs 
-               return (p : ps, remainingCs)
+genPlayers possibleStates playerCount cs = do
+     ps <- replicateM playerCount $ do 
+          pState <- Gen.element possibleStates
+          genPlayer pState "player" Nothing
+     return $ swap $ dealPlayersGen ps cs
+
+dealPlayersGen :: [Player] -> [Card] -> ([Card], [Player])
+dealPlayersGen ps cs = _2 %~ nameByPos $ mapAccumR (\cs p ->
+     let (maybeDealtP, remainingCs') = dealPlayer cs p in 
+       (remainingCs', maybeDealtP)) cs ps
+   where 
+     newName pos = playerName .~ ("player" <> (T.pack $ show pos))
+     nameByPos ps = imap (\pos p -> newName pos p) ps
+     dealPlayer cs plyr@Player{..} 
+         | _playerState == SatOut = (plyr, cs)
+         | otherwise = (,) Player {_pockets = Just $ PocketCards c1 c2, .. } remainingCs'
+             where ([c1, c2], remainingCs') = splitAt 2 cs
 
 
 genPlayer' :: [PlayerState] -> Int -> [Card] -> Gen (Player, [Card])
 genPlayer' possibleStates position cs = do
      pState <- Gen.element possibleStates
-     let shouldDeal = pState /= SatOut
+     let shouldDeal = pState /= SatOut || null cs
      (pocketCs, remainingCs) <- if shouldDeal then genDealPockets cs else genNoPockets cs
      p <- genPlayer pState pName pocketCs
      return (p, remainingCs)
@@ -109,10 +121,11 @@ genPlayer _playerState _playerName _pockets = do
   _actedThisTurn <- Gen.bool
   return Player {..}
 
+
 genGame :: Gen Game
 genGame = do
     let _street = Flop
-    d@(Deck cs) <- genShuffledDeck
+    let d@(Deck cs) = initialDeck
     let 
        boardCount = numBoardCards _street
        (boardCards, remainingCs) = splitAt boardCount cs
