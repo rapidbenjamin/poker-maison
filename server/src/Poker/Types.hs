@@ -96,7 +96,7 @@ data PlayerState
   = SatOut -- SatOut denotes a player that will not be dealt cards unless they send a postblinds action to the server
   | Folded
   | In
-  deriving (Eq, Show, Ord, Read, Generic, ToJSON, FromJSON)
+  deriving (Eq, Show, Ord, Enum, Bounded, Read, Generic, ToJSON, FromJSON)
 
 data Street
   = PreDeal

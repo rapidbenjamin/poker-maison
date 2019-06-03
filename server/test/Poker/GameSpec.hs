@@ -116,11 +116,11 @@ initPlayers = [player1, player2, player3]
 
 prop_f :: Property
 prop_f = property $ do 
-  Gen.print genGame
+  Gen.print $ genGame allPStreets
 
 prop_p :: Property
 prop_p = property $ do 
-  Gen.print $ genPlayers allPStates 7 (unDeck initialDeck)
+  Gen.print $ genPlayers 0 allPStates 7 (unDeck initialDeck)
 
 spec = do
   focus $ describe " game generator" $ do 

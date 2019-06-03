@@ -44,7 +44,10 @@ import GHC.Enum
 import Data.Tuple
 
 allPStates :: [PlayerState]
-allPStates = [SatOut, Folded, In]
+allPStates = [SatOut ..]
+
+allPStreets :: [Street]
+allPStreets = [PreDeal ..] 
 
 genShuffledCards :: Int -> Gen [Card]
 genShuffledCards n = do 
@@ -74,18 +77,16 @@ genNoPockets :: [Card] -> Gen (Maybe PocketCards, [Card])
 genNoPockets cs = return (Nothing, cs)
 
 
---mapAccumR :: Traversable t => (a -> b -> (a, c)) -> a -> t b -> (a, t c) Source#
+  --Card <$> [minBound ..] 
 
---The mapAccumR function behaves like a combination of fmap and foldr; 
---it applies a function to each element of a structure, 
---  passing an accumulating parameter from right to left,
---     and returning a final value of this accumulator together with the new structure.
-genPlayers :: [PlayerState] -> Int -> [Card] -> Gen ([Player], [Card])
-genPlayers possibleStates playerCount cs = do
+genPlayers :: Int -> [PlayerState] -> Int -> [Card] -> Gen ([Player], [Card])
+genPlayers requiredInPlayers possibleStates playerCount cs = do
      ps <- replicateM playerCount $ do 
           pState <- Gen.element possibleStates
           genPlayer pState "player" Nothing
-     return $ swap $ dealPlayersGen ps cs
+     if (length $ getActivePlayers ps) < requiredInPlayers then Gen.discard else
+       return $ swap $ dealPlayersGen ps cs
+
 
 dealPlayersGen :: [Player] -> [Card] -> ([Card], [Player])
 dealPlayersGen ps cs = _2 %~ nameByPos $ mapAccumR (\cs p ->
@@ -122,9 +123,9 @@ genPlayer _playerState _playerName _pockets = do
   return Player {..}
 
 
-genGame :: Gen Game
-genGame = do
-    let _street = Flop
+genGame :: [Street] -> Gen Game
+genGame possibleStreets = do
+    _street <- Gen.element [Showdown]
     let d@(Deck cs) = initialDeck
     let 
        boardCount = numBoardCards _street
@@ -132,7 +133,8 @@ genGame = do
     _smallBlind <- Gen.int $ Range.linear 1 100
     _maxPlayers <- Gen.int $ Range.linear 2 9
     playerCount <- Gen.int $ Range.linear 2 _maxPlayers
-    (_players, remainingCs') <- genPlayers allPStates playerCount remainingCs
+    let requiredInPlyrs = if _street == Showdown then 2 else 0
+    (_players, remainingCs') <- genPlayers requiredInPlyrs allPStates playerCount remainingCs
     let
       _waitlist = []
       _bigBlind = _smallBlind * 2
@@ -144,7 +146,7 @@ genGame = do
       _maxBet = maximum betsThisRound
       betSum = sum betsThisRound
       playerCount = length _players
-      _winners = if _street == River then getWinners Game{..} else NoWinners
+      _winners = if _street == Showdown then getWinners Game{..} else NoWinners
     _pot <- Gen.int $ Range.linear betSum (betSum * fromEnum _street)
     _dealer <- Gen.int $ Range.linear 0 (playerCount - 1)
     _currentPosToAct <- Gen.int $ Range.linear 0 (playerCount - 1)
@@ -153,8 +155,9 @@ genGame = do
 numBoardCards :: Street -> Int
 numBoardCards = 
      \case
-       PreDeal -> 0
-       PreFlop -> 0
-       Flop    -> 3
-       Turn    -> 4
-       River   -> 5
+       PreDeal  -> 0
+       PreFlop  -> 0
+       Flop     -> 3
+       Turn     -> 4
+       River    -> 5
+       Showdown -> 5
