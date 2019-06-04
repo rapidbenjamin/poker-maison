@@ -24,6 +24,9 @@ import Poker.Game.Game
 import Poker.Poker
 import Poker.Types
 
+import Poker.Generators
+import Poker.Game.Utils
+
 player1 =
   Player
     { _pockets =
@@ -91,4 +94,19 @@ player5 =
 
 initPlayers = [player1, player2, player3]
 
-spec = describe "Poker" $ return ()
+prop_canProgressIsEquivalentToAllActed :: Property
+prop_canProgressIsEquivalentToAllActed = property $ do
+    g@Game{..} <- forAll $ genGame actionStages
+    let 
+      playerCanAct = any (canPlayerAct _maxBet) _players
+      actionPossible = ((length $ getActivePlayers _players) >= 2) && playerCanAct
+    canProgressGame g === not actionPossible
+  where 
+    actionStages = [PreFlop, Flop, Turn, River]
+    canPlayerAct maxBet' Player{..} =
+      _chips > 0 && (not _actedThisTurn || (_playerState == In && (_bet < maxBet')))
+
+spec = describe "Poker" $ do 
+  focus $ describe " proppy" $ do 
+    it " games" $ require prop_canProgressIsEquivalentToAllActed
+

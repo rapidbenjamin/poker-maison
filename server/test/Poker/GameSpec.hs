@@ -123,10 +123,6 @@ prop_p = property $ do
   Gen.print $ genPlayers 0 allPStates 7 (unDeck initialDeck)
 
 spec = do
-  focus $ describe " game generator" $ do 
-    it "samples games" $ require prop_f
-  describe "players generator" $ do 
-      it "samples players" $ require prop_p
   describe "dealToPlayers" $ do
     it "should deal correct number of cards" $ do
       let (_, newPlayers) = dealToPlayers initialDeck [player1, player3]

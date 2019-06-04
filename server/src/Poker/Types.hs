@@ -15,7 +15,10 @@ import Data.Function
 import Data.Monoid
 import Data.Text
 import Database.Persist.TH
+import qualified Data.Text.Lazy as LT
 import GHC.Generics
+
+import Text.Pretty.Simple
 
 ------------------------------------------------------------------------------
 data Rank
@@ -173,7 +176,7 @@ data Game = Game
   } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Game where
-  show Game {..} =
+  show Game{..} =
     "\n dealer: " <> show _dealer <>
     "\n _currentPosToAct: " <>
     show _currentPosToAct <>
@@ -187,6 +190,8 @@ instance Show Game where
     show _maxBuyInChips <>
     "\n _pot: " <>
     show _pot <>
+    "\n _maxBet: " <>
+    show _maxBet <>
     "\n _street: " <>
     show _street <>
     "\n _winners: " <>
@@ -194,7 +199,7 @@ instance Show Game where
     "\n _board: " <>
     show _board <>
     "\n _players: " <>
-    show _players
+    (LT.unpack $ pShow _players)
 
 type PlayerName = Text
 
