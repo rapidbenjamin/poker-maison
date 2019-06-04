@@ -141,7 +141,7 @@ genPlayer _playerState _playerName _pockets = do
 
 genGame :: [Street] -> Gen Game
 genGame possibleStreets = do
-    _street <- Gen.element [Showdown]
+    _street <- Gen.element possibleStreets
     let d@(Deck cs) = initialDeck
     let 
        boardCount = numBoardCards _street

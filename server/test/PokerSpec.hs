@@ -109,4 +109,3 @@ prop_canProgressIsEquivalentToAllActed = property $ do
 spec = describe "Poker" $ do 
   focus $ describe " proppy" $ do 
     it " games" $ require prop_canProgressIsEquivalentToAllActed
-
