@@ -52,7 +52,7 @@ runPlayerAction currGame@Game {..} playerName action =
 canProgressGame :: Game -> Bool
 canProgressGame game@Game{..}
     | _street == Showdown = True
-    | _street == PreDeal && haveAllPlayersActed game = True
+    | _street == PreDeal = haveRequiredBlindsBeenPosted game
     | otherwise = haveAllPlayersActed game 
 
     --  ((length $ getActivePlayers _players) < 2 && haveAllPlayersActed game) ||
@@ -64,6 +64,7 @@ canProgressGame game@Game{..}
 -- to progress the game to the next hand.
 -- A similar situation occurs when no further player action is possible but  the game is not over
 -- - in other words more than one players are active and all or all but one are all in
+
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.

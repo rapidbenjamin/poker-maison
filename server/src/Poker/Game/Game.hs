@@ -198,15 +198,12 @@ haveAllPlayersActed :: Game -> Bool
 haveAllPlayersActed game@Game {..}
   | _street == Showdown = True
   | _street == PreDeal = haveRequiredBlindsBeenPosted game
-  | otherwise = not awaitingPlayerAction
+  | otherwise = not awaitingPlayerAction || (length activePlayers < 2)
   where
     activePlayers = getActivePlayers _players
-    awaitingPlayerAction =
-      any
-        (\Player {..} ->
-           not _actedThisTurn ||
-           (_playerState == In && (_bet < _maxBet && _chips /= 0)))
-        activePlayers
+    canAct maxBet' Player{..} = 
+       _chips > 0 && (not _actedThisTurn || (_actedThisTurn && (_bet < maxBet')))
+    awaitingPlayerAction = any (canAct _maxBet) activePlayers
 
 -- If all players have folded apart from a remaining player then the mucked boolean 
 -- inside the player value will determine if we show the remaining players hand to the 
