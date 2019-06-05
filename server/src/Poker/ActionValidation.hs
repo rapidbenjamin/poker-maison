@@ -93,7 +93,7 @@ isPlayerActingOutOfTurn game@Game {..} playerName
     case playerName `elemIndex` gamePlayerNames of
       Nothing -> Left $ NotAtTable playerName
       Just pos ->
-        if traceShow (doesPlayerHaveToAct playerName game) (doesPlayerHaveToAct playerName game)
+        if doesPlayerHaveToAct playerName game
           then Right ()
           else Left $
                InvalidMove playerName $

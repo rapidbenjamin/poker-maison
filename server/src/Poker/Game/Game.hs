@@ -312,7 +312,7 @@ doesPlayerHaveToAct playerName game@Game {..}
   | _street == PreDeal =
     currentPlayerNameToAct == playerName &&
     (blindRequiredByPlayer game playerName /= NoBlind)
-  | otherwise = traceShow (currentPlayerNameToAct) (_playerName currentPlyrToAct == playerName)
+  | otherwise = _playerName currentPlyrToAct == playerName
   where
     currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh?! fromjust safe pointless
     currentPlayerNameToAct = _playerName currentPlyrToAct

@@ -22,6 +22,13 @@ import Poker.Types
 import Data.Either
 import Poker.Game.Utils
 
+import Poker.Generators
+
+import HaskellWorks.Hspec.Hedgehog
+import           Hedgehog
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+
 initialGameState' = initialGameState initialDeck
 
 player1 =
@@ -162,6 +169,31 @@ preDealHeadsUpFixture = Game {
           ]
 }
 
+
+
+prop_plyrShouldntBeAbleToPostBlindsWhenNoChips :: Property 
+prop_plyrShouldntBeAbleToPostBlindsWhenNoChips = property $ do
+    g <- forAll $ genGame allPStreets allPStates
+    blind' <- forAll $ Gen.element [Small, Big]
+    let
+      g' = g & players . element 0 %~ chips .~ 0
+      action' = PostBlind blind'
+      pName = "player1"
+    isLeft (validateAction g' pName action') === True 
+  where
+   actionStages = [PreDeal]
+
+prop_plyrShouldntBeAbleToPostBlindsOutsidePreDeal :: Property 
+prop_plyrShouldntBeAbleToPostBlindsOutsidePreDeal = property $ do
+    g <- forAll $ genGame allPStreets allPStates
+    blind' <- forAll $ Gen.element [Small, Big]
+    let
+--      g' = g & players . element 0 %~ chips .~ 0
+      action' = PostBlind blind'
+      pName = "player1"
+    isLeft (validateAction g pName action') === True 
+  where
+   actionStages = [PreFlop, Flop, Turn, River]
 
 spec = do
   describe "Player Acting in Turn Validation" $ do
@@ -644,4 +676,5 @@ spec = do
           let action' = PostBlind Small
           let pName = "player1"
           isLeft (validateAction preDealHeadsUpFixture pName action') `shouldBe` True
-             
+      it "Players can't post a blind when they have no chips" $ require prop_plyrShouldntBeAbleToPostBlindsWhenNoChips
+      it "Players shouldn't be able to post blinds outside PreDeal" $ require prop_plyrShouldntBeAbleToPostBlindsOutsidePreDeal

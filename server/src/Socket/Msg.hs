@@ -73,14 +73,14 @@ handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
     msg <- atomically $ readTChan socketReadChan
-  --  print msg
+    print msg
     msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
     either
       (sendMsg clientConn . ErrMsg)
       (handleNewGameState dbConn serverStateTVar)
       msgOutE
   --  print "socketReadChannel"
-  --  pPrint msgOutE
+    pPrint msgOutE
     return ()
 
 -- This function writes msgs received from the websocket to the socket threads msgReader channel 

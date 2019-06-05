@@ -137,6 +137,16 @@ prop_plyrShouldntActWhenNoChips = property $ do
   where
    actionStages = [PreFlop, Flop, Turn, River]
 
+   
+prop_number_of_hand_rankings_and_player_same :: Property 
+prop_number_of_hand_rankings_and_player_same = property $ do
+   plyrCount <- forAll $ Gen.int $ Range.linear 2 9
+   (ps, cs) <- forAll $ genPlayers Showdown requiredActives allPStates plyrCount deck
+   (length $ getHandRankings ps cs) === length ps
+  where
+    requiredActives = 1
+    Deck deck = initialDeck
+
 
 spec = do
   describe "dealToPlayers" $ do
@@ -420,6 +430,8 @@ spec = do
              ]) $
             initialGameState'
       allButOneAllIn flopGame `shouldBe` True
+  describe "getHandRankings" $ do 
+    it "Number of hand rankings should equal number of players" $ require prop_number_of_hand_rankings_and_player_same
   describe "doesPlayerHaveToAct" $ do
     it "should be False when posToAct is not on player" $ do
       require prop_plyrShouldntActWhenNotInPos
