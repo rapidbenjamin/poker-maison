@@ -96,7 +96,7 @@ initPlayers = [player1, player2, player3]
 
 prop_canProgressIsEquivalentToAllActed :: Property
 prop_canProgressIsEquivalentToAllActed = property $ do
-    g@Game{..} <- forAll $ genGame actionStages
+    g@Game{..} <- forAll $ genGame actionStages allPStates
     let 
       playerCanAct = any (canPlayerAct _maxBet) _players
       actionPossible = ((length $ getActivePlayers _players) >= 2) && playerCanAct
@@ -107,5 +107,5 @@ prop_canProgressIsEquivalentToAllActed = property $ do
       _chips > 0 && (not _actedThisTurn || (_playerState == In && (_bet < maxBet')))
 
 spec = describe "Poker" $ do 
-  focus $ describe " proppy" $ do 
+  describe " proppy" $ do 
     it " games" $ require prop_canProgressIsEquivalentToAllActed

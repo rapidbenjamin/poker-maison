@@ -95,11 +95,11 @@ genNoPockets :: [Card] -> Gen (Maybe PocketCards, [Card])
 genNoPockets cs = return (Nothing, cs)
 
 
-genPlayers :: Int -> [PlayerState] -> Int -> [Card] -> Gen ([Player], [Card])
-genPlayers requiredInPlayers possibleStates playerCount cs = do
+genPlayers :: Street -> Int -> [PlayerState] -> Int -> [Card] -> Gen ([Player], [Card])
+genPlayers street' requiredInPlayers possibleStates playerCount cs = do
      ps <- replicateM playerCount $ do 
           pState <- Gen.element possibleStates
-          genPlayer pState "player" Nothing
+          genPlayer street' pState "player" Nothing
      if (length $ getActivePlayers ps) < requiredInPlayers then Gen.discard else
        return $ swap $ dealPlayersGen ps cs
 
@@ -117,30 +117,34 @@ dealPlayersGen ps cs = _2 %~ nameByPos $ mapAccumR (\cs p ->
              where ([c1, c2], remainingCs') = splitAt 2 cs
 
      
-genPlayer' :: [PlayerState] -> Int -> [Card] -> Gen (Player, [Card])
-genPlayer' possibleStates position cs = do
+genPlayer' :: Street -> [PlayerState] -> Int -> [Card] -> Gen (Player, [Card])
+genPlayer' street' possibleStates position cs = do
      pState <- Gen.element possibleStates
      let shouldDeal = pState /= SatOut || null cs
      (pocketCs, remainingCs) <- if shouldDeal then genDealPockets cs else genNoPockets cs
-     p <- genPlayer pState pName pocketCs
+     p <- genPlayer street' pState pName pocketCs
      return (p, remainingCs)
      where 
        pName = "player" <> (T.pack $ show position) 
 
 
 -- if given Just cards then will deal player (as long as not sat out) and return the remaining cards
-genPlayer :: PlayerState -> PlayerName -> Maybe PocketCards -> Gen Player
-genPlayer _playerState _playerName _pockets = do
-  _actedThisTurn <- Gen.bool
-  _chips <- Gen.int $ Range.linear 0 10000
-  _committed <- Gen.int $ Range.linear 0 10000
-  _bet <- Gen.int $ Range.linear 0 _committed
-  _actedThisTurn <- Gen.bool
+--
+-- minChips is calculated to reflect fact that a player can't fold if was all in (no action possible when chips 0)
+-- a player who has state set to Folded and has 0 chips is not a valid player state
+genPlayer :: Street -> PlayerState -> PlayerName -> Maybe PocketCards -> Gen Player
+genPlayer street' _playerState _playerName _pockets = do
+  _chips <- Gen.int $ Range.linear minChips 10000
+  _committed <- if _playerState == SatOut then Gen.constant 0 else Gen.int $ Range.linear 0 10000
+  _bet <- if street' == PreDeal then Gen.constant 0 else Gen.int $ Range.linear 0 _committed
+  _actedThisTurn <- if _playerState == SatOut then Gen.constant False else Gen.bool
   return Player {..}
+  where minChips = if _playerState == Folded then 1 else 0 
+                   
 
 
-genGame :: [Street] -> Gen Game
-genGame possibleStreets = do
+genGame :: [Street] -> [PlayerState] -> Gen Game
+genGame possibleStreets pStates = do
     _street <- Gen.element possibleStreets
     let d@(Deck cs) = initialDeck
     let 
@@ -150,7 +154,7 @@ genGame possibleStreets = do
     _maxPlayers <- Gen.int $ Range.linear 2 9
     playerCount <- Gen.int $ Range.linear 2 _maxPlayers
     let requiredInPlyrs = if _street == Showdown then 2 else 0
-    (_players, remainingCs') <- genPlayers requiredInPlyrs allPStates playerCount remainingCs
+    (_players, remainingCs') <- genPlayers _street requiredInPlyrs pStates playerCount remainingCs
     let
       _waitlist = []
       _bigBlind = _smallBlind * 2

@@ -114,13 +114,29 @@ player6 =
 
 initPlayers = [player1, player2, player3]
 
-prop_f :: Property
-prop_f = property $ do 
-  Gen.print $ genGame allPStreets
+--prop_f :: Property
+--prop_f = property $ do 
+--  Gen.print $ genGame allPStreets allPStates
+--
+--prop_p :: Property
+--prop_p = property $ do 
+--  Gen.print $ genPlayers 0 allPStates 7 (unDeck initialDeck)
 
-prop_p :: Property
-prop_p = property $ do 
-  Gen.print $ genPlayers 0 allPStates 7 (unDeck initialDeck)
+prop_plyrShouldntActWhenNotInPos :: Property 
+prop_plyrShouldntActWhenNotInPos = property $ do
+   g <- forAll $ genGame allPStreets allPStates
+   let g' = g & currentPosToAct .~ 1
+   doesPlayerHaveToAct "player0" g' === False
+
+
+prop_plyrShouldntActWhenNoChips :: Property 
+prop_plyrShouldntActWhenNoChips = property $ do
+   g <- forAll $ genGame allPStreets allPStates
+   let g' = g & players . element 0 %~ chips .~ 0
+   doesPlayerHaveToAct "player0" g' === False
+  where
+   actionStages = [PreFlop, Flop, Turn, River]
+
 
 spec = do
   describe "dealToPlayers" $ do
@@ -395,7 +411,11 @@ spec = do
              ]) $
             initialGameState'
       isEveryoneAllIn flopGame `shouldBe` False
-  describe "doesPlayerHaveToAct" $ do
+  focus $ describe "doesPlayerHaveToAct" $ do
+    it "should be False when posToAct is not on player" $ do
+      require prop_plyrShouldntActWhenNotInPos
+    it "should be False when player has no chips" $ do
+        require prop_plyrShouldntActWhenNoChips
     it "should return True for an active player in position" $ do
       let game =
             (street .~ Flop) . (dealer .~ 0) .
