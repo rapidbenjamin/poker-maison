@@ -16,7 +16,7 @@ import Debug.Trace
 
 import Control.Lens
 
-import Poker.Game.Game (isEveryoneAllIn)
+import Poker.Game.Game (allButOneAllIn)
 import Poker.Game.Utils
 import Poker.Types
 
@@ -50,7 +50,7 @@ excludePrivateCards :: Maybe PlayerName -> Game -> Game
 excludePrivateCards maybePlayerName game =
   game & (players %~ (<$>) pocketCardsPrivacyModifier) . (deck .~ Deck [])
   where
-    everyoneAllIn = isEveryoneAllIn game
+    everyoneAllIn = allButOneAllIn game
     multiplayerShowdown =
       _street game == Showdown && isMultiPlayerShowdown (_winners game)
     showAllActivesCards = everyoneAllIn || multiplayerShowdown

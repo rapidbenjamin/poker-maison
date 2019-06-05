@@ -301,7 +301,7 @@ spec = do
       let playerBets = (\Player {..} -> _bet) <$> _players preDealGame
       playerBets `shouldBe` [0, 0]
     it "should increment dealer position" $ preDealGame ^. dealer `shouldBe` 0
-  describe "isEveryoneAllIn" $ do
+  describe "allButOneAllIn" $ do
     it "should return False for two player game if no one all in" $ do
       let preFlopGame' =
             (street .~ PreFlop) . (pot .~ 1000) . (deck .~ initialDeck) .
@@ -310,7 +310,16 @@ spec = do
              , (((playerState .~ In) . (actedThisTurn .~ True)) player3)
              ]) $
             initialGameState'
-      isEveryoneAllIn preFlopGame' `shouldBe` False
+      allButOneAllIn preFlopGame' `shouldBe` False
+    it "should return True for two player game if one player is all in and other isn't" $ do
+        let preFlopGame' =
+              (street .~ PreFlop) . (currentPosToAct .~ 0) . (pot .~ 10) . (deck .~ initialDeck) .
+              (players .~
+               [ (((playerState .~ In) . (chips .~ 0) . (bet .~ 0) . (actedThisTurn .~ False)) player1)
+               , (((playerState .~ In) . (chips .~ 1) . (bet .~ 0) . (actedThisTurn .~ False)) player3)
+               ]) $
+              initialGameState'
+        allButOneAllIn preFlopGame' `shouldBe` True
     it
       "should return True for two player game if a player has called the other player all in" $ do
       let preFlopGame =
@@ -327,7 +336,7 @@ spec = do
                  player3
              ]) $
             initialGameState'
-      isEveryoneAllIn preFlopGame `shouldBe` True
+      allButOneAllIn preFlopGame `shouldBe` True
     it
       "should return False for two player game if a player bet all in and the other has folded" $ do
       let preFlopGame =
@@ -345,7 +354,7 @@ spec = do
                  player3
              ]) $
             initialGameState'
-      isEveryoneAllIn preFlopGame `shouldBe` False
+      allButOneAllIn preFlopGame `shouldBe` False
     it
       "should return False for three player game if only one short stacked player all in" $ do
       let preFlopGame =
@@ -366,7 +375,7 @@ spec = do
                  player3
              ]) $
             initialGameState'
-      isEveryoneAllIn preFlopGame `shouldBe` False
+      allButOneAllIn preFlopGame `shouldBe` False
     it "should return True for three player game if everyone is all in" $ do
       let flopGame =
             (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
@@ -386,8 +395,8 @@ spec = do
                  player3
              ]) $
             initialGameState'
-      isEveryoneAllIn flopGame `shouldBe` True
-    it "should return False for four player game if one player not all in" $ do
+      allButOneAllIn flopGame `shouldBe` True
+    it "should return True for four player game if only one player not all in" $ do
       let flopGame =
             (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
             (deck .~ initialDeck) .
@@ -410,8 +419,8 @@ spec = do
                  player3
              ]) $
             initialGameState'
-      isEveryoneAllIn flopGame `shouldBe` False
-  focus $ describe "doesPlayerHaveToAct" $ do
+      allButOneAllIn flopGame `shouldBe` True
+  describe "doesPlayerHaveToAct" $ do
     it "should be False when posToAct is not on player" $ do
       require prop_plyrShouldntActWhenNotInPos
     it "should be False when player has no chips" $ do

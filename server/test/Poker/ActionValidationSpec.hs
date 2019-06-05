@@ -19,6 +19,7 @@ import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
 
+import Data.Either
 import Poker.Game.Utils
 
 initialGameState' = initialGameState initialDeck
@@ -82,6 +83,86 @@ playerFixtures = [player1, player2, player3, player4]
 
 playerFixtures2 = [player3, player5]
 
+callAllInHeadsUpFixture :: Game
+callAllInHeadsUpFixture = Game {
+        _dealer = 1
+      , _currentPosToAct = 0
+      , _smallBlind = 25
+      , _bigBlind = 50
+      , _minBuyInChips = 1500
+      , _maxBuyInChips = 3000
+      , _pot = 2500
+      , _maxBet = 2400
+      , _street = Turn
+      , _winners = NoWinners
+      , _board = []
+      , _maxPlayers = 6
+      , _waitlist = []
+      , _deck = Deck []
+      , _players =
+          [ 
+            Player {
+                _pockets = Nothing
+                , _chips = 3500
+                , _bet = 0
+                , _playerState = In
+                , _playerName = "player0" 
+                , _committed = 50
+                , _actedThisTurn = True
+              } 
+             , Player 
+                 { _pockets = Nothing
+                 , _chips = 0
+                 , _bet = 2400
+                 , _playerState = In
+                 , _playerName = "player1" 
+                 , _committed = 2450
+                 , _actedThisTurn = True
+               }
+          ]
+}
+
+
+preDealHeadsUpFixture :: Game
+preDealHeadsUpFixture = Game {
+        _dealer = 0
+      , _currentPosToAct = 0
+      , _smallBlind = 25
+      , _bigBlind = 50
+      , _minBuyInChips = 1500
+      , _maxBuyInChips = 3000
+      , _pot = 50
+      , _maxBet = 50
+      , _street = PreDeal
+      , _winners = NoWinners
+      , _board = []
+      , _maxPlayers = 6
+      , _waitlist = []
+      , _deck = Deck []
+      , _players =
+          [ 
+            Player {
+                _pockets = Nothing
+                , _chips = 3000
+                , _bet = 0
+                , _playerState = In
+                , _playerName = "player0" 
+                , _committed = 0
+                , _actedThisTurn = False
+              } 
+             , Player 
+                 { _pockets = Nothing
+                 , _chips = 2950
+                 , _bet = 50
+                 , _playerState = In
+                 , _playerName = "player1" 
+                 , _committed = 50
+                 , _actedThisTurn = True
+               }
+          ]
+}
+
+
 spec = do
   describe "Player Acting in Turn Validation" $ do
     let game =
@@ -129,6 +210,8 @@ spec = do
       isPlayerActingOutOfTurn game2 playerName1 `shouldBe` Right ()
     it "return no Error if player is acting in turn" $
       isPlayerActingOutOfTurn game "player1" `shouldBe` Right ()
+    it "return no error for player acting in turn calling an all in during 2 plyr game" $ do
+      isPlayerActingOutOfTurn callAllInHeadsUpFixture "player0" `shouldBe` Right ()
     it
       "returns Just NotAtTable Error if no player with playerName is sat at table" $ do
       let expectedErr = Left $ NotAtTable "MissingPlayer"
@@ -542,5 +625,23 @@ spec = do
             initialGameState'
       it "Player1 should be able to post small blind" $
         canPostBlind game' (_playerName player1) Small `shouldBe` Right ()
-      it "Player2 should be able to post big blind" $
-        canPostBlind game' (_playerName player2) Big `shouldBe` Right ()
+  
+  describe "validateAction" $ do
+    describe "postBlinds" $ do
+      it "Player0 should be able to post small blind" $ do
+        let action' = PostBlind Small
+        let pName = "player0"
+        validateAction preDealHeadsUpFixture pName action' `shouldBe` Right ()
+      it "Player0 should not be able post big blind" $ do
+          let action' = PostBlind Big
+          let pName = "player0"
+          isLeft (validateAction preDealHeadsUpFixture pName action') `shouldBe` True
+      it "Player1 should not be able post big blind when already posted big blind" $ do
+        let action' = PostBlind Big
+        let pName = "player1"
+        isLeft (validateAction preDealHeadsUpFixture pName action') `shouldBe` True
+      it "Player1 should not be able post small blind when already posted big blind" $ do
+          let action' = PostBlind Small
+          let pName = "player1"
+          isLeft (validateAction preDealHeadsUpFixture pName action') `shouldBe` True
+             

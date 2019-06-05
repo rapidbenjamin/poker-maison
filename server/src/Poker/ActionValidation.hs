@@ -17,6 +17,8 @@ import Control.Lens hiding (Fold)
 import Control.Monad
 import Control.Monad.State.Lazy
 
+import Debug.Trace
+
 import Data.List
 import Data.Maybe
 import Data.Monoid
@@ -27,6 +29,7 @@ import Poker.Game.Game (doesPlayerHaveToAct, getWinners)
 import Poker.Game.Hands
 import Poker.Game.Utils
 import Poker.Types
+
 
 -- TODO remove sitdowm from playerMoves and then
 -- can use  checkPlayerSatAtTable on validateAction
@@ -90,7 +93,7 @@ isPlayerActingOutOfTurn game@Game {..} playerName
     case playerName `elemIndex` gamePlayerNames of
       Nothing -> Left $ NotAtTable playerName
       Just pos ->
-        if doesPlayerHaveToAct playerName game
+        if traceShow (doesPlayerHaveToAct playerName game) (doesPlayerHaveToAct playerName game)
           then Right ()
           else Left $
                InvalidMove playerName $

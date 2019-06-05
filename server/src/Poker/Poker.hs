@@ -22,6 +22,8 @@ import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
 
+import Text.Pretty.Simple (pPrint)
+
 import Poker.ActionValidation
 import Poker.Game.Actions
 import Poker.Game.Blinds
@@ -39,8 +41,12 @@ runPlayerAction ::
      Game -> PlayerName -> PlayerAction -> IO (Either GameErr Game)
 runPlayerAction currGame@Game {..} playerName action =
     case handlePlayerAction currGame playerName action of
-      Left err -> return $ Left err
-      Right newGameState ->
+      Left err -> do
+        pPrint currGame
+        print err
+        return $ Left err
+      Right newGameState -> do
+        pPrint newGameState
         case action of
           SitDown _ -> return $ Right newGameState
           LeaveSeat' -> return $ Right newGameState
@@ -52,7 +58,7 @@ runPlayerAction currGame@Game {..} playerName action =
 canProgressGame :: Game -> Bool
 canProgressGame game@Game{..}
     | _street == Showdown = True
-    | _street == PreDeal = haveRequiredBlindsBeenPosted game
+    | _street == PreDeal && haveRequiredBlindsBeenPosted game = True
     | otherwise = haveAllPlayersActed game 
 
     --  ((length $ getActivePlayers _players) < 2 && haveAllPlayersActed game) ||

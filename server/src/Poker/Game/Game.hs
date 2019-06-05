@@ -10,6 +10,8 @@ import Control.Lens
 import Control.Monad.Random.Class
 import Control.Monad.State
 
+import Debug.Trace 
+
 import Data.List
 import qualified Data.List.Safe as Safe
 import Data.List.Split
@@ -87,7 +89,7 @@ progressToPreFlop game@Game {..} =
 
 progressToFlop :: Game -> Game
 progressToFlop game
-  | isEveryoneAllIn game = game & (street .~ Flop) . dealBoardCards 3
+  | allButOneAllIn game = game & (street .~ Flop) . dealBoardCards 3
   | otherwise =
     game &
     (street .~ Flop) .
@@ -96,7 +98,7 @@ progressToFlop game
 
 progressToTurn :: Game -> Game
 progressToTurn game
-  | isEveryoneAllIn game = game & (street .~ Turn) . dealBoardCards 1
+  | allButOneAllIn game = game & (street .~ Turn) . dealBoardCards 1
   | otherwise =
     game &
     (street .~ Turn) .
@@ -106,7 +108,7 @@ progressToTurn game
 
 progressToRiver :: Game -> Game
 progressToRiver game@Game {..}
-  | isEveryoneAllIn game = game & (street .~ River) . dealBoardCards 1
+  | allButOneAllIn game = game & (street .~ River) . dealBoardCards 1
   | otherwise =
     game &
     (street .~ River) .
@@ -148,13 +150,14 @@ awardWinners _players pot' =
            else p) <$>
       _players
 
-isEveryoneAllIn :: Game -> Bool
-isEveryoneAllIn game@Game {..}
+allButOneAllIn :: Game -> Bool
+allButOneAllIn game@Game {..}
   | _street == PreDeal = False
   | _street == Showdown = False
   | numPlayersIn < 2 = False
-  | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
-  | otherwise = False
+  | otherwise = (numPlayersIn - numPlayersAllIn) <= 1
+ -- | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
+ -- | otherwise = False
   where
     numPlayersIn = length $ getActivePlayers _players
     numPlayersAllIn =
@@ -299,8 +302,9 @@ initPlayer playerName chips =
 -- player's action. 
 doesPlayerHaveToAct :: Text -> Game -> Bool
 doesPlayerHaveToAct playerName game@Game {..}
+  | _chips currentPlyrToAct == 0 = False
   | _street == Showdown ||
-      isEveryoneAllIn game ||
+--      allButOneAllIn game ||
       (activePlayerCount < 2) ||
       haveAllPlayersActed game ||
       _playerState currentPlyrToAct /= In ||
@@ -308,7 +312,7 @@ doesPlayerHaveToAct playerName game@Game {..}
   | _street == PreDeal =
     currentPlayerNameToAct == playerName &&
     (blindRequiredByPlayer game playerName /= NoBlind)
-  | otherwise = _playerName currentPlyrToAct == playerName
+  | otherwise = traceShow (currentPlayerNameToAct) (_playerName currentPlyrToAct == playerName)
   where
     currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh?! fromjust safe pointless
     currentPlayerNameToAct = _playerName currentPlyrToAct

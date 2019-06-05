@@ -203,10 +203,10 @@ progressGame' connString serverStateTVar tableName game@Game {..} = do
   when
     (canProgressGame game) $ do
       progressedGame <- progressGame game
-        -- pPrint "PROGRESED GAME"
-        -- pPrint progressedGame
-        -- print "haveAllPlayersActed:"
-        -- print (haveAllPlayersActed progressedGame)
+      pPrint "PROGRESED GAME"
+      pPrint progressedGame
+      print "haveAllPlayersActed:"
+      print (haveAllPlayersActed progressedGame)
     
       let currentStreet = progressedGame ^. street
       atomically $ updateGameAndBroadcastT serverStateTVar tableName progressedGame
@@ -321,7 +321,8 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
         else do
           eitherProgressedGame <- liftIO $ (runPlayerAction game (unUsername username) LeaveSeat')
           case eitherProgressedGame of
-            Left gameErr -> throwError $ GameErr gameErr
+            Left gameErr ->
+              throwError $ GameErr gameErr
             Right newGame -> do
               let maybePlayer =
                     find
@@ -373,6 +374,7 @@ unUsername (Username username) = username
 -- originator of the invalid in-game move
 gameActionHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameActionHandler gameMove@(GameMove tableName playerAction) = do
+  liftIO $ print playerAction
   MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
@@ -384,8 +386,12 @@ gameActionHandler gameMove@(GameMove tableName playerAction) = do
             else do
               eitherNewGame <- liftIO $ runPlayerAction game (unUsername username) playerAction
               case eitherNewGame of
-                Left gameErr -> throwError $ GameErr gameErr
+                Left gameErr -> do 
+                  liftIO $ print "Error! :<"
+                  liftIO $ print gameErr 
+                  throwError $ GameErr gameErr
                 Right newGame
-                 -- liftIO $ pPrint newGame
                  -> do
+                  liftIO $ print "No error :)"
+                  liftIO $ pPrint newGame
                   return $ NewGameState tableName newGame
