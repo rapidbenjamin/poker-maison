@@ -3,12 +3,11 @@
 
 module Poker.ActionValidationSpec where
 
-import Control.Lens
 import Data.List
 import Data.Text (Text)
 import Test.Hspec
 
-import Control.Lens
+import Control.Lens hiding (Fold)
 import Control.Monad.State hiding (state)
 import Data.List.Lens
 import Data.Text (Text)
@@ -170,7 +169,6 @@ preDealHeadsUpFixture = Game {
 }
 
 
-
 prop_plyrShouldntBeAbleToPostBlindsWhenNoChips :: Property 
 prop_plyrShouldntBeAbleToPostBlindsWhenNoChips = property $ do
     g <- forAll $ genGame allPStreets allPStates
@@ -178,7 +176,7 @@ prop_plyrShouldntBeAbleToPostBlindsWhenNoChips = property $ do
     let
       g' = g & players . element 0 %~ chips .~ 0
       action' = PostBlind blind'
-      pName = "player1"
+      pName = "player0"
     isLeft (validateAction g' pName action') === True 
   where
    actionStages = [PreDeal]
@@ -188,10 +186,23 @@ prop_plyrShouldntBeAbleToPostBlindsOutsidePreDeal = property $ do
     g <- forAll $ genGame allPStreets allPStates
     blind' <- forAll $ Gen.element [Small, Big]
     let
---      g' = g & players . element 0 %~ chips .~ 0
       action' = PostBlind blind'
       pName = "player1"
     isLeft (validateAction g pName action') === True 
+  where
+   actionStages = [PreFlop, Flop, Turn, River]
+
+prop_plyrWithChipsShouldAlwaysBeableToFoldInTurn :: Property 
+prop_plyrWithChipsShouldAlwaysBeableToFoldInTurn = property $ do
+    g <- forAll $ genGame actionStages [In]
+    let
+--      g' = g & players . element 0 %~ chips .~ 0
+      action' = Fold
+      pName = "player0"
+      inTurn = isRight $ isPlayerActingOutOfTurn g pName
+      allIn = (== 0) $ _chips $ head $ _players g
+      canFold = isRight $ validateAction g pName action'
+    canFold === (inTurn && not allIn) 
   where
    actionStages = [PreFlop, Flop, Turn, River]
 
@@ -659,6 +670,7 @@ spec = do
         canPostBlind game' (_playerName player1) Small `shouldBe` Right ()
   
   describe "validateAction" $ do
+
     describe "postBlinds" $ do
       it "Player0 should be able to post small blind" $ do
         let action' = PostBlind Small
@@ -678,3 +690,6 @@ spec = do
           isLeft (validateAction preDealHeadsUpFixture pName action') `shouldBe` True
       it "Players can't post a blind when they have no chips" $ require prop_plyrShouldntBeAbleToPostBlindsWhenNoChips
       it "Players shouldn't be able to post blinds outside PreDeal" $ require prop_plyrShouldntBeAbleToPostBlindsOutsidePreDeal
+
+    describe "fold" $ do
+      it "should always be able to fold when in turn" $ require prop_plyrWithChipsShouldAlwaysBeableToFoldInTurn
