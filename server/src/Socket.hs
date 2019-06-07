@@ -28,6 +28,7 @@ import Socket.Types
 import Socket.Workers
 import Types
 
+import Control.Lens hiding (Fold)
 import Database
 import Poker.Types hiding (LeaveSeat)
 import Data.Traversable
@@ -75,9 +76,10 @@ runSocketServer secretKey port connString redisConfig = do
   print $ "Socket server listening on " ++ (show port :: String)
   _ <- forkIO $ delayThenSeatPlayer connString 20000000 serverStateTVar bot1
   _ <- forkIO $ delayThenSeatPlayer connString 24000000 serverStateTVar bot2
+  startBotActionLoops connString serverStateTVar  botNames
   WS.runServer "0.0.0.0" port $
     application secretKey connString redisConfig serverStateTVar
-
+ where botNames = (^. playerName) <$> [bot1, bot2]
 
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
@@ -126,8 +128,8 @@ bot2 = initPlayer "2@2" 2000
 --    dupTableChanMsg <- atomically $ readTChan dupTableChan
 
 
-startBotActionLoops :: [PlayerName] -> ConnectionString -> TVar ServerState -> IO ()
-startBotActionLoops botNames db s = do
+startBotActionLoops :: ConnectionString -> TVar ServerState -> [PlayerName] -> IO ()
+startBotActionLoops db s botNames = do
   ServerState{..} <- readTVarIO s
   case M.lookup tableName $ unLobby lobby of
     Nothing -> error "TableDoesNotExist "
@@ -148,13 +150,14 @@ botActionLoop dbConn s tableChan botName = do
        let hasToAct = doesPlayerHaveToAct pName' g'
          in when hasToAct $ do
             _ <- threadDelay 5000000
-            print "going to act after delay of 5 secs"
+            print (show pName' <> "going to act after delay of 5 secs")
             runBotAction dbConn s g' pName'
 
 
 runBotAction :: ConnectionString -> TVar ServerState -> Game -> PlayerName -> IO ()
 runBotAction dbConn serverStateTVar g pName = do
       a <- getValidAction g pName
+      print ("Random action from " <> show pName  <> " is " <> show a)
       eitherNewGame <- runPlayerAction g pName a
       case eitherNewGame of
         Left gameErr -> error (show $ GameErr gameErr) >> return ()
