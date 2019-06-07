@@ -5,9 +5,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Socket.Msg
-  ( authenticatedMsgLoop
-  ) where
+module Socket.Msg where
 
 import Control.Applicative
 
@@ -365,8 +363,6 @@ getPlayersAvailableChips = do
       Just UserEntity {..} ->
         Right $ userEntityAvailableChips - userEntityChipsInPlay
 
-unUsername :: Username -> Text
-unUsername (Username username) = username
 
 -- first we check that table exists and player is sat the game at table otherwise we throw an error
 -- then the player move is applied to the table which results in either a new game state which is 

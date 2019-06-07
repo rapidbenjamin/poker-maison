@@ -54,9 +54,35 @@ import Socket.Clients
 import Socket.Lobby
 import Socket.Subscriptions
 import Socket.Types
+import Socket.Msg
 import Socket.Utils
+import Socket
+import Database
+
 
 import Types
+
+sitDownBot :: ConnectionString -> Player -> TVar ServerState -> IO ()
+sitDownBot dbConn player@Player{..} serverStateTVar = do
+    s@ServerState {..} <- readTVarIO serverStateTVar
+    let gameMove = SitDown player
+    case M.lookup tableName $ unLobby lobby of
+      Nothing -> error "table doesnt exist" >> return ()
+      Just Table {..} -> do
+          eitherNewGame <- liftIO $ runPlayerAction game _playerName takeSeatAction
+          case eitherNewGame of
+            Left gameErr -> error (show $ GameErr gameErr) >> return ()
+            Right newGame -> do
+              dbDepositChipsIntoPlay dbConn _playerName chipsToSit
+              atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
+  where 
+    chipsToSit = 2000
+    tableName = "Black"
+    takeSeatAction = (SitDown player)
+
+--runBotAction :: TVar ServerState -> TableName -> Game -> PlayerAction -> STM ()
+--runBotAction serverS tableName g botAction = do
+
 
 actions :: Int -> [PlayerAction]
 actions chips = [PostBlind Big, PostBlind Small, Check, Call, Fold, Bet chips, Raise chips]
@@ -77,4 +103,3 @@ getValidAction g@Game{..} name action =  do
         print g
         error $ "UHOH no valid actions"
 
-chooseAction = undefined
