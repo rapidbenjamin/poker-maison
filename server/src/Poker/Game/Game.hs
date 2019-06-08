@@ -301,20 +301,26 @@ initPlayer playerName chips =
 -- of the game in a satisfactory timeframe is determined by the expediancy of the current
 -- player's action. 
 doesPlayerHaveToAct :: Text -> Game -> Bool
-doesPlayerHaveToAct playerName game@Game {..}
-  | _chips currentPlyrToAct == 0 = False
-  | _street == Showdown ||
---      allButOneAllIn game ||
-      (activePlayerCount < 2) ||
-      haveAllPlayersActed game ||
-      _playerState currentPlyrToAct /= In ||
-      (_street == PreDeal && _maxBet == 0) = False
-  | _street == PreDeal =
-    currentPlayerNameToAct == playerName &&
-    (blindRequiredByPlayer game playerName /= NoBlind)
-  | otherwise = _playerName currentPlyrToAct == playerName
+doesPlayerHaveToAct playerName game@Game {..} 
+  | length _players < 2 = False 
+  | otherwise =
+    if _currentPosToAct > ((length _players) - 1) 
+      then error $ "_currentPosToAct too large " <> show game
+      else 
+        case _players Safe.!! _currentPosToAct of
+          Nothing -> False
+          Just Player{..} 
+            | _chips == 0 -> False
+            | _street == Showdown ||
+  --              allButOneAllIn game ||
+                (activePlayerCount < 2) ||
+                haveAllPlayersActed game ||
+                _playerState /= In ||
+                (_street == PreDeal && _maxBet == 0) -> False
+            | _street == PreDeal ->
+              _playerName == playerName &&
+              (blindRequiredByPlayer game playerName /= NoBlind)
+            | otherwise -> _playerName == playerName
   where
-    currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh?! fromjust safe pointless
-    currentPlayerNameToAct = _playerName currentPlyrToAct
     activePlayerCount =
       length $ filter (\Player {..} -> _playerState == In) _players

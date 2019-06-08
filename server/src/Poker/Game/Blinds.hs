@@ -91,6 +91,7 @@ getSmallBlindPosition playersSatIn dealerPos =
 -- If no blind is required for the player to remain In for the next hand then we will return Nothing
 blindRequiredByPlayer :: Game -> PlayerName -> Blind
 blindRequiredByPlayer game playerName
+  | length (_players game) < 2 || _street game /= PreDeal = NoBlind
   | playerPosition == smallBlindPos = Small
   | playerPosition == bigBlindPos = Big
   | otherwise = NoBlind
