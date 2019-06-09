@@ -75,15 +75,18 @@ runSocketServer secretKey port connString redisConfig = do
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   forkBackgroundJobs connString serverStateTVar lobby
   print $ "Socket server listening on " ++ (show port :: String)
+  _ <- forkIO $ WS.runServer "0.0.0.0" port $ application secretKey connString redisConfig serverStateTVar
   _ <- forkIO $ delayThenSeatPlayer connString 1000000 serverStateTVar bot1
   _ <- forkIO $ delayThenSeatPlayer connString 2000000 serverStateTVar bot2
   _ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot3
-  threadDelay 900000 --delay so bots dont start game until all of them sat down
-  forkIO $ startBotActionLoops connString serverStateTVar botNames
-  WS.runServer "0.0.0.0" port $
-    application secretKey connString redisConfig serverStateTVar
- where botNames = (^. playerName) <$> [bot1, bot2, bot3]
-
+ -- _ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot4
+ -- _ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot5
+  threadDelay 1000000 --delay so bots dont start game until all of them sat down
+  _ <- forkIO $ startBotActionLoops connString serverStateTVar playersToWaitFor botNames
+  return ()
+ where 
+  botNames = (^. playerName) <$> [bot1, bot2, bot3]
+  playersToWaitFor = length $ botNames
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
 -- updated with the newly authenticated client.
@@ -124,27 +127,32 @@ delayThenSeatPlayer dbConn delayDuration s p = do
 bot1 :: Player
 bot1 = initPlayer "1@1" 2000
 
-
 bot2 :: Player
 bot2 = initPlayer "2@2" 2000
 
 bot3 :: Player
 bot3 = initPlayer "3@3" 2000
 
+bot4 :: Player
+bot4 = initPlayer "101@101" 2000
+
+bot5 :: Player
+bot5 = initPlayer "102@102" 2000
+
 --    dupTableChanMsg <- atomically $ readTChan dupTableChan
 
-startBotActionLoops :: ConnectionString -> TVar ServerState -> [PlayerName] -> IO ()
-startBotActionLoops db s botNames = do
-  threadDelay 2000000 --delay so bots dont start game until all of them sat down
+startBotActionLoops :: ConnectionString -> TVar ServerState -> Int -> [PlayerName] -> IO ()
+startBotActionLoops db s playersToWaitFor botNames = do
+--  threadDelay 1180000 --delay so bots dont start game until all of them sat down
   ServerState{..} <- readTVarIO s
   case M.lookup tableName $ unLobby lobby of
     Nothing -> error "TableDoesNotExist "
-    Just table@Table {..} -> mapM_ (botActionLoop db s channel) botNames
+    Just table@Table {..} -> mapM_ (botActionLoop db s channel playersToWaitFor) botNames
  where tableName = "Black"
 
 
-botActionLoop :: ConnectionString -> TVar ServerState -> TChan MsgOut -> PlayerName -> IO ThreadId
-botActionLoop dbConn s tableChan botName = forkIO $ do 
+botActionLoop :: ConnectionString -> TVar ServerState -> TChan MsgOut -> Int -> PlayerName -> IO ThreadId
+botActionLoop dbConn s tableChan playersToWaitFor botName = forkIO $ do 
     chan <- atomically $ dupTChan tableChan
     print botName
     print "create action loop"
@@ -152,9 +160,10 @@ botActionLoop dbConn s tableChan botName = forkIO $ do
       msg <- atomically $ readTChan chan
       print "action received"
       case msg of
-        (NewGameState tableName g) -> actIfNeeded g botName
+        (NewGameState tableName g) -> unless (shouldn'tStartGameYet g) (actIfNeeded g botName)
         _ -> return ()
   where
+    shouldn'tStartGameYet Game{..} = (_street == PreDeal && ((length $ _players) < playersToWaitFor))
     actIfNeeded g' pName' =
        let hasToAct = doesPlayerHaveToAct pName' g'
          in 
