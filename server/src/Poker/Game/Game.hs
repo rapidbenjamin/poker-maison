@@ -29,7 +29,7 @@ import Poker.Types
 -- over the remaining course of the hand.
 dealToPlayers :: Deck -> [Player] -> (Deck, [Player])
 dealToPlayers =
-  mapAccumL
+  mapAccumR
     (\deck player ->
        if player ^. playerState == In
          then let (pocketCs, remainingDeck) = dealPockets deck in
