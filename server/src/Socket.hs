@@ -77,11 +77,12 @@ runSocketServer secretKey port connString redisConfig = do
   print $ "Socket server listening on " ++ (show port :: String)
   _ <- forkIO $ delayThenSeatPlayer connString 1000000 serverStateTVar bot1
   _ <- forkIO $ delayThenSeatPlayer connString 2000000 serverStateTVar bot2
-  --_ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot3
-  forkIO $ startBotActionLoops connString serverStateTVar  botNames
+  _ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot3
+  threadDelay 900000 --delay so bots dont start game until all of them sat down
+  forkIO $ startBotActionLoops connString serverStateTVar botNames
   WS.runServer "0.0.0.0" port $
     application secretKey connString redisConfig serverStateTVar
- where botNames = (^. playerName) <$> [bot1, bot2]
+ where botNames = (^. playerName) <$> [bot1, bot2, bot3]
 
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
@@ -132,9 +133,9 @@ bot3 = initPlayer "3@3" 2000
 
 --    dupTableChanMsg <- atomically $ readTChan dupTableChan
 
-
 startBotActionLoops :: ConnectionString -> TVar ServerState -> [PlayerName] -> IO ()
 startBotActionLoops db s botNames = do
+  threadDelay 2000000 --delay so bots dont start game until all of them sat down
   ServerState{..} <- readTVarIO s
   case M.lookup tableName $ unLobby lobby of
     Nothing -> error "TableDoesNotExist "
