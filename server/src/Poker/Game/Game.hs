@@ -171,6 +171,14 @@ countPlayersNotAllIn game@Game{..}
       length $
       filter (\Player {..} -> _playerState == In && _chips == 0) _players
 
+-- Can we show the active players' pocket cards to the world? Only if everyone is all in
+-- (no more than 1 player not all (> 0 chips) per pot and every player has acted
+canPubliciseActivesCards :: Game -> Bool
+canPubliciseActivesCards g =
+   (haveAllPlayersActed g && allButOneAllIn g) || everyoneAllIn g || multiplayerShowdown
+   where
+    multiplayerShowdown = _street g == Showdown && isMultiPlayerShowdown (_winners g)
+
 -- TODO move players from waitlist to players list
 -- TODO need to send msg to players on waitlist when a seat frees up to inform them 
 -- to choose a seat and set limit for them t pick one

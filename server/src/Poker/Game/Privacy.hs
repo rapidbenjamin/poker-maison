@@ -1,5 +1,5 @@
 {-
-  Functions for excluding sensitive game data from game state.
+  Logic for excluding sensitive game data from game state.
 -}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -50,10 +50,7 @@ excludePrivateCards :: Maybe PlayerName -> Game -> Game
 excludePrivateCards maybePlayerName game =
   game & (players %~ (<$>) pocketCardsPrivacyModifier) . (deck .~ Deck [])
   where
-    isEveryoneAllIn = everyoneAllIn game
-    multiplayerShowdown =
-      _street game == Showdown && isMultiPlayerShowdown (_winners game)
-    showAllActivesCards = (haveAllPlayersActed game && allButOneAllIn game) || everyoneAllIn game || multiplayerShowdown
+    showAllActivesCards = canPubliciseActivesCards game
     pocketCardsPrivacyModifier =
       maybe
         (updatePocketCardsForSpectator showAllActivesCards)
