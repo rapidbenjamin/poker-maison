@@ -213,7 +213,7 @@ progressGame' connString serverStateTVar tableName game@Game {..} = do
    --          (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
    --        pPrint progressedGame
       progressGame' connString serverStateTVar tableName progressedGame
-  where stagePauseDuration = 5000000
+  where stagePauseDuration =  5000000
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 getTablesHandler = do

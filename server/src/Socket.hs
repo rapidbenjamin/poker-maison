@@ -78,14 +78,14 @@ runSocketServer secretKey port connString redisConfig = do
   _ <- forkIO $ WS.runServer "0.0.0.0" port $ application secretKey connString redisConfig serverStateTVar
   _ <- forkIO $ delayThenSeatPlayer connString 1000000 serverStateTVar bot1
   _ <- forkIO $ delayThenSeatPlayer connString 2000000 serverStateTVar bot2
-  _ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot3
+  --_ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot3
  -- _ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot4
  -- _ <- forkIO $ delayThenSeatPlayer connString 3000000 serverStateTVar bot5
-  threadDelay 1000000 --delay so bots dont start game until all of them sat down
+  threadDelay 100000 --delay so bots dont start game until all of them sat down
   _ <- forkIO $ startBotActionLoops connString serverStateTVar playersToWaitFor botNames
   return ()
  where 
-  botNames = (^. playerName) <$> [bot1, bot2, bot3]
+  botNames = (^. playerName) <$> [bot1, bot2]
   playersToWaitFor = length $ botNames
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
