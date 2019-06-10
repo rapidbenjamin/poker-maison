@@ -32,6 +32,10 @@ newtype Username =
   Username Text
   deriving (Generic, Show, Read, Eq, Ord)
 
+
+unUsername :: Username -> Text
+unUsername (Username username) = username
+
 instance ToJSON Username
 
 instance FromJSON Username

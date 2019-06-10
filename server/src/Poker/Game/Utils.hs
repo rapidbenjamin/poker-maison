@@ -61,6 +61,8 @@ modDec num modulo
     decNum = num - 1
     modInc = decNum `mod` modulo
 
+
+
 -- return players which have the ability to make further moves i.e not all in or folded
 -- the distinction between sat in and active is important
 -- if a player is sat out then there has been no historical participation in this hand 
@@ -115,18 +117,26 @@ maximums (x:xs) = foldl f [x] xs
         EQ -> y : ys
         LT -> [y]
 
--- returns the index of the next active player after the given current index
--- TODO REMOVE USE OF FROMJUST
+-- returns the index of the next active player with chips after the given current index who has chips
+--
+-- return a Nothing if everyone is all in and we cannot increment the position since
+-- there are no players who can act
+
+-- updates position to next player if there is another player who can act otherwise
+-- return the same position
+
+-- RETURNs A MAYBE INT SINCE SOMETIMES NO PLAYER CAN ACT for example when everyone is ALLIN
 incPosToAct :: Int -> Game -> Int
-incPosToAct currIx Game {..} = nextIx
+incPosToAct currPosToAct Game {..} = fromMaybe currPosToAct (fst <$> nextIPlayer)
   where
     iplayers = zip [0 ..] _players
     iplayers' =
-      let (a, b) = splitAt currIx iplayers
+      let (a, b) = splitAt currPosToAct iplayers
        in b <> a
-    (nextIx, nextPlayer) =
-      fromJust $ find (\(_, p) -> _playerState p == In) (tail iplayers')
+    nextIPlayer =
+      find (\(_, Player{..}) -> _playerState == In && _chips > 0) (tail iplayers')
 
+    
 isMultiPlayerShowdown :: Winners -> Bool
 isMultiPlayerShowdown (MultiPlayerShowdown _) = True
 isMultiPlayerShowdown _ = False

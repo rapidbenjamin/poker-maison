@@ -63,6 +63,7 @@ library:
   source-dirs: src
   exposed-modules:
     - API
+    - Bots
     - Database
     - Schema
     - Env

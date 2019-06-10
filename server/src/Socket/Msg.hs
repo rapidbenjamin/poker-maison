@@ -5,9 +5,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Socket.Msg
-  ( authenticatedMsgLoop
-  ) where
+module Socket.Msg where
 
 import Control.Applicative
 
@@ -215,7 +213,7 @@ progressGame' connString serverStateTVar tableName game@Game {..} = do
    --          (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
    --        pPrint progressedGame
       progressGame' connString serverStateTVar tableName progressedGame
-  where stagePauseDuration = 5000000
+  where stagePauseDuration =  5000000
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 getTablesHandler = do
@@ -301,10 +299,10 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                     (username `notElem` subscribers)
                     (liftIO $
                      atomically $ subscribeToTable tableName msgHandlerConfig)
-                  asyncGameReceiveLoop <-
-                    liftIO $
-                    async (playerTimeoutLoop tableName channel msgHandlerConfig)
-                  liftIO $ link asyncGameReceiveLoop
+                  --asyncGameReceiveLoop <-
+                  --  liftIO $
+                  --  async (playerTimeoutLoop tableName channel msgHandlerConfig)
+                  --liftIO $ link asyncGameReceiveLoop
                   liftIO $
                     sendMsg clientConn (SuccessfullySatDown tableName newGame)
                   return $ NewGameState tableName newGame
@@ -365,8 +363,6 @@ getPlayersAvailableChips = do
       Just UserEntity {..} ->
         Right $ userEntityAvailableChips - userEntityChipsInPlay
 
-unUsername :: Username -> Text
-unUsername (Username username) = username
 
 -- first we check that table exists and player is sat the game at table otherwise we throw an error
 -- then the player move is applied to the table which results in either a new game state which is 

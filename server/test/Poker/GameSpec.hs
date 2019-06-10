@@ -134,9 +134,13 @@ prop_plyrShouldntActWhenNoChips = property $ do
    g <- forAll $ genGame allPStreets allPStates
    let g' = g & players . element 0 %~ chips .~ 0
    doesPlayerHaveToAct "player0" g' === False
-  where
-   actionStages = [PreFlop, Flop, Turn, River]
 
+prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame :: Property 
+prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame = property $ do
+   g <- forAll $ (genGame [PreDeal] allPStates)
+   (p, _) <- forAll $ genPlayer' PreDeal allPStates 0 []
+   let g' = g & players .~ [p]
+   doesPlayerHaveToAct "player0" g' === False
    
 prop_number_of_hand_rankings_and_player_same :: Property 
 prop_number_of_hand_rankings_and_player_same = property $ do
@@ -437,6 +441,8 @@ spec = do
       require prop_plyrShouldntActWhenNotInPos
     it "should be False when player has no chips" $ do
         require prop_plyrShouldntActWhenNoChips
+    it "should be False when not enough players (<2) during predeal to start a game" $ do
+        require prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame
     it "should return True for an active player in position" $ do
       let game =
             (street .~ Flop) . (dealer .~ 0) .

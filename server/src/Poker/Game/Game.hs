@@ -151,11 +151,18 @@ awardWinners _players pot' =
       _players
 
 allButOneAllIn :: Game -> Bool
-allButOneAllIn game@Game {..}
-  | _street == PreDeal = False
-  | _street == Showdown = False
-  | numPlayersIn < 2 = False
-  | otherwise = (numPlayersIn - numPlayersAllIn) <= 1
+allButOneAllIn = (== 1) . countPlayersNotAllIn
+
+everyoneAllIn :: Game -> Bool
+everyoneAllIn = (== 0) . countPlayersNotAllIn
+
+-- nothing if no one
+countPlayersNotAllIn :: Game -> Int
+countPlayersNotAllIn game@Game{..}
+  | _street == PreDeal = 0
+  | _street == Showdown = 0
+  | numPlayersIn < 2 = 0
+  | otherwise = numPlayersIn - numPlayersAllIn
  -- | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
  -- | otherwise = False
   where
@@ -163,6 +170,14 @@ allButOneAllIn game@Game {..}
     numPlayersAllIn =
       length $
       filter (\Player {..} -> _playerState == In && _chips == 0) _players
+
+-- Can we show the active players' pocket cards to the world? Only if everyone is all in
+-- (no more than 1 player not all (> 0 chips) per pot and every player has acted
+canPubliciseActivesCards :: Game -> Bool
+canPubliciseActivesCards g =
+   (haveAllPlayersActed g && allButOneAllIn g) || everyoneAllIn g || multiplayerShowdown
+   where
+    multiplayerShowdown = _street g == Showdown && isMultiPlayerShowdown (_winners g)
 
 -- TODO move players from waitlist to players list
 -- TODO need to send msg to players on waitlist when a seat frees up to inform them 
@@ -301,20 +316,26 @@ initPlayer playerName chips =
 -- of the game in a satisfactory timeframe is determined by the expediancy of the current
 -- player's action. 
 doesPlayerHaveToAct :: Text -> Game -> Bool
-doesPlayerHaveToAct playerName game@Game {..}
-  | _chips currentPlyrToAct == 0 = False
-  | _street == Showdown ||
---      allButOneAllIn game ||
-      (activePlayerCount < 2) ||
-      haveAllPlayersActed game ||
-      _playerState currentPlyrToAct /= In ||
-      (_street == PreDeal && _maxBet == 0) = False
-  | _street == PreDeal =
-    currentPlayerNameToAct == playerName &&
-    (blindRequiredByPlayer game playerName /= NoBlind)
-  | otherwise = _playerName currentPlyrToAct == playerName
+doesPlayerHaveToAct playerName game@Game {..} 
+  | length _players < 2 = False 
+  | otherwise =
+    if _currentPosToAct > ((length _players) - 1) 
+      then error $ "_currentPosToAct too large " <> show game
+      else 
+        case _players Safe.!! _currentPosToAct of
+          Nothing -> False
+          Just Player{..} 
+            | _chips == 0 -> False
+            | _street == Showdown ||
+  --              allButOneAllIn game ||
+                (activePlayerCount < 2) ||
+                haveAllPlayersActed game ||
+                _playerState /= In ||
+                (_street == PreDeal && _maxBet == 0) -> False
+            | _street == PreDeal ->
+              _playerName == playerName &&
+              (blindRequiredByPlayer game playerName /= NoBlind)
+            | otherwise -> _playerName == playerName
   where
-    currentPlyrToAct = fromJust $ _players Safe.!! _currentPosToAct -- eh?! fromjust safe pointless
-    currentPlayerNameToAct = _playerName currentPlyrToAct
     activePlayerCount =
       length $ filter (\Player {..} -> _playerState == In) _players
