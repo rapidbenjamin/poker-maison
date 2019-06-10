@@ -151,11 +151,18 @@ awardWinners _players pot' =
       _players
 
 allButOneAllIn :: Game -> Bool
-allButOneAllIn game@Game {..}
-  | _street == PreDeal = False
-  | _street == Showdown = False
-  | numPlayersIn < 2 = False
-  | otherwise = (numPlayersIn - numPlayersAllIn) <= 1
+allButOneAllIn = (== 1) . countPlayersNotAllIn
+
+everyoneAllIn :: Game -> Bool
+everyoneAllIn = (== 0) . countPlayersNotAllIn
+
+-- nothing if no one
+countPlayersNotAllIn :: Game -> Int
+countPlayersNotAllIn game@Game{..}
+  | _street == PreDeal = 0
+  | _street == Showdown = 0
+  | numPlayersIn < 2 = 0
+  | otherwise = numPlayersIn - numPlayersAllIn
  -- | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
  -- | otherwise = False
   where

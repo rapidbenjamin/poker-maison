@@ -299,10 +299,10 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                     (username `notElem` subscribers)
                     (liftIO $
                      atomically $ subscribeToTable tableName msgHandlerConfig)
-                  asyncGameReceiveLoop <-
-                    liftIO $
-                    async (playerTimeoutLoop tableName channel msgHandlerConfig)
-                  liftIO $ link asyncGameReceiveLoop
+                  --asyncGameReceiveLoop <-
+                  --  liftIO $
+                  --  async (playerTimeoutLoop tableName channel msgHandlerConfig)
+                  --liftIO $ link asyncGameReceiveLoop
                   liftIO $
                     sendMsg clientConn (SuccessfullySatDown tableName newGame)
                   return $ NewGameState tableName newGame
