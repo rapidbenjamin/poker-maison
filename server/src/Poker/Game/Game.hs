@@ -339,14 +339,13 @@ nextIPlayerToAct Game {..} = nextIPlayer _currentPosToAct
           let nextIPlayerToAct = tail $ iplayers' currPos
            in find (\(_, Player{..}) -> _playerState == In && _chips > 0) nextIPlayerToAct
            
--- why is it updates next pos to a folded player
 
 -- gets the position of the next player which needs to act
 -- if currentPosToAct is already a Nothing then this means we are starting a new hand
 -- and will just return the initial player to act for a new hand
 nextPosToAct :: Game -> Maybe Int
 nextPosToAct g@Game{..}
-    | haveAllPlayersActed g && not (everyoneAllIn g) = traceShow (1) (Just firstPosToAct)
+    | haveAllPlayersActed g && not (everyoneAllIn g) = traceShow (1) (Just $ firstPosToAct g)
     | everyoneAllIn g = traceShow 2 Nothing
     | otherwise = traceShow (3) (fst <$> nextIPlayerToAct g)
       where
@@ -355,12 +354,23 @@ nextPosToAct g@Game{..}
         -- hasAnyPlayerActed = any ((== True) . (^. actedThisTurn)) _players
         activePCount = length activePs
        -- beginningOfActionStage = (not hasAnyPlayerActed) && _street /= PreDeal
-        firstPosToAct = case activePCount of 
-            2 -> if _street == PreFlop then _dealer
-                   else modInc 1 _dealer (activePCount - 1)
-            _ -> if _street == PreFlop then modInc 3 _dealer (activePCount - 1)
-                   else modInc 1 _dealer (activePCount - 1)
-                
+
+-- used to get the initial player to act when progressing to a new game stage
+firstPosToAct :: Game -> Int
+firstPosToAct Game{..}
+  | activePCount == 2 = 
+    if _street == PreFlop 
+      then _dealer
+      else incPosBy 1
+  | otherwise = 
+    if _street == PreFlop
+      then incPosBy 3
+      else incPosBy 1
+  where 
+    activePs = getActivePlayers _players 
+    activePCount = length activePs
+    incPosBy n = modInc n _dealer (activePCount - 1)
+
         
 isMultiPlayerShowdown :: Winners -> Bool
 isMultiPlayerShowdown (MultiPlayerShowdown _) = True
