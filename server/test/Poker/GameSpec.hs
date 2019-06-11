@@ -942,7 +942,7 @@ spec = do
                       (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
                       (players .~ [player1, player1, player1]) $
                       initialGameState'
-                nextPosToAct game2 `shouldBe` Just 0
+                nextPosToAct game2 `shouldBe` Just 1
           
 
               it "Next position at end of Flop (Turn) should be small blind's position" $ do
