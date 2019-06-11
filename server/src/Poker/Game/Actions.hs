@@ -18,6 +18,7 @@ import Data.Monoid
 import Poker.ActionValidation
 import Poker.Game.Blinds
 import Poker.Game.Utils
+import Poker.Game.Game
 import Poker.Types
 
 import Text.Read (readMaybe)

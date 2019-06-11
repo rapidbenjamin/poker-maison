@@ -168,6 +168,51 @@ preDealHeadsUpFixture = Game {
           ]
 }
 
+turnGameThreePlyrs = Game {
+    _dealer = 2
+  , _currentPosToAct = Just 0
+  , _smallBlind = 25
+  , _bigBlind = 50
+  , _minBuyInChips = 1500
+  , _maxBuyInChips = 3000
+  , _pot = 550
+  , _maxBet = 0
+  , _street = Turn
+  , _winners = NoWinners
+  , _board = []
+  , _maxPlayers = 6
+  , _waitlist = []
+  , _deck = Deck []
+  , _players =
+      [ Player 
+         { _pockets = Nothing
+         , _chips = 2197
+         , _bet = 0
+         , _playerState = In
+         , _playerName = "player0" 
+         , _committed = 50
+         , _actedThisTurn = False
+         } 
+      , Player 
+         { _pockets = Nothing
+         , _chips = 1847
+         , _bet = 0
+         , _playerState = In
+         , _playerName = "player1" 
+         , _committed = 250
+         , _actedThisTurn = False
+         } 
+      , Player 
+         { _pockets = Nothing
+         , _chips = 2072
+         , _bet = 0
+         , _playerState = In
+         , _playerName = "player2" 
+         , _committed = 250
+         , _actedThisTurn = False
+         } 
+      ]
+}
 
 prop_plyrShouldntBeAbleToPostBlindsWhenNoChips :: Property 
 prop_plyrShouldntBeAbleToPostBlindsWhenNoChips = property $ do
@@ -207,6 +252,7 @@ prop_plyrWithChipsShouldAlwaysBeableToFoldInTurn = property $ do
    actionStages = [PreFlop, Flop, Turn, River]
 
 spec = do
+  
   describe "Player Acting in Turn Validation" $ do
     let game =
           (currentPosToAct .~ Just 0) .
@@ -401,6 +447,11 @@ spec = do
       let amount = 100
       let expectedErr = Left $ InvalidMove playerName $ InvalidActionForStreet
       canCheck playerName showdownGame `shouldBe` expectedErr
+
+    it "should be able to check when have chips and in position during 3 player game" $ do
+      let playerName = "player0"
+      validateAction turnGameThreePlyrs playerName Check `shouldBe` Right ()
+
   describe "canCall" $ do
     it
       "should return InvalidActionForStreet InvalidMoveErr if game stage is PreDeal" $ do

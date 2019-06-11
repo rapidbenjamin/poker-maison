@@ -77,15 +77,8 @@ progressToPreFlop :: Game -> Game
 progressToPreFlop game@Game {..} =
   game &
   (street .~ PreFlop) .
-  (currentPosToAct .~ pure firstPosToAct) .
+  (currentPosToAct .~  nextPosToAct game) .
   (players %~ (<$>) (actedThisTurn .~ False)) . deal . updatePlayersInHand
-  where
-    playerCount = length $ getActivePlayers _players
-    incAmount = 2
-    firstPosToAct =
-      if playerCount == 2
-        then _dealer
-        else modInc incAmount _dealer (playerCount - 1)
 
 progressToFlop :: Game -> Game
 progressToFlop game
@@ -149,8 +142,6 @@ awardWinners _players pot' =
            then Player {_chips = _chips + pot', ..}
            else p) <$>
       _players
-
-
 
 
 -- Can we show the active players' pocket cards to the world? Only if everyone is all in
@@ -323,3 +314,74 @@ doesPlayerHaveToAct playerName game@Game {..}
     activePlayerCount =
       length $ filter (\Player {..} -> _playerState == In) _players
     currPosToActOutOfBounds = maybe False ((<) ((length _players) - 1)) _currentPosToAct
+
+
+-- returns the index of the next active player with chips after the given current index who has chips
+--
+-- return a Nothing if everyone is all in and we cannot increment the position since
+-- there are no players who can act
+
+-- updates position to next player if there is another player who can act otherwise
+-- return the same position
+
+-- RETURNs A MAYBE INT SINCE SOMETIMES NO PLAYER CAN ACT for example when everyone is ALLIN
+nextIPlayerToAct :: Game -> Maybe (Int, Player)
+nextIPlayerToAct Game {..} = nextIPlayer _currentPosToAct
+  where
+    iplayers = zip [0 ..] _players
+    iplayers' currPosToAct =
+      let (a, b) = splitAt currPosToAct iplayers
+       in b <> a
+    nextIPlayer = 
+      \case 
+        Nothing -> Nothing
+        Just currPos -> 
+          let nextIPlayerToAct = tail $ iplayers' currPos
+           in find (\(_, Player{..}) -> _playerState == In && _chips > 0) nextIPlayerToAct
+           
+-- why is it updates next pos to a folded player
+
+-- gets the position of the next player which needs to act
+-- if currentPosToAct is already a Nothing then this means we are starting a new hand
+-- and will just return the initial player to act for a new hand
+nextPosToAct :: Game -> Maybe Int
+nextPosToAct g@Game{..}
+    | haveAllPlayersActed g && not (everyoneAllIn g) = traceShow (1) (Just firstPosToAct)
+    | everyoneAllIn g = traceShow 2 Nothing
+    | otherwise = traceShow (3) (fst <$> nextIPlayerToAct g)
+      where
+        activePs = getActivePlayers _players 
+       -- headsUp = (== 2) $ length $ getActivePlayers activePs
+        -- hasAnyPlayerActed = any ((== True) . (^. actedThisTurn)) _players
+        activePCount = length activePs
+       -- beginningOfActionStage = (not hasAnyPlayerActed) && _street /= PreDeal
+        firstPosToAct = case activePCount of 
+            2 -> if _street == PreFlop then _dealer
+                   else modInc 1 _dealer (activePCount - 1)
+            _ -> if _street == PreFlop then modInc 3 _dealer (activePCount - 1)
+                   else modInc 1 _dealer (activePCount - 1)
+                
+        
+isMultiPlayerShowdown :: Winners -> Bool
+isMultiPlayerShowdown (MultiPlayerShowdown _) = True
+isMultiPlayerShowdown _ = False
+
+allButOneAllIn :: Game -> Bool
+allButOneAllIn = (== 1) . countPlayersNotAllIn
+
+everyoneAllIn :: Game -> Bool
+everyoneAllIn = (== 0) . countPlayersNotAllIn
+
+countPlayersNotAllIn :: Game -> Int
+countPlayersNotAllIn game@Game{..}
+   -- | _street == PreDeal = 0
+   -- | _street == Showdown = 0
+    | numPlayersIn < 2 = 0
+    | otherwise = numPlayersIn - numPlayersAllIn
+   -- | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
+   -- | otherwise = False
+    where
+      numPlayersIn = length $ getActivePlayers _players
+      numPlayersAllIn =
+        length $
+        filter (\Player {..} -> _playerState == In && _chips == 0) _players

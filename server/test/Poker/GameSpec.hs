@@ -122,6 +122,53 @@ initPlayers = [player1, player2, player3]
 --prop_p = property $ do 
 --  Gen.print $ genPlayers 0 allPStates 7 (unDeck initialDeck)
 
+
+turnGameThreePlyrs = Game {
+    _dealer = 2
+  , _currentPosToAct = Just 0
+  , _smallBlind = 25
+  , _bigBlind = 50
+  , _minBuyInChips = 1500
+  , _maxBuyInChips = 3000
+  , _pot = 550
+  , _maxBet = 0
+  , _street = Turn
+  , _winners = NoWinners
+  , _board = []
+  , _maxPlayers = 6
+  , _waitlist = []
+  , _deck = Deck []
+  , _players =
+      [ Player 
+         { _pockets = Nothing
+         , _chips = 2197
+         , _bet = 0
+         , _playerState = In
+         , _playerName = "player0" 
+         , _committed = 50
+         , _actedThisTurn = False
+         } 
+      , Player 
+         { _pockets = Nothing
+         , _chips = 1847
+         , _bet = 0
+         , _playerState = In
+         , _playerName = "player1" 
+         , _committed = 250
+         , _actedThisTurn = False
+         } 
+      , Player 
+         { _pockets = Nothing
+         , _chips = 2072
+         , _bet = 0
+         , _playerState = In
+         , _playerName = "player2" 
+         , _committed = 250
+         , _actedThisTurn = False
+         } 
+      ]
+}
+
 prop_plyrShouldntActWhenNotInPos :: Property 
 prop_plyrShouldntActWhenNotInPos = property $ do
    g <- forAll $ genGame allPStreets allPStates
@@ -151,6 +198,15 @@ prop_number_of_hand_rankings_and_player_same = property $ do
     requiredActives = 1
     Deck deck = initialDeck
 
+prop_nextPosToActLTPlayerCount :: Property 
+prop_nextPosToActLTPlayerCount = property $ do
+   g <- forAll $ genGame allPStreets allPStates
+   let 
+    pCount = length $ _players g
+    nextPos = fromMaybe 0 (nextPosToAct g)
+   assert $ nextPos < pCount
+    
+    
 
 spec = do
   describe "dealToPlayers" $ do
@@ -163,6 +219,7 @@ spec = do
               else isNothing _pockets)
          newPlayers) `shouldBe`
         True
+
   describe "haveAllPlayersActed" $ do
     it
       "should return True when all players have acted during PreDeal for Three Players" $ do
@@ -181,12 +238,14 @@ spec = do
              ]) $
             initialGameState'
       haveAllPlayersActed game `shouldBe` True
+
     it
       "should return False when not all players acted during PreDeal for Three Players" $ do
       let unfinishedBlindsGame =
             (street .~ PreDeal) . (players .~ [player1, player4, player6]) $
             initialGameState'
       haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
+
     it
       "should return True when all players have acted during preFlop for Two Players" $ do
       let game =
@@ -199,12 +258,14 @@ spec = do
              ]) $
             initialGameState'
       haveAllPlayersActed game `shouldBe` True
+
     it
       "should return False when not all players acted during PreFlop for Two Players" $ do
       let unfinishedBlindsGame =
             (street .~ PreDeal) . (players .~ [player1, player4]) $
             initialGameState'
       haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
+
   describe "allButOneFolded" $ do
     it "should return True when all but one player " $ do
       let game =
@@ -212,17 +273,20 @@ spec = do
             (players .~ [((playerState .~ Folded) player1), player2]) $
             initialGameState'
       allButOneFolded game `shouldBe` True
+
     it "should return False when not all players acted" $ do
       let unfinishedBlindsGame =
             (street .~ PreFlop) . (players .~ [player1, player3]) $
             initialGameState'
       allButOneFolded unfinishedBlindsGame `shouldBe` False
+
     it "should always return False for PreDeal (blinds) stage" $ do
       let unfinishedBlindsGame =
             (street .~ PreDeal) .
             (players .~ [((playerState .~ Folded) player1), player2]) $
             initialGameState'
       allButOneFolded unfinishedBlindsGame `shouldBe` False
+
   describe "progressToPreFlop" $ do
     let preDealGame =
           (street .~ PreDeal) . (maxBet .~ 50) . (pot .~ 75) .
@@ -232,12 +296,14 @@ spec = do
            , (((chips .~ 1000) . (committed .~ 50) . (bet .~ 50)) player2)
            ]) $
           initialGameState'
+
     let preFlopGame = progressToPreFlop preDealGame
-    it "should update street to PreFlop" $ preFlopGame ^. street `shouldBe`
-      PreFlop
+    it "should update street to PreFlop" $ preFlopGame ^. street `shouldBe` PreFlop
+
     it "should not reset any player bet" $ do
       let playerBets = (^. bet) <$> _players preFlopGame
       playerBets `shouldBe` [25, 50]
+
   describe "progressToFlop" $ do
     let preFlopGame =
           (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -245,11 +311,15 @@ spec = do
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
           initialGameState'
     let flopGame = progressToFlop preFlopGame
+
     it "should update street to Turn" $ flopGame ^. street `shouldBe` Flop
+
     it "should reset maxBet" $ flopGame ^. maxBet `shouldBe` 0
+
     it "should reset all player bets" $ do
       let playerBets = (^. bet) <$> (_players flopGame)
       playerBets `shouldBe` [0, 0]
+
   describe "progressToTurn" $ do
     let flopGame =
           (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -257,11 +327,15 @@ spec = do
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
           initialGameState'
     let turnGame = progressToTurn flopGame
+
     it "should update street to Turn" $ turnGame ^. street `shouldBe` Turn
+
     it "should reset maxBet" $ turnGame ^. maxBet `shouldBe` 0
+
     it "should reset all player bets" $ do
       let playerBets = (^. bet) <$> _players turnGame
       playerBets `shouldBe` [0, 0]
+
   describe "progressToRiver" $ do
     let turnGame =
           (street .~ Turn) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -269,8 +343,11 @@ spec = do
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
           initialGameState'
     let riverGame = progressToRiver turnGame
+
     it "should update street to River" $ riverGame ^. street `shouldBe` River
+    
     it "should reset maxBet" $ riverGame ^. maxBet `shouldBe` 0
+
     it "should reset all player bets" $ do
       let turnGame =
             (street .~ Turn) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -280,17 +357,19 @@ spec = do
       let riverGame = progressToRiver turnGame
       let playerBets = (^. bet) <$> _players riverGame
       playerBets `shouldBe` [0, 0]
+
   describe "progressToShowdown" $ do
     let riverGame =
           (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
           initialGameState'
     let showdownGame = progressToShowdown riverGame
-    it "should update street to Turn" $ showdownGame ^. street `shouldBe`
-      Showdown
+    it "should update street to Turn" $ showdownGame ^. street `shouldBe` Showdown
+
     it "should award pot chips to winner of hand" $ do
       let playerChipCounts = (^. chips) <$> (_players showdownGame)
       playerChipCounts `shouldBe` [2000, 1000]
+
     it "should split pot if more than one player wins given pot" $ do
       let riverGame =
             (street .~ River) . (pot .~ 1000) . (deck .~ initialDeck) .
@@ -300,6 +379,8 @@ spec = do
       let playerChipCounts =
             (\Player {..} -> _chips) <$> (_players showdownGame)
       playerChipCounts `shouldBe` [1500, 1500]
+
+
   describe "getNextHand" $ do
     let showdownGame =
           (street .~ Showdown) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -308,13 +389,18 @@ spec = do
           (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
           initialGameState'
     let preDealGame = getNextHand showdownGame $ Deck []
+
     it "should update street to PreDeal" $ preDealGame ^. street `shouldBe`
       PreDeal
+
     it "should reset maxBet" $ preDealGame ^. maxBet `shouldBe` 0
+
     it "should reset all player bets" $ do
       let playerBets = (\Player {..} -> _bet) <$> _players preDealGame
       playerBets `shouldBe` [0, 0]
+
     it "should increment dealer position" $ preDealGame ^. dealer `shouldBe` 0
+
   describe "allButOneAllIn" $ do
     it "should return False for two player game if no one all in" $ do
       let preFlopGame' =
@@ -325,6 +411,7 @@ spec = do
              ]) $
             initialGameState'
       allButOneAllIn preFlopGame' `shouldBe` False
+
     it "should return True for two player game if one player is all in and other isn't" $ do
         let preFlopGame' =
               (street .~ PreFlop) . (currentPosToAct .~ Just 0) . (pot .~ 10) . (deck .~ initialDeck) .
@@ -334,6 +421,7 @@ spec = do
                ]) $
               initialGameState'
         allButOneAllIn preFlopGame' `shouldBe` True
+
     it
       "should return True for two player game if a player has called the other player all in" $ do
       let preFlopGame =
@@ -351,6 +439,7 @@ spec = do
              ]) $
             initialGameState'
       allButOneAllIn preFlopGame `shouldBe` True
+
     it
       "should return False for two player game if a player bet all in and the other has folded" $ do
       let preFlopGame =
@@ -369,6 +458,7 @@ spec = do
              ]) $
             initialGameState'
       allButOneAllIn preFlopGame `shouldBe` False
+
     it
       "should return False for three player game if only one short stacked player all in" $ do
       let preFlopGame =
@@ -415,6 +505,7 @@ spec = do
              ]) $
             initialGameState'
       allButOneAllIn flopGame `shouldBe` True
+
   describe "everyoneAllIn" $ do
     it "should return True for three player game if everyone is all in" $ do
       let flopGame =
@@ -436,22 +527,29 @@ spec = do
              ]) $
             initialGameState'
       everyoneAllIn flopGame `shouldBe` True
+
   describe "getHandRankings" $ do 
     it "Number of hand rankings should equal number of players" $ require prop_number_of_hand_rankings_and_player_same
+  
   describe "doesPlayerHaveToAct" $ do
     it "should be False when posToAct is not on player" $ do
       require prop_plyrShouldntActWhenNotInPos
+
     it "should be False when player has no chips" $ do
         require prop_plyrShouldntActWhenNoChips
+
     it "should be False when not enough players (<2) during predeal to start a game" $ do
         require prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame
+
     it "should return True for an active player in position" $ do
       let game =
-            (street .~ Flop) . (dealer .~ 0) .
+            (street .~ Flop) . (dealer .~ 0) . (currentPosToAct .~ Just 1) .
             (players .~ [((chips .~ 1000) player5), ((chips .~ 1000) player2)]) $
             initialGameState'
       doesPlayerHaveToAct (_playerName player2) game `shouldBe` True
       doesPlayerHaveToAct (_playerName player5) game `shouldBe` False
+
+      doesPlayerHaveToAct  "player0" turnGameThreePlyrs `shouldBe` True
     it "should return False for non-active players" $ do
       let game =
             (street .~ Flop) . (dealer .~ 0) .
@@ -464,8 +562,11 @@ spec = do
             initialGameState'
       doesPlayerHaveToAct (_playerName player3) game `shouldBe` False
       doesPlayerHaveToAct (_playerName player4) game `shouldBe` False
+
     describe "Heads Up Game" $ do
+
       describe "PreDeal" $ do
+
         describe "When 0 players sat in" $ do
           let game' =
                 (street .~ PreDeal) . (maxBet .~ 0) . (pot .~ 0) .
@@ -490,6 +591,7 @@ spec = do
           it "No player should have to act first" $ do
             doesPlayerHaveToAct (_playerName player1) game' `shouldBe` False
             doesPlayerHaveToAct (_playerName player2) game' `shouldBe` False
+
         describe "When 1 player is sat in" $ do
           let game' =
                 (street .~ PreDeal) .
@@ -508,6 +610,7 @@ spec = do
           it "No player should have to act first" $ do
             doesPlayerHaveToAct (_playerName player1) game' `shouldBe` False
             doesPlayerHaveToAct (_playerName player2) game' `shouldBe` False
+
         describe
           "When 2 players are both sat in but no one has posted a blind yet" $ do
           let game' =
@@ -532,6 +635,7 @@ spec = do
           it "Player2 should not have to act" $
             doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
             False
+
         describe "When one player has already posted blinds" $ do
           let game' =
                 (street .~ PreDeal) . (maxBet .~ 25) . (pot .~ 25) .
@@ -555,6 +659,7 @@ spec = do
           it "Player2 should have to act" $
             doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
             True
+
         describe "PreFlop" $ do
           describe "First Turn" $ do
             let game' =
@@ -583,6 +688,7 @@ spec = do
             it "Player2 should have to act" $
               doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
               True
+
           describe "Second Turn" $ do
             let game' =
                   (street .~ PreFlop) . (maxBet .~ 50) . (deck .~ initialDeck) .
@@ -610,6 +716,7 @@ spec = do
             it "Player2 should have to act" $
               doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
               True
+
           describe "Third Turn" $ do
             let game' =
                   (street .~ PreFlop) . (maxBet .~ 50) . (pot .~ 0) .
@@ -634,7 +741,9 @@ spec = do
             it "Player2 should not have to act" $
               doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
               False
+
         describe "Flop" $ do
+
           describe "First turn" $ do
             let game' =
                   (street .~ Flop) . (maxBet .~ 0) . (pot .~ 100) .
@@ -660,6 +769,7 @@ spec = do
             it "Player2 should have to act" $
               doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
               True
+
           describe "Second turn" $ do
             let game' =
                   (street .~ Flop) . (maxBet .~ 0) . (pot .~ 100) .
@@ -684,3 +794,192 @@ spec = do
             it "Player2 should not have to act" $
               doesPlayerHaveToAct (_playerName player2) game' `shouldBe`
               False
+
+  describe "nextPosToAct" $ do
+            let 
+             
+              player1 =
+                Player
+                  { _pockets = Nothing
+                  , _chips = 2000
+                  , _bet = 0
+                  , _playerState = In
+                  , _playerName = "player1"
+                  , _committed = 100
+                  , _actedThisTurn = True
+                  }
+              
+              player2 =
+                Player
+                  { _pockets = Nothing
+                  , _chips = 2000
+                  , _bet = 0
+                  , _playerState = Folded
+                  , _playerName = "player2"
+                  , _committed = 50
+                  , _actedThisTurn = False
+                  }
+              
+              player3 =
+                Player
+                  { _pockets = Nothing
+                  , _chips = 2000
+                  , _bet = 0
+                  , _playerState = In
+                  , _playerName = "player3"
+                  , _committed = 50
+                  , _actedThisTurn = False
+                  }
+              
+              player4 =
+                Player
+                  { _pockets = Nothing
+                  , _chips = 2000
+                  , _bet = 0
+                  , _playerState = In
+                  , _playerName = "player3"
+                  , _committed = 0
+                  , _actedThisTurn = False
+                  }
+              
+              player5 =
+                Player
+                  { _pockets = Nothing
+                  , _chips = 4000
+                  , _bet = 4000
+                  , _playerState = In
+                  , _playerName = "player5"
+                  , _committed = 4000
+                  , _actedThisTurn = True
+                  }
+          
+            it "nextPosToAct is always less than player count" $ do require prop_nextPosToActLTPlayerCount
+
+            describe "Heads Up" $ do
+              it "Next position at end of PreDeal (PreFlop) is dealer" $ do
+                let game =
+                      (street .~ PreDeal) . (currentPosToAct .~ Just 1) .
+                      (players .~ [player1, player1]) $
+                      initialGameState'
+                nextPosToAct game `shouldBe` Just (_dealer game)
+
+              it "Next position at end of PreDeal (PreFlop) is big blind position" $ do
+                let game =
+                      (street .~ PreDeal) . (currentPosToAct .~ Just 1) .
+                      (players .~
+                          [  player1 & (playerName .~ "player0") . (committed .~ 25)
+                           , player1 &  (committed .~ 50)
+                          ]) $
+                      initialGameState'
+                nextPosToAct game `shouldBe` Just 1
+
+              it "should modulo increment position for two players who are both In" $ do
+                let game =
+                      (street .~ PreFlop) . (currentPosToAct .~ Just 0) .
+                      (players .~ [player1, player3]) $
+                      initialGameState'
+                nextPosToAct game `shouldBe` Just 1
+                let game2 =
+                      (street .~ PreFlop) . (currentPosToAct .~ Just 1) .
+                      (players .~ [player1, player3]) $
+                      initialGameState'
+                nextPosToAct game2 `shouldBe` Just 0
+            
+            describe "Three Players" $ do
+              let 
+                threePGamePreFlop = Game {
+                   _dealer = 2
+                 , _currentPosToAct = Just 0
+                 , _smallBlind = 25
+                 , _bigBlind = 50
+                 , _minBuyInChips = 1500
+                 , _maxBuyInChips = 3000
+                 , _pot = 100
+                 , _maxBet = 50
+                 , _street = PreFlop
+                 , _winners = NoWinners
+                 , _board = []
+                 , _maxPlayers = 6
+                 , _waitlist = []
+                 , _deck = Deck []
+                 , _players =
+                    [ 
+                      Player { 
+                              _pockets = Nothing
+                            , _chips = 2300
+                            , _bet = 50
+                            , _playerState = In
+                            , _playerName = "player0" 
+                            , _committed = 50
+                            , _actedThisTurn = True
+                            } 
+                        , Player {
+                              _pockets = Nothing
+                            , _chips = 1700
+                            , _bet = 50
+                            , _playerState = In
+                            , _playerName = "player1" 
+                            , _committed = 50
+                            , _actedThisTurn = True
+                            } 
+                        , Player { 
+                              _pockets = Nothing
+                            , _chips = 2122
+                            , _bet = 0
+                            , _playerState = Folded
+                            , _playerName = "player2" 
+                            , _committed = 0
+                            , _actedThisTurn = True
+                            } 
+                    ]
+              }
+      
+              it "Next position at end of PreDeal (PreFlop) should should skip folded player's position" $ do
+                nextPosToAct threePGamePreFlop `shouldBe` Just 1
+
+              it "Next position at end of PreDeal (PreFlop) should be left of big blind's (dealer's) position" $ do
+                let game2 =
+                      (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
+                      (players .~ [player1, player1, player1]) $
+                      initialGameState'
+                nextPosToAct game2 `shouldBe` Just 0
+          
+
+              it "Next position at end of Flop (Turn) should be small blind's position" $ do
+                let game2 =
+                      (street .~ Flop) . (currentPosToAct .~ Just 0) .
+                      (players .~ [player1, player1, player1]) $
+                      initialGameState'
+                nextPosToAct game2 `shouldBe` Just 1
+
+              it "should modulo increment position when one player has folded" $ do
+                let game2 =
+                      (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
+                      (players .~ [player1, player2, player3]) $
+                      initialGameState'
+                nextPosToAct game2 `shouldBe` Just 0
+                
+            describe "Four Players" $ do
+              it "should modulo increment position for four players" $ do
+                let game =
+                      (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
+                      (players .~ [player1, player4, player3, player2]) $
+                      initialGameState'
+                nextPosToAct game `shouldBe` Just 0
+                let game2 =
+                      (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
+                      (players .~
+                       [ player1
+                       , player4
+                       , player3
+                       , (playerState .~ In) player2
+                       , (playerState .~ In) player2
+                       ]) $
+                      initialGameState'
+                nextPosToAct game2 `shouldBe` Just 3
+                let game3 =
+                      (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
+                      (players .~ [player2, player4, player3, player2]) $
+                      initialGameState'
+                nextPosToAct game3 `shouldBe` Just 1
+
