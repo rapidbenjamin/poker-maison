@@ -169,5 +169,5 @@ genGame possibleStreets pStates = do
       _winners = if _street == Showdown then getWinners Game{..} else NoWinners
     _pot <- Gen.int $ Range.linear betSum (betSum * fromEnum _street)
     _dealer <- Gen.int $ Range.linear 0 (playerCount - 1)
-    _currentPosToAct <- Gen.int $ Range.linear 0 (playerCount - 1)
+    _currentPosToAct <- Gen.maybe $ Gen.int $ Range.linear 0 (playerCount - 1)
     return Game {..}

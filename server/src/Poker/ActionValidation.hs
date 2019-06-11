@@ -87,8 +87,12 @@ canPostBlind game@Game {..} pName blind
 -- when (< 2 players state set to sat in)
 isPlayerActingOutOfTurn :: Game -> PlayerName -> Either GameErr ()
 isPlayerActingOutOfTurn game@Game {..} playerName
-  | _currentPosToAct < 0 = error "_currentPosToAct player < 0"
-  | _currentPosToAct > ((length _players) - 1) = error "_currentPosToAct too big"
+  | currPosToActOutOfBounds = error "_currentPosToAct too big"
+  | isNothing _currentPosToAct = 
+      Left $
+      InvalidMove playerName $
+      NoPlayerCanAct
+  | (fromJust _currentPosToAct) < 0 = error "_currentPosToAct player < 0"
   | _street == PreDeal = Right () -- first predeal blind bet can be done from any position
   | otherwise =
     case playerName `elemIndex` gamePlayerNames of
@@ -99,11 +103,12 @@ isPlayerActingOutOfTurn game@Game {..} playerName
           else Left $
                InvalidMove playerName $
                OutOfTurn $
-               CurrentPlayerToActErr $ gamePlayerNames !! _currentPosToAct
+               CurrentPlayerToActErr $ gamePlayerNames !! (fromJust _currentPosToAct)
   where
     gamePlayerNames = getGamePlayerNames game
     numberOfPlayersSatIn =
       length $ filter (\Player {..} -> _playerState == In) _players
+    currPosToActOutOfBounds = maybe False ((<) ((length _players) - 1)) _currentPosToAct
 
 checkPlayerSatAtTable :: Game -> PlayerName -> Either GameErr ()
 checkPlayerSatAtTable game@Game {..} pName

@@ -92,7 +92,7 @@ playerFixtures2 = [player3, player5]
 callAllInHeadsUpFixture :: Game
 callAllInHeadsUpFixture = Game {
         _dealer = 1
-      , _currentPosToAct = 0
+      , _currentPosToAct = Just 0
       , _smallBlind = 25
       , _bigBlind = 50
       , _minBuyInChips = 1500
@@ -132,7 +132,7 @@ callAllInHeadsUpFixture = Game {
 preDealHeadsUpFixture :: Game
 preDealHeadsUpFixture = Game {
         _dealer = 0
-      , _currentPosToAct = 0
+      , _currentPosToAct = Just 0
       , _smallBlind = 25
       , _bigBlind = 50
       , _minBuyInChips = 1500
@@ -209,7 +209,7 @@ prop_plyrWithChipsShouldAlwaysBeableToFoldInTurn = property $ do
 spec = do
   describe "Player Acting in Turn Validation" $ do
     let game =
-          (currentPosToAct .~ 0) .
+          (currentPosToAct .~ Just 0) .
           (street .~ PreFlop) . (players .~ playerFixtures) $
           initialGameState'
     it
@@ -224,7 +224,7 @@ spec = do
       let game =
             (street .~ PreFlop) .
             (dealer .~ 0) .
-            (currentPosToAct .~ 1) .
+            (currentPosToAct .~ Just 1) .
             (players .~
              [ ((playerState .~ In) .
                 (actedThisTurn .~ False) . (bet .~ 25) . (committed .~ 25))
@@ -239,7 +239,7 @@ spec = do
       let game2 =
             (street .~ PreFlop) .
             (dealer .~ 1) .
-            (currentPosToAct .~ 0) .
+            (currentPosToAct .~ Just 0) .
             (players .~
              [ ((playerState .~ In) .
                 (actedThisTurn .~ False) . (bet .~ 50) . (committed .~ 50))
@@ -628,7 +628,7 @@ spec = do
             (maxBet .~ 0) .
             (pot .~ 0) .
             (deck .~ initialDeck) .
-            (currentPosToAct .~ 1) .
+            (currentPosToAct .~ Just 1) .
             (dealer .~ 0) .
             (players .~
              [ ((actedThisTurn .~ False) .
@@ -653,7 +653,7 @@ spec = do
             (maxBet .~ 0) .
             (pot .~ 0) .
             (deck .~ initialDeck) .
-            (currentPosToAct .~ 1) .
+            (currentPosToAct .~ Just 1) .
             (dealer .~ 0) .
             (players .~
              [ ((actedThisTurn .~ False) .

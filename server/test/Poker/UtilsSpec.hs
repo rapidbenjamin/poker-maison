@@ -105,36 +105,36 @@ spec = do
       requireProperty $ do
         i <- forAll $ Gen.int $ Range.linear 0 9
         (modInc 1 i 9 >= 0) === True
-  describe "incPosToAct" $ do
+  describe "nextPosToAct" $ do
     it "should modulo increment position for two players who are both In" $ do
       let game =
-            (street .~ PreFlop) . (currentPosToAct .~ 0) .
+            (street .~ PreFlop) . (currentPosToAct .~ Just 0) .
             (players .~ [player1, player3]) $
             initialGameState'
-      incPosToAct (_currentPosToAct game) game `shouldBe` 1
+      nextPosToAct game `shouldBe` Just 1
       let game2 =
-            (street .~ PreFlop) . (currentPosToAct .~ 1) .
+            (street .~ PreFlop) . (currentPosToAct .~ Just 1) .
             (players .~ [player1, player3]) $
             initialGameState'
-      incPosToAct (_currentPosToAct game2) game2 `shouldBe` 0
+      nextPosToAct game2 `shouldBe` Just 0
     it "should modulo increment position when one player has folded" $ do
       let game =
             (street .~ PreFlop) . (players .~ [player1, player2, player3]) $
             initialGameState'
-      incPosToAct (_currentPosToAct game) game `shouldBe` 2
+      nextPosToAct game `shouldBe` Just 2
       let game2 =
-            (street .~ PreFlop) . (currentPosToAct .~ 2) .
+            (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
             (players .~ [player1, player2, player3]) $
             initialGameState'
-      incPosToAct (_currentPosToAct game2) game2 `shouldBe` 0
+      nextPosToAct game2 `shouldBe` Just 0
     it "should modulo increment position for four players" $ do
       let game =
-            (street .~ PreFlop) . (currentPosToAct .~ 2) .
+            (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
             (players .~ [player1, player4, player3, player2]) $
             initialGameState'
-      incPosToAct (_currentPosToAct game) game `shouldBe` 0
+      nextPosToAct game `shouldBe` Just 0
       let game2 =
-            (street .~ PreFlop) . (currentPosToAct .~ 2) .
+            (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
             (players .~
              [ player1
              , player4
@@ -143,9 +143,9 @@ spec = do
              , (playerState .~ In) player2
              ]) $
             initialGameState'
-      incPosToAct (_currentPosToAct game2) game2 `shouldBe` 3
+      nextPosToAct game2 `shouldBe` Just 3
       let game3 =
-            (street .~ PreFlop) . (currentPosToAct .~ 2) .
+            (street .~ PreFlop) . (currentPosToAct .~ Just 2) .
             (players .~ [player2, player4, player3, player2]) $
             initialGameState'
-      incPosToAct (_currentPosToAct game3) game3 `shouldBe` 1
+      nextPosToAct game3 `shouldBe` Just 1

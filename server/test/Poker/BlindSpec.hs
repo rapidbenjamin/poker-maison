@@ -63,7 +63,7 @@ twoPlayerGame =
     , _maxBuyInChips = 3000
     , _maxBet = 0
     , _dealer = 0
-    , _currentPosToAct = 1
+    , _currentPosToAct = Just 1
     , _winners = NoWinners
     }
 
@@ -102,7 +102,7 @@ twoPlayerGameAllBlindsPosted =
     , _dealer = 0
     , _minBuyInChips = 1000
     , _maxBuyInChips = 3000
-    , _currentPosToAct = 1
+    , _currentPosToAct = Just 1
     }
 
 threePlayerGame =
@@ -149,7 +149,7 @@ threePlayerGame =
     , _dealer = 0
     , _minBuyInChips = 1000
     , _maxBuyInChips = 3000
-    , _currentPosToAct = 1
+    , _currentPosToAct = Just 1
     }
 
 threePlayerGameAllBlindsPosted =
@@ -196,7 +196,7 @@ threePlayerGameAllBlindsPosted =
     , _winners = NoWinners
     , _maxBet = 0
     , _dealer = 0
-    , _currentPosToAct = 1
+    , _currentPosToAct = Just 1
     }
 
 twoPlayerNames = getGamePlayerNames twoPlayerGame

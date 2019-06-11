@@ -77,7 +77,7 @@ progressToPreFlop :: Game -> Game
 progressToPreFlop game@Game {..} =
   game &
   (street .~ PreFlop) .
-  (currentPosToAct .~ firstPosToAct) .
+  (currentPosToAct .~ pure firstPosToAct) .
   (players %~ (<$>) (actedThisTurn .~ False)) . deal . updatePlayersInHand
   where
     playerCount = length $ getActivePlayers _players
@@ -93,7 +93,7 @@ progressToFlop game
   | otherwise =
     game &
     (street .~ Flop) .
-    (currentPosToAct .~ incPosToAct (_dealer game) game) .
+    (currentPosToAct .~ nextPosToAct game) .
     (maxBet .~ 0) . dealBoardCards 3 . resetPlayers
 
 progressToTurn :: Game -> Game
@@ -103,7 +103,7 @@ progressToTurn game
     game &
     (street .~ Turn) .
     (maxBet .~ 0) .
-    (currentPosToAct .~ incPosToAct (_dealer game) game) .
+    (currentPosToAct .~ nextPosToAct game) .
     dealBoardCards 1 . resetPlayers
 
 progressToRiver :: Game -> Game
@@ -113,13 +113,13 @@ progressToRiver game@Game {..}
     game &
     (street .~ River) .
     (maxBet .~ 0) .
-    (currentPosToAct .~ incPosToAct _dealer game) .
+    (currentPosToAct .~ nextPosToAct game) .
     dealBoardCards 1 . resetPlayers
 
 progressToShowdown :: Game -> Game
 progressToShowdown game@Game {..} =
   game &
-  (street .~ Showdown) . (winners .~ winners') . (players .~ awardedPlayers)
+  (street .~ Showdown) . (winners .~ winners') . (players .~ awardedPlayers) . (currentPosToAct .~ Nothing)
   where
     winners' = getWinners game
     awardedPlayers = awardWinners _players _pot winners'
@@ -150,26 +150,8 @@ awardWinners _players pot' =
            else p) <$>
       _players
 
-allButOneAllIn :: Game -> Bool
-allButOneAllIn = (== 1) . countPlayersNotAllIn
 
-everyoneAllIn :: Game -> Bool
-everyoneAllIn = (== 0) . countPlayersNotAllIn
 
--- nothing if no one
-countPlayersNotAllIn :: Game -> Int
-countPlayersNotAllIn game@Game{..}
-  | _street == PreDeal = 0
-  | _street == Showdown = 0
-  | numPlayersIn < 2 = 0
-  | otherwise = numPlayersIn - numPlayersAllIn
- -- | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
- -- | otherwise = False
-  where
-    numPlayersIn = length $ getActivePlayers _players
-    numPlayersAllIn =
-      length $
-      filter (\Player {..} -> _playerState == In && _chips == 0) _players
 
 -- Can we show the active players' pocket cards to the world? Only if everyone is all in
 -- (no more than 1 player not all (> 0 chips) per pot and every player has acted
@@ -199,7 +181,7 @@ getNextHand Game {..} shuffledDeck =
     , _street = PreDeal
     , _dealer = newDealer
     , _pot = 0
-    , _currentPosToAct = nextPlayerToAct
+    , _currentPosToAct = Just nextPlayerToAct
     , ..
     }
   where
@@ -318,11 +300,12 @@ initPlayer playerName chips =
 doesPlayerHaveToAct :: Text -> Game -> Bool
 doesPlayerHaveToAct playerName game@Game {..} 
   | length _players < 2 = False 
+  | isNothing _currentPosToAct = False
   | otherwise =
-    if _currentPosToAct > ((length _players) - 1) 
+    if currPosToActOutOfBounds
       then error $ "_currentPosToAct too large " <> show game
       else 
-        case _players Safe.!! _currentPosToAct of
+        case _players Safe.!! (fromJust _currentPosToAct) of
           Nothing -> False
           Just Player{..} 
             | _chips == 0 -> False
@@ -339,3 +322,4 @@ doesPlayerHaveToAct playerName game@Game {..}
   where
     activePlayerCount =
       length $ filter (\Player {..} -> _playerState == In) _players
+    currPosToActOutOfBounds = maybe False ((<) ((length _players) - 1)) _currentPosToAct

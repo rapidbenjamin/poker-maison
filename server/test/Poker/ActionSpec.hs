@@ -188,14 +188,14 @@ spec = do
       playerWhoBet `shouldBe` Just expectedPlayer
     it "should increment position to act" $ do
       let game =
-            (street .~ PreFlop) . (currentPosToAct .~ 0) .
+            (street .~ PreFlop) . (currentPosToAct .~ pure 0) .
             (players .~ [player1, player2, player3]) $
             initialGameState'
           betValue = 200
           pName = "player1"
           newGame = makeBet betValue pName game
           newPositionToAct = newGame ^. currentPosToAct
-          expectedNewPositionToAct = 2
+          expectedNewPositionToAct = Just 2
       newPositionToAct `shouldBe` expectedNewPositionToAct
   describe "foldCards" $ do
     it "should update player attributes correctly" $ do
@@ -218,13 +218,13 @@ spec = do
       playerWhoFolded `shouldBe` Just expectedPlayer
     it "should increment position to act" $ do
       let game =
-            (street .~ PreFlop) . (currentPosToAct .~ 0) .
+            (street .~ PreFlop) . (currentPosToAct .~ pure 0) .
             (players .~ [player1, player2, player3]) $
             initialGameState'
           pName = "player1"
           newGame = foldCards pName game
           newPositionToAct = newGame ^. currentPosToAct
-          expectedNewPositionToAct = 2
+          expectedNewPositionToAct = Just 2
       newPositionToAct `shouldBe` expectedNewPositionToAct
   describe "call" $ do
     it "should update player attributes correctly when calling a bet" $ do
@@ -267,13 +267,13 @@ spec = do
       playerWhoCalled' `shouldBe` Just expectedPlayer'
     it "should increment position to act" $ do
       let game =
-            (street .~ PreFlop) . (currentPosToAct .~ 0) .
+            (street .~ PreFlop) . (currentPosToAct .~ pure 0) .
             (players .~ [player1, player2, player3]) $
             initialGameState'
           pName = "player1"
           newGame = call pName game
           newPositionToAct = newGame ^. currentPosToAct
-          expectedNewPositionToAct = 2
+          expectedNewPositionToAct = Just 2
       newPositionToAct `shouldBe` expectedNewPositionToAct
   describe "check" $ do
     it "should update player attributes correctly" $ do
@@ -288,13 +288,13 @@ spec = do
       playerWhoChecked `shouldBe` Just expectedPlayer
     it "should increment position to act" $ do
       let game =
-            (street .~ PreFlop) . (currentPosToAct .~ 0) .
+            (street .~ PreFlop) . (currentPosToAct .~ pure 0) .
             (players .~ [player1, player3]) $
             initialGameState'
           pName = "player1"
           newGame = check pName game
           newPositionToAct = newGame ^. currentPosToAct
-          expectedNewPositionToAct = 1
+          expectedNewPositionToAct = Just 1
       newPositionToAct `shouldBe` expectedNewPositionToAct
   describe "SitOut" $ it "should set playerState to SatOut" $ do
     let game =

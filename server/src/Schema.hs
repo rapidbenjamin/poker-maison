@@ -54,7 +54,7 @@ share
     pot Int
     maxBet Bet
     dealer Int
-    currentPosToAct Int
+    currentPosToAct Int Maybe
     deriving Show Read
 |]
 

@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
+
 
 module Poker.Game.Utils where
 
@@ -60,7 +62,6 @@ modDec num modulo
   where
     decNum = num - 1
     modInc = decNum `mod` modulo
-
 
 
 -- return players which have the ability to make further moves i.e not all in or folded
@@ -126,17 +127,57 @@ maximums (x:xs) = foldl f [x] xs
 -- return the same position
 
 -- RETURNs A MAYBE INT SINCE SOMETIMES NO PLAYER CAN ACT for example when everyone is ALLIN
-incPosToAct :: Int -> Game -> Int
-incPosToAct currPosToAct Game {..} = fromMaybe currPosToAct (fst <$> nextIPlayer)
+nextIPlayerToAct :: Game -> Maybe (Int, Player)
+nextIPlayerToAct Game {..} = nextIPlayer _currentPosToAct
   where
     iplayers = zip [0 ..] _players
-    iplayers' =
+    iplayers' currPosToAct =
       let (a, b) = splitAt currPosToAct iplayers
        in b <> a
-    nextIPlayer =
-      find (\(_, Player{..}) -> _playerState == In && _chips > 0) (tail iplayers')
+    nextIPlayer = 
+      \case 
+        Nothing -> Nothing
+        Just currPos -> 
+          let nextIPlayerToAct = tail $ iplayers' currPos
+           in find (\(_, Player{..}) -> _playerState == In && _chips > 0) nextIPlayerToAct
 
-    
+
+-- gets the position of the next player which needs to act
+-- if currentPosToAct is already a Nothing then this means we are starting a new hand
+-- and will just return the initial player to act for a new hand
+nextPosToAct :: Game -> Maybe Int
+nextPosToAct g@Game{..}
+    | (isNothing _currentPosToAct || beginningOfActionStage) && not (everyoneAllIn g) = posAfterDealer
+    | everyoneAllIn g = Nothing
+    | otherwise = fst <$> nextIPlayerToAct g
+      where
+        activePs = getActivePlayers _players 
+        headsUp = (== 2) $ length $ getActivePlayers activePs
+        hasAnyPlayerActed = any ((== True) . (^. actedThisTurn)) _players
+        beginningOfActionStage = (not hasAnyPlayerActed) && _street /= PreDeal
+        posAfterDealer = Just $ modInc 1 _dealer (length _players)
+
 isMultiPlayerShowdown :: Winners -> Bool
 isMultiPlayerShowdown (MultiPlayerShowdown _) = True
 isMultiPlayerShowdown _ = False
+
+allButOneAllIn :: Game -> Bool
+allButOneAllIn = (== 1) . countPlayersNotAllIn
+
+everyoneAllIn :: Game -> Bool
+everyoneAllIn = (== 0) . countPlayersNotAllIn
+
+
+countPlayersNotAllIn :: Game -> Int
+countPlayersNotAllIn game@Game{..}
+    | _street == PreDeal = 0
+    | _street == Showdown = 0
+    | numPlayersIn < 2 = 0
+    | otherwise = numPlayersIn - numPlayersAllIn
+   -- | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
+   -- | otherwise = False
+    where
+      numPlayersIn = length $ getActivePlayers _players
+      numPlayersAllIn =
+        length $
+        filter (\Player {..} -> _playerState == In && _chips == 0) _players

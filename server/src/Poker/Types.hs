@@ -172,7 +172,7 @@ data Game = Game
   , _pot :: Int
   , _maxBet :: Bet
   , _dealer :: Int
-  , _currentPosToAct :: Int -- position here refes to the zero indexed set of active players that have a playerState not set to SatOut
+  , _currentPosToAct :: Maybe Int -- Nothing if no player can act (i.e everyone all in)
   } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Game where
@@ -199,8 +199,8 @@ instance Show Game where
     "\n _board: " <>
     show _board <>
     "\n _players: " <>
-    (LT.unpack (pShow _players))
-
+    show _players
+    
 type PlayerName = Text
 
 data Blind
@@ -257,7 +257,8 @@ data InvalidMoveErr
   | BlindRequired Blind
   | NoBlindRequired
   | BlindAlreadyPosted Blind
-  | OutOfTurn CurrentPlayerToActErr
+  | OutOfTurn CurrentPlayerToActErr -- _currentPosToAct is Just but not the player's index
+  | NoPlayerCanAct -- _currentPosToAct is Nothing
   | CannotPostBlindOutsidePreDeal
   | CannotPostNoBlind -- if player tries to apply postBlind with a value of NoBlind
   | CannotPostBlind Text

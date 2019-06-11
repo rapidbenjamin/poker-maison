@@ -54,7 +54,7 @@ postBlind blind pName game@Game {..} =
   game &
   (players .~ newPlayers) .
   (pot +~ blindValue) .
-  (currentPosToAct .~ nextRequiredBlindPos) . (maxBet .~ newMaxBet)
+  (currentPosToAct .~ pure nextRequiredBlindPos) . (maxBet .~ newMaxBet)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -79,7 +79,7 @@ postBlind blind pName game@Game {..} =
 makeBet :: Int -> PlayerName -> Game -> Game
 makeBet amount pName game@Game {..} =
   updateMaxBet amount game &
-  (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct) . (pot +~ amount)
+  (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct game) . (pot +~ amount)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -87,11 +87,10 @@ makeBet amount pName game@Game {..} =
            then (markActed . placeBet amount) p
            else p) <$>
       _players
-    nextPosToAct = incPosToAct _currentPosToAct game
 
 foldCards :: PlayerName -> Game -> Game
 foldCards pName game@Game {..} =
-  game & (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)
+  game & (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct game)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -99,13 +98,12 @@ foldCards pName game@Game {..} =
            then (markActed . (playerState .~ Folded)) p
            else p) <$>
       _players
-    nextPosToAct = incPosToAct _currentPosToAct game
 
 call :: PlayerName -> Game -> Game
 call pName game@Game {..} =
   game &
   (players .~ newPlayers) .
-  (currentPosToAct .~ nextPosToAct) . (pot +~ callAmount)
+  (currentPosToAct .~ nextPosToAct game) . (pot +~ callAmount)
   where
     player = fromJust $ find (\Player {..} -> _playerName == pName) _players --horrible performance use map for players
     callAmount =
@@ -120,11 +118,11 @@ call pName game@Game {..} =
            then (markActed . placeBet callAmount) p
            else p) <$>
       _players
-    nextPosToAct = incPosToAct _currentPosToAct game
+
 
 check :: PlayerName -> Game -> Game
 check pName game@Game {..} =
-  game & (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct)
+  game & (players .~ newPlayers) . (currentPosToAct .~ nextPosToAct game)
   where
     newPlayers =
       (\p@Player {..} ->
@@ -132,7 +130,7 @@ check pName game@Game {..} =
            then markActed p
            else p) <$>
       _players
-    nextPosToAct = incPosToAct _currentPosToAct game
+
 
 -- Sets state of a given player to SatOut (sat-out)
 -- In order to sit in again the player must post a blind

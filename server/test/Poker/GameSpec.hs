@@ -125,7 +125,7 @@ initPlayers = [player1, player2, player3]
 prop_plyrShouldntActWhenNotInPos :: Property 
 prop_plyrShouldntActWhenNotInPos = property $ do
    g <- forAll $ genGame allPStreets allPStates
-   let g' = g & currentPosToAct .~ 1
+   let g' = g & currentPosToAct .~ Just 1
    doesPlayerHaveToAct "player0" g' === False
 
 
@@ -327,7 +327,7 @@ spec = do
       allButOneAllIn preFlopGame' `shouldBe` False
     it "should return True for two player game if one player is all in and other isn't" $ do
         let preFlopGame' =
-              (street .~ PreFlop) . (currentPosToAct .~ 0) . (pot .~ 10) . (deck .~ initialDeck) .
+              (street .~ PreFlop) . (currentPosToAct .~ Just 0) . (pot .~ 10) . (deck .~ initialDeck) .
               (players .~
                [ (((playerState .~ In) . (chips .~ 0) . (bet .~ 0) . (actedThisTurn .~ False)) player1)
                , (((playerState .~ In) . (chips .~ 1) . (bet .~ 0) . (actedThisTurn .~ False)) player3)
@@ -390,26 +390,7 @@ spec = do
              ]) $
             initialGameState'
       allButOneAllIn preFlopGame `shouldBe` False
-    it "should return True for three player game if everyone is all in" $ do
-      let flopGame =
-            (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
-            (deck .~ initialDeck) .
-            (players .~
-             [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 0) .
-                (chips .~ 0) .
-                (committed .~ 2000))
-                 player1
-             , ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 2000) .
-                (committed .~ 4000) .
-                (chips .~ 0))
-                 player3
-             , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 2000) .
-                (committed .~ 4000) .
-                (chips .~ 0))
-                 player3
-             ]) $
-            initialGameState'
-      allButOneAllIn flopGame `shouldBe` True
+   
     it "should return True for four player game if only one player not all in" $ do
       let flopGame =
             (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
@@ -434,6 +415,27 @@ spec = do
              ]) $
             initialGameState'
       allButOneAllIn flopGame `shouldBe` True
+  describe "everyoneAllIn" $ do
+    it "should return True for three player game if everyone is all in" $ do
+      let flopGame =
+            (street .~ Flop) . (maxBet .~ 2000) . (pot .~ 10000) .
+            (deck .~ initialDeck) .
+            (players .~
+             [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 0) .
+                (chips .~ 0) .
+                (committed .~ 2000))
+                 player1
+             , ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 2000) .
+                (committed .~ 4000) .
+                (chips .~ 0))
+                 player3
+             , ((playerState .~ In) . (actedThisTurn .~ True) . (bet .~ 2000) .
+                (committed .~ 4000) .
+                (chips .~ 0))
+                 player3
+             ]) $
+            initialGameState'
+      everyoneAllIn flopGame `shouldBe` True
   describe "getHandRankings" $ do 
     it "Number of hand rankings should equal number of players" $ require prop_number_of_hand_rankings_and_player_same
   describe "doesPlayerHaveToAct" $ do
@@ -468,7 +470,7 @@ spec = do
           let game' =
                 (street .~ PreDeal) . (maxBet .~ 0) . (pot .~ 0) .
                 (deck .~ initialDeck) .
-                (currentPosToAct .~ 1) .
+                (currentPosToAct .~ Just 1) .
                 (dealer .~ 0) .
                 (players .~
                  [ ((actedThisTurn .~ False) . (playerState .~ SatOut) .
@@ -511,7 +513,7 @@ spec = do
           let game' =
                 (street .~ PreDeal) . (maxBet .~ 0) . (pot .~ 0) .
                 (deck .~ initialDeck) .
-                (currentPosToAct .~ 1) .
+                (currentPosToAct .~ Just 1) .
                 (dealer .~ 0) .
                 (players .~
                  [ ((actedThisTurn .~ False) . (playerState .~ In) . (bet .~ 0) .
@@ -534,7 +536,7 @@ spec = do
           let game' =
                 (street .~ PreDeal) . (maxBet .~ 25) . (pot .~ 25) .
                 (deck .~ initialDeck) .
-                (currentPosToAct .~ 1) .
+                (currentPosToAct .~ Just 1) .
                 (dealer .~ 0) .
                 (players .~
                  [ ((actedThisTurn .~ True) . (playerState .~ In) . (bet .~ 0) .
@@ -560,7 +562,7 @@ spec = do
                   (smallBlind .~ 25) .
                   (smallBlind .~ 50) .
                   (pot .~ 100) .
-                  (currentPosToAct .~ 1) .
+                  (currentPosToAct .~ Just 1) .
                   (dealer .~ 1) .
                   (players .~
                    [ ((actedThisTurn .~ False) . (playerState .~ In) .
@@ -587,7 +589,7 @@ spec = do
                   (smallBlind .~ 25) .
                   (smallBlind .~ 50) .
                   (pot .~ 100) .
-                  (currentPosToAct .~ 1) .
+                  (currentPosToAct .~ Just 1) .
                   (dealer .~ 1) .
                   (players .~
                    [ ((actedThisTurn .~ True) . (playerState .~ In) .
@@ -612,7 +614,7 @@ spec = do
             let game' =
                   (street .~ PreFlop) . (maxBet .~ 50) . (pot .~ 0) .
                   (deck .~ initialDeck) .
-                  (currentPosToAct .~ 0) .
+                  (currentPosToAct .~ Just 0) .
                   (dealer .~ 1) .
                   (players .~
                    [ ((playerState .~ In) . (bet .~ 0) . (committed .~ 50) .
@@ -637,7 +639,7 @@ spec = do
             let game' =
                   (street .~ Flop) . (maxBet .~ 0) . (pot .~ 100) .
                   (deck .~ initialDeck) .
-                  (currentPosToAct .~ 1) .
+                  (currentPosToAct .~ Just 1) .
                   (dealer .~ 0) .
                   (players .~
                    [ ((actedThisTurn .~ False) . (playerState .~ In) .
@@ -662,7 +664,7 @@ spec = do
             let game' =
                   (street .~ Flop) . (maxBet .~ 0) . (pot .~ 100) .
                   (deck .~ initialDeck) .
-                  (currentPosToAct .~ 0) .
+                  (currentPosToAct .~ Just 0) .
                   (dealer .~ 0) .
                   (players .~
                    [ ((actedThisTurn .~ False) . (playerState .~ In) .
