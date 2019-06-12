@@ -176,7 +176,6 @@ prop_plyrShouldntActWhenNotInPos = withDiscards 225 . property $ do
    let g' = g & currentPosToAct .~ Just 1
    doesPlayerHaveToAct "player0" g' === False
 
-
 prop_plyrShouldntActWhenNoChips :: Property 
 prop_plyrShouldntActWhenNoChips = withDiscards 225 . property $ do
    g <- forAll $ genGame allPStreets allPStates
@@ -209,13 +208,13 @@ prop_nextPosToActLTPlayerCount = withDiscards 225 . property $ do
 
   
 prop_when_everyone_allIn_next_pos_Nothing :: Property 
-prop_when_everyone_allIn_next_pos_Nothing = withDiscards 300 . property $ do
+prop_when_everyone_allIn_next_pos_Nothing = withDiscards 500 . property $ do
    g <- forAll $ Gen.filter everyoneAllIn (genGame allPStreets allPStates)
    nextPosToAct g === Nothing
 
 
 prop_when_awaiting_action_nextPos_always_Just :: Property 
-prop_when_awaiting_action_nextPos_always_Just = withDiscards 350 . property $ do
+prop_when_awaiting_action_nextPos_always_Just = withDiscards 600 . property $ do
    g <- forAll $ Gen.filter awaitingPlayerAction (genGame [PreFlop, Flop, Turn, River] [In, Folded])
    isNothing (nextPosToAct g) === False    
 
