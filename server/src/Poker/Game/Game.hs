@@ -307,8 +307,8 @@ doesPlayerHaveToAct playerName game@Game {..}
           Nothing -> False
           Just Player{..} 
             | _chips == 0 -> False
-            | _street == Showdown ||
-  --              allButOneAllIn game ||
+            | _street == 
+                Showdown ||
                 (activePlayerCount < 2) ||
                 haveAllPlayersActed game ||
                 _playerState /= In ||
@@ -353,15 +353,12 @@ nextIPlayerToAct Game {..} initialPos = nextIPlayer initialPos
 -- and will just return the initial player to act for a new hand
 nextPosToAct :: Game -> Maybe Int
 nextPosToAct g@Game{..}
-    | haveAllPlayersActed g && not (everyoneAllIn g) = traceShow (1) (firstPosToAct g)
-    | everyoneAllIn g = traceShow 2 Nothing
-    | otherwise = traceShow (3) (fst <$> nextIPlayerToAct g _currentPosToAct)
+    | haveAllPlayersActed g && not (everyoneAllIn g) = firstPosToAct g
+    | everyoneAllIn g = Nothing
+    | otherwise = fst <$> nextIPlayerToAct g _currentPosToAct
       where
         activePs = getActivePlayers _players 
-       -- headsUp = (== 2) $ length $ getActivePlayers activePs
-        -- hasAnyPlayerActed = any ((== True) . (^. actedThisTurn)) _players
         activePCount = length activePs
-       -- beginningOfActionStage = (not hasAnyPlayerActed) && _street /= PreDeal
 
 -- used to get the initial player to act when progressing to a new game stage
 firstPosToAct :: Game -> Maybe Int
@@ -393,12 +390,8 @@ everyoneAllIn = (== 0) . countPlayersNotAllIn
 
 countPlayersNotAllIn :: Game -> Int
 countPlayersNotAllIn game@Game{..}
-   -- | _street == PreDeal = 0
-   -- | _street == Showdown = 0
     | numPlayersIn < 2 = 0
     | otherwise = numPlayersIn - numPlayersAllIn
-   -- | haveAllPlayersActed game = (numPlayersIn - numPlayersAllIn) <= 1
-   -- | otherwise = False
     where
       numPlayersIn = length $ getActivePlayers _players
       numPlayersAllIn =
