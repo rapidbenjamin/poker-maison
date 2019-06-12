@@ -190,11 +190,11 @@ prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame = withDiscards 22
    let g' = g & players .~ [p]
    doesPlayerHaveToAct "player0" g' === False
    
-prop_number_of_hand_rankings_and_player_same :: Property 
-prop_number_of_hand_rankings_and_player_same = property $ do
+prop_number_of_hand_rankings_and_active_players_same :: Property 
+prop_number_of_hand_rankings_and_active_players_same = withDiscards 225 . property $ do
    plyrCount <- forAll $ Gen.int $ Range.linear 2 9
    (ps, cs) <- forAll $ genPlayers Showdown requiredActives allPStates plyrCount deck
-   (length $ getHandRankings ps cs) === length ps
+   (length $ getHandRankings ps cs) === (length $ getActivePlayers ps)
   where
     requiredActives = 1
     Deck deck = initialDeck
@@ -541,7 +541,7 @@ spec = do
       everyoneAllIn flopGame `shouldBe` True
 
   describe "getHandRankings" $ do 
-    it "Number of hand rankings should equal number of players" $ require prop_number_of_hand_rankings_and_player_same
+    it "Number of hand rankings should equal number of active players" $ require prop_number_of_hand_rankings_and_active_players_same
   
   describe "doesPlayerHaveToAct" $ do
     it "should be False when posToAct is not on player" $ require prop_plyrShouldntActWhenNotInPos

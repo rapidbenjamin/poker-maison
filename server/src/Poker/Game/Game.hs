@@ -231,12 +231,7 @@ getHandRankings plyrs boardCards =
     (\plyr@Player{..} -> let showHand = (++boardCards) $ unPocketCards $ fromJust _pockets in (value showHand, plyr))
     remainingPlayersInHand
   where
-    remainingPlayersInHand =
-      filter
-        (\Player {..} ->
-           (_playerState /= Folded) ||
-           (_playerState /= SatOut) || isNothing _pockets)
-        plyrs
+    remainingPlayersInHand = getActivePlayers plyrs
 
 -- Update active players states to prepare them for the next hand.
 resetPlayerCardsAndBets :: Player -> Player
