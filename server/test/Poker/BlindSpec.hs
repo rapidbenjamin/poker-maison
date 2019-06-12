@@ -211,38 +211,51 @@ spec = do
   describe "blind required by player" $
     it "should return correct blind" $
     blindRequiredByPlayer twoPlayerGame "player2" `shouldBe` Big
+
   describe "getSmallBlindPosition" $ do
+
     it "small blind position should be correct for a two player game" $ do
       let dealerPos = 0
       getSmallBlindPosition twoPlayerNames dealerPos `shouldBe` (0 :: Int)
+
     it "small blind position should be correct for a three player game" $ do
       let dealerPos = 2
       getSmallBlindPosition threePlayerNames dealerPos `shouldBe` (0 :: Int)
+
   describe "getRequiredBlinds" $
+
     it "should return correct blinds for two player game" $
     getRequiredBlinds twoPlayerGame `shouldBe` [Small, Big]
+
   describe "blinds" $ do
+
     describe "getSmallBlindPosition" $ do
+
       it "returns correct small blind position in three player game" $ do
         let dealerPos = 0
         getSmallBlindPosition ["Player1", "Player2", "Player3"] dealerPos `shouldBe`
           1
+
       it "returns correct small blind position in two player game" $ do
         let dealerPos = 0
         getSmallBlindPosition ["Player1", "Player2"] dealerPos `shouldBe` 0
+
     describe "blindRequiredByPlayer" $ do
+
       it "returns Small if player position is dealer + 1 for three players" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player2" `shouldBe` Small
+
       it "returns Big if player position is dealer + 2 for three players" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player3" `shouldBe` Big
+
       it
         "returns NoBlind if player position is dealer for three players and playerState is In" $ do
         let testPlayers =
@@ -250,6 +263,7 @@ spec = do
               (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
+
       it
         "returns Big if player position is dealer for three players and playerState is SatOut" $ do
         let testPlayers =
@@ -257,40 +271,51 @@ spec = do
               (initPlayer <$> ["Player1", "Player2", "Player3"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` NoBlind
+
       it "returns Small if player position is dealer for two players" $ do
         let testPlayers =
               (playerState .~ In) <$>
               (initPlayer <$> ["Player1", "Player2"] <*> [100])
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player1" `shouldBe` Small
+
       it "returns Big if player position is dealer + 1 for two players" $ do
         let testPlayers = initPlayer <$> ["Player1", "Player2"] <*> [100]
         let game = players .~ testPlayers $ initialGameState'
         blindRequiredByPlayer game "Player2" `shouldBe` Big
+
   describe "haveRequiredBlindsBeenPosted" $ do
+
     it
       "should return False when not all players have posted blinds in 2 player game" $
       haveRequiredBlindsBeenPosted twoPlayerGame `shouldBe` False
+
     it "should return True when all players have posted blinds in 2 player game" $
       haveRequiredBlindsBeenPosted twoPlayerGameAllBlindsPosted `shouldBe` True
+
     it
       "should return False when not all players have posted blinds in 3 player game" $
       haveRequiredBlindsBeenPosted threePlayerGame `shouldBe` False
+
     it
       "should  return True when all players have posted blinds in 3 player game" $
       haveRequiredBlindsBeenPosted threePlayerGameAllBlindsPosted `shouldBe`
       True
+
   describe "updatePlayersInHand" $ do
+
     it
       "should set players that are not in blind position to In for three players" $ do
       let newGame = updatePlayersInHand threePlayerGameAllBlindsPosted
       let playerStates = (\Player {..} -> _playerState) <$> _players newGame
       playerStates `shouldBe` [In, In, In]
+
     it
       "should return correct player states for two players when all blinds posted" $ do
       let newGame = updatePlayersInHand twoPlayerGameAllBlindsPosted
       let playerStates = (\Player {..} -> _playerState) <$> _players newGame
       playerStates `shouldBe` [In, In]
+      
     it
       "should return correct player states for two players when not all blinds posted" $ do
       let newGame = updatePlayersInHand twoPlayerGame

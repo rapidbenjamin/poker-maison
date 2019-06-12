@@ -107,6 +107,7 @@ genPlayers street' requiredInPlayers possibleStates playerCount cs = do
      actionStages = [PreFlop, Flop, Turn, River]
      activesCount ps = length $ getActivePlayers ps
      satInCount ps = length $ getPlayersSatIn ps 
+     
 
 dealPlayersGen :: [Player] -> [Card] -> ([Card], [Player])
 dealPlayersGen ps cs = _2 %~ nameByPos $ mapAccumR (\cs p ->

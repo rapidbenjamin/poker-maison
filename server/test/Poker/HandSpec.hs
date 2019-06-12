@@ -50,3 +50,4 @@ spec = do
     describe "value" $ do
       it "Number of cards before and after valuation is involutive" $ do
         require prop_same_num_cards_after_valuation
+    it "7 suited cards always a flush" $ require prop_7suited_cards_always_a_flush

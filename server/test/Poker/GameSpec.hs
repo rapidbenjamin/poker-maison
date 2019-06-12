@@ -25,6 +25,7 @@ import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
+
 import Poker.ActionValidation
 import Poker.Game.Blinds
 import Poker.Game.Game
@@ -170,20 +171,20 @@ turnGameThreePlyrs = Game {
 }
 
 prop_plyrShouldntActWhenNotInPos :: Property 
-prop_plyrShouldntActWhenNotInPos = property $ do
+prop_plyrShouldntActWhenNotInPos = withDiscards 225 . property $ do
    g <- forAll $ genGame allPStreets allPStates
    let g' = g & currentPosToAct .~ Just 1
    doesPlayerHaveToAct "player0" g' === False
 
 
 prop_plyrShouldntActWhenNoChips :: Property 
-prop_plyrShouldntActWhenNoChips = property $ do
+prop_plyrShouldntActWhenNoChips = withDiscards 225 . property $ do
    g <- forAll $ genGame allPStreets allPStates
    let g' = g & players . element 0 %~ chips .~ 0
    doesPlayerHaveToAct "player0" g' === False
 
 prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame :: Property 
-prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame = property $ do
+prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame = withDiscards 225 . property $ do
    g <- forAll $ (genGame [PreDeal] allPStates)
    (p, _) <- forAll $ genPlayer' PreDeal allPStates 0 []
    let g' = g & players .~ [p]
@@ -199,21 +200,22 @@ prop_number_of_hand_rankings_and_player_same = property $ do
     Deck deck = initialDeck
 
 prop_nextPosToActLTPlayerCount :: Property 
-prop_nextPosToActLTPlayerCount = property $ do
+prop_nextPosToActLTPlayerCount = withDiscards 225 . property $ do
    g <- forAll $ genGame allPStreets allPStates
    let 
     pCount = length $ _players g
     nextPos = fromMaybe 0 (nextPosToAct g)
    assert $ nextPos < pCount
 
+  
 prop_when_everyone_allIn_next_pos_Nothing :: Property 
-prop_when_everyone_allIn_next_pos_Nothing = property $ do
+prop_when_everyone_allIn_next_pos_Nothing = withDiscards 225 . property $ do
    g <- forAll $ Gen.filter everyoneAllIn (genGame allPStreets allPStates)
    nextPosToAct g === Nothing
 
 
 prop_when_awaiting_action_nextPos_always_Just :: Property 
-prop_when_awaiting_action_nextPos_always_Just = property $ do
+prop_when_awaiting_action_nextPos_always_Just = withDiscards 225 . property $ do
    g <- forAll $ Gen.filter awaitingPlayerAction (genGame [PreFlop, Flop, Turn, River] [In, Folded])
    isNothing (nextPosToAct g) === False    
 

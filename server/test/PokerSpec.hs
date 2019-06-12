@@ -95,7 +95,7 @@ player5 =
 initPlayers = [player1, player2, player3]
 
 prop_canProgressIsEquivalentToAllActed :: Property
-prop_canProgressIsEquivalentToAllActed = property $ do
+prop_canProgressIsEquivalentToAllActed = withDiscards 225 . property $ do
     g@Game{..} <- forAll $ genGame actionStages allPStates
     let 
       playerCanAct = any (canPlayerAct _maxBet) _players
