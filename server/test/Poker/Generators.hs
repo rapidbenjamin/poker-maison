@@ -100,9 +100,13 @@ genPlayers street' requiredInPlayers possibleStates playerCount cs = do
      ps <- replicateM playerCount $ do 
           pState <- Gen.element possibleStates
           genPlayer street' pState "player" Nothing
-     if (length $ getActivePlayers ps) < requiredInPlayers then Gen.discard else
-       return $ swap $ dealPlayersGen ps cs
-
+     if (activesCount ps < requiredInPlayers) || street' `elem` actionStages && (satInCount ps) < 2
+          then Gen.discard 
+          else return $ swap $ dealPlayersGen ps cs
+  where 
+     actionStages = [PreFlop, Flop, Turn, River]
+     activesCount ps = length $ getActivePlayers ps
+     satInCount ps = length $ getPlayersSatIn ps 
 
 dealPlayersGen :: [Player] -> [Card] -> ([Card], [Player])
 dealPlayersGen ps cs = _2 %~ nameByPos $ mapAccumR (\cs p ->
@@ -169,5 +173,8 @@ genGame possibleStreets pStates = do
       _winners = if _street == Showdown then getWinners Game{..} else NoWinners
     _pot <- Gen.int $ Range.linear betSum (betSum * fromEnum _street)
     _dealer <- Gen.int $ Range.linear 0 (playerCount - 1)
-    _currentPosToAct <- Gen.maybe $ Gen.int $ Range.linear 0 (playerCount - 1)
-    return Game {..}
+    _currentPosToAct' <- Gen.int $ Range.linear 0 (playerCount - 1)
+    let
+      g'' = Game {..}
+      _currentPosToAct = fst <$> nextIPlayerToAct g'' (Just _dealer)
+    return Game{..}

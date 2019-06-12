@@ -199,7 +199,7 @@ instance Show Game where
     "\n _board: " <>
     show _board <>
     "\n _players: " <>
-    show _players
+    LT.unpack (pShow _players)
     
 type PlayerName = Text
 

@@ -186,15 +186,22 @@ getNextHand Game {..} shuffledDeck =
 -- | If all players have acted and their bets are equal 
 -- to the max bet then we can move to the next stage
 haveAllPlayersActed :: Game -> Bool
-haveAllPlayersActed game@Game {..}
+haveAllPlayersActed g@Game {..}
   | _street == Showdown = True
-  | _street == PreDeal = haveRequiredBlindsBeenPosted game
-  | otherwise = not awaitingPlayerAction || (length activePlayers < 2)
+  | _street == PreDeal = haveRequiredBlindsBeenPosted g
+  | otherwise = not (awaitingPlayerAction g) || (length activePlayers < 2)
   where
     activePlayers = getActivePlayers _players
-    canAct maxBet' Player{..} = 
-       _chips > 0 && (not _actedThisTurn || (_actedThisTurn && (_bet < maxBet')))
-    awaitingPlayerAction = any (canAct _maxBet) activePlayers
+
+awaitingPlayerAction :: Game -> Bool
+awaitingPlayerAction Game {..} =
+  length activePlayers >= 2 && any (canAct _maxBet) activePlayers
+   where
+     activePlayers = getActivePlayers _players
+     canAct maxBet' Player{..} = 
+      (_playerState /= Folded) &&
+        (_chips > 0) &&
+        (not _actedThisTurn || (_actedThisTurn && (_bet < maxBet')))
 
 -- If all players have folded apart from a remaining player then the mucked boolean 
 -- inside the player value will determine if we show the remaining players hand to the 

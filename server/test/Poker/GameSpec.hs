@@ -205,8 +205,18 @@ prop_nextPosToActLTPlayerCount = property $ do
     pCount = length $ _players g
     nextPos = fromMaybe 0 (nextPosToAct g)
    assert $ nextPos < pCount
-    
-    
+
+prop_when_everyone_allIn_next_pos_Nothing :: Property 
+prop_when_everyone_allIn_next_pos_Nothing = property $ do
+   g <- forAll $ Gen.filter everyoneAllIn (genGame allPStreets allPStates)
+   nextPosToAct g === Nothing
+
+
+prop_when_awaiting_action_nextPos_always_Just :: Property 
+prop_when_awaiting_action_nextPos_always_Just = property $ do
+   g <- forAll $ Gen.filter awaitingPlayerAction (genGame [PreFlop, Flop, Turn, River] [In, Folded])
+   isNothing (nextPosToAct g) === False    
+
 
 spec = do
   describe "dealToPlayers" $ do
@@ -265,6 +275,9 @@ spec = do
             (street .~ PreDeal) . (players .~ [player1, player4]) $
             initialGameState'
       haveAllPlayersActed unfinishedBlindsGame `shouldBe` False
+
+ -- describe "awaitingPlayerAction" $ do 
+
 
   describe "allButOneFolded" $ do
     it "should return True when all but one player " $ do
@@ -532,13 +545,11 @@ spec = do
     it "Number of hand rankings should equal number of players" $ require prop_number_of_hand_rankings_and_player_same
   
   describe "doesPlayerHaveToAct" $ do
-    it "should be False when posToAct is not on player" $ do
-      require prop_plyrShouldntActWhenNotInPos
+    it "should be False when posToAct is not on player" $ require prop_plyrShouldntActWhenNotInPos
 
-    it "should be False when player has no chips" $ do
-        require prop_plyrShouldntActWhenNoChips
+    it "should be False when player has no chips" $ require prop_plyrShouldntActWhenNoChips
 
-    it "should be False when not enough players (<2) during predeal to start a game" $ do
+    it "should be False when not enough players (<2) during predeal to start a game" $
         require prop_plyrShouldntActDuringPreDealWhenNotEnoughPlyrsToStartGame
 
     it "should return True for an active player in position" $ do
@@ -854,7 +865,11 @@ spec = do
                   }
           
             it "nextPosToAct is always less than player count" $ do require prop_nextPosToActLTPlayerCount
-
+            
+            it "When everyone is all in then there should be no next player to act" $ require prop_when_everyone_allIn_next_pos_Nothing
+           
+            it "When awaiting player action nextPosToAct should never be Nothing" $ require prop_when_awaiting_action_nextPos_always_Just
+           
             describe "Heads Up" $ do
               it "Next position at end of PreDeal (PreFlop) is dealer" $ do
                 let game =
