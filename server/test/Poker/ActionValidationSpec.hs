@@ -594,45 +594,37 @@ spec = do
 
   describe "canTimeout" $ do
     it
-      "should return InvalidActionForStreet InvalidMoveErr for Timeout if player is acting out of turn" $ do
+      "should return an error for Timeout if no player can act" $ do
       let preFlopGame =
             (street .~ PreFlop) . (players .~ playerFixtures2) $
             initialGameState'
       let playerName = "player3"
       let expectedErr =
             Left $
-            InvalidMove "player3" $ OutOfTurn $ CurrentPlayerToActErr "player5"
+            InvalidMove "player3" NoPlayerCanAct
       validateAction preFlopGame playerName Timeout `shouldBe` expectedErr
 
     it "should return no error for Timeout when acting in turn" $ do
-      let preFlopGame =
-            (street .~ PreFlop) . (players .~ playerFixtures2) $
-            initialGameState'
+      let preFlopGame = initialGameState' & (street .~ PreFlop) . (players .~ playerFixtures2) . (currentPosToAct .~ Just 1)
       let playerName = "player5"
       validateAction preFlopGame playerName Timeout `shouldBe` Right ()
 
     it
       "should return InvalidActionForStreet InvalidMoveErr if Timeout action occurs during Showdown" $ do
-      let showDownGame =
-            (street .~ Showdown) . (players .~ playerFixtures2) $
-            initialGameState'
+      let showDownGame = initialGameState' & (street .~ Showdown) . (players .~ playerFixtures2)
       let playerName = "player3"
       let expectedErr = Left $ InvalidMove playerName InvalidActionForStreet
       validateAction showDownGame playerName Timeout `shouldBe` expectedErr
 
     it "should return err for LeaveSeat if game state is not PreDeal" $ do
-      let preFlopGame =
-            (street .~ PreFlop) . (players .~ playerFixtures2) $
-            initialGameState'
+      let preFlopGame = initialGameState' & (street .~ PreFlop) . (players .~ playerFixtures2)
       let playerName = "player3"
       let expectedErr = InvalidMove "player3" CannotLeaveSeatOutsidePreDeal
       validateAction preFlopGame playerName LeaveSeat' `shouldBe`
         Left expectedErr
 
     it "should return err for LeaveSeat if player is not sat at Table" $ do
-      let preDealGame =
-            (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState'
+      let preDealGame = initialGameState' & (street .~ PreDeal) . (players .~ playerFixtures2)
       let playerName = "playerX"
       let expectedErr = NotAtTable playerName
       validateAction preDealGame playerName LeaveSeat' `shouldBe`
@@ -640,9 +632,7 @@ spec = do
 
     it
       "should return no err for leave seat if player is sat at table during PreDeal" $ do
-      let preDealGame =
-            (street .~ PreDeal) . (players .~ playerFixtures2) $
-            initialGameState'
+      let preDealGame = initialGameState' & (street .~ PreDeal) . (players .~ playerFixtures2)
       let playerName = "player3"
       validateAction preDealGame playerName LeaveSeat' `shouldBe` Right ()
 

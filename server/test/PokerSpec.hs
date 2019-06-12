@@ -106,6 +106,5 @@ prop_canProgressIsEquivalentToAllActed = withDiscards 225 . property $ do
     canPlayerAct maxBet' Player{..} =
       _chips > 0 && (not _actedThisTurn || (_playerState == In && (_bet < maxBet')))
 
-spec = describe "Poker" $ do 
-  describe " proppy" $ do 
+spec = describe "Poker" $ do  
     it " games" $ require prop_canProgressIsEquivalentToAllActed

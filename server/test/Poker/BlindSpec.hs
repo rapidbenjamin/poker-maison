@@ -27,6 +27,8 @@ import Poker.Game.Utils
 import Poker.Poker
 import Poker.Types
 
+import Poker.Generators
+
 initialGameState' = initialGameState initialDeck
 
 twoPlayerGame =
@@ -207,6 +209,29 @@ threePlayerNames = getGamePlayerNames threePlayerGame
 
 threePlayers = _players threePlayerGame
 
+
+prop_requiredBlinds_always_valid_arrangement_for_2_plyrs :: Property 
+prop_requiredBlinds_always_valid_arrangement_for_2_plyrs = withDiscards 225 . property $ do
+   g <- forAll $ Gen.filter twoPlayers (genGame [PreDeal] allPStates)
+   let
+     legalBlindArrangements = [[Small, Big], [Big, Small]]
+     requiredBlinds = getRequiredBlinds g
+   assert (requiredBlinds `elem` legalBlindArrangements)  
+   where 
+    twoPlayers = ((== 2) . length . _players)
+
+
+prop_requiredBlinds_always_valid_arrangement_for_3_plyrs :: Property 
+prop_requiredBlinds_always_valid_arrangement_for_3_plyrs = withDiscards 225 . property $ do
+   g <- forAll $ Gen.filter threePlayer (genGame [PreDeal] allPStates)
+   let
+     legalBlindArrangements = [[Small, Big, NoBlind], [Big, NoBlind, Small], [NoBlind, Small, Big]]
+     requiredBlinds = getRequiredBlinds g 
+   assert (requiredBlinds `elem` legalBlindArrangements)  
+   where 
+    threePlayer = ((== 3) . length . _players)      
+    
+
 spec = do
   describe "blind required by player" $
     it "should return correct blind" $
@@ -222,10 +247,11 @@ spec = do
       let dealerPos = 2
       getSmallBlindPosition threePlayerNames dealerPos `shouldBe` (0 :: Int)
 
-  describe "getRequiredBlinds" $
+  describe "getRequiredBlinds" $ do
 
-    it "should return correct blinds for two player game" $
-    getRequiredBlinds twoPlayerGame `shouldBe` [Small, Big]
+    it "Should return valid required blinds for two player game" $ require prop_requiredBlinds_always_valid_arrangement_for_2_plyrs
+
+    it "Should return valid required blinds for three player game" $ require prop_requiredBlinds_always_valid_arrangement_for_3_plyrs
 
   describe "blinds" $ do
 
@@ -315,7 +341,7 @@ spec = do
       let newGame = updatePlayersInHand twoPlayerGameAllBlindsPosted
       let playerStates = (\Player {..} -> _playerState) <$> _players newGame
       playerStates `shouldBe` [In, In]
-      
+
     it
       "should return correct player states for two players when not all blinds posted" $ do
       let newGame = updatePlayersInHand twoPlayerGame
