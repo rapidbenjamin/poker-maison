@@ -1,5 +1,11 @@
 import React from 'react'
 
-const Profile = username => <div className="profile">profile </div>
+const MyComponent = require('./Counter.bs').make
+
+const Profile = username => (
+  <div className="profile">
+    profile <MyComponent name="Regina" />
+  </div>
+)
 
 export default Profile

@@ -19,6 +19,12 @@
   ],
   "suffix": ".bs.js",
   "namespace": true,
-  "bs-dependencies": ["reason-react"],
+  "bs-dependencies": [
+    "reason-react",
+    "bs-fetch",
+    "@glennsl/bs-json",
+    "relude",
+    "bs-abstract"
+  ],
   "refmt": 3
 }
