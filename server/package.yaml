@@ -19,7 +19,7 @@ extra-source-files:
 description: Please see the README on GitHub at <https://github.com/githubuser/poker-server#readme>
 
 dependencies:
-  - base >= 4.7 && < 5
+  - base >= 4.12 && < 5
   - async
   - aeson
   - hedis
@@ -32,12 +32,19 @@ dependencies:
   - containers
   - cryptohash
   - bytestring
+  - jose
   - persistent
   - persistent-postgresql
   - persistent-template
   - servant
   - time
   - servant-server
+  - servant-foreign
+  - servant-auth
+  - servant-auth-server
+  - servant-auth-client
+  - servant-auth-swagger
+  - servant-auth-docs
   - transformers
   - random
   - text
@@ -47,6 +54,7 @@ dependencies:
   - wai-cors
   - websockets
   - pretty-simple
+  - utf8-string
   - split
   - MonadRandom
   - mtl
@@ -55,6 +63,7 @@ dependencies:
   - servant-docs
   - listsafe
   - warp
+  - bytestring
   - lens
   - servant-options
   - async

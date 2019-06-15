@@ -23,7 +23,7 @@ import Prelude
 import Text.Pretty.Simple (pPrint)
 import Web.JWT (Secret)
 
-import Auth
+import Socket.Auth
 import qualified Data.Set as Set
 import Database
 import Schema

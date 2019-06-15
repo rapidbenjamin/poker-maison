@@ -3,6 +3,13 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
+{-# LANGUAGE UndecidableInstances #-}
 
 module Users where
 
@@ -17,60 +24,113 @@ import Data.Time.Clock
 import Database
 import Database.Persist
 import Database.Persist.Postgresql
+import qualified Data.ByteString.Lazy as BSL
+import qualified Crypto.JOSE          as Jose
+import qualified Crypto.JWT           as Jose
 import Servant
-import Servant.Server.Experimental.Auth
-import Web.JWT (Secret)
-
-import Auth (hashPassword, signToken)
+--import Web.JWT hiding (JSON)
+import Servant.Foreign
+import GHC.TypeLits
+import Data.Maybe
 import Schema
 import Types
 
-type UsersAPI
-   = "profile" :> AuthProtect "JWT" :> Get '[ JSON] UserProfile :<|> "login" :> ReqBody '[ JSON] Login :> Post '[ JSON] ReturnToken :<|> "register" :> ReqBody '[ JSON] Register :> Post '[ JSON] ReturnToken
+import Control.Lens
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 
--- | We need to specify the data returned after authentication
-type instance AuthServerData (AuthProtect "JWT") = UserEntity
+import Servant.Auth.Server
+import Data.Either
+import Crypto.JWT (JWK)
+import Data.Proxy
 
-usersAPI :: Proxy UsersAPI
-usersAPI = Proxy :: Proxy UsersAPI
+import Data.ByteString.Lazy.UTF8 as BLU
 
-usersServer :: Secret -> ConnectionString -> RedisConfig -> Server UsersAPI
-usersServer secretKey connString redisConfig =
-  fetchUserProfileHandler :<|> loginHandler secretKey connString :<|>
-  registerUserHandler secretKey connString redisConfig
+{-
 
-fetchUserProfileHandler :: UserEntity -> Handler UserProfile
-fetchUserProfileHandler UserEntity {..} =
-  return
-    UserProfile
-      { proEmail = userEntityEmail
-      , proAvailableChips = userEntityAvailableChips
-      , proChipsInPlay = userEntityChipsInPlay
-      , proUsername = Username userEntityUsername
-      , proUserCreatedAt = userEntityCreatedAt
-      }
+instance forall lang ftype api.
+    ( HasForeign lang ftype api
+    , HasForeignType lang ftype Text
+    )
+  => forall a. HasForeign lang ftype (Auth '[JWT] a :> api) where
+  type Foreign ftype (Auth '[JWT] a :> api) = Foreign ftype api
 
+  foreignFor lang Proxy Proxy subR =
+    foreignFor lang Proxy (Proxy :: Proxy api) req
+    where
+      req = subR{ _reqHeaders = HeaderArg arg : _reqHeaders subR }
+      arg = Arg
+        { _argName = PathSegment "Authorization"
+        , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy Text)
+        }
+
+-}
+
+
+fetchUserProfileHandler :: ConnectionString -> Username -> Handler UserProfile
+fetchUserProfileHandler connString username' = do
+  maybeUser <- liftIO $ dbGetUserByUsername connString username'
+  case maybeUser of 
+    Nothing -> throwError err404
+    Just UserEntity{..} -> 
+      return $ UserProfile
+         { proEmail = userEntityEmail
+         , proAvailableChips = userEntityAvailableChips
+         , proChipsInPlay = userEntityChipsInPlay
+         , proUsername = Username userEntityUsername
+         , proUserCreatedAt = userEntityCreatedAt
+         }
+
+hashPassword :: Text -> Text
+hashPassword password = T.pack $ C.unpack $ H.hash $ encodeUtf8 password
+      
 ------------------------------------------------------------------------
 -- | Handlers
-loginHandler :: Secret -> ConnectionString -> Login -> Handler ReturnToken
-loginHandler secretKey connString Login {..} = do
-  maybeUser <- liftIO $ dbGetUserByLogin connString loginWithHashedPswd
-  maybe (throwError unAuthErr) createToken maybeUser
-  where
+
+
+
+--unprotectedUsers :: JWTSettings -> Server Unprotected
+--unprotectedUsers jwts = checkCreds cs jwts :<|> serveDirectory "example/static"
+
+signToken :: JWTSettings -> Username -> Handler ReturnToken 
+signToken jwtSettings username' = do 
+   eToken <- liftIO $ makeJWT username' jwtSettings expiryTime 
+   case eToken of 
+     Left e -> do 
+       liftIO $ print e
+       throwError unAuthErr
+     Right token -> do
+        liftIO $ print token
+        return $ ReturnToken {access_token = T.pack (BLU.toString token), refresh_token="", expiration=9999999, ..}
+  where 
+    expiryTime = Nothing
     unAuthErr = err401 {errBody = "Incorrect email or password"}
-    createToken UserEntity {..} =
-      signToken secretKey (Username userEntityUsername)
+
+
+loginHandler :: JWTSettings -> ConnectionString -> Login -> Handler ReturnToken
+loginHandler jwtSettings connString l@Login {..} = do
+  liftIO (print l)
+  maybeUser <- liftIO $ dbGetUserByLogin connString loginWithHashedPswd
+  case maybeUser of 
+    Nothing -> do 
+      liftIO $ print "no user found"
+      throwError unAuthErr
+    Just u@UserEntity{..} -> do
+      liftIO $ print u
+      signToken jwtSettings (Username userEntityUsername)
+ where
+    unAuthErr = err401 {errBody = "Incorrect email or password"}
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
+
 
 -- when we register new user we check to see if email and username are already taken
 -- if they are then the exception will be propagated to the client
 registerUserHandler ::
-     Secret
+     JWTSettings
   -> ConnectionString
   -> RedisConfig
   -> Register
   -> Handler ReturnToken
-registerUserHandler secretKey connString redisConfig Register {..} = do
+registerUserHandler jwtSettings connString redisConfig Register {..} = do
   let hashedPassword = hashPassword newUserPassword
   currTime <- liftIO getCurrentTime
   let (Username username) = newUsername
@@ -87,4 +147,4 @@ registerUserHandler secretKey connString redisConfig Register {..} = do
     liftIO $ runExceptT $ dbRegisterUser connString redisConfig newUser
   case registrationResult of
     Left err -> throwError $ err401 {errBody = CL.pack $ T.unpack err}
-    _ -> signToken secretKey newUsername
+    _ -> signToken jwtSettings newUsername

@@ -3,6 +3,8 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
+{-# LANGUAGE OverloadedStrings #-}
+
 
 module Types where
 
@@ -14,6 +16,7 @@ import Data.Time.Clock
 import Database.Redis (ConnectInfo)
 import GHC.Generics (Generic)
 import Servant
+import Servant.Auth.Server
 
 type RedisConfig = ConnectInfo
 
@@ -22,17 +25,19 @@ type Password = Text
 data Login = Login
   { loginUsername :: Text
   , loginPassword :: Text
-  } deriving (Eq, Show, Generic, FromJSON)
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 data Register = Register
   { newUserEmail :: Text
   , newUsername :: Username
   , newUserPassword :: Text
-  } deriving (Eq, Show, Generic, FromJSON)
+  } deriving (Eq, Show, Generic, FromJSON, ToJSON)
+
+
 
 newtype Username =
   Username Text
-  deriving (Generic, Show, Read, Eq, Ord)
+  deriving (Generic, Show, Read, Eq, Ord, ToJWT, FromJWT)
 
 
 unUsername :: Username -> Text
@@ -50,23 +55,10 @@ data UserProfile = UserProfile
   , proAvailableChips :: Int
   , proChipsInPlay :: Int
   , proUserCreatedAt :: UTCTime
-  } deriving (Eq, Show, Generic, ToJSON)
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 data ReturnToken = ReturnToken
   { access_token :: Text
   , refresh_token :: Text
   , expiration :: Int --seconds to expire
-  } deriving (Generic, ToJSON)
-
-newtype Token =
-  Token Text deriving Generic
-
-instance FromHttpApiData Token where
-  parseQueryParam t =
-    let striped = T.strip t
-        ls = T.words striped
-     in case ls of
-          "Bearer":r:_ -> Right $ Token r
-          _ -> Left "Invalid Token"
-
-      
+  } deriving (Generic, ToJSON, FromJSON)

@@ -150,3 +150,5 @@ data Err
   | UserDoesNotExistInDB Text
   | AuthFailed Text
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+newtype Token = Token Text -- JWT

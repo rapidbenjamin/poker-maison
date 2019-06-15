@@ -23,6 +23,7 @@ import System.Environment (lookupEnv)
 import Text.Read
 import Types
 import Web.JWT (secret)
+import Data.ByteString.UTF8 as BSU
 
 getRedisHostFromEnv :: HostName -> IO ConnectInfo
 getRedisHostFromEnv defaultHostName = do
@@ -67,4 +68,4 @@ getSecretKey = do
   maybeSecretKey <- lookupEnv "secret"
   case maybeSecretKey of
     Nothing -> error "Missing secret key in env"
-    (Just s) -> return $ secret $ pack s
+    (Just s) -> return $ BSU.fromString s
