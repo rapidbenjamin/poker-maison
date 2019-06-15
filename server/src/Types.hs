@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 
 module Types where
 
@@ -57,7 +59,7 @@ data ReturnToken = ReturnToken
   } deriving (Generic, ToJSON)
 
 newtype Token =
-  Token Text
+  Token Text deriving Generic
 
 instance FromHttpApiData Token where
   parseQueryParam t =
@@ -66,3 +68,5 @@ instance FromHttpApiData Token where
      in case ls of
           "Bearer":r:_ -> Right $ Token r
           _ -> Left "Invalid Token"
+
+      
