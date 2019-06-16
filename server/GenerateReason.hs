@@ -43,6 +43,9 @@ main =
        : toReasonTypeSource (Proxy :: Proxy Login)
        : toReasonEncoderSource (Proxy :: Proxy Login)
 
+       : toReasonTypeSource (Proxy :: Proxy Register)
+       : toReasonEncoderSource (Proxy :: Proxy Register)
+
        : toReasonTypeSource    (Proxy :: Proxy ReturnToken)
        : toReasonDecoderSource (Proxy :: Proxy ReturnToken)
 
