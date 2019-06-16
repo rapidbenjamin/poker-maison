@@ -35,7 +35,7 @@ main = do
   let code = defReasonImports
          : toReasonTypeSource    (Proxy :: Proxy ReturnToken)
          : toReasonDecoderSource (Proxy :: Proxy ReturnToken)
-         : (generateReasonForAPI protectedUsersApi ++ generateReasonForAPI  unprotectedUsersApi)
+         : (generateReasonForAPI api)
   writeFile "Api.re" $ intercalate "\n\n" $ map unpack code
   dbConnString <- getDBConnStrFromEnv
   userAPIPort <- getAuthAPIPort defaultUserAPIPort

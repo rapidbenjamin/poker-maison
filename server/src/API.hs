@@ -22,7 +22,6 @@ import Servant.Auth.Server
 import Crypto.JOSE.JWK (JWK)
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
-import Data.Text (Text)
 import Control.Concurrent (forkIO)
 import Control.Monad (forever)
 import Control.Monad.Trans (liftIO)
@@ -43,6 +42,12 @@ import Types
 import Network.Wai.Middleware.Cors
 import Servant.Foreign
 
+import GHC.TypeLits
+
+
+type API auths =
+         (Servant.Auth.Server.Auth auths Username :> ProtectedUsersAPI)
+    :<|> UnprotectedUsersAPI
 
 api :: Proxy (API '[JWT])
 api = Proxy :: Proxy (API '[JWT])
@@ -71,7 +76,7 @@ type family TokenHeaderName xs :: Symbol where
   TokenHeaderName (Cookie ': xs) = "X-XSRF-TOKEN"
   TokenHeaderName (JWT ': xs) = "Authorization"
   TokenHeaderName (x ': xs) = TokenHeaderName xs
-  --TokenHeaderName '[] = TypeError ( "Neither JWT nor cookie auth enabled")
+  TokenHeaderName '[] = TypeError (Text "Neither JWT nor cookie auth enabled")
 instance
     ( TokenHeaderName auths ~ header
     , KnownSymbol header
@@ -93,7 +98,6 @@ instance
       
 
 
-type API auths = (Servant.Auth.Server.Auth auths Username :> ProtectedUsersAPI) :<|> UnprotectedUsersAPI
 
 
 -- Adds JWT Authentication to our server
