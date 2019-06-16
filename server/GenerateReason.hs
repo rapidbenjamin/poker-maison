@@ -26,30 +26,34 @@ import Servant
 
 import Data.Proxy
 import Reason
+import Data.Text (Text)
 import Data.Text hiding (intercalate, map)
 import Types
 import Data.List (intercalate, map)
 
 main :: IO ()
 main =
-  writeFile "../client/app/Api.re" $ intercalate "\n\n" $ map unpack code
-  where 
-    code = 
-      defReasonImports
-       : toReasonTypeSource (Proxy :: Proxy Username)
-       : toReasonDecoderSource (Proxy :: Proxy Username)
-       : toReasonEncoderSource (Proxy :: Proxy Username)
+  writeFile "../client/app/Api.re" $ intercalate "\n\n" $ map unpack usersAPIcode
 
-       : toReasonTypeSource (Proxy :: Proxy Login)
-       : toReasonEncoderSource (Proxy :: Proxy Login)
 
-       : toReasonTypeSource (Proxy :: Proxy Register)
-       : toReasonEncoderSource (Proxy :: Proxy Register)
+-- Front end code for our Users API - handles things like registration, login etc.
+usersAPIcode :: [Text]
+usersAPIcode = 
+    defReasonImports
+     : toReasonTypeSource (Proxy :: Proxy Username)
+     : toReasonDecoderSource (Proxy :: Proxy Username)
+     : toReasonEncoderSource (Proxy :: Proxy Username)
 
-       : toReasonTypeSource    (Proxy :: Proxy ReturnToken)
-       : toReasonDecoderSource (Proxy :: Proxy ReturnToken)
+     : toReasonTypeSource (Proxy :: Proxy Login)
+     : toReasonEncoderSource (Proxy :: Proxy Login)
 
-       : toReasonTypeSource    (Proxy :: Proxy UserProfile)
-       : toReasonDecoderSource (Proxy :: Proxy UserProfile)
+     : toReasonTypeSource (Proxy :: Proxy Register)
+     : toReasonEncoderSource (Proxy :: Proxy Register)
 
-       : (generateReasonForAPI api)
+     : toReasonTypeSource    (Proxy :: Proxy ReturnToken)
+     : toReasonDecoderSource (Proxy :: Proxy ReturnToken)
+
+     : toReasonTypeSource    (Proxy :: Proxy UserProfile)
+     : toReasonDecoderSource (Proxy :: Proxy UserProfile)
+
+     : (generateReasonForAPI api)
