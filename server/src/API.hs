@@ -32,6 +32,7 @@ import System.Environment (getArgs)
 import Servant
 import Servant.Auth.Server
 import GHC.TypeLits
+import qualified Data.ByteString.Lazy as BSL
 import Network.Wai.Middleware.Servant.Options
 import Data.Proxy
 import Schema
@@ -39,31 +40,25 @@ import Users
 import Control.Lens ((&), (<>~))
 import Debug.Trace
 import Types
+import Reason
 import Network.Wai.Middleware.Cors
 import Servant.Foreign
 
 import GHC.TypeLits
 
-
 type API auths =
          (Servant.Auth.Server.Auth auths Username :> ProtectedUsersAPI)
     :<|> UnprotectedUsersAPI
 
+type UnprotectedUsersAPI = 
+       "login" :> ReqBody '[ JSON] Login :> Post '[ JSON] ReturnToken      
+  :<|> "register" :> ReqBody '[ JSON] Register :> Post '[ JSON] ReturnToken
+    
+type ProtectedUsersAPI =
+  "profile" :> Get '[ JSON] UserProfile   
+
 api :: Proxy (API '[JWT])
 api = Proxy :: Proxy (API '[JWT])
-
-type Middleware = Application -> Application
-
-app :: BS.ByteString -> ConnectionString -> RedisConfig -> Application
-app secretKey connString redisConfig = addMiddleware $ serveWithAuth secretKey connString redisConfig
-
-type UnprotectedUsersAPI = 
-  "login" :> ReqBody '[ JSON] Login :> Post '[ JSON] ReturnToken       :<|> 
-  "register" :> ReqBody '[ JSON] Register :> Post '[ JSON] ReturnToken
-
-type ProtectedUsersAPI = "profile" :> Get '[ JSON] UserProfile   
-
-
 
 protectedUsersApi :: Proxy ProtectedUsersAPI 
 protectedUsersApi = Proxy :: Proxy ProtectedUsersAPI
@@ -71,6 +66,10 @@ protectedUsersApi = Proxy :: Proxy ProtectedUsersAPI
 unprotectedUsersApi :: Proxy UnprotectedUsersAPI
 unprotectedUsersApi = Proxy :: Proxy UnprotectedUsersAPI
 
+app :: BS.ByteString -> ConnectionString -> RedisConfig -> Application
+app secretKey connString redisConfig = addMiddleware $ serveWithAuth secretKey connString redisConfig
+
+type Token = String
 
 type family TokenHeaderName xs :: Symbol where
   TokenHeaderName (Cookie ': xs) = "X-XSRF-TOKEN"
@@ -80,7 +79,7 @@ type family TokenHeaderName xs :: Symbol where
 instance
     ( TokenHeaderName auths ~ header
     , KnownSymbol header
-    , HasForeignType lang ftype ReturnToken
+    , HasForeignType lang ftype Token
     , HasForeign lang ftype sub
     )
     => HasForeign lang ftype (Auth auths a :> sub) where
@@ -93,12 +92,9 @@ instance
         { _argName = PathSegment . T.pack $ symbolVal @header Proxy
         , _argType = token
         }
-      token = typeFor lang (Proxy @ftype) (Proxy @ReturnToken)
+      token = typeFor lang (Proxy @ftype) (Proxy @Token)
       subP  = Proxy @sub
       
-
-
-
 
 -- Adds JWT Authentication to our server
 serveWithAuth :: BS.ByteString -> ConnectionString -> RedisConfig -> Application
@@ -122,6 +118,7 @@ protectedUsersServer :: JWTSettings -> ConnectionString -> RedisConfig -> AuthRe
 protectedUsersServer j c r (Authenticated username') = fetchUserProfileHandler c username'
 protectedUsersServer _ _ _ er = traceShow  er (throwAll err401)
 
+type Middleware = Application -> Application
 
 addMiddleware :: Application -> Application
 addMiddleware = logStdoutDev . cors (const $ Just policy) . (provideOptions api)
