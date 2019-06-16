@@ -15,9 +15,26 @@ import Env
 import Socket
 import Web.JWT (secret)
 
+import           Reason          (Spec (Spec), specsToDir, toReasonDecoderSource,
+                               toReasonTypeSource)
+import           GHC.Generics (Generic)
+import           Servant.API  ((:>), Capture, Get, JSON)
+import           Servant.Reason  (ReasonType, Proxy (Proxy), defReasonImports,
+                               generateReasonForAPI)
+
+import Data.Proxy
+import Reason
+import Data.Text hiding (intercalate, map)
+import Types
+import Data.List (intercalate, map)
 
 main :: IO ((), ())
 main = do
+  let code = defReasonImports
+         : toReasonTypeSource    (Proxy :: Proxy Username)
+         : toReasonDecoderSource (Proxy :: Proxy Username)
+         : generateReasonForAPI  api
+  writeFile "Api.re" $ intercalate "\n\n" $ map unpack code
   dbConnString <- getDBConnStrFromEnv
   userAPIPort <- getAuthAPIPort defaultUserAPIPort
   socketAPIPort <- getSocketAPIPort defaultSocketAPIPort

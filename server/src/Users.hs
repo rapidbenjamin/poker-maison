@@ -95,11 +95,8 @@ signToken :: JWTSettings -> Username -> Handler ReturnToken
 signToken jwtSettings username' = do 
    eToken <- liftIO $ makeJWT username' jwtSettings expiryTime 
    case eToken of 
-     Left e -> do 
-       liftIO $ print e
-       throwError unAuthErr
-     Right token -> do
-        liftIO $ print token
+     Left e -> throwError unAuthErr
+     Right token -> 
         return $ ReturnToken {access_token = T.pack (BLU.toString token), refresh_token="", expiration=9999999, ..}
   where 
     expiryTime = Nothing
@@ -111,12 +108,8 @@ loginHandler jwtSettings connString l@Login {..} = do
   liftIO (print l)
   maybeUser <- liftIO $ dbGetUserByLogin connString loginWithHashedPswd
   case maybeUser of 
-    Nothing -> do 
-      liftIO $ print "no user found"
-      throwError unAuthErr
-    Just u@UserEntity{..} -> do
-      liftIO $ print u
-      signToken jwtSettings (Username userEntityUsername)
+    Nothing -> throwError unAuthErr
+    Just u@UserEntity{..} -> signToken jwtSettings (Username userEntityUsername)
  where
     unAuthErr = err401 {errBody = "Incorrect email or password"}
     loginWithHashedPswd = Login {loginPassword = hashPassword loginPassword, ..}
@@ -131,10 +124,11 @@ registerUserHandler ::
   -> Register
   -> Handler ReturnToken
 registerUserHandler jwtSettings connString redisConfig Register {..} = do
-  let hashedPassword = hashPassword newUserPassword
   currTime <- liftIO getCurrentTime
-  let (Username username) = newUsername
-  let newUser =
+  let 
+    hashedPassword = hashPassword newUserPassword
+    (Username username) = newUsername
+    newUser =
         UserEntity
           { userEntityUsername = username
           , userEntityEmail = newUserEmail

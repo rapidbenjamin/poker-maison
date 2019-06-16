@@ -79,6 +79,7 @@ library:
     - Database
     - Schema
     - Env
+    - Types
     - Poker.Poker
     - Poker.Game.Actions
     - Poker.ActionValidation
