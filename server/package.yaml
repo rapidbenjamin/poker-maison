@@ -32,6 +32,8 @@ dependencies:
   - containers
   - cryptohash
   - bytestring
+  - servant-reason
+  - reason-export
   - jose
   - persistent
   - persistent-postgresql
