@@ -9,7 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveGeneric #-}
-
+{-# LANGUAGE StandaloneDeriving #-}
 
 module API where
 
@@ -58,9 +58,14 @@ type UnprotectedUsersAPI =
 
 type ProtectedUsersAPI = "profile" :> Get '[ JSON] UserProfile   
 
-type ProtectedAPI = ProtectedUsersAPI 
 
-type UnprotectedAPI = UnprotectedUsersAPI 
+
+protectedUsersApi :: Proxy ProtectedUsersAPI 
+protectedUsersApi = Proxy :: Proxy ProtectedUsersAPI
+
+unprotectedUsersApi :: Proxy UnprotectedUsersAPI
+unprotectedUsersApi = Proxy :: Proxy UnprotectedUsersAPI
+
 
 type family TokenHeaderName xs :: Symbol where
   TokenHeaderName (Cookie ': xs) = "X-XSRF-TOKEN"
@@ -85,9 +90,10 @@ instance
         }
       token = typeFor lang (Proxy @ftype) (Proxy @ReturnToken)
       subP  = Proxy @sub
+      
 
 
-type API auths = (Servant.Auth.Server.Auth auths Username :> ProtectedAPI) :<|> UnprotectedAPI
+type API auths = (Servant.Auth.Server.Auth auths Username :> ProtectedUsersAPI) :<|> UnprotectedUsersAPI
 
 
 -- Adds JWT Authentication to our server
