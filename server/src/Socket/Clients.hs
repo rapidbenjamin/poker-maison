@@ -1,6 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Socket.Clients where
+
 
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -21,7 +23,7 @@ import Database.Persist.Postgresql (ConnectionString, entityVal)
 import qualified Network.WebSockets as WS
 import Prelude
 import Text.Pretty.Simple (pPrint)
-import Web.JWT (Secret)
+import qualified Data.ByteString.Lazy as BL
 
 import Socket.Auth
 import qualified Data.Set as Set
@@ -30,14 +32,29 @@ import Schema
 import Socket.Types
 import Socket.Utils
 import Types
+import qualified Data.ByteString as BS
+
 
 import Data.Maybe
 import System.Timeout
-
+import Crypto.JWT
 import Poker.Game.Privacy (excludeAllPlayerCards, excludeOtherPlayerCards)
+import qualified Data.ByteString.Lazy.Char8 as C
+
+
+verifyJWT :: BL.ByteString -> BL.ByteString -> IO (Either JWTError ClaimsSet)
+verifyJWT key jwt = runExceptT $ do
+  let
+    key' = fromOctets key
+    -- turn raw secret into symmetric JWK
+    audCheck = const True -- should be a proper audience check
+  jwt' <- decodeCompact jwt
+  -- decode JWT
+  verifyClaims (defaultJWTValidationSettings audCheck) key' jwt'
+
 
 authClient ::
-     Secret
+     BL.ByteString
   -> TVar ServerState
   -> ConnectionString
   -> RedisConfig
@@ -45,11 +62,11 @@ authClient ::
   -> WS.Connection
   -> Token
   -> IO ()
-authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
-  authResult <- runExceptT $ verifyToken secretKey dbConn redisConfig token
+authClient secretKey state dbConn redisConfig authMsgLoop conn (Token token) = do
+  authResult <- runExceptT $ liftIO $ verifyJWT secretKey ( C.pack $ T.unpack token)
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
-    (Right UserEntity {..}) -> do
+    (Right claimsSet) -> do
       sendMsg conn AuthSuccess
       ServerState {..} <- readTVarIO state
       atomically $
@@ -60,10 +77,9 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
                  addClient
                    Client
                      { conn = conn
-                     , clientUsername = userEntityUsername
-                     , email = userEntityEmail
+                     , clientUsername = T.pack "username"
                      }
-                   username
+                   (Username "username")
                    clients
              , ..
              })
@@ -71,14 +87,13 @@ authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
       let msgHandlerConfig =
             MsgHandlerConfig
               { serverStateTVar = state
-              , username = username
+              , username = Username $ T.pack "username"
               , dbConn = dbConn
               , clientConn = conn
               , redisConfig = redisConfig
               , ..
               }
       authMsgLoop msgHandlerConfig
-      where username = Username userEntityUsername
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
 removeClient username serverStateTVar = do
