@@ -59,6 +59,7 @@ dependencies:
   - utf8-string
   - split
   - MonadRandom
+  - jose
   - mtl
   - wuss
   - jwt
