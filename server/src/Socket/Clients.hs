@@ -25,7 +25,6 @@ import Prelude
 import Text.Pretty.Simple (pPrint)
 import qualified Data.ByteString.Lazy as BL
 
-import Socket.Auth
 import qualified Data.Set as Set
 import Database
 import Schema
