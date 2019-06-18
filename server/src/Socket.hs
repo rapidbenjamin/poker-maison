@@ -35,6 +35,7 @@ import Data.Traversable
 
 
 import Data.Aeson
+import qualified Data.ByteString as BS 
 import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -45,6 +46,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.STM
 import Control.Monad.State.Lazy
+import qualified Data.ByteString.Lazy as BL
 
 import Socket.Types
 import qualified Data.List as L
@@ -63,13 +65,14 @@ import Socket.Types
 import Socket.Msg
 import Socket.Utils
 import Poker.Poker
+import Crypto.JWT
 
 initialServerState :: Lobby -> ServerState
 initialServerState lobby = ServerState {clients = M.empty, lobby = lobby}
 
 -- Create the initial lobby holding all game state and then fork a new thread for each table in the lobby
 -- to write new game states to the DB
-runSocketServer :: Secret -> Int -> ConnectionString -> RedisConfig -> IO ()
+runSocketServer :: BS.ByteString -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port connString redisConfig = do
   lobby <- initialLobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
@@ -94,7 +97,7 @@ runSocketServer secretKey port connString redisConfig = do
 -- After the client has been authenticated we fork a thread which writes
 -- the clients msgs to a channel.
 application ::
-     Secret
+     BS.ByteString
   -> ConnectionString
   -> RedisConfig
   -> TVar ServerState

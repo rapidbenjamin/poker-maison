@@ -1,6 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Socket.Clients where
+
 
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -21,23 +23,30 @@ import Database.Persist.Postgresql (ConnectionString, entityVal)
 import qualified Network.WebSockets as WS
 import Prelude
 import Text.Pretty.Simple (pPrint)
-import Web.JWT (Secret)
+import qualified Data.ByteString.Lazy as BL
 
-import Socket.Auth
 import qualified Data.Set as Set
 import Database
 import Schema
 import Socket.Types
 import Socket.Utils
 import Types
+import Servant.Auth.Server
+import qualified Data.ByteString as BS
+
+import           Crypto.JOSE        as Jose
+import           Crypto.JWT         as Jose
 
 import Data.Maybe
 import System.Timeout
-
+import Crypto.JWT
 import Poker.Game.Privacy (excludeAllPlayerCards, excludeOtherPlayerCards)
+import qualified Data.ByteString.Lazy.Char8 as C
+import Socket.Auth
+
 
 authClient ::
-     Secret
+     BS.ByteString
   -> TVar ServerState
   -> ConnectionString
   -> RedisConfig
@@ -45,40 +54,42 @@ authClient ::
   -> WS.Connection
   -> Token
   -> IO ()
-authClient secretKey state dbConn redisConfig authMsgLoop conn token = do
-  authResult <- runExceptT $ verifyToken secretKey dbConn redisConfig token
+authClient secretKey state dbConn redisConfig authMsgLoop conn (Token token) = do
+  print secretKey
+  authResult <- runExceptT $ liftIO $ verifyJWT secretKey ( C.pack $ T.unpack token)
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
-    (Right UserEntity {..}) -> do
-      sendMsg conn AuthSuccess
-      ServerState {..} <- readTVarIO state
-      atomically $
-        swapTVar
-          state
-          (ServerState
-             { clients =
-                 addClient
-                   Client
-                     { conn = conn
-                     , clientUsername = userEntityUsername
-                     , email = userEntityEmail
-                     }
-                   username
-                   clients
-             , ..
-             })
-      socketReadChan <- newTChanIO
-      let msgHandlerConfig =
-            MsgHandlerConfig
-              { serverStateTVar = state
-              , username = username
-              , dbConn = dbConn
-              , clientConn = conn
-              , redisConfig = redisConfig
-              , ..
-              }
-      authMsgLoop msgHandlerConfig
-      where username = Username userEntityUsername
+    (Right (Left err)) -> sendMsg conn $ ErrMsg $ AuthFailed $ T.pack $ show err   
+    (Right (Right claimsSet)) -> 
+      case (decodeJWT claimsSet) of
+        (Left jwtErr) -> sendMsg conn $ ErrMsg $ AuthFailed $ T.pack $ show jwtErr
+        (Right username@(Username name)) -> do
+            sendMsg conn AuthSuccess
+            ServerState {..} <- readTVarIO state
+            atomically $
+              swapTVar
+                state
+                (ServerState
+                   { clients =
+                       addClient
+                         Client
+                           { conn = conn
+                           , clientUsername = name
+                           }
+                         username
+                         clients
+                   , ..
+                   })
+            socketReadChan <- newTChanIO
+            let msgHandlerConfig =
+                  MsgHandlerConfig
+                    { serverStateTVar = state
+                    , dbConn = dbConn
+                    , clientConn = conn
+                    , redisConfig = redisConfig
+                    , ..
+                    }
+            authMsgLoop msgHandlerConfig
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
 removeClient username serverStateTVar = do
