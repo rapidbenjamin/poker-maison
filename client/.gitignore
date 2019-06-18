@@ -13,6 +13,6 @@ npm-debug.log
 yarn-error.log
 
 # Bucklescript
-.bsb.js
+*.bsb.js
 .bsb.lock
 .merlin
