@@ -72,7 +72,7 @@ initialServerState lobby = ServerState {clients = M.empty, lobby = lobby}
 
 -- Create the initial lobby holding all game state and then fork a new thread for each table in the lobby
 -- to write new game states to the DB
-runSocketServer :: BL.ByteString -> Int -> ConnectionString -> RedisConfig -> IO ()
+runSocketServer :: BS.ByteString -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port connString redisConfig = do
   lobby <- initialLobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
@@ -97,7 +97,7 @@ runSocketServer secretKey port connString redisConfig = do
 -- After the client has been authenticated we fork a thread which writes
 -- the clients msgs to a channel.
 application ::
-     BL.ByteString
+     BS.ByteString
   -> ConnectionString
   -> RedisConfig
   -> TVar ServerState

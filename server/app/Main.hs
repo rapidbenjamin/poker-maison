@@ -28,7 +28,7 @@ main = do
   print redisConfig
   secretKey <- getSecretKey
   let runSocketAPI =
-        runSocketServer (C.pack $ show secretKey) socketAPIPort dbConnString redisConfig
+        runSocketServer secretKey socketAPIPort dbConnString redisConfig
   let runUserAPI = run userAPIPort (app secretKey dbConnString redisConfig)
   migrateDB dbConnString
   ekg <- runMonitoringServer

@@ -31,29 +31,22 @@ import Schema
 import Socket.Types
 import Socket.Utils
 import Types
+import Servant.Auth.Server
 import qualified Data.ByteString as BS
 
+import           Crypto.JOSE        as Jose
+import           Crypto.JWT         as Jose
 
 import Data.Maybe
 import System.Timeout
 import Crypto.JWT
 import Poker.Game.Privacy (excludeAllPlayerCards, excludeOtherPlayerCards)
 import qualified Data.ByteString.Lazy.Char8 as C
-
-
-verifyJWT :: BL.ByteString -> BL.ByteString -> IO (Either JWTError ClaimsSet)
-verifyJWT key jwt = runExceptT $ do
-  let
-    key' = fromOctets key
-    -- turn raw secret into symmetric JWK
-    audCheck = const True -- should be a proper audience check
-  jwt' <- decodeCompact jwt
-  -- decode JWT
-  verifyClaims (defaultJWTValidationSettings audCheck) key' jwt'
+import Socket.Auth
 
 
 authClient ::
-     BL.ByteString
+     BS.ByteString
   -> TVar ServerState
   -> ConnectionString
   -> RedisConfig
@@ -62,37 +55,41 @@ authClient ::
   -> Token
   -> IO ()
 authClient secretKey state dbConn redisConfig authMsgLoop conn (Token token) = do
+  print secretKey
   authResult <- runExceptT $ liftIO $ verifyJWT secretKey ( C.pack $ T.unpack token)
   case authResult of
     (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
-    (Right claimsSet) -> do
-      sendMsg conn AuthSuccess
-      ServerState {..} <- readTVarIO state
-      atomically $
-        swapTVar
-          state
-          (ServerState
-             { clients =
-                 addClient
-                   Client
-                     { conn = conn
-                     , clientUsername = T.pack "username"
-                     }
-                   (Username "username")
-                   clients
-             , ..
-             })
-      socketReadChan <- newTChanIO
-      let msgHandlerConfig =
-            MsgHandlerConfig
-              { serverStateTVar = state
-              , username = Username $ T.pack "username"
-              , dbConn = dbConn
-              , clientConn = conn
-              , redisConfig = redisConfig
-              , ..
-              }
-      authMsgLoop msgHandlerConfig
+    (Right (Left err)) -> sendMsg conn $ ErrMsg $ AuthFailed $ T.pack $ show err   
+    (Right (Right claimsSet)) -> 
+      case (decodeJWT claimsSet) of
+        (Left jwtErr) -> sendMsg conn $ ErrMsg $ AuthFailed $ T.pack $ show jwtErr
+        (Right username@(Username name)) -> do
+            sendMsg conn AuthSuccess
+            ServerState {..} <- readTVarIO state
+            atomically $
+              swapTVar
+                state
+                (ServerState
+                   { clients =
+                       addClient
+                         Client
+                           { conn = conn
+                           , clientUsername = name
+                           }
+                         username
+                         clients
+                   , ..
+                   })
+            socketReadChan <- newTChanIO
+            let msgHandlerConfig =
+                  MsgHandlerConfig
+                    { serverStateTVar = state
+                    , dbConn = dbConn
+                    , clientConn = conn
+                    , redisConfig = redisConfig
+                    , ..
+                    }
+            authMsgLoop msgHandlerConfig
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
 removeClient username serverStateTVar = do
