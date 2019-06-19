@@ -23,6 +23,8 @@ dependencies:
   - async
   - aeson
   - hedis
+  - servant-websockets
+  - conduit
   - time
   - monad-logger
   - mtl
