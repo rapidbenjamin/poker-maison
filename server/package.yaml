@@ -25,6 +25,10 @@ dependencies:
   - hedis
   - servant-websockets
   - conduit
+  - stm-conduit
+  - pipes
+  - pipes-aeson
+  - pipes-concurrency
   - time
   - monad-logger
   - mtl
