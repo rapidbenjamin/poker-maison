@@ -86,6 +86,21 @@ import           Data.Aeson                     ( FromJSON
                                                 )
 import           Poker.Types
 
+import qualified Network.WebSockets            as WS
+
+import           Pipes                          ( (>->)
+                                                , (~>)
+                                                , for
+                                                , (>~)
+                                                , await
+                                                , yield
+                                                , runEffect
+                                                , each
+                                                )
+import           Pipes.Core                     ( push )
+import           Pipes.Concurrent
+import qualified Pipes.Prelude                 as P
+
 initialServerState :: Lobby -> ServerState
 initialServerState lobby = ServerState { clients = M.empty, lobby = lobby }
 
@@ -113,6 +128,20 @@ runSocketServer secretKey port connString redisConfig = do
  where
   botNames         = (^. playerName) <$> [bot1, bot2]
   playersToWaitFor = length $ botNames
+
+-- creates a mailbox which has both an input sink and output source which
+-- models the bidirectionality of websockets.
+-- We return input source which emits our received socket msgs.
+websocketMailbox :: WS.Connection -> IO (Input MsgIn)
+websocketMailbox newConn = do
+  print "accepted request"
+  (om, inputMailbox) <- spawn Unbounded
+  forever $ do
+    -- lift recv msg IO action into a Producer and then run the IO effect of placing each msg in the mailbox
+    a <- async $ runEffect $ lift (WS.receiveDataMessage newConn) >~ toOutput om
+    link a
+    return inputMailbox
+
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
 -- updated with the newly authenticated client.
@@ -129,18 +158,20 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
-  i   <- newEmptyMVar
-  race_ (forever $ WS.receiveData newConn >>= putMVar i) $ do
-    runConduitRes
-      $  forever (yieldM . liftIO $ takeMVar i)
-      .| CL.mapMaybe (parseMsgFromJSON')
-      .| CL.mapM (liftIO . msgHandler' (msgConf newConn))
-      .| CL.mapM_ (liftIO . WS.sendTextData newConn . encodeMsgToJSON)
-    WS.sendClose newConn ("Out of data" :: Text)
-    -- After sending the close message, we keep receiving packages
-    -- (and drop them) until the connection is actually closed,
-    -- which is indicated by an exception.
-    forever $ WS.receiveDataMessage newConn
+  websocketMailbox newconn
+
+  --i   <- newEmptyMVar
+  --race_ (forever $ WS.receiveData newConn >>= putMVar i) $ do
+  --  runConduitRes
+  --    $  forever (yieldM . liftIO $ takeMVar i)
+  --    .| CL.mapMaybe (parseMsgFromJSON')
+  --    .| CL.mapM (liftIO . msgHandler' (msgConf newConn))
+  --    .| CL.mapM_ (liftIO . WS.sendTextData newConn . encodeMsgToJSON)
+  --  WS.sendClose newConn ("Out of data" :: Text)
+  --  -- After sending the close message, we keep receiving packages
+  --  -- (and drop them) until the connection is actually closed,
+  --  -- which is indicated by an exception.
+  --  forever $ WS.receiveDataMessage newConn
   authClient secretKey
              serverState
              dbConnString
