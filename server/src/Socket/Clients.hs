@@ -150,6 +150,6 @@ filterPrivateGameData username (SuccessfullySubscribedToTable tableName game) =
   SuccessfullySubscribedToTable
     tableName
     (excludeOtherPlayerCards username game)
-filterPrivateGameData username (NewGameState tableName game) =
-  NewGameState tableName (excludeOtherPlayerCards username game)
+filterPrivateGameData username (GameMsgOut (NewGameState tableName game)) =
+  GameMsgOut $ NewGameState tableName (excludeOtherPlayerCards username game)
 filterPrivateGameData _ unfilteredMsg = unfilteredMsg

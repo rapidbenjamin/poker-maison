@@ -97,11 +97,14 @@ data MsgIn
   = GetTables
   | SubscribeToTable TableName
   | LeaveTable
-  | TakeSeat TableName
+  | GameMsgIn GameMsgIn  
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+data GameMsgIn =
+  TakeSeat TableName
              Int
   | LeaveSeat TableName
-  | GameMove TableName
-             PlayerAction
+  | GameMove TableName PlayerAction
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- TODO - add BBs per hour, hands per hour etc
@@ -120,20 +123,24 @@ data TableSummary = TableSummary
 -- outgoing messages for ws client(s)
 data MsgOut
   = TableList [TableSummary] -- TODO only broadcast public table info -- add list of tables to msg
-  | PlayerLeft
   | SuccessfullySatDown TableName
                         Game
   | SuccessfullyLeftSeat TableName
   | SuccessfullySubscribedToTable TableName
                                   Game
-  | PlayerJoined TableName
-                 Text
-  | NewGameState TableName
-                 Game
+  | GameMsgOut GameMsgOut
   | ErrMsg Err
   | AuthSuccess
   | Noop
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+data GameMsgOut 
+  = GameMoveErr Err
+  | PlayerLeft
+  | PlayerJoined TableName Text
+  | NewGameState TableName Game
+  deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
 
 data Err
   = TableFull TableName

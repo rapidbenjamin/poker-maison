@@ -69,7 +69,7 @@ writeNewGameStatesToDB connString chan tableKey = do
   forever $ do
     chanMsg <- atomically $ readTChan dupChan
     case chanMsg of
-      (NewGameState tableName game) -> return ()
+      (GameMsgOut (NewGameState tableName game)) -> return ()
       --  void (dbInsertGame connString game tableKey)
       _ -> return ()
 

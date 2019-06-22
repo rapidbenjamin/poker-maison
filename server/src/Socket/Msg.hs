@@ -59,12 +59,15 @@ import Types
 
 import Database
 
-gameMsgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameMsgHandler GetTables {} = getTablesHandler
-gameMsgHandler msg@SubscribeToTable {} = subscribeToTableHandler msg
-gameMsgHandler msg@TakeSeat {} = takeSeatHandler msg
+msgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+msgHandler GetTables {} = getTablesHandler
+msgHandler msg@SubscribeToTable {} = subscribeToTableHandler msg
+msgHandler (GameMsgIn msg) = gameMsgHandler msg
+
+gameMsgHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+gameMsgHandler msg@TakeSeat {}  = takeSeatHandler msg
 gameMsgHandler msg@LeaveSeat {} = leaveSeatHandler msg
-gameMsgHandler msg@GameMove {} = gameActionHandler msg
+gameMsgHandler msg@GameMove {}  = gameActionHandler msg
 
 -- process msgs sent by the client socket
 handleReadChanMsgs :: MsgHandlerConfig -> IO ()
@@ -72,14 +75,12 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
     msg <- atomically $ readTChan socketReadChan
     print msg
-    msgOutE <- runExceptT $ runReaderT (gameMsgHandler msg) msgHandlerConfig
-    either
-      (sendMsg clientConn . ErrMsg)
-      (handleNewGameState dbConn serverStateTVar)
-      msgOutE
-  --  print "socketReadChannel"
+    msgOutE <- runExceptT $ runReaderT (msgHandler msg) msgHandlerConfig
     pPrint msgOutE
-    return ()
+    case msgOutE of 
+      Right (GameMsgOut m) -> handleNewGameState dbConn serverStateTVar m
+      Left err -> sendMsg clientConn (ErrMsg err)
+
 
 -- This function writes msgs received from the websocket to the socket threads msgReader channel 
 -- then forks a new thread to read msgs from the authenticated client
@@ -116,7 +117,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
 --
 -- Note that timeouts are only enforced when the expediency of the player's action is required
 -- to avoid halting the progress of the game.
-playerTimeoutLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
+playerTimeoutLoop :: TableName -> TChan GameMsgOut -> MsgHandlerConfig -> IO ()
 playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
   msgReaderDup <- atomically $ dupTChan socketReadChan
   dupTableChan <- atomically $ dupTChan channel
@@ -141,7 +142,7 @@ awaitValidPlayerAction tableName game playerName dupChan =
   where
     isValidAction game playerName =
       \case
-        (GameMove tableName' action) ->
+        GameMsgIn (GameMove tableName' action) ->
           (isRight $ validateAction game playerName action) &&
           tableName == tableName'
         _ -> False
@@ -160,7 +161,7 @@ awaitTimedPlayerAction socketReadChan game tableName (Username playerName) = do
   timer <- async $ atomically $ readTVar delayTVar >>= check
   msgInOrTimedOut <- waitEitherCancel timer validPlayerAction
   when (isLeft msgInOrTimedOut) $
-    atomically $ writeTChan socketReadChan (GameMove tableName Timeout)
+    atomically $ writeTChan socketReadChan (GameMsgIn $ GameMove tableName Timeout)
   where
     timeoutDuration = 6500000
 
@@ -179,12 +180,12 @@ updateGameAndBroadcastT serverStateTVar tableName newGame = do
   case M.lookup tableName $ unLobby lobby of
     Nothing -> throwSTM $ TableDoesNotExistInLobby tableName
     Just table@Table {..} -> do
-      writeTChan channel $ NewGameState tableName newGame
+      writeTChan channel $ GameMsgOut $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
       swapTVar serverStateTVar ServerState {lobby = updatedLobby, ..}
       return ()
 
-handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
+handleNewGameState :: ConnectionString -> TVar ServerState -> GameMsgOut -> IO ()
 handleNewGameState connString serverStateTVar (NewGameState tableName newGame) = do
   newServerState <-
     atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
@@ -268,7 +269,7 @@ subscribeToTable tableName MsgHandlerConfig {..} = do
 --
 ---- If game is in predeal stage then add player to game else add to waitlist
 -- the waitlist is a queue awaiting the next predeal stage of the game
-takeSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+takeSeatHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 takeSeatHandler (TakeSeat tableName chipsToSit) = do
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
@@ -305,9 +306,9 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                   --liftIO $ link asyncGameReceiveLoop
                   liftIO $
                     sendMsg clientConn (SuccessfullySatDown tableName newGame)
-                  return $ NewGameState tableName newGame
+                  return $ GameMsgOut $ NewGameState tableName newGame
 
-leaveSeatHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+leaveSeatHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
@@ -334,7 +335,7 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
                       dbConn
                       (unUsername username)
                       chipsInPlay
-                  return $ NewGameState tableName newGame
+                  return $ GameMsgOut $ NewGameState tableName newGame
 
 canTakeSeat ::
      Int
@@ -368,7 +369,7 @@ getPlayersAvailableChips = do
 -- then the player move is applied to the table which results in either a new game state which is 
 -- broadcast to all table subscribers or an error is returned which is then only sent to the
 -- originator of the invalid in-game move
-gameActionHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+gameActionHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameActionHandler gameMove@(GameMove tableName playerAction) = do
   liftIO $ print playerAction
   MsgHandlerConfig {..} <- ask
@@ -390,4 +391,4 @@ gameActionHandler gameMove@(GameMove tableName playerAction) = do
                  -> do
                   liftIO $ print "No error :)"
                   liftIO $ pPrint newGame
-                  return $ NewGameState tableName newGame
+                  return $ GameMsgOut $ NewGameState tableName newGame

@@ -71,14 +71,14 @@ import           Crypto.JWT
 import           Data.ByteString.Lazy           ( fromStrict
                                                 , toStrict
                                                 )
-import           Data.Conduit                   ( Conduit
-                                                , runConduitRes
-                                                , yieldM
-                                                , (.|)
-                                                )
-
-import qualified Data.Conduit.List             as CL
-import           Conduit
+--import           Data.Conduit                   ( Conduit
+--                                                , runConduitRes
+--                                                , yieldM
+--                                                , (.|)
+--                                                )
+--
+--import qualified Data.Conduit.List             as CL
+-- import           Conduit
 import           Data.Aeson                     ( FromJSON
                                                 , ToJSON
                                                 , decode
@@ -86,17 +86,13 @@ import           Data.Aeson                     ( FromJSON
                                                 )
 import           Poker.Types
 
+import Control.Monad 
+import Control.Exception
+import qualified GHC.IO.Exception as G
+
 import qualified Network.WebSockets            as WS
 
-import           Pipes                          ( (>->)
-                                                , (~>)
-                                                , for
-                                                , (>~)
-                                                , await
-                                                , yield
-                                                , runEffect
-                                                , each
-                                                )
+import           Pipes                         
 import           Pipes.Core                     ( push )
 import           Pipes.Concurrent
 import qualified Pipes.Prelude                 as P
@@ -138,10 +134,26 @@ websocketMailbox newConn = do
   (om, inputMailbox) <- spawn Unbounded
   forever $ do
     -- lift recv msg IO action into a Producer and then run the IO effect of placing each msg in the mailbox
-    a <- async $ runEffect $ lift (WS.receiveDataMessage newConn) >~ toOutput om
+    a <- async $ runEffect $ lift (WS.receiveDataMessage newConn) >~ logMsg >~ toOutput om
     link a
     return inputMailbox
 
+
+logMsg :: Consumer WS.DataMessage IO ()
+logMsg = do 
+  msg <- await
+  x   <- lift $ try $ print msg
+  case x of
+      -- Gracefully terminate if we got a broken pipe error
+      Left e@(G.IOError { G.ioe_type = t}) ->
+          lift $ unless (t == G.ResourceVanished) $ throwIO e
+      -- Otherwise loop
+      Right () -> logMsg
+
+--newtype Table' = Table' (Pipe PlayerAction gameMove IO Game)
+
+
+  
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
 -- updated with the newly authenticated client.
@@ -158,7 +170,7 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
-  websocketMailbox newconn
+  websocketMailbox newConn
 
   --i   <- newEmptyMVar
   --race_ (forever $ WS.receiveData newConn >>= putMVar i) $ do
@@ -192,10 +204,9 @@ application secretKey dbConnString redisConfig serverState pending = do
 
 
 msgHandler' :: MsgHandlerConfig -> MsgIn -> IO MsgOut
-msgHandler' _ _ = return PlayerLeft
+msgHandler' _ _ = return $ GameMsgOut PlayerLeft
 
 
-newtype TableCon = TableCon (ConduitT PlayerAction PlayerAction IO Game)
 
 delayThenSeatPlayer
   :: ConnectionString -> Int -> TVar ServerState -> Player -> IO ()
@@ -251,7 +262,7 @@ botActionLoop dbConn s tableChan playersToWaitFor botName = forkIO $ do
     msg <- atomically $ readTChan chan
     print "action received"
     case msg of
-      (NewGameState tableName g) ->
+      GameMsgOut (NewGameState tableName g) ->
         unless (shouldn'tStartGameYet g) (actIfNeeded g botName)
       _ -> return ()
  where
