@@ -1,0 +1,1 @@
+{ "dirs" : [ "app" , "app/middleware" , "app/reducers" , "app/reducers/tests" , "app/actions" , "app/actions/tests" , "app/styles" , "app/styles/common" , "app/styles/layout" , "app/styles/components" , "app/styles/components/game" , "app/utils" , "app/containers" , "app/components" , "app/selectors" , "app/selectors/tests" ] , "generated" : [] }

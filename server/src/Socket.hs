@@ -105,6 +105,11 @@ initialServerState lobby = ServerState { clients = M.empty, lobby = lobby }
 runSocketServer
   :: BS.ByteString -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port connString redisConfig = do
+  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ TakeSeat "black" 2222)
+  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" (Raise 400))
+  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" (Fold))
+
+
   lobby           <- initialLobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   forkBackgroundJobs connString serverStateTVar lobby
@@ -170,7 +175,7 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
-  websocketMailbox newConn
+ -- async $ websocketMailbox newConn
 
   --i   <- newEmptyMVar
   --race_ (forever $ WS.receiveData newConn >>= putMVar i) $ do
@@ -205,7 +210,6 @@ application secretKey dbConnString redisConfig serverState pending = do
 
 msgHandler' :: MsgHandlerConfig -> MsgIn -> IO MsgOut
 msgHandler' _ _ = return $ GameMsgOut PlayerLeft
-
 
 
 delayThenSeatPlayer

@@ -75,10 +75,12 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} =
   forever $ do
     msg <- atomically $ readTChan socketReadChan
     print msg
+    print "aboooo"
     msgOutE <- runExceptT $ runReaderT (msgHandler msg) msgHandlerConfig
     pPrint msgOutE
-    case msgOutE of 
-      Right (GameMsgOut m) -> handleNewGameState dbConn serverStateTVar m
+    case msgOutE of
+      Right m@(GameMsgOut gm) -> sendMsg clientConn m >> handleNewGameState dbConn serverStateTVar gm 
+      Right m -> sendMsg clientConn m
       Left err -> sendMsg clientConn (ErrMsg err)
 
 
@@ -94,10 +96,10 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
       (catch
          (forever $ do
             msg <- WS.receiveData clientConn
-       --     print msg
+            print msg
             let parsedMsg = parseMsgFromJSON msg
-        --    print "parsed msg:"
-        --    print parsedMsg
+            print "parsed msg:"
+            print parsedMsg
             for_ parsedMsg $ atomically . writeTChan socketReadChan)
          (\e -> do
             let err = show (e :: IOException)
@@ -230,6 +232,7 @@ getTablesHandler = do
 subscribeToTableHandler ::
      MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 subscribeToTableHandler (SubscribeToTable tableName) = do
+  liftIO $ putStrLn "CALLLLLLLLLLLLLLLLLLLLLLLLLED3"
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..} <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
@@ -239,6 +242,7 @@ subscribeToTableHandler (SubscribeToTable tableName) = do
       if username `notElem` subscribers
         then do
           liftIO $ atomically $ subscribeToTable tableName msgHandlerConfig
+          --liftIO $ sendMsg clientConn (GameMsgOut $ NewGameState tableName game)
           liftIO $
             sendMsg clientConn (SuccessfullySubscribedToTable tableName game)
           return $ SuccessfullySubscribedToTable tableName game
