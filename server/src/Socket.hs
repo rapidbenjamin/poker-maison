@@ -10,7 +10,7 @@ module Socket
   )
 where
 
-import           Control.Concurrent
+import           Control.Concurrent hiding (yield)
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import qualified Data.Map.Lazy                 as M
@@ -35,7 +35,6 @@ import           Poker.Types             hiding ( LeaveSeat )
 import           Data.Traversable
 
 
-import           Data.Aeson
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy.Char8    as C
 import           Data.Text                      ( Text )
@@ -46,7 +45,7 @@ import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Control.Monad.STM
-import           Control.Monad.State.Lazy
+--import           Control.Monad.State.Lazy hiding (evalStateT)
 import qualified Data.ByteString.Lazy          as BL
 
 import           Socket.Types
@@ -81,8 +80,6 @@ import           Data.ByteString.Lazy           ( fromStrict
 -- import           Conduit
 import           Data.Aeson                     ( FromJSON
                                                 , ToJSON
-                                                , decode
-                                                , encode
                                                 )
 import           Poker.Types
 
@@ -92,9 +89,11 @@ import qualified GHC.IO.Exception as G
 
 import qualified Network.WebSockets            as WS
 
+import Pipes.Aeson
 import           Pipes                         
 import           Pipes.Core                     ( push )
 import           Pipes.Concurrent
+import Pipes.Parse hiding (decode, encode)
 import qualified Pipes.Prelude                 as P
 
 initialServerState :: Lobby -> ServerState
@@ -133,27 +132,71 @@ runSocketServer secretKey port connString redisConfig = do
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
-websocketMailbox :: WS.Connection -> IO (Input MsgIn)
+websocketMailbox :: WS.Connection -> IO (Input Text)
 websocketMailbox newConn = do
   print "accepted request"
-  (om, inputMailbox) <- spawn Unbounded
+  (om, inputMailbox :: Input Text ) <- spawn Unbounded
+  async $ runEffect $ fromInput inputMailbox >-> msgInHandler
   forever $ do
-    -- lift recv msg IO action into a Producer and then run the IO effect of placing each msg in the mailbox
-    a <- async $ runEffect $ lift (WS.receiveDataMessage newConn) >~ logMsg >~ toOutput om
+    a <- async $ runEffect $ socketReader newConn >-> logMsg >-> toOutput om
     link a
     return inputMailbox
+  return inputMailbox
 
 
-logMsg :: Consumer WS.DataMessage IO ()
+socketReader :: WS.Connection -> Producer Text IO ()
+socketReader conn = forever $ do
+    msg <- liftIO $ WS.receiveData conn
+    liftIO $ putStrLn $ "received a msg from socket: " ++ T.unpack msg
+    yield msg
+
+-- Takes a parser and raw msg producer and gives you a producer which yields only 
+-- correctly parsed Msg in from a socket 
+resumingParser :: 
+     StateT (Producer BS.ByteString IO ()) IO (Maybe (Either DecodingError MsgIn))
+  -> Producer BS.ByteString IO ()
+  -> Producer MsgIn IO ()
+resumingParser parser rawMsgInProd = do
+  (x, p') <- lift $ runStateT parser rawMsgInProd
+  case x of
+    Nothing -> return ()
+    Just (Left a) -> do
+      (x, p'') <- lift $ runStateT draw p'
+      -- x is the problem item that failed to parse. We ignore it here
+      resumingParser parser p''
+    Just (Right b) -> do -- successful parsing case
+      yield b
+      resumingParser parser p'
+
+-- aids type inference for our JSON parser
+msgInParser :: StateT (Producer BS.ByteString IO ()) IO (Maybe (Either DecodingError MsgIn))
+msgInParser = decode
+
+msgInJSONDecoder :: Producer BS.ByteString IO () -> Producer MsgIn IO ()
+msgInJSONDecoder = resumingParser msgInParser
+
+
+msgInHandler :: Consumer Text IO ()
+msgInHandler = loop
+  where 
+  loop = do
+    msg <- await
+    lift $ print "msghandler : "
+    lift $ print msg
+    loop
+                  
+
+logMsg :: Pipe Text Text IO ()
 logMsg = do 
   msg <- await
+  lift $ putStrLn "logger"
   x   <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
       Left e@(G.IOError { G.ioe_type = t}) ->
           lift $ unless (t == G.ResourceVanished) $ throwIO e
       -- Otherwise loop
-      Right () -> logMsg
+      Right () -> yield msg >> logMsg
 
 --newtype Table' = Table' (Pipe PlayerAction gameMove IO Game)
 
@@ -175,7 +218,7 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
- -- async $ websocketMailbox newConn
+  async $ websocketMailbox newConn
 
   --i   <- newEmptyMVar
   --race_ (forever $ WS.receiveData newConn >>= putMVar i) $ do

@@ -29,6 +29,7 @@ dependencies:
   - pipes
   - pipes-aeson
   - pipes-concurrency
+  - pipes-parse
   - time
   - monad-logger
   - mtl
