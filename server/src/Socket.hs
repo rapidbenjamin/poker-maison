@@ -32,7 +32,7 @@ import           Types
 import           Control.Lens            hiding ( Fold )
 import           Database
 import           Poker.Types             hiding ( LeaveSeat )
-import           Data.Traversable
+--import           Data.Traversable
 
 
 import qualified Data.ByteString               as BS
@@ -50,7 +50,9 @@ import qualified Data.ByteString.Lazy          as BL
 
 import           Socket.Types
 import qualified Data.List                     as L
+import qualified Data.Text.Lazy                as X
 
+import qualified Data.Text.Lazy.Encoding       as D
 import           System.Random
 
 import           Poker.ActionValidation
@@ -64,8 +66,11 @@ import           Poker.Game.Utils
 import           Socket.Types
 import           Socket.Msg
 import           Socket.Utils
+import Data.ByteString.UTF8 (fromString)
+
 import           Poker.Poker
 import           Crypto.JWT
+import qualified Data.Aeson as A
 
 import           Data.ByteString.Lazy           ( fromStrict
                                                 , toStrict
@@ -136,13 +141,17 @@ websocketInMailbox :: WS.Connection -> IO (Input MsgIn)
 websocketInMailbox newConn = do
   print "directing new socket msgs to mailbox"
   (om, inputMailbox) <- spawn Unbounded
-  async $ runEffect $ fromInput inputMailbox >-> msgInHandler
+  async $ runEffect $ for (fromInput inputMailbox >-> msgInHandler) (lift . WS.sendTextData newConn . encodeMsgOut)
+
+ -- async $ runEffect $ fromInput inputMailbox >-> msgInHandler >->
   forever $ do
     a <- async $ runEffect $ msgInDecoder (socketReader newConn >-> logMsg) >-> toOutput om -- only parsed MsgIns make it into the mailbox
     link a
     return inputMailbox
   return inputMailbox
-
+  where 
+    -- encode MsgOut values to JSON bytestring to send to socket
+    encodeMsgOut msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
 socketReader conn = forever $ do
@@ -168,16 +177,26 @@ msgInDecoder rawMsgProducer = do
       yield msgIn
       msgInDecoder p'
 
+     
+msgOutEncoder :: Pipe MsgOut BS.ByteString IO ()
+msgOutEncoder = forever $ do 
+  msgOut <- await
+  lift $ print "encoding msg: "
+  lift $ print msgOut
+  yield $ fromString $ T.unpack $ X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 
-msgInHandler :: Consumer MsgIn IO ()
+
+msgInHandler :: Pipe MsgIn MsgOut IO ()
 msgInHandler = loop
   where 
   loop = do
     msg <- await
     lift $ print "msghandler : "
     lift $ print msg
+    yield sampleMsg
     loop
-                  
+    where sampleMsg = GameMsgOut PlayerLeft
+
 
 logMsg :: Pipe BS.ByteString BS.ByteString IO ()
 logMsg = do 
@@ -190,6 +209,11 @@ logMsg = do
           lift $ unless (t == G.ResourceVanished) $ throwIO e
       -- Otherwise loop
       Right () -> yield msg >> logMsg
+
+
+
+-- tables are stream abstractions which take in game msgs and yield game states
+--data Game = Producer GameMsgIn (Either GameErr Game) IO ()
 
 --newtype Table' = Table' (Pipe PlayerAction gameMove IO Game)
 
