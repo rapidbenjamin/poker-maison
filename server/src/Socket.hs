@@ -132,22 +132,22 @@ runSocketServer secretKey port connString redisConfig = do
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
-websocketMailbox :: WS.Connection -> IO (Input Text)
+websocketMailbox :: WS.Connection -> IO (Input MsgIn)
 websocketMailbox newConn = do
   print "accepted request"
-  (om, inputMailbox :: Input Text ) <- spawn Unbounded
-  async $ runEffect $ fromInput inputMailbox >-> msgInHandler
+  (om, inputMailbox :: Input MsgIn ) <- spawn Unbounded
+  async $ runEffect $ fromInput inputMailbox >-> (msgInHandler)
   forever $ do
-    a <- async $ runEffect $ socketReader newConn >-> logMsg >-> toOutput om
+    a <- async $ runEffect $ msgInDecoder (socketReader newConn >-> logMsg) >-> toOutput om -- only parsed MsgIns make it into the mailbox
     link a
     return inputMailbox
   return inputMailbox
 
 
-socketReader :: WS.Connection -> Producer Text IO ()
+socketReader :: WS.Connection -> Producer BS.ByteString IO ()
 socketReader conn = forever $ do
     msg <- liftIO $ WS.receiveData conn
-    liftIO $ putStrLn $ "received a msg from socket: " ++ T.unpack msg
+    liftIO $ putStrLn $ "received a msg from socket: " ++ show msg
     yield msg
 
 -- Convert a raw Bytestring producer of raw JSON into a new producer which yields 
@@ -169,7 +169,7 @@ msgInDecoder rawMsgProducer = do
       msgInDecoder p'
 
 
-msgInHandler :: Consumer Text IO ()
+msgInHandler :: Consumer MsgIn IO ()
 msgInHandler = loop
   where 
   loop = do
@@ -179,7 +179,7 @@ msgInHandler = loop
     loop
                   
 
-logMsg :: Pipe Text Text IO ()
+logMsg :: Pipe BS.ByteString BS.ByteString IO ()
 logMsg = do 
   msg <- await
   lift $ putStrLn "logger"
