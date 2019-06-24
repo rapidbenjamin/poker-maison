@@ -132,11 +132,11 @@ runSocketServer secretKey port connString redisConfig = do
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
-websocketMailbox :: WS.Connection -> IO (Input MsgIn)
-websocketMailbox newConn = do
-  print "accepted request"
-  (om, inputMailbox :: Input MsgIn ) <- spawn Unbounded
-  async $ runEffect $ fromInput inputMailbox >-> (msgInHandler)
+websocketInMailbox :: WS.Connection -> IO (Input MsgIn)
+websocketInMailbox newConn = do
+  print "directing new socket msgs to mailbox"
+  (om, inputMailbox) <- spawn Unbounded
+  async $ runEffect $ fromInput inputMailbox >-> msgInHandler
   forever $ do
     a <- async $ runEffect $ msgInDecoder (socketReader newConn >-> logMsg) >-> toOutput om -- only parsed MsgIns make it into the mailbox
     link a
@@ -193,8 +193,10 @@ logMsg = do
 
 --newtype Table' = Table' (Pipe PlayerAction gameMove IO Game)
 
+-- get a pipe which only forwards the game moves which occur at the given table
+filterMsgsForTable tableName = P.filter $ \(GameMove tableName' _) -> tableName == tableName'
 
-  
+
 -- New WS connections are expected to supply an access token as an initial msg
 -- Once the token is verified the connection only then will the server state be 
 -- updated with the newly authenticated client.
@@ -211,20 +213,9 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
-  async $ websocketMailbox newConn
+  async $ websocketInMailbox newConn
 
-  --i   <- newEmptyMVar
-  --race_ (forever $ WS.receiveData newConn >>= putMVar i) $ do
-  --  runConduitRes
-  --    $  forever (yieldM . liftIO $ takeMVar i)
-  --    .| CL.mapMaybe (parseMsgFromJSON')
-  --    .| CL.mapM (liftIO . msgHandler' (msgConf newConn))
-  --    .| CL.mapM_ (liftIO . WS.sendTextData newConn . encodeMsgToJSON)
-  --  WS.sendClose newConn ("Out of data" :: Text)
-  --  -- After sending the close message, we keep receiving packages
-  --  -- (and drop them) until the connection is actually closed,
-  --  -- which is indicated by an exception.
-  --  forever $ WS.receiveDataMessage newConn
+
   authClient secretKey
              serverState
              dbConnString
