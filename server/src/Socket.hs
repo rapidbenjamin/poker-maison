@@ -150,30 +150,23 @@ socketReader conn = forever $ do
     liftIO $ putStrLn $ "received a msg from socket: " ++ T.unpack msg
     yield msg
 
--- Takes a parser and raw msg producer and gives you a producer which yields only 
--- correctly parsed Msg in from a socket 
-resumingParser :: 
-     StateT (Producer BS.ByteString IO ()) IO (Maybe (Either DecodingError MsgIn))
-  -> Producer BS.ByteString IO ()
-  -> Producer MsgIn IO ()
-resumingParser parser rawMsgInProd = do
-  (x, p') <- lift $ runStateT parser rawMsgInProd
+-- Combine a msgIn JSON parser and raw msg producer into a newproducer which yields only 
+-- correctly parsed messages of type MsgIn
+--
+-- Note that this parser deliberately ignores parsing errors as the naive implementation
+-- would lead to parse errors closing stream and thus the socket connection
+msgInDecoder :: Producer BS.ByteString IO () -> Producer MsgIn IO ()
+msgInDecoder rawMsgProducer = do
+  (x, p') <- lift $ runStateT decode rawMsgProducer
   case x of
     Nothing -> return ()
     Just (Left a) -> do
       (x, p'') <- lift $ runStateT draw p'
       -- x is the problem item that failed to parse. We ignore it here
-      resumingParser parser p''
-    Just (Right b) -> do -- successful parsing case
-      yield b
-      resumingParser parser p'
-
--- aids type inference for our JSON parser
-msgInParser :: StateT (Producer BS.ByteString IO ()) IO (Maybe (Either DecodingError MsgIn))
-msgInParser = decode
-
-msgInJSONDecoder :: Producer BS.ByteString IO () -> Producer MsgIn IO ()
-msgInJSONDecoder = resumingParser msgInParser
+      msgInDecoder p''
+    Just (Right msgIn) -> do -- successful parsing case
+      yield msgIn
+      msgInDecoder p'
 
 
 msgInHandler :: Consumer Text IO ()
