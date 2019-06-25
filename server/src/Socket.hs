@@ -206,15 +206,13 @@ msgOutEncoder = forever $ do
 
 
 msgInHandler :: Pipe MsgIn MsgOut IO ()
-msgInHandler = loop
-  where 
-  loop = do
+msgInHandler = forever $ do
     msg <- await
     lift $ print "msghandler : "
     lift $ print msg
     yield sampleMsg
-    loop
-    where sampleMsg = GameMsgOut PlayerLeft
+    msgInHandler
+  where sampleMsg = GameMsgOut PlayerLeft
 
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
