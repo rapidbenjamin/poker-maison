@@ -140,18 +140,20 @@ runSocketServer secretKey port connString redisConfig = do
 websocketInMailbox :: WS.Connection -> IO (Input MsgIn)
 websocketInMailbox newConn = do
   print "directing new socket msgs to mailbox"
-  (om, inputMailbox) <- spawn Unbounded
-  async $ runEffect $ for (fromInput inputMailbox >-> msgInHandler) (lift . WS.sendTextData newConn . encodeMsgOut)
+  (writeMsgSource, readMsgSource) <- spawn Unbounded
+  async $ runEffect $ for (fromInput readMsgSource >-> msgInHandler) (lift . WS.sendTextData newConn . encodeMsgOut)
 
  -- async $ runEffect $ fromInput inputMailbox >-> msgInHandler >->
   forever $ do
-    a <- async $ runEffect $ msgInDecoder (socketReader newConn >-> logMsg) >-> toOutput om -- only parsed MsgIns make it into the mailbox
+    a <- async $ runEffect $ msgInDecoder (socketReader newConn >-> logMsg) >-> toOutput writeMsgSource -- only parsed MsgIns make it into the mailbox
     link a
-    return inputMailbox
-  return inputMailbox
+    return readMsgSource
+  return readMsgSource
   where 
     -- encode MsgOut values to JSON bytestring to send to socket
     encodeMsgOut msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
+
+
 
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
 socketReader conn = forever $ do
