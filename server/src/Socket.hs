@@ -138,11 +138,14 @@ runSocketServer secretKey port connString redisConfig = do
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
 websocketInMailbox :: WS.Connection -> IO (Input MsgIn)
-websocketInMailbox newConn = do
+websocketInMailbox conn = do
   print "directing new socket msgs to mailbox"
   (writeMsgInSource, readMsgInSource) <- spawn Unbounded
-  async $ socketMsgInWriter newConn writeMsgInSource
-  async $ runEffect $ processMsgIn newConn readMsgInSource msgInHandler
+  (writeMsgOutSource, readMsgOutSource) <- spawn Unbounded
+  async $ socketMsgInWriter conn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
+  async $ runEffect $ fromInput readMsgInSource >-> msgInHandler >-> toOutput writeMsgOutSource -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
+  async $ socketMsgOutWriter conn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
+  --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
  -- async $ runEffect $ fromInput inputMailbox >-> msgInHandler >->
 
   return readMsgInSource
@@ -153,19 +156,17 @@ websocketInMailbox newConn = do
 -- 
 --  Note - only parsed MsgIns make it into the mailbox - socket msgs which cannot be parsed
 -- are silently ignored but logged anyway.
-socketMsgInWriter :: WS.Connection -> Output MsgIn -> IO (Async())
+socketMsgInWriter :: WS.Connection -> Output MsgIn -> IO (Async ())
 socketMsgInWriter conn writeMsgInSource = 
     forever $ do
-      a <- async $ runEffect $ msgInDecoder (socketReader conn >-> logMsg) >-> toOutput writeMsgInSource
+      a <- async $ runEffect $ msgInDecoder (socketReader conn >-> logMsgIn) >-> toOutput writeMsgInSource
       link a
 
--- takes a connection a source of MsgIns and a pipe which converts the MsgIns to MsgOuts 
--- then returns an Effect which sends the MsgOut through the socket connection
-processMsgIn :: WS.Connection -> Input MsgIn -> Pipe MsgIn MsgOut IO () -> Effect IO ()
-processMsgIn conn msgSource pipe = for (fromInput msgSource >-> pipe) (lift . sendMsgOut conn)
+socketMsgOutWriter :: WS.Connection -> Input MsgOut -> IO (Async ())
+socketMsgOutWriter conn is =  
+  forever $ do
+    runEffect $ for (fromInput is >-> msgOutEncoder) (lift . WS.sendTextData conn )
 
-sendMsgOut :: WS.Connection -> MsgOut -> IO ()
-sendMsgOut conn = WS.sendTextData conn . encodeMsgOutToJSON
 
 encodeMsgOutToJSON :: MsgOut -> Text
 encodeMsgOutToJSON msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
@@ -216,19 +217,32 @@ msgInHandler = loop
     where sampleMsg = GameMsgOut PlayerLeft
 
 
-logMsg :: Pipe BS.ByteString BS.ByteString IO ()
-logMsg = do 
+logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
+logMsgIn = do 
   msg <- await
-  lift $ putStrLn "logger"
+  lift $ putStrLn "logging MsgIn"
   x   <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
       Left e@(G.IOError { G.ioe_type = t}) ->
           lift $ unless (t == G.ResourceVanished) $ throwIO e
       -- Otherwise loop
-      Right () -> yield msg >> logMsg
+      Right () -> yield msg >> logMsgIn
 
 
+logMsgOut :: Pipe MsgOut MsgOut IO ()
+logMsgOut = do 
+  msg <- await
+  lift $ putStrLn "logging MsgOut"
+  x   <- lift $ try $ print msg
+  case x of
+      -- Gracefully terminate if we got a broken pipe error
+      Left e@(G.IOError { G.ioe_type = t}) ->
+          lift $ unless (t == G.ResourceVanished) $ throwIO e
+      -- Otherwise loop
+      Right () -> yield msg >> logMsgOut
+      
+      
 
 -- tables are stream abstractions which take in game msgs and yield game states
 --data Game = Producer GameMsgIn (Either GameErr Game) IO ()
