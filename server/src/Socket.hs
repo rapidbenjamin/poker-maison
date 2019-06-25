@@ -140,21 +140,37 @@ runSocketServer secretKey port connString redisConfig = do
 websocketInMailbox :: WS.Connection -> IO (Input MsgIn)
 websocketInMailbox newConn = do
   print "directing new socket msgs to mailbox"
-  (writeMsgSource, readMsgSource) <- spawn Unbounded
-  async $ runEffect $ for (fromInput readMsgSource >-> msgInHandler) (lift . WS.sendTextData newConn . encodeMsgOut)
-
+  (writeMsgInSource, readMsgInSource) <- spawn Unbounded
+  async $ socketMsgInWriter newConn writeMsgInSource
+  async $ runEffect $ processMsgIn newConn readMsgInSource msgInHandler
  -- async $ runEffect $ fromInput inputMailbox >-> msgInHandler >->
-  forever $ do
-    a <- async $ runEffect $ msgInDecoder (socketReader newConn >-> logMsg) >-> toOutput writeMsgSource -- only parsed MsgIns make it into the mailbox
-    link a
-    return readMsgSource
-  return readMsgSource
-  where 
+
+  return readMsgInSource
     -- encode MsgOut values to JSON bytestring to send to socket
-    encodeMsgOut msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 
+-- Runs an IO action forever which parses read MsgIn's from the websocket connection 
+-- and puts them in our mailbox waiting to be processed by our MsgIn handler
+-- 
+--  Note - only parsed MsgIns make it into the mailbox - socket msgs which cannot be parsed
+-- are silently ignored but logged anyway.
+socketMsgInWriter :: WS.Connection -> Output MsgIn -> IO (Async())
+socketMsgInWriter conn writeMsgInSource = 
+    forever $ do
+      a <- async $ runEffect $ msgInDecoder (socketReader conn >-> logMsg) >-> toOutput writeMsgInSource
+      link a
 
+-- takes a connection a source of MsgIns and a pipe which converts the MsgIns to MsgOuts 
+-- then returns an Effect which sends the MsgOut through the socket connection
+processMsgIn :: WS.Connection -> Input MsgIn -> Pipe MsgIn MsgOut IO () -> Effect IO ()
+processMsgIn conn msgSource pipe = for (fromInput msgSource >-> pipe) (lift . sendMsgOut conn)
 
+sendMsgOut :: WS.Connection -> MsgOut -> IO ()
+sendMsgOut conn = WS.sendTextData conn . encodeMsgOutToJSON
+
+encodeMsgOutToJSON :: MsgOut -> Text
+encodeMsgOutToJSON msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
+
+-- Converts a websocket connection into a producer 
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
 socketReader conn = forever $ do
     msg <- liftIO $ WS.receiveData conn
