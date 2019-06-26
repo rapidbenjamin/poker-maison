@@ -8,6 +8,7 @@ module Socket.Types where
 import Control.Concurrent (MVar)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TChan
+import Pipes.Concurrent
 import Control.Exception
 import Control.Monad.State
 import Data.Aeson
@@ -59,10 +60,13 @@ instance Exception TableDoesNotExistInLobby
 
 data Table = Table
   { subscribers :: [Username] -- observing public game state includes players sat down
+  , subscribersOutput :: Output GameMsgOut -- write source for msgs to propagate new game states to clients
+  , subscribersInput :: Input GameMsgOut -- read (consume) source for msg outs
   , waitlist :: [Username] -- waiting to join a full table
   , game :: Game
   , channel :: TChan MsgOut
   }
+
 
 instance Show Table where
   show Table {..} =

@@ -134,6 +134,19 @@ runSocketServer secretKey port connString redisConfig = do
   botNames         = (^. playerName) <$> [bot1, bot2]
   playersToWaitFor = length $ botNames
 
+-- subscriptions are handled by combining each subscribers mailbox into one large mailbox
+-- where mew MsgOuts with new game states are posted
+--
+-- The new game state msgs will then propogate to to the subscribers mailbox and 
+-- sent via their websocket connection automatically
+subscribeToTable :: Output MsgOut -> Output MsgOut -> Output MsgOut
+subscribeToTable tableOutput playerOutput = tableOutput <> playerOutput
+
+--gameMsgHandler :: Pipe GameMsgIn (Either GameErr Game) IO ()
+--gameMsgHandler = do 
+--   gameMsgIn <- yield
+
+
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.

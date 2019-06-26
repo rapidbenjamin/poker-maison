@@ -26,17 +26,22 @@ import Socket.Clients
 import Socket.Types
 import Socket.Utils
 import Types
+import Pipes.Concurrent
+
 
 initialLobby :: IO Lobby
 initialLobby = do
   chan <- atomically newBroadcastTChan
   shuffledDeck <- shuffledDeck
+  (output, input) <- spawn Unbounded
   return $
     Lobby $
     M.fromList
       [ ( "Black"
         , Table
             { subscribers = []
+            , subscribersOutput = output
+            , subscribersInput = input
             , waitlist = []
             , game = initialGameState shuffledDeck
             , channel = chan
