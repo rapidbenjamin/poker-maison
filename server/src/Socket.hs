@@ -142,8 +142,30 @@ runSocketServer secretKey port connString redisConfig = do
 subscribeToTable :: Output MsgOut -> Output MsgOut -> Output MsgOut
 subscribeToTable tableOutput playerOutput = tableOutput <> playerOutput
 
---gameMsgHandler :: Pipe GameMsgIn (Either GameErr Game) IO ()
---gameMsgHandler = do 
+
+-- Uses incoming msg mailbox as a producer of actions which are run against 
+-- the game state and then fed into the outgoing msg mailbox to be propagated to clients
+gameStream :: Input GameMsgIn -> Output GameMsgOut -> Output GameMsgOut
+gameStream msgInput msgOutput = producer >-> processor >-> consumer 
+  where 
+    producer = frominput msgInput
+    processor = gameMsgInHandler'
+    consumer = toOutputMsgOutput
+
+
+
+gameMsgInHandler' :: Pipe GameMsgIn (Either GameErr Game) IO ()
+gameMsgInHandler' = undefined
+
+--gameMsgOutHandler' :: Pipe (Either GameErr Game) GameMsgOut IO ()
+--gameMsgoutHandler' = undefined
+
+-- (~>) :: Monad m
+-- => (a -> Producer b m ())
+-- -> (b -> Producer c m ())
+-- -> (a -> Producer c m ())
+-- 
+--   -- do 
 --   gameMsgIn <- yield
 
 
