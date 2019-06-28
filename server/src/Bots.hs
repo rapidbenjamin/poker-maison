@@ -69,7 +69,7 @@ sitDownBot dbConn player@Player{..} serverStateTVar = do
     case M.lookup tableName $ unLobby lobby of
       Nothing -> error "table doesnt exist" >> return ()
       Just Table {..} -> do
-          eitherNewGame <- liftIO $ runPlayerAction game _playerName takeSeatAction
+          eitherNewGame <- liftIO $ runPlayerAction game takeSeatAction
           case eitherNewGame of
             Left gameErr -> error (show $ GameErr gameErr) >> return ()
             Right newGame -> do
@@ -78,13 +78,13 @@ sitDownBot dbConn player@Player{..} serverStateTVar = do
   where 
     chipsToSit = 2000
     tableName = "Black"
-    takeSeatAction = (SitDown player)
+    takeSeatAction = PlayerAction{ name = _playerName, action = SitDown player}
 
 --runBotAction :: TVar ServerState -> TableName -> Game -> PlayerAction -> STM ()
 --runBotAction serverS tableName g botAction = do
 
 
-actions :: Int -> [PlayerAction]
+actions :: Int -> [Action]
 actions chips = [PostBlind Big, PostBlind Small, Check, Call, Fold, Bet chips, Raise chips]
 
 
@@ -94,7 +94,7 @@ getValidAction g@Game{..} name action =  do
     let validActions = filter (isRight . validateAction g name) (actions betAmount')
     if null validActions then panic else return ()
     randIx <- randomRIO (0, length validActions - 1)
-    return $ validActions !! randIx
+    return $ PlayerAction { action = validActions !! randIx, .. }
   where 
       lowerBetBound = if (_bet > 0) then (2 * _bet) else 1
       Player{..} = fromJust $ getGamePlayer g name

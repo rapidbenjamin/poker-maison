@@ -209,6 +209,12 @@ data Blind
   | NoBlind
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
+data PlayerAction = PlayerAction {
+  name :: PlayerName ,
+  action :: Action
+} deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+
+
 -- If you can check, that is you aren't facing an amount you have to call, 
 -- then when you put in chips it is called a bet. If you have to put in
 -- some amount of chips to continue with the hand, and you want to 
@@ -219,7 +225,7 @@ data Blind
 -- show his hands after everyone has folded to them. Essentially in
 -- this scenario mucking or showing refers to the decision to
 -- show ones hand or not to the table after everyone else has folded.
-data PlayerAction
+data Action 
   = SitDown Player -- doesnt progress the game
   | LeaveSeat' -- doesnt progress the game
   | PostBlind Blind
@@ -285,6 +291,8 @@ newtype CurrentPlayerToActErr =
   deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 makeLenses ''Player
+
+makeLenses ''PlayerAction
 
 makeLenses ''Game
 

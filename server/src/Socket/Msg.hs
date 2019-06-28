@@ -136,16 +136,16 @@ playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
 -- We use a duplicate to listen to the client so as to not consume messages intended for other tables
 awaitValidPlayerAction ::
      TableName -> Game -> PlayerName -> TChan MsgIn -> STM MsgIn
-awaitValidPlayerAction tableName game playerName dupChan =
+awaitValidPlayerAction tableName game name dupChan =
   readTChan dupChan >>= \msg ->
-    if isValidAction game playerName msg
+    if isValidAction game name msg
       then return msg
-      else awaitValidPlayerAction tableName game playerName dupChan
+      else awaitValidPlayerAction tableName game name dupChan
   where
-    isValidAction game playerName =
+    isValidAction game name =
       \case
-        GameMsgIn (GameMove tableName' action) ->
-          (isRight $ validateAction game playerName action) &&
+        GameMsgIn (GameMove tableName' PlayerAction{..}) ->
+          (isRight $ validateAction game name action) &&
           tableName == tableName'
         _ -> False
 
@@ -163,7 +163,7 @@ awaitTimedPlayerAction socketReadChan game tableName (Username playerName) = do
   timer <- async $ atomically $ readTVar delayTVar >>= check
   msgInOrTimedOut <- waitEitherCancel timer validPlayerAction
   when (isLeft msgInOrTimedOut) $
-    atomically $ writeTChan socketReadChan (GameMsgIn $ GameMove tableName Timeout)
+    atomically $ writeTChan socketReadChan (GameMsgIn $ GameMove tableName PlayerAction{name=playerName, action=Timeout})
   where
     timeoutDuration = 6500000
 
@@ -288,10 +288,11 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
             Left err -> throwError err
             Right () -> do
               let player = initPlayer (unUsername username) chipsToSit
-                  takeSeatAction = GameMove tableName $ SitDown player
+                  playerAction = PlayerAction {name= unUsername username, action=SitDown player}
+                  takeSeatAction = GameMove tableName playerAction
               eitherProgressedGame <-
                 liftIO $
-                  (runPlayerAction game (unUsername username) (SitDown player))
+                  (runPlayerAction game PlayerAction {name=unUsername username, action = SitDown player})
               case eitherProgressedGame of
                 Left gameErr -> throwError $ GameErr gameErr
                 Right newGame -> do
@@ -322,7 +323,7 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
       if unUsername username `notElem` getGamePlayerNames game
         then throwError $ NotSatInGame tableName
         else do
-          eitherProgressedGame <- liftIO $ (runPlayerAction game (unUsername username) LeaveSeat')
+          eitherProgressedGame <- liftIO $ (runPlayerAction game PlayerAction {name=unUsername username, action= LeaveSeat'})
           case eitherProgressedGame of
             Left gameErr ->
               throwError $ GameErr gameErr
@@ -385,7 +386,7 @@ gameActionHandler gameMove@(GameMove tableName playerAction) = do
        in if not satAtTable
             then throwError $ NotSatAtTable tableName
             else do
-              eitherNewGame <- liftIO $ runPlayerAction game (unUsername username) playerAction
+              eitherNewGame <- liftIO $ runPlayerAction game playerAction
               case eitherNewGame of
                 Left gameErr -> do 
                   liftIO $ print "Error! :<"

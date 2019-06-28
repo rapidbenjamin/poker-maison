@@ -38,9 +38,9 @@ import Poker.Types
 -- if the current game stage is showdown then the next game state will have a newly shuffled
 -- deck and pocket cards/ bets reset
 runPlayerAction ::
-     Game -> PlayerName -> PlayerAction -> IO (Either GameErr Game)
-runPlayerAction currGame@Game {..} playerName action =
-    case handlePlayerAction currGame playerName action of
+     Game -> PlayerAction -> IO (Either GameErr Game)
+runPlayerAction currGame@Game {..} playerAction'@PlayerAction{..} =
+    case handlePlayerAction currGame playerAction' of
       Left err -> do
         pPrint currGame
         print err
@@ -95,43 +95,43 @@ progressGame game@Game {..}
   where
     numberPlayersSatIn = length $ getActivePlayers _players
 
-handlePlayerAction :: Game -> PlayerName -> PlayerAction -> Either GameErr Game
-handlePlayerAction game@Game {..} playerName =
-  \case
-    action@(PostBlind blind) ->
-      validateAction game playerName action $> postBlind blind playerName game
-    action@Fold ->
-      validateAction game playerName action $> foldCards playerName game
-    action@Call -> validateAction game playerName action $> call playerName game
-    action@(Raise amount) ->
-      validateAction game playerName action $> makeBet amount playerName game
-    action@Check ->
-      validateAction game playerName action $> check playerName game
-    action@(Bet amount) ->
-      validateAction game playerName action $> makeBet amount playerName game
-    action@Timeout -> handlePlayerTimeout playerName game
-    action@(SitDown player) ->
-      validateAction game playerName action $> seatPlayer player game
-    action@SitIn ->
-      validateAction game playerName action $> sitIn playerName game
-    action@LeaveSeat' ->
-      validateAction game playerName action $> leaveSeat playerName game
+handlePlayerAction :: Game -> PlayerAction -> Either GameErr Game
+handlePlayerAction game@Game {..} PlayerAction{..} =
+  case action of
+    PostBlind blind ->
+      validateAction game name action $> postBlind blind name game
+    Fold ->
+      validateAction game name action $> foldCards name game
+    Call -> validateAction game name action $> call name game
+    Raise amount ->
+      validateAction game name action $> makeBet amount name game
+    Check ->
+      validateAction game name action $> check name game
+    Bet amount ->
+      validateAction game name action $> makeBet amount name game
+    Timeout -> handlePlayerTimeout name game
+    SitDown player ->
+      validateAction game name action $> seatPlayer player game
+    SitIn ->
+      validateAction game name action $> sitIn name game
+    LeaveSeat' ->
+      validateAction game name action $> leaveSeat name game
 
 -- TODO - "Except" or ExceptT Identity has a more reliable Alternative instance.
 -- Use except and remove the guards and just use <|> to combine all the 
 -- eithers and return the first right. I.e try each action in turn and return the first
 -- valid action. 
 handlePlayerTimeout :: PlayerName -> Game -> Either GameErr Game
-handlePlayerTimeout playerName game@Game {..}
+handlePlayerTimeout name game@Game {..}
   | playerCanCheck && handStarted =
-    validateAction game playerName Check $> check playerName game
+    validateAction game name Check $> check name game
   | not playerCanCheck && handStarted =
-    validateAction game playerName Timeout $> foldCards playerName game
+    validateAction game name Timeout $> foldCards name game
   | not handStarted =
-    validateAction game playerName SitOut $> sitOut playerName game
+    validateAction game name SitOut $> sitOut name game
   where
     handStarted = _street /= PreDeal
-    playerCanCheck = isRight $ canCheck playerName game
+    playerCanCheck = isRight $ canCheck name game
 
 
 initialGameState :: Deck -> Game

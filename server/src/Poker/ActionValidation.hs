@@ -33,36 +33,36 @@ import Poker.Types
 
 -- TODO remove sitdowm from playerMoves and then
 -- can use  checkPlayerSatAtTable on validateAction
-validateAction :: Game -> PlayerName -> PlayerAction -> Either GameErr ()
-validateAction game@Game {..} playerName =
+validateAction :: Game -> PlayerName -> Action -> Either GameErr ()
+validateAction game@Game {..} name' =
   \case
     PostBlind blind ->
-      when (_maxBet > 0) (isPlayerActingOutOfTurn game playerName) >>
-      checkPlayerSatAtTable game playerName >>
-      canPostBlind game playerName blind >>
-      validateBlindAction game playerName blind
-    Check -> isPlayerActingOutOfTurn game playerName >> canCheck playerName game
-    Fold -> isPlayerActingOutOfTurn game playerName >> canFold playerName game
+      when (_maxBet > 0) (isPlayerActingOutOfTurn game name') >>
+      checkPlayerSatAtTable game name' >>
+      canPostBlind game name' blind >>
+      validateBlindAction game name' blind
+    Check -> isPlayerActingOutOfTurn game name' >> canCheck name' game
+    Fold -> isPlayerActingOutOfTurn game name' >> canFold name' game
     Bet amount ->
-      isPlayerActingOutOfTurn game playerName >> canBet playerName amount game
+      isPlayerActingOutOfTurn game name' >> canBet name' amount game
     Raise amount ->
-      isPlayerActingOutOfTurn game playerName >> canRaise playerName amount game
-    Call -> isPlayerActingOutOfTurn game playerName >> canCall playerName game
-    Timeout -> canTimeout playerName game
-    LeaveSeat' -> canLeaveSeat playerName game
+      isPlayerActingOutOfTurn game name' >> canRaise name' amount game
+    Call -> isPlayerActingOutOfTurn game name' >> canCall name' game
+    Timeout -> canTimeout name' game
+    LeaveSeat' -> canLeaveSeat name' game
     SitDown plyr -> canSit plyr game
-    SitOut -> checkPlayerSatAtTable game playerName >> canSitOut playerName game
-    SitIn -> checkPlayerSatAtTable game playerName >> canSitIn playerName game
-    ShowHand -> validateShowOrMuckHand game playerName ShowHand
-    MuckHand -> validateShowOrMuckHand game playerName MuckHand
+    SitOut -> checkPlayerSatAtTable game name' >> canSitOut name' game
+    SitIn -> checkPlayerSatAtTable game name' >> canSitIn name' game
+    ShowHand -> validateShowOrMuckHand game name' ShowHand
+    MuckHand -> validateShowOrMuckHand game name' MuckHand
 
 -- Cannot post a blind to start a game unless at least two active players are present.
 -- An active player is one whose playerState is set to In.
 canPostBlind :: Game -> PlayerName -> Blind -> Either GameErr ()
-canPostBlind game@Game {..} pName blind
+canPostBlind game@Game {..} name blind
   | activePlayersCount < 2 =
     Left $
-    InvalidMove pName $
+    InvalidMove name $
     CannotPostBlind
       "Cannot post blind unless a minimum of two active players are sat at table"
   | otherwise =
@@ -75,33 +75,33 @@ canPostBlind game@Game {..} pName blind
         if chipCount < _smallBlind
           then notEnoughChipsErr
           else Right ()
-      NoBlind -> Left $ InvalidMove pName CannotPostNoBlind
+      NoBlind -> Left $ InvalidMove name CannotPostNoBlind
   where
-    chipCount = _chips $ fromJust $ getGamePlayer game pName
+    chipCount = _chips $ fromJust $ getGamePlayer game name
     activePlayersCount = length $ getActivePlayers _players
-    notEnoughChipsErr = Left $ InvalidMove pName NotEnoughChipsForAction
+    notEnoughChipsErr = Left $ InvalidMove name NotEnoughChipsForAction
 
 -- | The first player to post their blinds in the predeal stage  can do it from any 
 -- position as long as there aren't enough players sat in to start a game 
 -- Therefore the acting in turn rule wont apply for that first move 
 -- when (< 2 players state set to sat in)
 isPlayerActingOutOfTurn :: Game -> PlayerName -> Either GameErr ()
-isPlayerActingOutOfTurn game@Game {..} playerName
+isPlayerActingOutOfTurn game@Game {..} name
   | currPosToActOutOfBounds = error "_currentPosToAct too big"
   | isNothing _currentPosToAct = 
       Left $
-      InvalidMove playerName $
+      InvalidMove name $
       NoPlayerCanAct
   | (fromJust _currentPosToAct) < 0 = error "_currentPosToAct player < 0"
   | _street == PreDeal = Right () -- first predeal blind bet can be done from any position
   | otherwise =
-    case playerName `elemIndex` gamePlayerNames of
-      Nothing -> Left $ NotAtTable playerName
+    case name `elemIndex` gamePlayerNames of
+      Nothing -> Left $ NotAtTable name
       Just pos ->
-        if doesPlayerHaveToAct playerName game
+        if doesPlayerHaveToAct name game
           then Right ()
           else Left $
-               InvalidMove playerName $
+               InvalidMove name $
                OutOfTurn $
                CurrentPlayerToActErr $ gamePlayerNames !! (fromJust _currentPosToAct)
   where
@@ -111,77 +111,77 @@ isPlayerActingOutOfTurn game@Game {..} playerName
     currPosToActOutOfBounds = maybe False ((<) ((length _players) - 1)) _currentPosToAct
 
 checkPlayerSatAtTable :: Game -> PlayerName -> Either GameErr ()
-checkPlayerSatAtTable game@Game {..} pName
-  | not atTable = Left $ NotAtTable pName
+checkPlayerSatAtTable game@Game {..} name
+  | not atTable = Left $ NotAtTable name
   | otherwise = Right ()
   where
     playerNames = getGamePlayerNames game
-    atTable = pName `elem` playerNames
+    atTable = name `elem` playerNames
 
 canTimeout :: PlayerName -> Game -> Either GameErr ()
-canTimeout playerName game@Game {..}
-  | _street == Showdown = Left $ InvalidMove playerName InvalidActionForStreet
-  | otherwise = isPlayerActingOutOfTurn game playerName
+canTimeout name game@Game {..}
+  | _street == Showdown = Left $ InvalidMove name InvalidActionForStreet
+  | otherwise = isPlayerActingOutOfTurn game name
 
 canBet :: PlayerName -> Int -> Game -> Either GameErr ()
-canBet pName amount game@Game {..}
-  | amount < _bigBlind = Left $ InvalidMove pName BetLessThanBigBlind
-  | amount > chipCount = Left $ InvalidMove pName NotEnoughChipsForAction
+canBet name amount game@Game {..}
+  | amount < _bigBlind = Left $ InvalidMove name BetLessThanBigBlind
+  | amount > chipCount = Left $ InvalidMove name NotEnoughChipsForAction
   | _street == Showdown || _street == PreDeal =
-    Left $ InvalidMove pName InvalidActionForStreet
+    Left $ InvalidMove name InvalidActionForStreet
   | _maxBet > 0 && _street /= PreFlop =
     Left $
-    InvalidMove pName $
+    InvalidMove name $
     CannotBetShouldRaiseInstead
       "A bet can only be carried out if no preceding player has bet"
   | otherwise = Right ()
   where
-    chipCount = _chips $ fromJust $ getGamePlayer game pName
+    chipCount = _chips $ fromJust $ getGamePlayer game name
 
 -- Keep in mind that a player can always raise all in,
 -- even if their total chip count is less than what 
 -- a min-bet or min-raise would be. 
 canRaise :: PlayerName -> Int -> Game -> Either GameErr ()
-canRaise pName amount game@Game {..}
+canRaise name amount game@Game {..}
   | _street == Showdown || _street == PreDeal =
-    Left $ InvalidMove pName InvalidActionForStreet
-  | _maxBet == 0 = Left $ InvalidMove pName CannotRaiseShouldBetInstead
+    Left $ InvalidMove name InvalidActionForStreet
+  | _maxBet == 0 = Left $ InvalidMove name CannotRaiseShouldBetInstead
   | amount < minRaise && amount /= chipCount =
-    Left $ InvalidMove pName $ RaiseAmountBelowMinRaise minRaise
-  | amount > chipCount = Left $ InvalidMove pName NotEnoughChipsForAction
+    Left $ InvalidMove name $ RaiseAmountBelowMinRaise minRaise
+  | amount > chipCount = Left $ InvalidMove name NotEnoughChipsForAction
   | otherwise = Right ()
   where
     minRaise = 2 * _maxBet
-    chipCount = _chips $ fromJust $ getGamePlayer game pName
+    chipCount = _chips $ fromJust $ getGamePlayer game name
 
 canCheck :: PlayerName -> Game -> Either GameErr ()
-canCheck pName Game {..}
+canCheck name Game {..}
   | _street == PreFlop && _committed < _bigBlind =
-    Left $ InvalidMove pName CannotCheckShouldCallRaiseOrFold
+    Left $ InvalidMove name CannotCheckShouldCallRaiseOrFold
   | _street == Showdown || _street == PreDeal =
-    Left $ InvalidMove pName InvalidActionForStreet
+    Left $ InvalidMove name InvalidActionForStreet
   | _committed < _maxBet =
-    Left $ InvalidMove pName CannotCheckShouldCallRaiseOrFold
+    Left $ InvalidMove name CannotCheckShouldCallRaiseOrFold
   | otherwise = Right ()
   where
     Player {..} =
-      fromJust $ find (\Player {..} -> _playerName == pName) _players
+      fromJust $ find (\Player {..} -> _playerName == name) _players
 
 canFold :: PlayerName -> Game -> Either GameErr ()
-canFold pName Game {..}
+canFold name Game {..}
   | _street == Showdown || _street == PreDeal =
-    Left $ InvalidMove pName InvalidActionForStreet
+    Left $ InvalidMove name InvalidActionForStreet
   | otherwise = Right ()
 
 canCall :: PlayerName -> Game -> Either GameErr ()
-canCall pName game@Game {..}
+canCall name game@Game {..}
   | _street == Showdown || _street == PreDeal =
-    Left $ InvalidMove pName InvalidActionForStreet
+    Left $ InvalidMove name InvalidActionForStreet
   | _maxBet == 0 && _street /= PreFlop =
-    Left $ InvalidMove pName CannotCallZeroAmountCheckOrBetInstead
+    Left $ InvalidMove name CannotCallZeroAmountCheckOrBetInstead
   | otherwise = Right ()
   where
-    p = fromJust (getGamePlayer game pName)
+    p = fromJust (getGamePlayer game name)
     chipCount = _chips p
     amountNeededToCall = _maxBet - _bet p
 
@@ -197,22 +197,22 @@ canSit player@Player {..} game@Game {..}
   | otherwise = Left $ CannotSitAtFullTable _playerName
 
 canSitOut :: PlayerName -> Game -> Either GameErr ()
-canSitOut pName game@Game {..}
-  | _street /= PreDeal = Left $ InvalidMove pName CannotSitOutOutsidePreDeal
-  | currentState == Nothing = Left $ NotAtTable pName
-  | currentState == (Just SatOut) = Left $ InvalidMove pName AlreadySatOut
+canSitOut name game@Game {..}
+  | _street /= PreDeal = Left $ InvalidMove name CannotSitOutOutsidePreDeal
+  | currentState == Nothing = Left $ NotAtTable name
+  | currentState == (Just SatOut) = Left $ InvalidMove name AlreadySatOut
   | otherwise = Right ()
   where
-    currentState = getGamePlayerState game pName
+    currentState = getGamePlayerState game name
 
 canSitIn :: PlayerName -> Game -> Either GameErr ()
-canSitIn pName game@Game {..}
-  | _street /= PreDeal = Left $ InvalidMove pName CannotSitInOutsidePreDeal
-  | currentState == Nothing = Left $ NotAtTable pName
-  | currentState == (Just In) = Left $ InvalidMove pName AlreadySatIn
+canSitIn name game@Game {..}
+  | _street /= PreDeal = Left $ InvalidMove name CannotSitInOutsidePreDeal
+  | currentState == Nothing = Left $ NotAtTable name
+  | currentState == (Just In) = Left $ InvalidMove name AlreadySatIn
   | otherwise = Right ()
   where
-    currentState = getGamePlayerState game pName
+    currentState = getGamePlayerState game name
 
 canLeaveSeat :: PlayerName -> Game -> Either GameErr ()
 canLeaveSeat playerName game@Game {..}
@@ -253,24 +253,24 @@ validateBlindAction game@Game {..} playerName blind
               bigBlindValue = _smallBlind * 2
 
 validateShowOrMuckHand ::
-     Game -> PlayerName -> PlayerAction -> Either GameErr ()
-validateShowOrMuckHand game@Game {..} pName action =
-  checkPlayerSatAtTable game pName
+     Game -> PlayerName -> Action -> Either GameErr ()
+validateShowOrMuckHand game@Game {..} name action =
+  checkPlayerSatAtTable game name
 
 -- Should Tell us if everyone has folded to the given playerName 
 -- and the hand is over
 canShowOrMuckHand :: PlayerName -> Game -> Either GameErr ()
-canShowOrMuckHand pName game@Game {..}
-  | _street /= Showdown = Left $ InvalidMove pName InvalidActionForStreet
+canShowOrMuckHand name game@Game {..}
+  | _street /= Showdown = Left $ InvalidMove name InvalidActionForStreet
   | otherwise =
     case _winners of
       SinglePlayerShowdown winningPlayerName ->
-        if winningPlayerName == pName
+        if winningPlayerName == name
           then Right ()
           else Left $
-               InvalidMove pName $ CannotShowHandOrMuckHand "Not winner of hand"
+               InvalidMove name $ CannotShowHandOrMuckHand "Not winner of hand"
       MultiPlayerShowdown _ ->
         Left $
-        InvalidMove pName $
+        InvalidMove name $
         CannotShowHandOrMuckHand
           "Can only show or muck cards if winner of single player pot during showdown"

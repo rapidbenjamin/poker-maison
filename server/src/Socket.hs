@@ -110,8 +110,8 @@ runSocketServer
   :: BS.ByteString -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port connString redisConfig = do
   putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ TakeSeat "black" 2222)
-  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" (Raise 400))
-  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" (Fold))
+  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" $ PlayerAction {name = "player1", action = Raise 400})
+  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" $ PlayerAction {name = "player1", action = Fold})
 
 
   lobby           <- initialLobby
@@ -145,20 +145,49 @@ subscribeToTable tableOutput playerOutput = tableOutput <> playerOutput
 
 -- Uses incoming msg mailbox as a producer of actions which are run against 
 -- the game state and then fed into the outgoing msg mailbox to be propagated to clients
-gameStream :: Input GameMsgIn -> Output GameMsgOut -> Output GameMsgOut
-gameStream msgInput msgOutput = producer >-> processor >-> consumer 
-  where 
-    producer = frominput msgInput
-    processor = gameMsgInHandler'
-    consumer = toOutputMsgOutput
+--gameStream :: Input GameMsgIn -> Output GameMsgOut -> Output GameMsgOut
+--gameStream msgInput msgOutput = producer >-> gameMsgInHandler' >-> consumer 
+--  where 
+--    producer = fromInput msgInput
+--    consumer = toOutput msgOutput
 
 
 
-gameMsgInHandler' :: Pipe GameMsgIn (Either GameErr Game) IO ()
-gameMsgInHandler' = undefined
+-- (~>) :: Functor m => (a -> Producer b m r) -> (b -> Producer   c m ()) -> (a -> Producer   c m r)
+
+
+--s :: Producer GameMsgOut IO () -> Producer MsgOut IO ()
+--s returnToSender propagateValidAction = 
+--  either  (toOutput senderMsgMailbox) updateGame
+
+-- Note this doesn't propagate new game state to clients just updates the game in the lobby
+updateGame :: TVar ServerState -> TableName -> Game -> STM ()
+updateGame s tableName g = do 
+  ServerState{..} <- readTVar s
+  let newLobby = updateTableGame tableName g lobby
+  writeTVar s ServerState { lobby = newLobby , .. }
+
+-- and writes GameOutMsg to outgoing mailbox in table so it is propagated to clients
+--broadcast'
+--broadcast' 
+--
+
+playerActionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
+playerActionHandler g = forever $ do 
+    playerAction <- await
+    res <- lift $ runPlayerAction g playerAction
+    yield res
+    
+    
+--    ::IO (Either GameErr Game)
+--  either each
+---- each :: (Monad m, Foldable f) => f a -> Producer a m ()
+
 
 --gameMsgOutHandler' :: Pipe (Either GameErr Game) GameMsgOut IO ()
---gameMsgoutHandler' = undefined
+--gameMsgOutHandler' = undefined
+
+
 
 -- (~>) :: Monad m
 -- => (a -> Producer b m ())
@@ -404,7 +433,7 @@ runBotAction dbConn serverStateTVar g pName = do
   case maybeAction of
     Nothing -> return ()
     Just a  -> do
-      eitherNewGame <- runPlayerAction g pName a
+      eitherNewGame <- runPlayerAction g a
       case eitherNewGame of
         Left  gameErr -> print (show $ GameErr gameErr) >> return ()
         Right newGame -> do
@@ -421,7 +450,7 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
   case M.lookup tableName $ unLobby lobby of
     Nothing         -> error "table doesnt exist" >> return ()
     Just Table {..} -> do
-      eitherNewGame <- liftIO $ runPlayerAction game _playerName takeSeatAction
+      eitherNewGame <- liftIO $ runPlayerAction game takeSeatAction
       case eitherNewGame of
         Left  gameErr -> print $ GameErr gameErr
         Right newGame -> do
@@ -430,13 +459,13 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
  where
   chipsToSit     = 2000
   tableName      = "Black"
-  takeSeatAction = (SitDown player)
+  takeSeatAction = PlayerAction { name=_playerName, action = SitDown player}
 
 --runBotAction :: TVar ServerState -> TableName -> Game -> PlayerAction -> STM ()
 --runBotAction serverS tableName g botAction = do
 
 
-actions :: Street -> Int -> [PlayerAction]
+actions :: Street -> Int -> [Action]
 actions st chips | st == PreDeal = [PostBlind Big, PostBlind Small]
                  | otherwise     = [Check, Call, Fold, Bet chips, Raise chips]
 
@@ -445,8 +474,8 @@ getValidAction :: Game -> PlayerName -> IO (Maybe PlayerAction)
 getValidAction g@Game {..} name
   | length _players < 2 = return Nothing
   | _street == PreDeal = return $ case blindRequiredByPlayer g name of
-    Small   -> Just $ PostBlind Small
-    Big     -> Just $ PostBlind Big
+    Small   -> Just $ PlayerAction { action = PostBlind Small, ..}
+    Big     -> Just $ PlayerAction { action = PostBlind Big , ..}
     NoBlind -> Nothing
   | otherwise = do
     betAmount' <- randomRIO (lowerBetBound, chipCount)
@@ -460,7 +489,7 @@ getValidAction g@Game {..} name
 
     randIx <- randomRIO (0, length validActions - 1)
 
-    return $ Just $ validActions !! randIx
+    return $ Just $ PlayerAction {action =validActions !! randIx, ..}
  where
   lowerBetBound = if (_maxBet > 0) then (2 * _maxBet) else _bigBlind
   chipCount     = fromMaybe 0 ((^. chips) <$> (getGamePlayer g name))
