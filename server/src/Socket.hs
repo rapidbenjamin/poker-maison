@@ -172,13 +172,72 @@ updateGame s tableName g = do
 --broadcast' 
 --
 
-playerActionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
-playerActionHandler g = forever $ do 
+
+
+evalPlayerAction :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
+evalPlayerAction g = forever $ do 
     playerAction <- await
     res <- lift $ runPlayerAction g playerAction
     yield res
-    
-    
+
+
+-- An illegal player moves result in the err being sent back to the client who made the move
+-- whereas if the player move is legal we get a new game state (Right) which is written to  
+-- the table mailbox for propagation to clients who are observing the game
+-- (~>) composes our consumers which handle the success and failure cases of 
+-- player action evaluation. This composition returns a new consumer which abstracts
+-- away the machinery of handling failure for illegal player actions.
+playerActionHandler' ::
+     (GameErr -> Consumer PlayerAction IO ())
+  -> (Game -> Consumer PlayerAction IO ())
+  -> Game
+  -> Consumer PlayerAction IO (Either GameErr Game)
+playerActionHandler' failureConsumer successConsumer =
+    evalPlayerAction ~> divertResult
+    where
+      divertResult = 
+        \case 
+          Left e  -> failureConsumer e
+          Right g -> successConsumer g
+
+
+-- When a valid player action is received the resulting MsgOut after evaluation against the game
+-- is diverted to the game msg mailbox so new gamestate so it can be propagated
+-- to all observers.
+--
+-- Otherwise if the evaluation of the player action failed i.e invalid move then 
+-- the error msg is diverted back to the player's socket connection mailbox 
+--gg ::
+--  Output GameMsgOut ->
+--  Output GameMsgOut -> Producer PlayerAction IO () -> Effect IO ()
+--gg pOut gOut producer = producer >-> actionHandler playerAction
+
+
+--runEffect $ actionProducer >->
+
+-- errConsumer :: Consumer MsgOut IO ()
+-- errConsumer = toOutput playerMsgOutSink
+-- gameUpdateConsumer :: Consumer GameMsgOut IO ()
+-- gameUpdateConsumer = toOutput gameMsgOutSink
+  
+--playerActionHandler errConsumer gameUpdateConsumer 
+--(~>) :: (a -> Pipe   x b m r) -> (b -> Consumer x   m ()) -> (a -> Consumer x   m r)
+
+--for' ::
+--  Pipe PlayerAction (Either GameErr Game) m r -> 
+--  (Either GameErr Game -> Consumer PlayerAction m ()) -> 
+--  Consumer PlayerAction m r
+--for' p h = for p h 
+
+actionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO ()
+actionHandler g = forever $ do
+  a <- await
+  res <- lift $ runPlayerAction g a
+  yield res
+
+
+-- playerActionHandler :: Output GameMsgOut -> Output MsgOut -> 
+  -- playerActionHandler gameMailbox playerMailbox =
 --    ::IO (Either GameErr Game)
 --  either each
 ---- each :: (Monad m, Foldable f) => f a -> Producer a m ()
@@ -201,19 +260,23 @@ playerActionHandler g = forever $ do
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
-websocketInMailbox :: WS.Connection -> IO (Input MsgIn)
-websocketInMailbox conn = do
+websocketInMailbox :: WS.Connection -> MsgHandlerConfig -> IO (Input MsgIn)
+websocketInMailbox conn conf = do
   print "directing new socket msgs to mailbox"
   (writeMsgInSource, readMsgInSource) <- spawn Unbounded
   (writeMsgOutSource, readMsgOutSource) <- spawn Unbounded
   async $ socketMsgInWriter conn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
-  async $ runEffect $ fromInput readMsgInSource >-> msgInHandler >-> toOutput writeMsgOutSource -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
+  async $ (flip runReaderT) conf (runEffect $ fromInput readMsgInSource >-> msgInHandler >-> toOutput writeMsgOutSource) -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
   async $ socketMsgOutWriter conn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
   --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
  -- async $ runEffect $ fromInput inputMailbox >-> msgInHandler >->
 
   return readMsgInSource
     -- encode MsgOut values to JSON bytestring to send to socket
+
+
+msgInHandler' :: Pipe MsgIn MsgOut (ReaderT MsgHandlerConfig IO) () 
+msgInHandler' = undefined
 
 -- Runs an IO action forever which parses read MsgIn's from the websocket connection 
 -- and puts them in our mailbox waiting to be processed by our MsgIn handler
@@ -269,14 +332,15 @@ msgOutEncoder = forever $ do
   yield $ fromString $ T.unpack $ X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 
 
-msgInHandler :: Pipe MsgIn MsgOut IO ()
+msgInHandler :: Pipe MsgIn MsgOut (ReaderT MsgHandlerConfig IO) ()
 msgInHandler = forever $ do
     msg <- await
-    lift $ print "msghandler : "
-    lift $ print msg
+    liftIO $ print "msghandler : "
+    liftIO $ print msg
     yield sampleMsg
-    msgInHandler
-  where sampleMsg = GameMsgOut PlayerLeft
+    return ()
+  where 
+    sampleMsg = GameMsgOut PlayerLeft
 
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
@@ -331,7 +395,7 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
-  async $ websocketInMailbox newConn
+  async $ websocketInMailbox newConn (msgConf newConn)
 
 
   authClient secretKey
