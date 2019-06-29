@@ -261,22 +261,17 @@ actionHandler g = forever $ do
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
 websocketInMailbox :: WS.Connection -> MsgHandlerConfig -> IO (Input MsgIn)
-websocketInMailbox conn conf = do
-  print "directing new socket msgs to mailbox"
+websocketInMailbox conn conf@MsgHandlerConfig{..} = do
   (writeMsgInSource, readMsgInSource) <- spawn Unbounded
   (writeMsgOutSource, readMsgOutSource) <- spawn Unbounded
   async $ socketMsgInWriter conn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
-  async $ (flip runReaderT) conf (runEffect $ fromInput readMsgInSource >-> msgInHandler >-> toOutput writeMsgOutSource) -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
+  async $ (runEffect $ fromInput readMsgInSource >-> msgInHandler conf >-> toOutput writeMsgOutSource) -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
   async $ socketMsgOutWriter conn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
   --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
  -- async $ runEffect $ fromInput inputMailbox >-> msgInHandler >->
 
   return readMsgInSource
     -- encode MsgOut values to JSON bytestring to send to socket
-
-
-msgInHandler' :: Pipe MsgIn MsgOut (ReaderT MsgHandlerConfig IO) () 
-msgInHandler' = undefined
 
 -- Runs an IO action forever which parses read MsgIn's from the websocket connection 
 -- and puts them in our mailbox waiting to be processed by our MsgIn handler
@@ -317,9 +312,11 @@ msgInDecoder rawMsgProducer = do
     Nothing -> return ()
     Just (Left a) -> do
       (x, p'') <- lift $ runStateT draw p'
+      lift $ print x
       -- x is the problem input msg which failed to parse. We ignore it here by just resuming
       msgInDecoder p''
-    Just (Right msgIn) -> do -- successful parsing case
+    Just c@(Right msgIn) -> do -- successful parsing case
+      lift $ print c 
       yield msgIn
       msgInDecoder p'
 
@@ -332,12 +329,14 @@ msgOutEncoder = forever $ do
   yield $ fromString $ T.unpack $ X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 
 
-msgInHandler :: Pipe MsgIn MsgOut (ReaderT MsgHandlerConfig IO) ()
-msgInHandler = forever $ do
-    msg <- await
+msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
+msgInHandler conf = forever $ do
+    msgIn <- await
     liftIO $ print "msghandler : "
-    liftIO $ print msg
-    yield sampleMsg
+    liftIO $ print msgIn
+    msgOut <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
+    let msgOut' = either ErrMsg id msgOut
+    yield msgOut'
     return ()
   where 
     sampleMsg = GameMsgOut PlayerLeft
@@ -395,16 +394,17 @@ application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
   msg <- WS.receiveData newConn
+  ServerState {..} <- readTVarIO serverState
+  
   async $ websocketInMailbox newConn (msgConf newConn)
-
-
   authClient secretKey
              serverState
              dbConnString
              redisConfig
-             authenticatedMsgLoop
              newConn
-    $ Token msg
+        --     authenticatedMsgLoop
+             (Token msg)
+  forever (WS.receiveData newConn :: IO Text) 
  where
   msgConf c = MsgHandlerConfig
     { serverStateTVar = serverState
