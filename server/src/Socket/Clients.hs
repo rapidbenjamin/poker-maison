@@ -56,19 +56,17 @@ authClient
   -> RedisConfig
   -> WS.Connection
   -> Token
-  -> IO ()
+  -> IO (Either Err Username)
 authClient secretKey state dbConn redisConfig conn (Token token) = do
-  authResult <- runExceptT $ liftIO $ verifyJWT secretKey
-                                                (C.pack $ T.unpack token)
+  authResult <- runExceptT $ liftIO $ verifyJWT secretKey (C.pack $ T.unpack token)
   case authResult of
-    (Left err) -> sendMsg conn $ ErrMsg $ AuthFailed err
+    (Left err) -> return $ Left $ AuthFailed err
     (Right (Left err)) ->
-      sendMsg conn $ ErrMsg $ AuthFailed $ T.pack $ show err
+      return $ Left $ AuthFailed $ T.pack $ show err
     (Right (Right claimsSet)) -> case (decodeJWT claimsSet) of
       (Left jwtErr) ->
-        sendMsg conn $ ErrMsg $ AuthFailed $ T.pack $ show jwtErr
+        return $ Left $ AuthFailed $ T.pack $ show jwtErr
       (Right username@(Username name)) -> do
-        sendMsg conn AuthSuccess
         ServerState {..} <- readTVarIO state
         atomically $ swapTVar
           state
@@ -80,17 +78,7 @@ authClient secretKey state dbConn redisConfig conn (Token token) = do
             , ..
             }
           )
-        return ()
-         --   socketReadChan <- newTChanIO
-         --   let msgHandlerConfig =
-         --         MsgHandlerConfig
-         --           { serverStateTVar = state
-         --           , dbConn = dbConn
-         --           , clientConn = conn
-         --           , redisConfig = redisConfig
-         --           , ..
-         --           }
---       --     authMsgLoop msgHandlerConfig
+        return $ pure $ Username name
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
 removeClient username serverStateTVar = do

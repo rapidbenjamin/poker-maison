@@ -268,19 +268,14 @@ actionHandler g = forever $ do
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
-websocketInMailbox :: WS.Connection -> MsgHandlerConfig -> IO (Input MsgIn)
-websocketInMailbox conn conf@MsgHandlerConfig {..} = do
+websocketInMailbox :: MsgHandlerConfig -> IO (Input MsgIn)
+websocketInMailbox conf@MsgHandlerConfig {..} = do
   (writeMsgInSource , readMsgInSource ) <- spawn unbounded
   (writeMsgOutSource, readMsgOutSource) <- spawn unbounded
-  async $ socketMsgInWriter conn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
-  async $ runEffect
-    (   fromInput readMsgInSource
-    >-> msgInHandler conf
-    >-> toOutput writeMsgOutSource
-    ) -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
-  async $ socketMsgOutWriter conn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
+  async $ socketMsgInWriter clientConn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
+  async $ runEffect $ fromInput readMsgInSource >-> msgInHandler conf >-> toOutput writeMsgOutSource -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
+  async $ socketMsgOutWriter clientConn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
   --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
- -- async $ runEffect $ fromInput inputMailbox >-> msgInHandler >->
 
   return readMsgInSource
     -- encode MsgOut values to JSON bytestring to send to socket
@@ -300,8 +295,9 @@ socketMsgInWriter conn writeMsgInSource = forever $ do
   link a
 
 socketMsgOutWriter :: WS.Connection -> Input MsgOut -> IO (Async ())
-socketMsgOutWriter conn is = forever $ do
-  runEffect $ for (fromInput is >-> msgOutEncoder) (lift . WS.sendTextData conn)
+socketMsgOutWriter conn is = forever $ runEffect $ for
+  (fromInput is >-> msgOutEncoder)
+  (lift . WS.sendTextData conn)
 
 
 encodeMsgOutToJSON :: MsgOut -> Text
@@ -362,7 +358,7 @@ logMsgIn = do
   x <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
-    Left e@(G.IOError { G.ioe_type = t }) ->
+    Left e@G.IOError { G.ioe_type = t } ->
       lift $ unless (t == G.ResourceVanished) $ throwIO e
     -- Otherwise loop
     Right () -> yield msg >> logMsgIn
@@ -375,7 +371,7 @@ logMsgOut = do
   x <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
-    Left e@(G.IOError { G.ioe_type = t }) ->
+    Left e@G.IOError { G.ioe_type = t } ->
       lift $ unless (t == G.ResourceVanished) $ throwIO e
     -- Otherwise loop
     Right () -> yield msg >> logMsgOut
@@ -405,30 +401,25 @@ application
   -> TVar ServerState
   -> WS.ServerApp
 application secretKey dbConnString redisConfig serverState pending = do
-  newConn <- WS.acceptRequest pending
-  WS.forkPingThread newConn 30
-  msg              <- WS.receiveData newConn
+  conn <- WS.acceptRequest pending
+  WS.forkPingThread conn 30
+  authMsg <- WS.receiveData conn
   ServerState {..} <- readTVarIO serverState
-
-  async $ websocketInMailbox newConn (msgConf newConn)
-  authClient secretKey serverState dbConnString redisConfig newConn
-        --     authenticatedMsgLoop
-                                                                    (Token msg)
-  forever (WS.receiveData newConn :: IO Text)
+  eUsername <- authClient secretKey serverState dbConnString redisConfig conn (Token authMsg)
+  case eUsername of 
+    Right username' ->  do
+       sendMsg conn AuthSuccess
+       async $ websocketInMailbox $ msgConf conn username'
+       forever (WS.receiveData conn :: IO Text)
+    Left err -> sendMsg conn (ErrMsg err)
  where
-  msgConf c = MsgHandlerConfig
+  msgConf c username = MsgHandlerConfig
     { serverStateTVar = serverState
     , dbConn          = dbConnString
     , clientConn      = c
     , redisConfig     = redisConfig
     , ..
     }
-
-    -------- bots
-
-
-msgHandler' :: MsgHandlerConfig -> MsgIn -> IO MsgOut
-msgHandler' _ _ = return $ GameMsgOut PlayerLeft
 
 
 delayThenSeatPlayer
