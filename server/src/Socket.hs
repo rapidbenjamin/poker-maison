@@ -182,8 +182,6 @@ updateGame s tableName g = do
 --broadcast' 
 --
 
-
-
 evalPlayerAction
   :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
 evalPlayerAction g = forever $ do
@@ -272,8 +270,8 @@ actionHandler g = forever $ do
 -- We return input source which emits our received socket msgs.
 websocketInMailbox :: WS.Connection -> MsgHandlerConfig -> IO (Input MsgIn)
 websocketInMailbox conn conf@MsgHandlerConfig {..} = do
-  (writeMsgInSource , readMsgInSource ) <- spawn Unbounded
-  (writeMsgOutSource, readMsgOutSource) <- spawn Unbounded
+  (writeMsgInSource , readMsgInSource ) <- spawn unbounded
+  (writeMsgOutSource, readMsgOutSource) <- spawn unbounded
   async $ socketMsgInWriter conn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
   async $ runEffect
     (   fromInput readMsgInSource
