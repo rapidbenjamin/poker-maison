@@ -273,7 +273,11 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
   (writeMsgInSource , readMsgInSource ) <- spawn unbounded
   (writeMsgOutSource, readMsgOutSource) <- spawn unbounded
   async $ socketMsgInWriter clientConn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
-  async $ runEffect $ fromInput readMsgInSource >-> msgInHandler conf >-> toOutput writeMsgOutSource -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
+  async
+    $   runEffect
+    $   fromInput readMsgInSource
+    >-> msgInHandler conf
+    >-> toOutput writeMsgOutSource -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
   async $ socketMsgOutWriter clientConn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
   --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
 
@@ -307,7 +311,7 @@ encodeMsgOutToJSON msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
 socketReader conn = forever $ do
   msg <- liftIO $ WS.receiveData conn
-  liftIO $ putStrLn $ "received a msg from socket: " ++ show msg
+  liftIO $ putStrLn $ "received a raw msg from socket: " ++ show msg
   yield msg
 
 -- Convert a raw Bytestring producer of raw JSON into a new producer which yields 
@@ -340,22 +344,27 @@ msgOutEncoder = forever $ do
 
 
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
-msgInHandler conf = forever $ do
+msgInHandler conf@MsgHandlerConfig{..} = forever $ do
   msgIn <- await
   liftIO $ print "msghandler : "
   liftIO $ print msgIn
-  msgOut <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
-  let msgOut' = either ErrMsg id msgOut
-  yield msgOut'
+  msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
+  case msgOutE of
+    Right m@(GameMsgOut gm) -> do
+      yield m
+      liftIO $ handleNewGameState dbConn serverStateTVar gm
+    Right m   -> yield m
+    Left  err -> yield (ErrMsg err)
   return ()
-  where sampleMsg = GameMsgOut PlayerLeft
-
+  where 
+   sampleMsg = GameMsgOut PlayerLeft
+  
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
 logMsgIn = do
   msg <- await
-  lift $ putStrLn "logging MsgIn"
-  x <- lift $ try $ print msg
+  --lift $ putStrLn "logging MsgIn"
+  x   <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
     Left e@G.IOError { G.ioe_type = t } ->
@@ -367,8 +376,8 @@ logMsgIn = do
 logMsgOut :: Pipe MsgOut MsgOut IO ()
 logMsgOut = do
   msg <- await
-  lift $ putStrLn "logging MsgOut"
-  x <- lift $ try $ print msg
+ -- lift $ putStrLn "logging MsgOut"
+  x   <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
     Left e@G.IOError { G.ioe_type = t } ->
@@ -403,14 +412,19 @@ application
 application secretKey dbConnString redisConfig serverState pending = do
   conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
-  authMsg <- WS.receiveData conn
+  authMsg          <- WS.receiveData conn
   ServerState {..} <- readTVarIO serverState
-  eUsername <- authClient secretKey serverState dbConnString redisConfig conn (Token authMsg)
-  case eUsername of 
-    Right username' ->  do
-       sendMsg conn AuthSuccess
-       async $ websocketInMailbox $ msgConf conn username'
-       forever (WS.receiveData conn :: IO Text)
+  eUsername        <- authClient secretKey
+                                 serverState
+                                 dbConnString
+                                 redisConfig
+                                 conn
+                                 (Token authMsg)
+  case eUsername of
+    Right username' -> do
+      sendMsg conn AuthSuccess
+      async $ websocketInMailbox $ msgConf conn username'
+      forever (WS.receiveData conn :: IO Text)
     Left err -> sendMsg conn (ErrMsg err)
  where
   msgConf c username = MsgHandlerConfig

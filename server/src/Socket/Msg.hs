@@ -10,7 +10,6 @@ module Socket.Msg where
 import           Control.Applicative
 
 import           Control.Concurrent
-import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import           Control.Concurrent.STM.TChan
 
@@ -288,8 +287,10 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..}                       <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
-    Nothing -> throwError $ TableDoesNotExist tableName
-    Just table@Table {..} ->
+    Nothing               -> throwError $ TableDoesNotExist tableName
+    Just table@Table {..} -> do
+      liftIO $ print "GAME STATE AFTER TAKE SEAT ACTION RECVD"
+      liftIO $ print game
       if unUsername username `elem` getGamePlayerNames game
         then throwError $ AlreadySatInGame tableName
         else do
@@ -302,14 +303,12 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                                               , action = SitDown player
                                               }
                   takeSeatAction = GameMove tableName playerAction
-              eitherProgressedGame <-
-                liftIO
-                  $ (runPlayerAction
-                      game
-                      PlayerAction { name   = unUsername username
-                                   , action = SitDown player
-                                   }
-                    )
+              eitherProgressedGame <- liftIO $ runPlayerAction
+                game
+                PlayerAction { name   = unUsername username
+                             , action = SitDown player
+                             }
+
               case eitherProgressedGame of
                 Left  gameErr -> throwError $ GameErr gameErr
                 Right newGame -> do
