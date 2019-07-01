@@ -113,15 +113,13 @@ runSocketServer
 runSocketServer secretKey port connString redisConfig = do
   putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ TakeSeat "black" 2222)
   putStrLn $ T.unpack $ encodeMsgX
-    (GameMsgIn $ GameMove "black" $ PlayerAction { name   = "player1"
-                                                 , action = Raise 400
-                                                 }
-    )
+    (GameMsgIn $ GameMove "black" $ Raise 400)
   putStrLn $ T.unpack $ encodeMsgX
-    (GameMsgIn $ GameMove "black" $ PlayerAction { name   = "player1"
-                                                 , action = Fold
-                                                 }
-    )
+    (GameMsgIn $ GameMove "black" Fold)
+
+  putStrLn $ T.unpack $ encodeMsgX
+    (GameMsgIn $ GameMove "black" $ PostBlind Big)
+    
 
 
   lobby           <- initialLobby
@@ -344,21 +342,20 @@ msgOutEncoder = forever $ do
 
 
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
-msgInHandler conf@MsgHandlerConfig{..} = forever $ do
+msgInHandler conf@MsgHandlerConfig {..} = forever $ do
   msgIn <- await
   liftIO $ print "msghandler : "
   liftIO $ print msgIn
   msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
   case msgOutE of
     Right m@(GameMsgOut gm) -> do
-      yield m
+      yield m -- THIS DUPLICATES MESSAGES AS CLIENT ALREADY SUSCRIBED TO BROADCASTS FOR TABLE - SO CLIENT WILL RECEIVE MSG TWICE DOH!
       liftIO $ handleNewGameState dbConn serverStateTVar gm
     Right m   -> yield m
     Left  err -> yield (ErrMsg err)
   return ()
-  where 
-   sampleMsg = GameMsgOut PlayerLeft
-  
+  where sampleMsg = GameMsgOut PlayerLeft
+
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
 logMsgIn = do

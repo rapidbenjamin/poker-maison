@@ -24,7 +24,7 @@ import qualified Network.WebSockets            as WS
 
 import           Poker.Types                    ( Game
                                                 , GameErr
-                                                , PlayerAction
+                                                , Action
                                                 )
 import           Types                          ( RedisConfig
                                                 , Username
@@ -114,7 +114,7 @@ data GameMsgIn =
   TakeSeat TableName
              Int
   | LeaveSeat TableName
-  | GameMove TableName PlayerAction
+  | GameMove TableName Action
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 -- TODO - add BBs per hour, hands per hour etc

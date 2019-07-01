@@ -149,7 +149,7 @@ awaitValidPlayerAction tableName game name dupChan =
     else awaitValidPlayerAction tableName game name dupChan
  where
   isValidAction game name = \case
-    GameMsgIn (GameMove tableName' PlayerAction {..}) ->
+    GameMsgIn (GameMove tableName' action) ->
       (isRight $ validateAction game name action) && tableName == tableName'
     _ -> False
 
@@ -169,9 +169,7 @@ awaitTimedPlayerAction socketReadChan game tableName (Username playerName) = do
   msgInOrTimedOut <- waitEitherCancel timer validPlayerAction
   when (isLeft msgInOrTimedOut) $ atomically $ writeTChan
     socketReadChan
-    (GameMsgIn $ GameMove tableName
-                          PlayerAction { name = playerName, action = Timeout }
-    )
+    (GameMsgIn $ GameMove tableName Timeout)
   where timeoutDuration = 6500000
 
 --- If the game gets to a state where no player action is possible 
@@ -302,7 +300,7 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                   playerAction = PlayerAction { name   = unUsername username
                                               , action = SitDown player
                                               }
-                  takeSeatAction = GameMove tableName playerAction
+                  takeSeatAction = GameMove tableName (SitDown player)
               eitherProgressedGame <- liftIO $ runPlayerAction
                 game
                 PlayerAction { name   = unUsername username
@@ -393,8 +391,8 @@ getPlayersAvailableChips = do
 -- originator of the invalid in-game move
 gameActionHandler
   :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameActionHandler gameMove@(GameMove tableName playerAction) = do
-  liftIO $ print playerAction
+gameActionHandler gameMove@(GameMove tableName action) = do
+  liftIO $ print action
   MsgHandlerConfig {..} <- ask
   ServerState {..}      <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
@@ -404,7 +402,9 @@ gameActionHandler gameMove@(GameMove tableName playerAction) = do
       in  if not satAtTable
             then throwError $ NotSatAtTable tableName
             else do
-              eitherNewGame <- liftIO $ runPlayerAction game playerAction
+              eitherNewGame <- liftIO $ runPlayerAction
+                game
+                PlayerAction { name = unUsername username, .. }
               case eitherNewGame of
                 Left gameErr -> do
                   liftIO $ print "Error! :<"
