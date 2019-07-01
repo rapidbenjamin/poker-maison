@@ -5,20 +5,20 @@
 
 module Poker.Game.Privacy where
 
-import Data.Text (Text)
+import           Data.Text                      ( Text )
 
-import Data.Functor
-import Data.List
-import Data.Maybe
-import Data.Monoid
+import           Data.Functor
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid
 
-import Debug.Trace
+import           Debug.Trace
 
-import Control.Lens
+import           Control.Lens
 
-import Poker.Game.Game
-import Poker.Game.Utils
-import Poker.Types
+import           Poker.Game.Game
+import           Poker.Game.Utils
+import           Poker.Types
 
 -- For players that are sat in game
 excludeOtherPlayerCards :: PlayerName -> Game -> Game
@@ -49,34 +49,25 @@ excludeAllPlayerCards = excludePrivateCards Nothing
 excludePrivateCards :: Maybe PlayerName -> Game -> Game
 excludePrivateCards maybePlayerName game =
   game & (players %~ (<$>) pocketCardsPrivacyModifier) . (deck .~ Deck [])
-  where
-    showAllActivesCards = canPubliciseActivesCards game
-    pocketCardsPrivacyModifier =
-      maybe
-        (updatePocketCardsForSpectator showAllActivesCards)
-        (updatePocketCardsForPlayer showAllActivesCards)
-        maybePlayerName
+ where
+  showAllActivesCards        = canPubliciseActivesCards game
+  pocketCardsPrivacyModifier = maybe
+    (updatePocketCardsForSpectator showAllActivesCards)
+    (updatePocketCardsForPlayer showAllActivesCards)
+    maybePlayerName
 
 updatePocketCardsForSpectator :: Bool -> (Player -> Player)
 updatePocketCardsForSpectator showAllActivesCards
-  | showAllActivesCards =
-    (\player@Player {..} ->
-       if _playerState == In
-         then player
-         else Player {_pockets = Nothing, ..})
-  | otherwise = (\Player {..} -> Player {_pockets = Nothing, ..})
+  | showAllActivesCards = \player@Player {..} ->
+    if _playerState == In then player else Player { _pockets = Nothing, .. }
+  | otherwise = \Player {..} -> Player { _pockets = Nothing, .. }
 
 updatePocketCardsForPlayer :: Bool -> PlayerName -> (Player -> Player)
 updatePocketCardsForPlayer showAllActivesCards playerName
-  | showAllActivesCards =
-    (\player@Player {..} ->
-       if _playerState == In
-         then player
-         else if _playerName == playerName
-                then player
-                else Player {_pockets = Nothing, ..})
-  | otherwise =
-    (\player@Player {..} ->
-       if _playerName == playerName
-         then player
-         else Player {_pockets = Nothing, ..})
+  | showAllActivesCards = \player@Player {..} ->
+    if (_playerState == In) || (_playerName == playerName)
+      then player
+      else Player { _pockets = Nothing, .. }
+  | otherwise = \player@Player {..} -> if _playerName == playerName
+    then player
+    else Player { _pockets = Nothing, .. }

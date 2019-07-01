@@ -1,29 +1,28 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE LambdaCase #-}
 
 
 module Poker.Game.Utils where
 
-import Control.Monad.State
-import Data.Text (Text)
+import           Control.Monad.State
+import           Data.Text                      ( Text )
 
-import Data.Foldable
-import Data.Functor
-import Data.List
-import Data.Map.Lazy (Map)
-import qualified Data.Map.Lazy as M
-import Data.Maybe
-import Data.Monoid
+import           Data.Foldable
+import           Data.Functor
+import           Data.List
+import           Data.Map.Lazy                  ( Map )
+import qualified Data.Map.Lazy                 as M
+import           Data.Maybe
+import           Data.Monoid
 
-import Control.Lens
+import           Control.Lens
 
-import Poker.Types
+import           Poker.Types
 
-import Control.Monad
-import Data.Array.IO
-import System.Random
+import           Control.Monad
+import           Data.Array.IO
+import           System.Random
 
 -- | A standard deck of cards.
 initialDeck :: Deck
@@ -31,37 +30,35 @@ initialDeck = Deck $ Card <$> [minBound ..] <*> [minBound ..]
 
 -- Get a shuffled deck of cards.
 shuffledDeck :: IO Deck
-shuffledDeck = shuffle (unDeck initialDeck) >>= return . Deck
+shuffledDeck = Deck <$> shuffle (unDeck initialDeck)
 
 shuffle :: [a] -> IO [a]
 shuffle xs = do
   ar <- newArray n xs
   forM [1 .. n] $ \i -> do
-    j <- randomRIO (i, n)
+    j  <- randomRIO (i, n)
     vi <- readArray ar i
     vj <- readArray ar j
     writeArray ar j vi
     return vj
-  where
-    n = length xs
-    newArray :: Int -> [a] -> IO (IOArray Int a)
-    newArray n = newListArray (1, n)
+ where
+  n = length xs
+  newArray :: Int -> [a] -> IO (IOArray Int a)
+  newArray n = newListArray (1, n)
 
 modInc :: Int -> Int -> Int -> Int
-modInc incAmount num modulo
-  | incNum > modulo = 0
-  | otherwise = incNum
-  where
-    incNum = num + incAmount
-    modInc = incNum `mod` modulo
+modInc incAmount num modulo | incNum > modulo = 0
+                            | otherwise       = incNum
+ where
+  incNum = num + incAmount
+  modInc = incNum `mod` modulo
 
 modDec :: Int -> Int -> Int
-modDec num modulo
-  | decNum < modulo = 0
-  | otherwise = decNum
-  where
-    decNum = num - 1
-    modInc = decNum `mod` modulo
+modDec num modulo | decNum < modulo = 0
+                  | otherwise       = decNum
+ where
+  decNum = num - 1
+  modInc = decNum `mod` modulo
 
 
 -- return players which have the ability to make further moves i.e not all in or folded
@@ -109,11 +106,10 @@ getPlayerNames :: [Player] -> [Text]
 getPlayerNames players = (^. playerName) <$> players
 
 maximums :: Ord a => [(a, b)] -> [(a, b)]
-maximums [] = []
-maximums (x:xs) = foldl f [x] xs
-  where
-    f ys y =
-      case fst (head ys) `compare` fst y of
-        GT -> ys
-        EQ -> y : ys
-        LT -> [y]
+maximums []       = []
+maximums (x : xs) = foldl f [x] xs
+ where
+  f ys y = case fst (head ys) `compare` fst y of
+    GT -> ys
+    EQ -> y : ys
+    LT -> [y]

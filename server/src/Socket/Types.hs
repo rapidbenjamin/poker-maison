@@ -5,25 +5,30 @@
 
 module Socket.Types where
 
-import Control.Concurrent (MVar)
-import Control.Concurrent.STM
-import Control.Concurrent.STM.TChan
-import Pipes.Concurrent
-import Control.Exception
-import Control.Monad.State
-import Data.Aeson
-import Data.Aeson.Types
-import Data.Map.Lazy (Map)
-import qualified Data.Map.Lazy as M
-import Data.Monoid
-import Data.Text
-import Data.Time.Clock
-import Database.Persist.Postgresql (ConnectionString)
-import GHC.Generics
-import qualified Network.WebSockets as WS
+import           Control.Concurrent             ( MVar )
+import           Control.Concurrent.STM
+import           Control.Concurrent.STM.TChan
+import           Pipes.Concurrent
+import           Control.Exception
+import           Control.Monad.State
+import           Data.Aeson
+import           Data.Aeson.Types
+import           Data.Map.Lazy                  ( Map )
+import qualified Data.Map.Lazy                 as M
+import           Data.Monoid
+import           Data.Text
+import           Data.Time.Clock
+import           Database.Persist.Postgresql    ( ConnectionString )
+import           GHC.Generics
+import qualified Network.WebSockets            as WS
 
-import Poker.Types (Game, GameErr, PlayerAction)
-import Types (RedisConfig, Username)
+import           Poker.Types                    ( Game
+                                                , GameErr
+                                                , PlayerAction
+                                                )
+import           Types                          ( RedisConfig
+                                                , Username
+                                                )
 
 data MsgHandlerConfig = MsgHandlerConfig
   { dbConn :: ConnectionString
@@ -73,10 +78,11 @@ instance Show Table where
     show subscribers <> "\n" <> show waitlist <> "\n" <> show game
 
 instance Eq Table where
-  Table {game = game1} == Table {game = game2} = game1 == game2
+  Table { game = game1 } == Table { game = game2 } = game1 == game2
 
 instance Ord Table where
-  Table {game = game1} `compare` Table {game = game2} = game1 `compare` game2
+  Table { game = game1 } `compare` Table { game = game2 } =
+    game1 `compare` game2
 
 data Client = Client
   { email :: Text
@@ -94,14 +100,14 @@ data ServerState = ServerState
   }
 
 instance Eq Client where
-  Client {email = email1} == Client {email = email2} = email1 == email2
+  Client { email = email1 } == Client { email = email2 } = email1 == email2
 
 -- incoming messages from a ws client
 data MsgIn
   = GetTables
   | SubscribeToTable TableName
   | LeaveTable
-  | GameMsgIn GameMsgIn  
+  | GameMsgIn GameMsgIn
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 data GameMsgIn =
@@ -138,7 +144,7 @@ data MsgOut
   | Noop
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
-data GameMsgOut 
+data GameMsgOut
   = GameMoveErr Err
   | PlayerLeft
   | PlayerJoined TableName Text

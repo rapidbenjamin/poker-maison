@@ -4,20 +4,20 @@
 
 module Poker.Game.Blinds where
 
-import Control.Lens
+import           Control.Lens
 
-import Control.Monad.State
-import Data.Char (toLower)
-import Data.List
-import qualified Data.List.Safe as Safe
-import Data.Maybe
-import Data.Monoid
-import Data.Text (Text)
-import Text.Read (readMaybe)
+import           Control.Monad.State
+import           Data.Char                      ( toLower )
+import           Data.List
+import qualified Data.List.Safe                as Safe
+import           Data.Maybe
+import           Data.Monoid
+import           Data.Text                      ( Text )
+import           Text.Read                      ( readMaybe )
 
-import Poker.Game.Utils
-import Poker.Types
-import Prelude
+import           Poker.Game.Utils
+import           Poker.Types
+import           Prelude
 
 -- Gets the player position where the next required blind is
 -- This function always us timeout players in the blinds stage if they don't post
@@ -26,50 +26,38 @@ import Prelude
 -- TODO - abstract out the duplication from nextPosToAct
 getPosNextBlind :: Int -> Game -> Int
 getPosNextBlind currIx game@Game {..} = nextIx
-  where
-    iplayers = zip [0 ..] _players
-    iplayers' =
-      let (a, b) = splitAt currIx iplayers
-       in b <> a
-    (nextIx, nextPlayer) =
-      fromJust $
-      find
-        (\(_, p@Player {..}) ->
-           blindRequiredByPlayer game _playerName /= NoBlind)
-        (tail iplayers')
+ where
+  iplayers             = zip [0 ..] _players
+  iplayers'            = let (a, b) = splitAt currIx iplayers in b <> a
+  (nextIx, nextPlayer) = fromJust $ find
+    (\(_, p@Player {..}) -> blindRequiredByPlayer game _playerName /= NoBlind)
+    (tail iplayers')
 
 haveRequiredBlindsBeenPosted :: Game -> Bool
-haveRequiredBlindsBeenPosted game@Game {..} =
-  all (== True) $
-  zipWith
-    (\requiredBlind Player {..} ->
-       case requiredBlind of
-         NoBlind -> True
-         Big -> _committed == _bigBlind
-         Small -> _committed == _smallBlind)
-    requiredBlinds
-    _players
-  where
-    requiredBlinds = getRequiredBlinds game
+haveRequiredBlindsBeenPosted game@Game {..} = all (== True) $ zipWith
+  (\requiredBlind Player {..} -> case requiredBlind of
+    NoBlind -> True
+    Big     -> _committed == _bigBlind
+    Small   -> _committed == _smallBlind
+  )
+  requiredBlinds
+  _players
+  where requiredBlinds = getRequiredBlinds game
 
 getRequiredBlinds :: Game -> [Blind]
 getRequiredBlinds game@Game {..}
   | _street /= PreDeal = []
-  | otherwise = blindRequiredByPlayer game <$> getPlayerNames _players
+  | otherwise          = blindRequiredByPlayer game <$> getPlayerNames _players
 
 -- We use the list of required blinds to calculate if a player has posted 
 -- chips sufficient to be "In" for this hand.
 activatePlayersWhenNoBlindNeeded :: [Blind] -> [Player] -> [Player]
 activatePlayersWhenNoBlindNeeded = zipWith updatePlayer
-  where
-    updatePlayer blindReq Player {..} =
-      Player
-        { _playerState =
-            if blindReq == NoBlind
-              then In
-              else _playerState
-        , ..
-        }
+ where
+  updatePlayer blindReq Player {..} = Player
+    { _playerState = if blindReq == NoBlind then In else _playerState
+    , ..
+    }
 
 -- Sets player state to in if they don't need to post blind
 updatePlayersInHand :: Game -> Game
@@ -77,12 +65,10 @@ updatePlayersInHand game =
   game & (players %~ activatePlayersWhenNoBlindNeeded (getRequiredBlinds game))
 
 getSmallBlindPosition :: [Text] -> Int -> Int
-getSmallBlindPosition playersSatIn dealerPos =
-  if length playersSatIn == 2
-    then dealerPos
-    else modInc incAmount dealerPos (length playersSatIn - 1)
-  where
-    incAmount = 1
+getSmallBlindPosition playersSatIn dealerPos = if length playersSatIn == 2
+  then dealerPos
+  else modInc incAmount dealerPos (length playersSatIn - 1)
+  where incAmount = 1
 
 -- if a player does not post their blind at the appropriate time then their state will be changed to 
 -- SatOut signifying that they have a seat but are now sat out
@@ -90,16 +76,16 @@ getSmallBlindPosition playersSatIn dealerPos =
 -- or if their current playerState is set to Out 
 -- If no blind is required for the player to remain In for the next hand then we will return Nothing
 blindRequiredByPlayer :: Game -> PlayerName -> Blind
-blindRequiredByPlayer game playerName
+blindRequiredByPlayer game playerName |
 -- SO IS THIS NEEDED FOR BOTS?? IT BREAKS NON BOTS
 --  | length (_players game) < 2 || _street game /= PreDeal = NoBlind
-  | playerPosition == smallBlindPos = Small
-  | playerPosition == bigBlindPos = Big
-  | otherwise = NoBlind
-  where
-    player = fromJust $ getGamePlayer game playerName
-    playerNames = getPlayerNames (_players game)
-    playerPosition = fromJust $ getPlayerPosition playerNames playerName
-    smallBlindPos = getSmallBlindPosition playerNames (_dealer game)
-    incAmount = 1
-    bigBlindPos = modInc incAmount smallBlindPos (length playerNames - 1)
+                                        playerPosition == smallBlindPos = Small
+                                      | playerPosition == bigBlindPos = Big
+                                      | otherwise = NoBlind
+ where
+  player         = fromJust $ getGamePlayer game playerName
+  playerNames    = getPlayerNames (_players game)
+  playerPosition = fromJust $ getPlayerPosition playerNames playerName
+  smallBlindPos  = getSmallBlindPosition playerNames (_dealer game)
+  incAmount      = 1
+  bigBlindPos    = modInc incAmount smallBlindPos (length playerNames - 1)

@@ -10,15 +10,15 @@
 
 module Schema where
 
-import Control.Monad
-import Data.Aeson
-import Data.Aeson.Types
-import Data.Text (Text)
-import Data.Time.Clock
-import Database.Persist.TH
-import Servant.Docs
+import           Control.Monad
+import           Data.Aeson
+import           Data.Aeson.Types
+import           Data.Text                      ( Text )
+import           Data.Time.Clock
+import           Database.Persist.TH
+import           Servant.Docs
 
-import Poker.Types
+import           Poker.Types
 
 share
   [mkPersist sqlSettings, mkMigrate "migrateAll"]
@@ -94,13 +94,11 @@ parseUser o = do
 -}
 instance ToSample UserEntity where
   toSamples _ = [("Sample User", g)]
-    where
-      g =
-        UserEntity
-          { userEntityAvailableChips = 2000
-          , userEntityChipsInPlay = 0
-          , userEntityUsername = "Tom"
-          , userEntityEmail = "gooby@g.com"
-          , userEntityPassword = "n84!@R5G"
-          , userEntityCreatedAt = read "" --"2013 - 12 - 15 19 : 12 : 20.841326 UTC"
-          }
+   where
+    g = UserEntity { userEntityAvailableChips = 2000
+                   , userEntityChipsInPlay    = 0
+                   , userEntityUsername       = "Tom"
+                   , userEntityEmail          = "gooby@g.com"
+                   , userEntityPassword       = "n84!@R5G"
+                   , userEntityCreatedAt      = read "" --"2013 - 12 - 15 19 : 12 : 20.841326 UTC"
+                   }

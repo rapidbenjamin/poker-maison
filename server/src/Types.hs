@@ -8,23 +8,33 @@
 
 module Types where
 
-import Data.Aeson
-import Data.Aeson.Types
-import qualified Data.Text as T
-import Data.Text (Text)
-import Data.Time.Clock
-import Database.Redis (ConnectInfo)
-import GHC.Generics (Generic)
-import Servant
-import Servant.Auth.Server
+import           Data.Aeson
+import           Data.Aeson.Types
+import qualified Data.Text                     as T
+import           Data.Text                      ( Text )
+import           Data.Time.Clock
+import           Database.Redis                 ( ConnectInfo )
+import           GHC.Generics                   ( Generic )
+import           Servant
+import           Servant.Auth.Server
 
 
-import           Reason          (Spec (Spec), specsToDir, toReasonDecoderSource,
-                               toReasonTypeSource)
-import           GHC.Generics (Generic)
-import           Servant.API  ((:>), Capture, Get, JSON)
-import           Servant.Reason  (ReasonType, Proxy (Proxy), defReasonImports,
-                               generateReasonForAPI)
+import           Reason                         ( Spec(Spec)
+                                                , specsToDir
+                                                , toReasonDecoderSource
+                                                , toReasonTypeSource
+                                                )
+import           GHC.Generics                   ( Generic )
+import           Servant.API                    ( (:>)
+                                                , Capture
+                                                , Get
+                                                , JSON
+                                                )
+import           Servant.Reason                 ( ReasonType
+                                                , Proxy(Proxy)
+                                                , defReasonImports
+                                                , generateReasonForAPI
+                                                )
 
 
 type RedisConfig = ConnectInfo

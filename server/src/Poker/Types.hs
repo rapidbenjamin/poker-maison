@@ -7,18 +7,18 @@
 
 module Poker.Types where
 
-import Control.Lens
-import Control.Monad.State
-import Data.Aeson
-import Data.Aeson.Types
-import Data.Function
-import Data.Monoid
-import Data.Text
-import Database.Persist.TH
-import qualified Data.Text.Lazy as LT
-import GHC.Generics
+import           Control.Lens
+import           Control.Monad.State
+import           Data.Aeson
+import           Data.Aeson.Types
+import           Data.Function
+import           Data.Monoid
+import           Data.Text
+import           Database.Persist.TH
+import qualified Data.Text.Lazy                as LT
+import           GHC.Generics
 
-import Text.Pretty.Simple
+import           Text.Pretty.Simple
 
 ------------------------------------------------------------------------------
 data Rank
@@ -38,21 +38,20 @@ data Rank
   deriving (Eq, Read, Ord, Bounded, Enum, Generic, ToJSON, FromJSON)
 
 instance Show Rank where
-  show x =
-    case x of
-      Two -> "2"
-      Three -> "3"
-      Four -> "4"
-      Five -> "5"
-      Six -> "6"
-      Seven -> "7"
-      Eight -> "8"
-      Nine -> "9"
-      Ten -> "T"
-      Jack -> "J"
-      Queen -> "Q"
-      King -> "K"
-      Ace -> "A"
+  show x = case x of
+    Two   -> "2"
+    Three -> "3"
+    Four  -> "4"
+    Five  -> "5"
+    Six   -> "6"
+    Seven -> "7"
+    Eight -> "8"
+    Nine  -> "9"
+    Ten   -> "T"
+    Jack  -> "J"
+    Queen -> "Q"
+    King  -> "K"
+    Ace   -> "A"
 
 data Suit
   = Clubs
@@ -62,12 +61,11 @@ data Suit
   deriving (Eq, Ord, Bounded, Enum, Read, Generic, ToJSON, FromJSON)
 
 instance Show Suit where
-  show x =
-    case x of
-      Clubs -> "♧ "
-      Diamonds -> "♢ "
-      Hearts -> "♡ "
-      Spades -> "♤ "
+  show x = case x of
+    Clubs    -> "♧ "
+    Diamonds -> "♢ "
+    Hearts   -> "♡ "
+    Spades   -> "♤ "
 
 data Card = Card
   { rank :: Rank
@@ -176,31 +174,32 @@ data Game = Game
   } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Game where
-  show Game{..} =
-    "\n dealer: " <> show _dealer <>
-    "\n _currentPosToAct: " <>
-    show _currentPosToAct <>
-    "\n _smallBlind: " <>
-    show _smallBlind <>
-    "\n _big_blind: " <>
-    show _bigBlind <>
-    "\n _minBuyin: " <>
-    show _minBuyInChips <>
-    "\n _maxBuyin: " <>
-    show _maxBuyInChips <>
-    "\n _pot: " <>
-    show _pot <>
-    "\n _maxBet: " <>
-    show _maxBet <>
-    "\n _street: " <>
-    show _street <>
-    "\n _winners: " <>
-    show _winners <>
-    "\n _board: " <>
-    show _board <>
-    "\n _players: " <>
-    show _players
-    
+  show Game {..} =
+    "\n dealer: "
+      <> show _dealer
+      <> "\n _currentPosToAct: "
+      <> show _currentPosToAct
+      <> "\n _smallBlind: "
+      <> show _smallBlind
+      <> "\n _big_blind: "
+      <> show _bigBlind
+      <> "\n _minBuyin: "
+      <> show _minBuyInChips
+      <> "\n _maxBuyin: "
+      <> show _maxBuyInChips
+      <> "\n _pot: "
+      <> show _pot
+      <> "\n _maxBet: "
+      <> show _maxBet
+      <> "\n _street: "
+      <> show _street
+      <> "\n _winners: "
+      <> show _winners
+      <> "\n _board: "
+      <> show _board
+      <> "\n _players: "
+      <> show _players
+
 type PlayerName = Text
 
 data Blind
@@ -225,7 +224,7 @@ data PlayerAction = PlayerAction {
 -- show his hands after everyone has folded to them. Essentially in
 -- this scenario mucking or showing refers to the decision to
 -- show ones hand or not to the table after everyone else has folded.
-data Action 
+data Action
   = SitDown Player -- doesnt progress the game
   | LeaveSeat' -- doesnt progress the game
   | PostBlind Blind

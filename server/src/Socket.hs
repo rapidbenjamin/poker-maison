@@ -10,7 +10,7 @@ module Socket
   )
 where
 
-import           Control.Concurrent hiding (yield)
+import           Control.Concurrent      hiding ( yield )
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import qualified Data.Map.Lazy                 as M
@@ -66,11 +66,11 @@ import           Poker.Game.Utils
 import           Socket.Types
 import           Socket.Msg
 import           Socket.Utils
-import Data.ByteString.UTF8 (fromString)
+import           Data.ByteString.UTF8           ( fromString )
 
 import           Poker.Poker
 import           Crypto.JWT
-import qualified Data.Aeson as A
+import qualified Data.Aeson                    as A
 
 import           Data.ByteString.Lazy           ( fromStrict
                                                 , toStrict
@@ -88,17 +88,19 @@ import           Data.Aeson                     ( FromJSON
                                                 )
 import           Poker.Types
 
-import Control.Monad 
-import Control.Exception
-import qualified GHC.IO.Exception as G
+import           Control.Monad
+import           Control.Exception
+import qualified GHC.IO.Exception              as G
 
 import qualified Network.WebSockets            as WS
 
-import Pipes.Aeson
-import           Pipes                         
+import           Pipes.Aeson
+import           Pipes
 import           Pipes.Core                     ( push )
 import           Pipes.Concurrent
-import Pipes.Parse hiding (decode, encode)
+import           Pipes.Parse             hiding ( decode
+                                                , encode
+                                                )
 import qualified Pipes.Prelude                 as P
 
 initialServerState :: Lobby -> ServerState
@@ -110,8 +112,16 @@ runSocketServer
   :: BS.ByteString -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port connString redisConfig = do
   putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ TakeSeat "black" 2222)
-  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" $ PlayerAction {name = "player1", action = Raise 400})
-  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" $ PlayerAction {name = "player1", action = Fold})
+  putStrLn $ T.unpack $ encodeMsgX
+    (GameMsgIn $ GameMove "black" $ PlayerAction { name   = "player1"
+                                                 , action = Raise 400
+                                                 }
+    )
+  putStrLn $ T.unpack $ encodeMsgX
+    (GameMsgIn $ GameMove "black" $ PlayerAction { name   = "player1"
+                                                 , action = Fold
+                                                 }
+    )
 
 
   lobby           <- initialLobby
@@ -162,10 +172,10 @@ subscribeToTable tableOutput playerOutput = tableOutput <> playerOutput
 
 -- Note this doesn't propagate new game state to clients just updates the game in the lobby
 updateGame :: TVar ServerState -> TableName -> Game -> STM ()
-updateGame s tableName g = do 
-  ServerState{..} <- readTVar s
+updateGame s tableName g = do
+  ServerState {..} <- readTVar s
   let newLobby = updateTableGame tableName g lobby
-  writeTVar s ServerState { lobby = newLobby , .. }
+  writeTVar s ServerState { lobby = newLobby, .. }
 
 -- and writes GameOutMsg to outgoing mailbox in table so it is propagated to clients
 --broadcast'
@@ -174,11 +184,12 @@ updateGame s tableName g = do
 
 
 
-evalPlayerAction :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
-evalPlayerAction g = forever $ do 
-    playerAction <- await
-    res <- lift $ runPlayerAction g playerAction
-    yield res
+evalPlayerAction
+  :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
+evalPlayerAction g = forever $ do
+  playerAction <- await
+  res          <- lift $ runPlayerAction g playerAction
+  yield res
 
 
 -- An illegal player moves result in the err being sent back to the client who made the move
@@ -187,18 +198,17 @@ evalPlayerAction g = forever $ do
 -- (~>) composes our consumers which handle the success and failure cases of 
 -- player action evaluation. This composition returns a new consumer which abstracts
 -- away the machinery of handling failure for illegal player actions.
-playerActionHandler' ::
-     (GameErr -> Consumer PlayerAction IO ())
+playerActionHandler'
+  :: (GameErr -> Consumer PlayerAction IO ())
   -> (Game -> Consumer PlayerAction IO ())
   -> Game
   -> Consumer PlayerAction IO (Either GameErr Game)
 playerActionHandler' failureConsumer successConsumer =
-    evalPlayerAction ~> divertResult
-    where
-      divertResult = 
-        \case 
-          Left e  -> failureConsumer e
-          Right g -> successConsumer g
+  evalPlayerAction ~> divertResult
+ where
+  divertResult = \case
+    Left  e -> failureConsumer e
+    Right g -> successConsumer g
 
 
 -- When a valid player action is received the resulting MsgOut after evaluation against the game
@@ -219,7 +229,7 @@ playerActionHandler' failureConsumer successConsumer =
 -- errConsumer = toOutput playerMsgOutSink
 -- gameUpdateConsumer :: Consumer GameMsgOut IO ()
 -- gameUpdateConsumer = toOutput gameMsgOutSink
-  
+
 --playerActionHandler errConsumer gameUpdateConsumer 
 --(~>) :: (a -> Pipe   x b m r) -> (b -> Consumer x   m ()) -> (a -> Consumer x   m r)
 
@@ -231,7 +241,7 @@ playerActionHandler' failureConsumer successConsumer =
 
 actionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO ()
 actionHandler g = forever $ do
-  a <- await
+  a   <- await
   res <- lift $ runPlayerAction g a
   yield res
 
@@ -261,11 +271,15 @@ actionHandler g = forever $ do
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
 websocketInMailbox :: WS.Connection -> MsgHandlerConfig -> IO (Input MsgIn)
-websocketInMailbox conn conf@MsgHandlerConfig{..} = do
-  (writeMsgInSource, readMsgInSource) <- spawn Unbounded
+websocketInMailbox conn conf@MsgHandlerConfig {..} = do
+  (writeMsgInSource , readMsgInSource ) <- spawn Unbounded
   (writeMsgOutSource, readMsgOutSource) <- spawn Unbounded
   async $ socketMsgInWriter conn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
-  async $ (runEffect $ fromInput readMsgInSource >-> msgInHandler conf >-> toOutput writeMsgOutSource) -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
+  async $ runEffect
+    (   fromInput readMsgInSource
+    >-> msgInHandler conf
+    >-> toOutput writeMsgOutSource
+    ) -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
   async $ socketMsgOutWriter conn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
   --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
  -- async $ runEffect $ fromInput inputMailbox >-> msgInHandler >->
@@ -279,15 +293,17 @@ websocketInMailbox conn conf@MsgHandlerConfig{..} = do
 --  Note - only parsed MsgIns make it into the mailbox - socket msgs which cannot be parsed
 -- are silently ignored but logged anyway.
 socketMsgInWriter :: WS.Connection -> Output MsgIn -> IO (Async ())
-socketMsgInWriter conn writeMsgInSource = 
-    forever $ do
-      a <- async $ runEffect $ msgInDecoder (socketReader conn >-> logMsgIn) >-> toOutput writeMsgInSource
-      link a
+socketMsgInWriter conn writeMsgInSource = forever $ do
+  a <-
+    async
+    $   runEffect
+    $   msgInDecoder (socketReader conn >-> logMsgIn)
+    >-> toOutput writeMsgInSource
+  link a
 
 socketMsgOutWriter :: WS.Connection -> Input MsgOut -> IO (Async ())
-socketMsgOutWriter conn is =  
-  forever $ do
-    runEffect $ for (fromInput is >-> msgOutEncoder) (lift . WS.sendTextData conn )
+socketMsgOutWriter conn is = forever $ do
+  runEffect $ for (fromInput is >-> msgOutEncoder) (lift . WS.sendTextData conn)
 
 
 encodeMsgOutToJSON :: MsgOut -> Text
@@ -296,9 +312,9 @@ encodeMsgOutToJSON msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 -- Converts a websocket connection into a producer 
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
 socketReader conn = forever $ do
-    msg <- liftIO $ WS.receiveData conn
-    liftIO $ putStrLn $ "received a msg from socket: " ++ show msg
-    yield msg
+  msg <- liftIO $ WS.receiveData conn
+  liftIO $ putStrLn $ "received a msg from socket: " ++ show msg
+  yield msg
 
 -- Convert a raw Bytestring producer of raw JSON into a new producer which yields 
 -- only successfully parsed values of type MsgIn.
@@ -309,20 +325,20 @@ msgInDecoder :: Producer BS.ByteString IO () -> Producer MsgIn IO ()
 msgInDecoder rawMsgProducer = do
   (x, p') <- lift $ runStateT decode rawMsgProducer
   case x of
-    Nothing -> return ()
+    Nothing       -> return ()
     Just (Left a) -> do
       (x, p'') <- lift $ runStateT draw p'
       lift $ print x
       -- x is the problem input msg which failed to parse. We ignore it here by just resuming
       msgInDecoder p''
     Just c@(Right msgIn) -> do -- successful parsing case
-      lift $ print c 
+      lift $ print c
       yield msgIn
       msgInDecoder p'
 
-     
+
 msgOutEncoder :: Pipe MsgOut BS.ByteString IO ()
-msgOutEncoder = forever $ do 
+msgOutEncoder = forever $ do
   msgOut <- await
   lift $ print "encoding msg: "
   lift $ print msgOut
@@ -331,43 +347,42 @@ msgOutEncoder = forever $ do
 
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
 msgInHandler conf = forever $ do
-    msgIn <- await
-    liftIO $ print "msghandler : "
-    liftIO $ print msgIn
-    msgOut <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
-    let msgOut' = either ErrMsg id msgOut
-    yield msgOut'
-    return ()
-  where 
-    sampleMsg = GameMsgOut PlayerLeft
+  msgIn <- await
+  liftIO $ print "msghandler : "
+  liftIO $ print msgIn
+  msgOut <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
+  let msgOut' = either ErrMsg id msgOut
+  yield msgOut'
+  return ()
+  where sampleMsg = GameMsgOut PlayerLeft
 
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
-logMsgIn = do 
+logMsgIn = do
   msg <- await
   lift $ putStrLn "logging MsgIn"
-  x   <- lift $ try $ print msg
+  x <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
-      Left e@(G.IOError { G.ioe_type = t}) ->
-          lift $ unless (t == G.ResourceVanished) $ throwIO e
-      -- Otherwise loop
-      Right () -> yield msg >> logMsgIn
+    Left e@(G.IOError { G.ioe_type = t }) ->
+      lift $ unless (t == G.ResourceVanished) $ throwIO e
+    -- Otherwise loop
+    Right () -> yield msg >> logMsgIn
 
 
 logMsgOut :: Pipe MsgOut MsgOut IO ()
-logMsgOut = do 
+logMsgOut = do
   msg <- await
   lift $ putStrLn "logging MsgOut"
-  x   <- lift $ try $ print msg
+  x <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
-      Left e@(G.IOError { G.ioe_type = t}) ->
-          lift $ unless (t == G.ResourceVanished) $ throwIO e
-      -- Otherwise loop
-      Right () -> yield msg >> logMsgOut
-      
-      
+    Left e@(G.IOError { G.ioe_type = t }) ->
+      lift $ unless (t == G.ResourceVanished) $ throwIO e
+    -- Otherwise loop
+    Right () -> yield msg >> logMsgOut
+
+
 
 -- tables are stream abstractions which take in game msgs and yield game states
 --data Game = Producer GameMsgIn (Either GameErr Game) IO ()
@@ -375,7 +390,8 @@ logMsgOut = do
 --newtype Table' = Table' (Pipe PlayerAction gameMove IO Game)
 
 -- get a pipe which only forwards the game moves which occur at the given table
-filterMsgsForTable tableName = P.filter $ \(GameMove tableName' _) -> tableName == tableName'
+filterMsgsForTable tableName =
+  P.filter $ \(GameMove tableName' _) -> tableName == tableName'
 
 
 -- New WS connections are expected to supply an access token as an initial msg
@@ -393,18 +409,14 @@ application
 application secretKey dbConnString redisConfig serverState pending = do
   newConn <- WS.acceptRequest pending
   WS.forkPingThread newConn 30
-  msg <- WS.receiveData newConn
+  msg              <- WS.receiveData newConn
   ServerState {..} <- readTVarIO serverState
-  
+
   async $ websocketInMailbox newConn (msgConf newConn)
-  authClient secretKey
-             serverState
-             dbConnString
-             redisConfig
-             newConn
+  authClient secretKey serverState dbConnString redisConfig newConn
         --     authenticatedMsgLoop
-             (Token msg)
-  forever (WS.receiveData newConn :: IO Text) 
+                                                                    (Token msg)
+  forever (WS.receiveData newConn :: IO Text)
  where
   msgConf c = MsgHandlerConfig
     { serverStateTVar = serverState
@@ -523,7 +535,7 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
  where
   chipsToSit     = 2000
   tableName      = "Black"
-  takeSeatAction = PlayerAction { name=_playerName, action = SitDown player}
+  takeSeatAction = PlayerAction { name = _playerName, action = SitDown player }
 
 --runBotAction :: TVar ServerState -> TableName -> Game -> PlayerAction -> STM ()
 --runBotAction serverS tableName g botAction = do
@@ -538,8 +550,8 @@ getValidAction :: Game -> PlayerName -> IO (Maybe PlayerAction)
 getValidAction g@Game {..} name
   | length _players < 2 = return Nothing
   | _street == PreDeal = return $ case blindRequiredByPlayer g name of
-    Small   -> Just $ PlayerAction { action = PostBlind Small, ..}
-    Big     -> Just $ PlayerAction { action = PostBlind Big , ..}
+    Small   -> Just $ PlayerAction { action = PostBlind Small, .. }
+    Big     -> Just $ PlayerAction { action = PostBlind Big, .. }
     NoBlind -> Nothing
   | otherwise = do
     betAmount' <- randomRIO (lowerBetBound, chipCount)
@@ -553,7 +565,7 @@ getValidAction g@Game {..} name
 
     randIx <- randomRIO (0, length validActions - 1)
 
-    return $ Just $ PlayerAction {action =validActions !! randIx, ..}
+    return $ Just $ PlayerAction { action = validActions !! randIx, .. }
  where
   lowerBetBound = if (_maxBet > 0) then (2 * _maxBet) else _bigBlind
   chipCount     = fromMaybe 0 ((^. chips) <$> (getGamePlayer g name))
