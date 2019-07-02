@@ -20,7 +20,6 @@ import           Prelude
 import           Web.JWT                        ( Secret )
 
 import           Socket.Clients
-import           Socket.Concurrency
 import           Socket.Lobby
 import           Socket.Msg
 import           Socket.Setup
@@ -137,7 +136,7 @@ runSocketServer secretKey port connString redisConfig = do
   return ()
  where
   botNames         = (^. playerName) <$> [bot1, bot2]
-  playersToWaitFor = length $ botNames
+  playersToWaitFor = length botNames
 
 -- subscriptions are handled by combining each subscribers mailbox into one large mailbox
 -- where mew MsgOuts with new game states are posted
@@ -147,23 +146,6 @@ runSocketServer secretKey port connString redisConfig = do
 subscribeToTable :: Output MsgOut -> Output MsgOut -> Output MsgOut
 subscribeToTable tableOutput playerOutput = tableOutput <> playerOutput
 
-
--- Uses incoming msg mailbox as a producer of actions which are run against 
--- the game state and then fed into the outgoing msg mailbox to be propagated to clients
---gameStream :: Input GameMsgIn -> Output GameMsgOut -> Output GameMsgOut
---gameStream msgInput msgOutput = producer >-> gameMsgInHandler' >-> consumer 
---  where 
---    producer = fromInput msgInput
---    consumer = toOutput msgOutput
-
-
-
--- (~>) :: Functor m => (a -> Producer b m r) -> (b -> Producer   c m ()) -> (a -> Producer   c m r)
-
-
---s :: Producer GameMsgOut IO () -> Producer MsgOut IO ()
---s returnToSender propagateValidAction = 
---  either  (toOutput senderMsgMailbox) updateGame
 
 -- Note this doesn't propagate new game state to clients just updates the game in the lobby
 updateGame :: TVar ServerState -> TableName -> Game -> STM ()
@@ -204,60 +186,12 @@ playerActionHandler' failureConsumer successConsumer =
     Right g -> successConsumer g
 
 
--- When a valid player action is received the resulting MsgOut after evaluation against the game
--- is diverted to the game msg mailbox so new gamestate so it can be propagated
--- to all observers.
---
--- Otherwise if the evaluation of the player action failed i.e invalid move then 
--- the error msg is diverted back to the player's socket connection mailbox 
---gg ::
---  Output GameMsgOut ->
---  Output GameMsgOut -> Producer PlayerAction IO () -> Effect IO ()
---gg pOut gOut producer = producer >-> actionHandler playerAction
-
-
---runEffect $ actionProducer >->
-
--- errConsumer :: Consumer MsgOut IO ()
--- errConsumer = toOutput playerMsgOutSink
--- gameUpdateConsumer :: Consumer GameMsgOut IO ()
--- gameUpdateConsumer = toOutput gameMsgOutSink
-
---playerActionHandler errConsumer gameUpdateConsumer 
---(~>) :: (a -> Pipe   x b m r) -> (b -> Consumer x   m ()) -> (a -> Consumer x   m r)
-
---for' ::
---  Pipe PlayerAction (Either GameErr Game) m r -> 
---  (Either GameErr Game -> Consumer PlayerAction m ()) -> 
---  Consumer PlayerAction m r
---for' p h = for p h 
 
 actionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO ()
 actionHandler g = forever $ do
   a   <- await
   res <- lift $ runPlayerAction g a
   yield res
-
-
--- playerActionHandler :: Output GameMsgOut -> Output MsgOut -> 
-  -- playerActionHandler gameMailbox playerMailbox =
---    ::IO (Either GameErr Game)
---  either each
----- each :: (Monad m, Foldable f) => f a -> Producer a m ()
-
-
---gameMsgOutHandler' :: Pipe (Either GameErr Game) GameMsgOut IO ()
---gameMsgOutHandler' = undefined
-
-
-
--- (~>) :: Monad m
--- => (a -> Producer b m ())
--- -> (b -> Producer c m ())
--- -> (a -> Producer c m ())
--- 
---   -- do 
---   gameMsgIn <- yield
 
 
 -- creates a mailbox which has both an input sink and output source which

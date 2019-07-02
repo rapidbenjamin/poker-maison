@@ -98,6 +98,7 @@ library:
     - Poker.Game.Utils
     - Poker.Game.Privacy
     - Socket
+    - Socket.Table
 
 executables:
   poker-server-exe:
