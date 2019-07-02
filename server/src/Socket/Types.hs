@@ -48,21 +48,23 @@ newtype Lobby =
   Lobby (Map TableName Table)
   deriving (Ord, Eq)
 
-instance Show Lobby
+instance Show Lobby where
+  show _ = ""
 
-instance Show ServerState
+instance Show ServerState where
+    show _ = ""
 
 -- exception when adding subscriber to table if subscriber already exists inside STM transaction
 newtype CannotAddAlreadySubscribed =
   CannotAddAlreadySubscribed Text
-  deriving (Show)
+  deriving Show
 
 instance Exception CannotAddAlreadySubscribed
 
 -- exception for cannot find a table with given TableName in Lobby inside STM transaction
 newtype TableDoesNotExistInLobby =
   TableDoesNotExistInLobby Text
-  deriving (Show)
+  deriving Show
 
 instance Exception TableDoesNotExistInLobby
 

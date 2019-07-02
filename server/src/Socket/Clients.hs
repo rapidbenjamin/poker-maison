@@ -79,14 +79,14 @@ clientExists = M.member
 insertClient :: Client -> Username -> Map Username Client -> Map Username Client
 insertClient client username = M.insert username client
 
-addClient :: TVar ServerState -> WS.Connection -> Text -> Output MsgOut -> STM ServerState
-addClient s conn clientUsername outgoingMailbox = do
+addClient :: TVar ServerState -> Client -> STM ServerState
+addClient s c@Client{..} = do
   ServerState {..} <- readTVar s
   swapTVar
     s
     (ServerState
       { clients = insertClient
-        Client {..}
+        c
         (Username clientUsername)
         clients
       , ..

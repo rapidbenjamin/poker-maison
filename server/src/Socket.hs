@@ -190,7 +190,7 @@ actionHandler g = forever $ do
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
-websocketInMailbox :: MsgHandlerConfig -> IO (Input MsgIn)
+websocketInMailbox :: MsgHandlerConfig -> IO (Output MsgOut)
 websocketInMailbox conf@MsgHandlerConfig {..} = do
   (writeMsgInSource , readMsgInSource ) <- spawn unbounded
   (writeMsgOutSource, readMsgOutSource) <- spawn unbounded
@@ -203,7 +203,7 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
   async $ socketMsgOutWriter clientConn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
   --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
 
-  return readMsgInSource
+  return writeMsgOutSource
     -- encode MsgOut values to JSON bytestring to send to socket
 
 -- Runs an IO action forever which parses read MsgIn's from the websocket connection 
@@ -328,26 +328,27 @@ application
   -> RedisConfig
   -> TVar ServerState
   -> WS.ServerApp
-application secretKey dbConnString redisConfig serverState pending = do
+application secretKey dbConnString redisConfig s pending = do
   conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
   authMsg          <- WS.receiveData conn
-  ServerState {..} <- readTVarIO serverState
+  ServerState {..} <- readTVarIO s
   eUsername        <- authClient secretKey
-                                 serverState
+                                 s
                                  dbConnString
                                  redisConfig
                                  conn
                                  (Token authMsg)
   case eUsername of
-    Right username' -> do
+    Right username -> do
       sendMsg conn AuthSuccess
-      async $ websocketInMailbox $ msgConf conn username'
+      outgoingMailbox <- websocketInMailbox $ msgConf conn username
+      atomically $ addClient s Client {..}
       forever (WS.receiveData conn :: IO Text)
     Left err -> sendMsg conn (ErrMsg err)
  where
   msgConf c username = MsgHandlerConfig
-    { serverStateTVar = serverState
+    { serverStateTVar = s
     , dbConn          = dbConnString
     , clientConn      = c
     , redisConfig     = redisConfig
