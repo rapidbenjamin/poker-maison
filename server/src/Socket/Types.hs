@@ -30,6 +30,8 @@ import           Types                          ( RedisConfig
                                                 , Username
                                                 )
 
+import           Pipes.Concurrent
+
 data MsgHandlerConfig = MsgHandlerConfig
   { dbConn :: ConnectionString
   , serverStateTVar :: TVar ServerState
@@ -37,6 +39,7 @@ data MsgHandlerConfig = MsgHandlerConfig
   , clientConn :: WS.Connection
   , redisConfig :: RedisConfig
   , socketReadChan :: TChan MsgIn
+  , outgoingMailbox' :: Output MsgOut
   }
 
 type TableName = Text
@@ -65,8 +68,8 @@ instance Exception TableDoesNotExistInLobby
 
 data Table = Table
   { subscribers :: [Username] -- observing public game state includes players sat down
-  , subscribersOutput :: Output GameMsgOut -- write source for msgs to propagate new game states to clients
-  , subscribersInput :: Input GameMsgOut -- read (consume) source for msg outs
+  , subscribersOutput :: Output GameMsgOut -- outgoing MsgOuts broadcasts -> write source for msgs to propagate new game states to clients
+  , subscribersInput :: Input GameMsgOut --incoming gamestates -> read (consume) source for new game states
   , waitlist :: [Username] -- waiting to join a full table
   , game :: Game
   , channel :: TChan MsgOut
@@ -85,13 +88,14 @@ instance Ord Table where
     game1 `compare` game2
 
 data Client = Client
-  { email :: Text
-  , clientUsername :: Text
-  , conn :: WS.Connection
+  { 
+    clientUsername :: Text
+  , conn :: WS.Connection -- do we need this? could just use the mailbox?
+  , outgoingMailbox :: Output MsgOut
   }
 
 instance Show Client where
-  show Client {..} = show email
+  show Client {..} = show clientUsername
 
 -- TODO wrap clients Map in a newtype
 data ServerState = ServerState
@@ -100,8 +104,8 @@ data ServerState = ServerState
   }
 
 instance Eq Client where
-  Client { email = email1 } == Client { email = email2 } = email1 == email2
-
+  Client { clientUsername = clientUsername1 } == Client { clientUsername = clientUsername2 } = clientUsername1 == clientUsername2
+  
 -- incoming messages from a ws client
 data MsgIn
   = GetTables
