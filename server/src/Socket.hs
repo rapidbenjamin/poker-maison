@@ -340,9 +340,9 @@ application secretKey dbConnString redisConfig s pending = do
                                  conn
                                  (Token authMsg)
   case eUsername of
-    Right username -> do
+    Right u@(Username clientUsername) -> do
       sendMsg conn AuthSuccess
-      outgoingMailbox <- websocketInMailbox $ msgConf conn username
+      outgoingMailbox <- websocketInMailbox $ msgConf conn u
       atomically $ addClient s Client {..}
       forever (WS.receiveData conn :: IO Text)
     Left err -> sendMsg conn (ErrMsg err)

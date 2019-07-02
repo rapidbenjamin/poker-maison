@@ -195,6 +195,7 @@ updateGameAndBroadcastT serverStateTVar tableName newGame = do
 handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
 handleNewGameState connString serverStateTVar (NewGameState tableName newGame)
   = do
+    print "BROADCASTING!!!!!!!!!!!"
     newServerState <- atomically
       $ updateGameAndBroadcastT serverStateTVar tableName newGame
     async (progressGame' connString serverStateTVar tableName newGame)
