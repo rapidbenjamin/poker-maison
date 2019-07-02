@@ -11,10 +11,8 @@ import           Prelude
 
 import           Socket.Clients
 import           Socket.Lobby
-import           Socket.Msg
 import           Socket.Setup
 import           Socket.Subscriptions
-import           Socket.Types
 import           Socket.Workers
 import           Types
 
@@ -29,7 +27,6 @@ import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy                as X
 import qualified Data.Text.Lazy.Encoding       as D
-import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Control.Monad.STM
@@ -38,9 +35,7 @@ import qualified Data.ByteString.Lazy          as BL
 
 import           Socket.Types
 import qualified Data.List                     as L
-import qualified Data.Text.Lazy                as X
 
-import qualified Data.Text.Lazy.Encoding       as D
 import           System.Random
 
 import           Poker.ActionValidation
@@ -64,14 +59,7 @@ import qualified Data.Aeson                    as A
 import           Data.ByteString.Lazy           ( fromStrict
                                                 , toStrict
                                                 )
---import           Data.Conduit                   ( Conduit
---                                                , runConduitRes
---                                                , yieldM
---                                                , (.|)
---                                                )
---
---import qualified Data.Conduit.List             as CL
--- import           Conduit
+
 import           Data.Aeson                     ( FromJSON
                                                 , ToJSON
                                                 )
@@ -94,3 +82,38 @@ import qualified Pipes.Prelude                 as P
 
 
 
+tableGameStates :: Input Game -> Producer Game IO ()
+tableGameStates source = fromInput source
+
+
+gameToMsgOut :: TableName -> Pipe Game MsgOut IO ()
+gameToMsgOut name = P.map $ NewGameState name
+
+---- yields MsgOuts from new game states
+gamePropagator = undefined
+
+--getMsgOut :: TableName -> Pipe Game MsgOut IO ()
+--getMsgOut name outgoingMailboxes g = forever $ do 
+--    g <- await
+--    yield (NewGameState name g)
+
+-- write MsgOuts for new game states to outgoing mailbox for
+-- client's who are observing the table
+propagateGame :: [Client] -> Game -> Effect IO ()
+propagateGame subscribers g = undefined
+
+-- Get a combined outgoing mailbox for a group of clients who are observing a table
+-- 
+-- Here we monoidally combined so we then have one mailbox 
+-- we use to broadcast new game states to which will be sent out to each client's
+-- socket connection under the hood
+-- 
+-- Warning:
+-- You will pay a performance price if you combine thousands of Outputs 
+-- (thousands of subscribers) or more.
+--
+-- This is because by doing so will create a very large STM transaction. You can improve performance for very large broadcasts 
+-- if you sacrifice atomicity and manually combine multiple send actions in IO
+-- instead of STM.
+combineOutMailboxes :: [Client] -> Consumer MsgOut IO ()
+combineOutMailboxes clients = toOutput $ foldMap outgoingMailbox clients

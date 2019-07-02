@@ -45,7 +45,7 @@ import           Poker.Game.Privacy             ( excludeAllPlayerCards
                                                 )
 import qualified Data.ByteString.Lazy.Char8    as C
 import           Socket.Auth
-
+import Pipes.Concurrent
 
 authClient
   :: BS.ByteString
@@ -59,22 +59,11 @@ authClient secretKey state dbConn redisConfig conn (Token token) = do
   authResult <- runExceptT $ liftIO $ verifyJWT secretKey
                                                 (C.pack $ T.unpack token)
   case authResult of
-    (Left  err              ) -> return $ Left $ AuthFailed err
-    (Right (Left  err      )) -> return $ Left $ AuthFailed $ T.pack $ show err
-    (Right (Right claimsSet)) -> case (decodeJWT claimsSet) of
-      (Left jwtErr) -> return $ Left $ AuthFailed $ T.pack $ show jwtErr
-      (Right username@(Username name)) -> do
-        ServerState {..} <- readTVarIO state
-        atomically $ swapTVar
-          state
-          (ServerState
-            { clients = addClient
-              Client { conn = conn, clientUsername = name }
-              username
-              clients
-            , ..
-            }
-          )
+    Left  err               -> return $ Left $ AuthFailed err
+    Right (Left  err      ) -> return $ Left $ AuthFailed $ T.pack $ show err
+    Right (Right claimsSet) -> case decodeJWT claimsSet of
+      Left jwtErr -> return $ Left $ AuthFailed $ T.pack $ show jwtErr
+      Right username@(Username name) ->
         return $ pure $ Username name
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
@@ -87,8 +76,22 @@ removeClient username serverStateTVar = do
 clientExists :: Username -> Map Username Client -> Bool
 clientExists = M.member
 
-addClient :: Client -> Username -> Map Username Client -> Map Username Client
-addClient client username = M.insert username client
+insertClient :: Client -> Username -> Map Username Client -> Map Username Client
+insertClient client username = M.insert username client
+
+addClient :: TVar ServerState -> WS.Connection -> Text -> Output MsgOut -> STM ServerState
+addClient s conn clientUsername outgoingMailbox = do
+  ServerState {..} <- readTVar s
+  swapTVar
+    s
+    (ServerState
+      { clients = insertClient
+        Client {..}
+        (Username clientUsername)
+        clients
+      , ..
+      }
+    )
 
 getClient :: Map Username Client -> Username -> Maybe Client
 getClient clients username = M.lookup username clients
