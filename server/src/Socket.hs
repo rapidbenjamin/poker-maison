@@ -348,8 +348,7 @@ msgInHandler conf@MsgHandlerConfig {..} = forever $ do
     Right m@NewGameState{} ->
       liftIO $ handleNewGameState dbConn serverStateTVar m
     Right m   -> yield m
-    Left  err -> yield (ErrMsg err)
-  --return ()
+    Left  err -> yield $ ErrMsg err
   where sampleMsg = GameMsgOut PlayerLeft
 
 
@@ -378,7 +377,6 @@ logMsgOut = do
       lift $ unless (t == G.ResourceVanished) $ throwIO e
     -- Otherwise loop
     Right () -> yield msg >> logMsgOut
-
 
 
 -- tables are stream abstractions which take in game msgs and yield game states
