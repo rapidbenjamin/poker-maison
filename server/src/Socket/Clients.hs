@@ -16,7 +16,6 @@ import           Data.Either
 import           Data.Foldable
 import           Data.Map.Lazy                  ( Map )
 import qualified Data.Map.Lazy                 as M
-import           Data.Maybe
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Database.Persist.Postgresql    ( ConnectionString
@@ -37,7 +36,6 @@ import           Servant.Auth.Server
 import qualified Data.ByteString               as BS
 
 import           Crypto.JOSE                   as Jose
-import           Crypto.JWT                    as Jose
 
 import           Data.Maybe
 import           System.Timeout
@@ -58,14 +56,13 @@ authClient
   -> Token
   -> IO (Either Err Username)
 authClient secretKey state dbConn redisConfig conn (Token token) = do
-  authResult <- runExceptT $ liftIO $ verifyJWT secretKey (C.pack $ T.unpack token)
+  authResult <- runExceptT $ liftIO $ verifyJWT secretKey
+                                                (C.pack $ T.unpack token)
   case authResult of
-    (Left err) -> return $ Left $ AuthFailed err
-    (Right (Left err)) ->
-      return $ Left $ AuthFailed $ T.pack $ show err
+    (Left  err              ) -> return $ Left $ AuthFailed err
+    (Right (Left  err      )) -> return $ Left $ AuthFailed $ T.pack $ show err
     (Right (Right claimsSet)) -> case (decodeJWT claimsSet) of
-      (Left jwtErr) ->
-        return $ Left $ AuthFailed $ T.pack $ show jwtErr
+      (Left jwtErr) -> return $ Left $ AuthFailed $ T.pack $ show jwtErr
       (Right username@(Username name)) -> do
         ServerState {..} <- readTVarIO state
         atomically $ swapTVar
@@ -136,6 +133,6 @@ filterPrivateGameData username (SuccessfullySatDown tableName game) =
 filterPrivateGameData username (SuccessfullySubscribedToTable tableName game) =
   SuccessfullySubscribedToTable tableName
                                 (excludeOtherPlayerCards username game)
-filterPrivateGameData username (GameMsgOut (NewGameState tableName game)) =
-  GameMsgOut $ NewGameState tableName (excludeOtherPlayerCards username game)
+filterPrivateGameData username (NewGameState tableName game) =
+  NewGameState tableName (excludeOtherPlayerCards username game)
 filterPrivateGameData _ unfilteredMsg = unfilteredMsg

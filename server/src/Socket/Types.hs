@@ -139,6 +139,7 @@ data MsgOut
   | SuccessfullySubscribedToTable TableName
                                   Game
   | GameMsgOut GameMsgOut
+  | NewGameState TableName Game
   | ErrMsg Err
   | AuthSuccess
   | Noop
@@ -148,7 +149,6 @@ data GameMsgOut
   = GameMoveErr Err
   | PlayerLeft
   | PlayerJoined TableName Text
-  | NewGameState TableName Game
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 

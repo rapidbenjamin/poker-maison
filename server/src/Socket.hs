@@ -112,14 +112,11 @@ runSocketServer
   :: BS.ByteString -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port connString redisConfig = do
   putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ TakeSeat "black" 2222)
-  putStrLn $ T.unpack $ encodeMsgX
-    (GameMsgIn $ GameMove "black" $ Raise 400)
-  putStrLn $ T.unpack $ encodeMsgX
-    (GameMsgIn $ GameMove "black" Fold)
+  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" $ Raise 400)
+  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" Fold)
 
   putStrLn $ T.unpack $ encodeMsgX
     (GameMsgIn $ GameMove "black" $ PostBlind Big)
-    
 
 
   lobby           <- initialLobby
@@ -348,13 +345,13 @@ msgInHandler conf@MsgHandlerConfig {..} = forever $ do
   liftIO $ print msgIn
   msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
   case msgOutE of
-    Right m@(GameMsgOut gm) -> do
-      yield m -- THIS DUPLICATES MESSAGES AS CLIENT ALREADY SUSCRIBED TO BROADCASTS FOR TABLE - SO CLIENT WILL RECEIVE MSG TWICE DOH!
-      liftIO $ handleNewGameState dbConn serverStateTVar gm
+    Right m@NewGameState{} ->
+      liftIO $ handleNewGameState dbConn serverStateTVar m
     Right m   -> yield m
     Left  err -> yield (ErrMsg err)
-  return ()
+  --return ()
   where sampleMsg = GameMsgOut PlayerLeft
+
 
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
@@ -487,7 +484,7 @@ botActionLoop dbConn s tableChan playersToWaitFor botName = forkIO $ do
     msg <- atomically $ readTChan chan
     print "action received"
     case msg of
-      GameMsgOut (NewGameState tableName g) ->
+      NewGameState tableName g ->
         unless (shouldn'tStartGameYet g) (actIfNeeded g botName)
       _ -> return ()
  where

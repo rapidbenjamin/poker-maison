@@ -77,8 +77,8 @@ handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} = forever $ do
   msgOutE <- runExceptT $ runReaderT (msgHandler msg) msgHandlerConfig
   pPrint msgOutE
   case msgOutE of
-    Right m@(GameMsgOut gm) ->
-      sendMsg clientConn m >> handleNewGameState dbConn serverStateTVar gm
+    Right m@NewGameState{} ->
+      sendMsg clientConn m >> handleNewGameState dbConn serverStateTVar m
     Right m   -> sendMsg clientConn m
     Left  err -> sendMsg clientConn (ErrMsg err)
 
@@ -124,7 +124,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
 --
 -- Note that timeouts are only enforced when the expediency of the player's action is required
 -- to avoid halting the progress of the game.
-playerTimeoutLoop :: TableName -> TChan GameMsgOut -> MsgHandlerConfig -> IO ()
+playerTimeoutLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
 playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
   msgReaderDup <- atomically $ dupTChan socketReadChan
   dupTableChan <- atomically $ dupTChan channel
@@ -187,21 +187,19 @@ updateGameAndBroadcastT serverStateTVar tableName newGame = do
   case M.lookup tableName $ unLobby lobby of
     Nothing               -> throwSTM $ TableDoesNotExistInLobby tableName
     Just table@Table {..} -> do
-      writeTChan channel $ GameMsgOut $ NewGameState tableName newGame
+      writeTChan channel $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
       swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
       return ()
 
-handleNewGameState
-  :: ConnectionString -> TVar ServerState -> GameMsgOut -> IO ()
+handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
 handleNewGameState connString serverStateTVar (NewGameState tableName newGame)
   = do
     newServerState <- atomically
       $ updateGameAndBroadcastT serverStateTVar tableName newGame
     async (progressGame' connString serverStateTVar tableName newGame)
     return ()
-handleNewGameState _ _ msg = do
-  return ()
+handleNewGameState _ _ msg = return ()
 
 
 progressGame'
@@ -324,7 +322,7 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                   --liftIO $ link asyncGameReceiveLoop
                   liftIO $ sendMsg clientConn
                                    (SuccessfullySatDown tableName newGame)
-                  return $ GameMsgOut $ NewGameState tableName newGame
+                  return $ NewGameState tableName newGame
 
 leaveSeatHandler
   :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
@@ -357,7 +355,7 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
                   liftIO $ dbWithdrawChipsFromPlay dbConn
                                                    (unUsername username)
                                                    chipsInPlay
-                  return $ GameMsgOut $ NewGameState tableName newGame
+                  return $ NewGameState tableName newGame
 
 canTakeSeat
   :: Int
@@ -413,4 +411,4 @@ gameActionHandler gameMove@(GameMove tableName action) = do
                 Right newGame -> do
                   liftIO $ print "No error :)"
                   liftIO $ pPrint newGame
-                  return $ GameMsgOut $ NewGameState tableName newGame
+                  return $ NewGameState tableName newGame
