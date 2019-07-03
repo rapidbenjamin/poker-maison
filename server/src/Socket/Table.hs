@@ -92,7 +92,10 @@ import qualified Pipes.Prelude                 as P
 -- TODO USE SERVERSTATE TVAR SO CAN GET SUBSCRIBERS TO BROADCAST TO AT ANYTIME
 setUpTablePipes :: TableName -> Table -> IO (Async ())
 setUpTablePipes name Table {..} =
-  async $ forever $ runEffect $ fromInput gameOutMailbox 
+  async
+    $   forever
+    $   runEffect
+    $   fromInput gameOutMailbox
     >-> logGame name
     >-> P.map show
     >-> P.stdoutLn
@@ -100,6 +103,9 @@ setUpTablePipes name Table {..} =
    -- >->  -- broadcast
     -- writeGameToDB
 
+
+progressGame'' :: Pipe Game Game IO ()
+progressGame'' = undefined
 
 gameStateProducer :: Input Game -> Producer Game IO ()
 gameStateProducer source = fromInput source

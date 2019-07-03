@@ -201,6 +201,7 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
   (writeMsgOutSource, readMsgOutSource) <- spawn unbounded
   async $ socketMsgInWriter clientConn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
   async
+    $   forever
     $   runEffect
     $   fromInput readMsgInSource
     >-> msgInHandler conf
@@ -216,10 +217,11 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
 -- 
 --  Note - only parsed MsgIns make it into the mailbox - socket msgs which cannot be parsed
 -- are silently ignored but logged anyway.
-socketMsgInWriter :: WS.Connection -> Output MsgIn -> IO (Async ())
-socketMsgInWriter conn writeMsgInSource = forever $ do
+socketMsgInWriter :: WS.Connection -> Output MsgIn -> IO ()
+socketMsgInWriter conn writeMsgInSource = do
   a <-
     async
+    $   forever
     $   runEffect
     $   msgInDecoder (socketReader conn >-> logMsgIn)
     >-> toOutput writeMsgInSource
@@ -256,6 +258,7 @@ msgInDecoder rawMsgProducer = do
     Nothing       -> return ()
     Just (Left a) -> do
       (x, p'') <- lift $ runStateT draw p'
+      lift $ print "left err"
       lift $ print x
       -- x is the problem input msg which failed to parse. We ignore it here by just resuming
       msgInDecoder p''
@@ -266,7 +269,7 @@ msgInDecoder rawMsgProducer = do
 
 
 msgOutEncoder :: Pipe MsgOut BS.ByteString IO ()
-msgOutEncoder = forever $ do
+msgOutEncoder = do
   msgOut <- await
   lift $ print "encoding msg: "
   lift $ print msgOut
@@ -274,7 +277,7 @@ msgOutEncoder = forever $ do
 
 
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
-msgInHandler conf@MsgHandlerConfig {..} = forever $ do
+msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
   liftIO $ print "msghandler : "
   liftIO $ print msgIn
@@ -292,8 +295,8 @@ msgInHandler conf@MsgHandlerConfig {..} = forever $ do
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
 logMsgIn = do
   msg <- await
-  --lift $ putStrLn "logging MsgIn"
-  x   <- lift $ try $ print msg
+  lift $ putStrLn "logging MsgIn"
+  x <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
     Left e@G.IOError { G.ioe_type = t } ->
