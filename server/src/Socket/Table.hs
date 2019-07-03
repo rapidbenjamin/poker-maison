@@ -9,11 +9,7 @@ import           Database.Persist.Postgresql    ( ConnectionString )
 import qualified Network.WebSockets            as WS
 import           Prelude
 
-import           Socket.Clients
-import           Socket.Lobby
-import           Socket.Setup
-import           Socket.Subscriptions
-import           Socket.Workers
+
 import           Types
 
 import           Control.Lens            hiding ( Fold )
@@ -48,9 +44,8 @@ import           Poker.Game.Game
 import           Poker.Types                    ( Player )
 import           Data.Maybe
 import           Poker.Game.Utils
-import           Socket
+--import           Socket
 import           Socket.Types
-import           Socket.Msg
 import           Socket.Utils
 import           Data.ByteString.UTF8           ( fromString )
 
@@ -83,6 +78,28 @@ import           Pipes.Parse             hiding ( decode
 import qualified Pipes.Prelude                 as P
 
 
+-- PROGRESS GAME HERE AFTER ACTIONS RATHER THAN ELSEWHERE SO
+-- PROGRESSIONS AND EVAL PLAYER ACTIONS ARE DECOUPLED
+
+-- fork a new thread which does the following tasks when a new gameState
+-- 
+--  
+-- 1. when possible progress game to next staged 
+-- 2. and broadcast
+-- 3.  write new game state to db 
+-- 4. log new gameState
+
+-- TODO USE SERVERSTATE TVAR SO CAN GET SUBSCRIBERS TO BROADCAST TO AT ANYTIME
+setUpTablePipes :: TableName -> Table -> IO (Async ())
+setUpTablePipes name Table {..} =
+  async $ forever $ runEffect $ fromInput gameOutMailbox 
+    >-> logGame name
+    >-> P.map show
+    >-> P.stdoutLn
+    -- progressGame
+   -- >->  -- broadcast
+    -- writeGameToDB
+
 
 gameStateProducer :: Input Game -> Producer Game IO ()
 gameStateProducer source = fromInput source
@@ -105,31 +122,28 @@ propagateGame :: [Client] -> Game -> Effect IO ()
 propagateGame subscribers g = undefined
 
 
-logGame :: Pipe Game Game IO ()
-logGame = P.chain print
+logGame :: TableName -> Pipe Game Game IO ()
+logGame tableName = do
+  g <- await
+  liftIO $ print
+    "woop /n \n \n table \n /n \n pipe \n got \n  a \n \n \n /n/n/n\n\n game"
+  yield g
+
+  -- P.chain print
+
 
 -- Lookups up a table with the given name and writes the new game state
 -- to the gameIn mailbox for propagation to observers.
 --
 -- If table with tableName is not found in the serverState lobby 
 -- then we just return () and do nothing.
-writeGameState :: TVar ServerState -> TableName -> MsgOut -> IO ()
-writeGameState s name game = do
+toGameInMailbox :: TVar ServerState -> TableName -> Game -> IO ()
+toGameInMailbox s name game = do
+  print "SENT TO GAME IN MAILBOX \n \n \n __"
   table' <- atomically $ getTable s name
-  forM_ table' (runEffect . toMailbox)
-  where toMailbox Table {..} = yield game >-> toOutput gameInMailbox
+  forM_ table' send
+  where send Table {..} = runEffect $ yield game >-> toOutput gameInMailbox
 
-
-
-getTable :: TVar ServerState -> TableName -> STM (Maybe Table)
-getTable s tableName = do
-  ServerState {..} <- readTVar s
-  return $ M.lookup tableName $ unLobby lobby
-
--- PROGRESS GAME HERE AFTER ACTIONS RATHER THAN ELSEWHERE SO
--- PROGRESSIONS AND EVAL PLAYER ACTIONS ARE DECOUPLED
-
---handleGameStateUpdate = gameStateProducer >->
 
 -- Get a combined outgoing mailbox for a group of clients who are observing a table
 -- 
@@ -146,3 +160,10 @@ getTable s tableName = do
 -- instead of STM.
 combineOutMailboxes :: [Client] -> Consumer MsgOut IO ()
 combineOutMailboxes clients = toOutput $ foldMap outgoingMailbox clients
+
+
+
+getTable :: TVar ServerState -> TableName -> STM (Maybe Table)
+getTable s tableName = do
+  ServerState {..} <- readTVar s
+  return $ M.lookup tableName $ unLobby lobby

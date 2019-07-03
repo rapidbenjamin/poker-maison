@@ -70,8 +70,8 @@ instance Exception TableDoesNotExistInLobby
 
 data Table = Table
   { subscribers :: [Username] -- observing public game state includes players sat down
-  , gameInMailbox :: Output Game -- outgoing MsgOuts broadcasts -> write source for msgs to propagate new game states to clients
-  , gameOutMailbox :: Input Game --incoming gamestates -> read (consume) source for new game states
+  , gameOutMailbox :: Input Game -- outgoing MsgOuts broadcasts -> write source for msgs to propagate new game states to clients
+  , gameInMailbox :: Output Game --incoming gamestates -> read (consume) source for new game states
   , waitlist :: [Username] -- waiting to join a full table
   , game :: Game
   , channel :: TChan MsgOut

@@ -36,7 +36,7 @@ import           Socket.Utils
 import           Types
 import           Pipes.Concurrent
 import           System.Random
-
+import           Socket.Table
 
 initialLobby :: IO Lobby
 initialLobby = do
@@ -44,17 +44,16 @@ initialLobby = do
   g    <- getStdGen
   let shuffledDeck' = shuffledDeck g
   (output, input) <- spawn unbounded
-  return $ Lobby $ M.fromList
-    [ ( "Black"
-      , Table { subscribers    = []
-              , gameOutMailbox = input
-              , gameInMailbox  = output
-              , waitlist       = []
-              , game           = initialGameState shuffledDeck'
-              , channel        = chan
-              }
-      )
-    ]
+  let tableName = "Black"
+  let table' = Table { subscribers    = []
+                     , gameInMailbox  = output
+                     , gameOutMailbox = input
+                     , waitlist       = []
+                     , game           = initialGameState shuffledDeck'
+                     , channel        = chan
+                     }
+  setUpTablePipes tableName table'
+  return $ Lobby $ M.fromList [("Black", table')]
   where maxChanLength = 10000
 
 joinGame :: Username -> Int -> Game -> Game
@@ -91,3 +90,5 @@ summariseGame tableName Table { game = Game {..}, ..} = TableSummary
 
 summariseTables :: Lobby -> [TableSummary]
 summariseTables (Lobby lobby) = uncurry summariseGame <$> M.toList lobby
+
+

@@ -95,6 +95,9 @@ import           Pipes.Parse             hiding ( decode
                                                 )
 import qualified Pipes.Prelude                 as P
 
+import           Socket.Table
+
+
 initialServerState :: Lobby -> ServerState
 initialServerState lobby = ServerState { clients = M.empty, lobby = lobby }
 
@@ -204,9 +207,9 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
     >-> toOutput writeMsgOutSource -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
   async $ socketMsgOutWriter clientConn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
   --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
-
   return writeMsgOutSource
     -- encode MsgOut values to JSON bytestring to send to socket
+
 
 -- Runs an IO action forever which parses read MsgIn's from the websocket connection 
 -- and puts them in our mailbox waiting to be processed by our MsgIn handler
@@ -222,6 +225,7 @@ socketMsgInWriter conn writeMsgInSource = forever $ do
     >-> toOutput writeMsgInSource
   link a
 
+
 socketMsgOutWriter :: WS.Connection -> Input MsgOut -> IO (Async ())
 socketMsgOutWriter conn is = forever $ runEffect $ for
   (fromInput is >-> msgOutEncoder)
@@ -231,12 +235,14 @@ socketMsgOutWriter conn is = forever $ runEffect $ for
 encodeMsgOutToJSON :: MsgOut -> Text
 encodeMsgOutToJSON msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 
+
 -- Converts a websocket connection into a producer 
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
 socketReader conn = forever $ do
   msg <- liftIO $ WS.receiveData conn
   liftIO $ putStrLn $ "received a raw msg from socket: " ++ show msg
   yield msg
+
 
 -- Convert a raw Bytestring producer of raw JSON into a new producer which yields 
 -- only successfully parsed values of type MsgIn.
@@ -274,7 +280,8 @@ msgInHandler conf@MsgHandlerConfig {..} = forever $ do
   liftIO $ print msgIn
   msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
   case msgOutE of
-    Right m@NewGameState{} ->
+    Right m@(NewGameState tableName g) -> do
+      liftIO $ toGameInMailbox serverStateTVar tableName g
       liftIO $ handleNewGameState dbConn serverStateTVar m
     Right m   -> yield m
     Left  err -> yield $ ErrMsg err
