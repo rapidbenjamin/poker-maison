@@ -40,8 +40,8 @@ import           Poker.Types
 -- deck and pocket cards/ bets reset
 runPlayerAction
   :: RandomGen g => Game -> g -> PlayerAction -> Either GameErr Game
-runPlayerAction currGame@Game {..} gen playerAction'@PlayerAction {..} =
-  case handlePlayerAction currGame playerAction' of
+runPlayerAction game gen playerAction'@PlayerAction {..} =
+  case handlePlayerAction game playerAction' of
     Left  err          -> Left err
     Right newGameState -> if canProgressGame newGameState
       then Right $ progressGame gen newGameState
