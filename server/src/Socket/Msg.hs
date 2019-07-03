@@ -224,6 +224,7 @@ progressGame' connString serverStateTVar tableName game@Game {..} = do
     progressGame' connString serverStateTVar tableName progressedGame
   where stagePauseDuration = 5000000
 
+
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 getTablesHandler = do
   MsgHandlerConfig {..} <- ask

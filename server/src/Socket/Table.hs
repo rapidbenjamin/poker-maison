@@ -102,6 +102,11 @@ gamePropagator = undefined
 propagateGame :: [Client] -> Game -> Effect IO ()
 propagateGame subscribers g = undefined
 
+
+
+logGame :: Pipe Game Game IO ()
+logGame = P.chain print
+
 -- Get a combined outgoing mailbox for a group of clients who are observing a table
 -- 
 -- Here we monoidally combined so we then have one mailbox 

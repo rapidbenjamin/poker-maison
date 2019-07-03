@@ -45,7 +45,7 @@ import           Poker.Game.Privacy             ( excludeAllPlayerCards
                                                 )
 import qualified Data.ByteString.Lazy.Char8    as C
 import           Socket.Auth
-import Pipes.Concurrent
+import           Pipes.Concurrent
 
 authClient
   :: BS.ByteString
@@ -63,8 +63,7 @@ authClient secretKey state dbConn redisConfig conn (Token token) = do
     Right (Left  err      ) -> return $ Left $ AuthFailed $ T.pack $ show err
     Right (Right claimsSet) -> case decodeJWT claimsSet of
       Left jwtErr -> return $ Left $ AuthFailed $ T.pack $ show jwtErr
-      Right username@(Username name) ->
-        return $ pure $ Username name
+      Right username@(Username name) -> return $ pure $ Username name
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
 removeClient username serverStateTVar = do
@@ -76,19 +75,17 @@ removeClient username serverStateTVar = do
 clientExists :: Username -> Map Username Client -> Bool
 clientExists = M.member
 
+
 insertClient :: Client -> Username -> Map Username Client -> Map Username Client
 insertClient client username = M.insert username client
 
 addClient :: TVar ServerState -> Client -> STM ServerState
-addClient s c@Client{..} = do
+addClient s c@Client {..} = do
   ServerState {..} <- readTVar s
   swapTVar
     s
     (ServerState
-      { clients = insertClient
-        c
-        (Username clientUsername)
-        clients
+      { clients = insertClient c (Username clientUsername) clients
       , ..
       }
     )

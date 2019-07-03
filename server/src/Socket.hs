@@ -154,10 +154,11 @@ updateGame s tableName g = do
 
 evalPlayerAction
   :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
-evalPlayerAction g = forever $ do
-  playerAction <- await
-  res          <- lift $ runPlayerAction g playerAction
-  yield res
+evalPlayerAction g = P.map $ runPlayerAction g
+ -- forever $ do
+ -- playerAction <- await
+ -- res          <- lift $ runPlayerAction g playerAction
+ -- yield res
 
 
 -- An illegal player moves result in the err being sent back to the client who made the move
@@ -177,7 +178,6 @@ playerActionHandler' failureConsumer successConsumer =
   divertResult = \case
     Left  e -> failureConsumer e
     Right g -> successConsumer g
-
 
 
 actionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO ()
@@ -343,7 +343,7 @@ application secretKey dbConnString redisConfig s pending = do
     Right u@(Username clientUsername) -> do
       sendMsg conn AuthSuccess
       outgoingMailbox <- websocketInMailbox $ msgConf conn u
-      atomically $ addClient s Client {..}
+      atomically $ addClient s Client { .. }
       forever (WS.receiveData conn :: IO Text)
     Left err -> sendMsg conn (ErrMsg err)
  where
@@ -354,7 +354,6 @@ application secretKey dbConnString redisConfig s pending = do
     , redisConfig     = redisConfig
     , ..
     }
-
 
 delayThenSeatPlayer
   :: ConnectionString -> Int -> TVar ServerState -> Player -> IO ()
