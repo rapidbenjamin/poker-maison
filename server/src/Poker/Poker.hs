@@ -43,12 +43,9 @@ runPlayerAction
 runPlayerAction currGame@Game {..} gen playerAction'@PlayerAction {..} =
   case handlePlayerAction currGame playerAction' of
     Left  err          -> Left err
-    Right newGameState -> case action of
-      SitDown _  -> Right newGameState
-      LeaveSeat' -> Right newGameState
-      _          -> if canProgressGame newGameState
-        then Right $ progressGame gen newGameState
-        else Right newGameState
+    Right newGameState -> if canProgressGame newGameState
+      then Right $ progressGame gen newGameState
+      else Right newGameState
 
 
 canProgressGame :: Game -> Bool
