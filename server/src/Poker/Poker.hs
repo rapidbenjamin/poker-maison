@@ -21,6 +21,7 @@ import           Data.List
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Text                      ( Text )
+import           System.Random
 
 import           Text.Pretty.Simple             ( pPrint )
 
@@ -37,21 +38,17 @@ import           Poker.Types
 -- player action or an err signifying an invalid player action with the reason why
 -- if the current game stage is showdown then the next game state will have a newly shuffled
 -- deck and pocket cards/ bets reset
-runPlayerAction :: Game -> PlayerAction -> IO (Either GameErr Game)
-runPlayerAction currGame@Game {..} playerAction'@PlayerAction {..} =
+runPlayerAction
+  :: RandomGen g => Game -> g -> PlayerAction -> Either GameErr Game
+runPlayerAction currGame@Game {..} gen playerAction'@PlayerAction {..} =
   case handlePlayerAction currGame playerAction' of
-    Left err -> do
-      pPrint currGame
-      print err
-      return $ Left err
-    Right newGameState -> do
-      pPrint newGameState
-      case action of
-        SitDown _  -> return $ Right newGameState
-        LeaveSeat' -> return $ Right newGameState
-        _          -> if canProgressGame newGameState
-          then progressGame newGameState >>= \g -> return $ Right g
-          else return $ Right newGameState
+    Left  err          -> Left err
+    Right newGameState -> case action of
+      SitDown _  -> Right newGameState
+      LeaveSeat' -> Right newGameState
+      _          -> if canProgressGame newGameState
+        then Right $ progressGame gen newGameState
+        else Right newGameState
 
 
 canProgressGame :: Game -> Bool
@@ -74,28 +71,32 @@ canProgressGame game@Game {..}
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 -- toDO - make function pure by taking stdGen as an arg
-progressGame :: Game -> IO Game
-progressGame game@Game {..}
+progressGame :: RandomGen g => g -> Game -> Game
+progressGame gen game@Game {..}
   | _street == Showdown
-  = getNextHand game <$> shuffledDeck
-  | _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2
-  = getNextHand game <$> shuffledDeck
+  = nextHand
+  | notEnoughPlayersToStartGame
+  = nextHand
   | haveAllPlayersActed game
     && (  not (allButOneFolded game)
        || (_street == PreDeal || _street == Showdown)
        )
   = case getNextStreet _street of
-    PreFlop  -> return $ progressToPreFlop game
-    Flop     -> return $ progressToFlop game
-    Turn     -> return $ progressToTurn game
-    River    -> return $ progressToRiver game
-    Showdown -> return $ progressToShowdown game
-    PreDeal  -> getNextHand game <$> shuffledDeck
+    PreFlop  -> progressToPreFlop game
+    Flop     -> progressToFlop game
+    Turn     -> progressToTurn game
+    River    -> progressToRiver game
+    Showdown -> progressToShowdown game
+    PreDeal  -> nextHand
   | allButOneFolded game && _street /= Showdown
-  = return $ progressToShowdown game
+  = progressToShowdown game
   | otherwise
-  = return game
-  where numberPlayersSatIn = length $ getActivePlayers _players
+  = game
+ where
+  nextHand           = getNextHand game (shuffledDeck gen)
+  numberPlayersSatIn = length $ getActivePlayers _players
+  notEnoughPlayersToStartGame =
+    _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2
 
 handlePlayerAction :: Game -> PlayerAction -> Either GameErr Game
 handlePlayerAction game@Game {..} PlayerAction {..} = case action of

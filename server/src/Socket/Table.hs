@@ -87,7 +87,7 @@ tableGameStates source = fromInput source
 
 
 gameToMsgOut :: TableName -> Pipe Game MsgOut IO ()
-gameToMsgOut name = undefined -- P.map $ NewGameState name
+gameToMsgOut name = P.map $ NewGameState name
 
 ---- yields MsgOuts from new game states
 gamePropagator = undefined

@@ -157,7 +157,8 @@ evalPlayerAction
 evalPlayerAction g =  --P.map $ runPlayerAction g
                      forever $ do
   playerAction <- await
-  res          <- lift $ runPlayerAction g playerAction
+  gen          <- liftIO $ getStdGen
+  let res = runPlayerAction g gen playerAction
   yield res
 
 
@@ -183,8 +184,9 @@ playerActionHandler' failureConsumer successConsumer =
 actionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO ()
 actionHandler g = forever $ do
   a   <- await
-  res <- lift $ runPlayerAction g a
-  yield res
+  gen <- liftIO $ getStdGen
+  yield $ runPlayerAction g gen a
+  return ()
 
 
 -- creates a mailbox which has both an input sink and output source which
@@ -431,7 +433,8 @@ runBotAction dbConn serverStateTVar g pName = do
   case maybeAction of
     Nothing -> return ()
     Just a  -> do
-      eitherNewGame <- runPlayerAction g a
+      gen <- getStdGen
+      let eitherNewGame = runPlayerAction g gen a
       case eitherNewGame of
         Left  gameErr -> print (show $ GameErr gameErr) >> return ()
         Right newGame -> do
@@ -448,7 +451,8 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
   case M.lookup tableName $ unLobby lobby of
     Nothing         -> error "table doesnt exist" >> return ()
     Just Table {..} -> do
-      eitherNewGame <- liftIO $ runPlayerAction game takeSeatAction
+      gen <- getStdGen
+      let eitherNewGame = runPlayerAction game gen takeSeatAction
       case eitherNewGame of
         Left  gameErr -> print $ GameErr gameErr
         Right newGame -> do

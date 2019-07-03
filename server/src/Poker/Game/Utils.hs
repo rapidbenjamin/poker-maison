@@ -28,23 +28,28 @@ import           System.Random
 initialDeck :: Deck
 initialDeck = Deck $ Card <$> [minBound ..] <*> [minBound ..]
 
--- Get a shuffled deck of cards.
-shuffledDeck :: IO Deck
-shuffledDeck = Deck <$> shuffle (unDeck initialDeck)
 
-shuffle :: [a] -> IO [a]
-shuffle xs = do
-  ar <- newArray n xs
-  forM [1 .. n] $ \i -> do
-    j  <- randomRIO (i, n)
-    vi <- readArray ar i
-    vj <- readArray ar j
-    writeArray ar j vi
-    return vj
+-- Get a shuffled deck of cards.
+shuffledDeck :: RandomGen g => g -> Deck
+shuffledDeck gen = Deck <$> fst $ shuffle gen (unDeck initialDeck)
+
+
+fisherYatesStep :: RandomGen g => (Map Int a, g) -> (Int, a) -> (Map Int a, g)
+fisherYatesStep (m, gen) (i, x) =
+  ((M.insert j x . M.insert i (m M.! j)) m, gen')
+  where (j, gen') = randomR (0, i) gen
+
+  
+-- shuffle using the Fisher Yates algorithm
+shuffle :: RandomGen g => g -> [a] -> ([a], g)
+shuffle gen [] = ([], gen)
+shuffle gen l  = toElems
+  $ foldl fisherYatesStep (initial (head l) gen) (numerate (tail l))
  where
-  n = length xs
-  newArray :: Int -> [a] -> IO (IOArray Int a)
-  newArray n = newListArray (1, n)
+  toElems (x, y) = (M.elems x, y)
+  numerate = zip [1 ..]
+  initial x gen = (M.singleton 0 x, gen)
+
 
 modInc :: Int -> Int -> Int -> Int
 modInc incAmount num modulo | incNum > modulo = 0

@@ -59,7 +59,7 @@ import           Socket.Utils
 import           Socket
 import           Database
 
-
+import           System.Random
 import           Types
 
 sitDownBot :: ConnectionString -> Player -> TVar ServerState -> IO ()
@@ -69,7 +69,8 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
   case M.lookup tableName $ unLobby lobby of
     Nothing         -> error "table doesnt exist" >> return ()
     Just Table {..} -> do
-      eitherNewGame <- liftIO $ runPlayerAction game takeSeatAction
+      gen <- liftIO $ getStdGen
+      let eitherNewGame = runPlayerAction game gen takeSeatAction
       case eitherNewGame of
         Left  gameErr -> error (show $ GameErr gameErr) >> return ()
         Right newGame -> do

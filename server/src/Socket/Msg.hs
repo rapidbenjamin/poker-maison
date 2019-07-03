@@ -55,7 +55,7 @@ import           Socket.Utils
 
 import           System.Timeout
 import           Types
-
+import           System.Random
 import           Database
 
 msgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
@@ -208,7 +208,8 @@ progressGame'
 progressGame' connString serverStateTVar tableName game@Game {..} = do
   threadDelay stagePauseDuration
   when (canProgressGame game) $ do
-    progressedGame <- progressGame game
+    gen <- getStdGen
+    let progressedGame = progressGame gen game
     pPrint "PROGRESED GAME"
     pPrint progressedGame
     print "haveAllPlayersActed:"
@@ -301,30 +302,32 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                                               , action = SitDown player
                                               }
                   takeSeatAction = GameMove tableName (SitDown player)
-              eitherProgressedGame <- liftIO $ runPlayerAction
-                game
-                PlayerAction { name   = unUsername username
-                             , action = SitDown player
-                             }
-
-              case eitherProgressedGame of
-                Left  gameErr -> throwError $ GameErr gameErr
-                Right newGame -> do
-                  liftIO $ dbDepositChipsIntoPlay dbConn
-                                                  (unUsername username)
-                                                  chipsToSit
-                  when
-                    (username `notElem` subscribers)
-                    (liftIO $ atomically $ subscribeToTable tableName
-                                                            msgHandlerConfig
-                    )
-                  --asyncGameReceiveLoop <-
-                  --  liftIO $
-                  --  async (playerTimeoutLoop tableName channel msgHandlerConfig)
-                  --liftIO $ link asyncGameReceiveLoop
-                  liftIO $ sendMsg clientConn
-                                   (SuccessfullySatDown tableName newGame)
-                  return $ NewGameState tableName newGame
+              gen <- liftIO $ getStdGen
+              case
+                  runPlayerAction
+                    game
+                    gen
+                    PlayerAction { name   = unUsername username
+                                 , action = SitDown player
+                                 }
+                of
+                  Left  gameErr -> throwError $ GameErr gameErr
+                  Right newGame -> do
+                    liftIO $ dbDepositChipsIntoPlay dbConn
+                                                    (unUsername username)
+                                                    chipsToSit
+                    when
+                      (username `notElem` subscribers)
+                      (liftIO $ atomically $ subscribeToTable tableName
+                                                              msgHandlerConfig
+                      )
+                    --asyncGameReceiveLoop <-
+                    --  liftIO $
+                    --  async (playerTimeoutLoop tableName channel msgHandlerConfig)
+                    --liftIO $ link asyncGameReceiveLoop
+                    liftIO $ sendMsg clientConn
+                                     (SuccessfullySatDown tableName newGame)
+                    return $ NewGameState tableName newGame
 
 leaveSeatHandler
   :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
@@ -337,14 +340,12 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
       if unUsername username `notElem` getGamePlayerNames game
         then throwError $ NotSatInGame tableName
         else do
-          eitherProgressedGame <-
-            liftIO
-              $ (runPlayerAction
-                  game
-                  PlayerAction { name   = unUsername username
-                               , action = LeaveSeat'
-                               }
-                )
+          gen <- liftIO $ getStdGen
+          let eitherProgressedGame = runPlayerAction
+                game
+                gen
+                PlayerAction { name = unUsername username, action = LeaveSeat' }
+
           case eitherProgressedGame of
             Left  gameErr -> throwError $ GameErr gameErr
             Right newGame -> do
@@ -399,13 +400,17 @@ gameActionHandler gameMove@(GameMove tableName action) = do
     Nothing -> throwError $ TableDoesNotExist tableName
     Just table@Table {..} ->
       let satAtTable = unUsername username `elem` getGamePlayerNames game
-      in  if not satAtTable
-            then throwError $ NotSatAtTable tableName
-            else do
-              eitherNewGame <- liftIO $ runPlayerAction
-                game
-                PlayerAction { name = unUsername username, .. }
-              case eitherNewGame of
+      in
+        if not satAtTable
+          then throwError $ NotSatAtTable tableName
+          else do
+            gen <- liftIO $ getStdGen
+            case
+                runPlayerAction
+                  game
+                  gen
+                  PlayerAction { name = unUsername username, .. }
+              of
                 Left gameErr -> do
                   liftIO $ print "Error! :<"
                   liftIO $ print gameErr
