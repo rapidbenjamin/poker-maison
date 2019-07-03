@@ -87,7 +87,7 @@ tableGameStates source = fromInput source
 
 
 gameToMsgOut :: TableName -> Pipe Game MsgOut IO ()
-gameToMsgOut name = P.map $ NewGameState name
+gameToMsgOut name = undefined -- P.map $ NewGameState name
 
 ---- yields MsgOuts from new game states
 gamePropagator = undefined
@@ -101,7 +101,6 @@ gamePropagator = undefined
 -- client's who are observing the table
 propagateGame :: [Client] -> Game -> Effect IO ()
 propagateGame subscribers g = undefined
-
 
 
 logGame :: Pipe Game Game IO ()

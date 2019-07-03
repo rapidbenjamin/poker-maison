@@ -154,11 +154,11 @@ updateGame s tableName g = do
 
 evalPlayerAction
   :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
-evalPlayerAction g = P.map $ runPlayerAction g
- -- forever $ do
- -- playerAction <- await
- -- res          <- lift $ runPlayerAction g playerAction
- -- yield res
+evalPlayerAction g =  --P.map $ runPlayerAction g
+                     forever $ do
+  playerAction <- await
+  res          <- lift $ runPlayerAction g playerAction
+  yield res
 
 
 -- An illegal player moves result in the err being sent back to the client who made the move

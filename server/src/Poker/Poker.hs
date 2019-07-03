@@ -49,9 +49,9 @@ runPlayerAction currGame@Game {..} playerAction'@PlayerAction {..} =
       case action of
         SitDown _  -> return $ Right newGameState
         LeaveSeat' -> return $ Right newGameState
-        _          -> do
-          nextStage <- progressGame newGameState
-          return $ Right nextStage
+        _          -> if canProgressGame newGameState
+          then progressGame newGameState >>= \g -> return $ Right g
+          else return $ Right newGameState
 
 
 canProgressGame :: Game -> Bool
