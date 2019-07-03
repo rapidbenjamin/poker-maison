@@ -46,12 +46,12 @@ initialLobby = do
   (output, input) <- spawn unbounded
   return $ Lobby $ M.fromList
     [ ( "Black"
-      , Table { subscribers       = []
-              , subscribersOutput = output
-              , subscribersInput  = input
-              , waitlist          = []
-              , game              = initialGameState shuffledDeck'
-              , channel           = chan
+      , Table { subscribers    = []
+              , gameOutMailbox = input
+              , gameInMailbox  = output
+              , waitlist       = []
+              , game           = initialGameState shuffledDeck'
+              , channel        = chan
               }
       )
     ]

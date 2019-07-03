@@ -34,4 +34,3 @@ getTimestamp = UTCTime (ModifiedJulianDay 0) (secondsToDiffTime 0)
 
 unLobby :: Lobby -> Map TableName Table
 unLobby (Lobby lobby) = lobby
-

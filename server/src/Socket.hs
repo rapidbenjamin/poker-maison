@@ -184,7 +184,7 @@ playerActionHandler' failureConsumer successConsumer =
 actionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO ()
 actionHandler g = forever $ do
   a   <- await
-  gen <- liftIO $ getStdGen
+  gen <- liftIO getStdGen
   yield $ runPlayerAction g gen a
   return ()
 
@@ -314,6 +314,7 @@ logMsgOut = do
 --newtype Table' = Table' (Pipe PlayerAction gameMove IO Game)
 
 -- get a pipe which only forwards the game moves which occur at the given table
+filterMsgsForTable :: Monad m => TableName -> Pipe GameMsgIn GameMsgIn m ()
 filterMsgsForTable tableName =
   P.filter $ \(GameMove tableName' _) -> tableName == tableName'
 

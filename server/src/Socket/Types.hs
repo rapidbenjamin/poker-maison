@@ -52,7 +52,7 @@ instance Show Lobby where
   show _ = ""
 
 instance Show ServerState where
-    show _ = ""
+  show _ = ""
 
 -- exception when adding subscriber to table if subscriber already exists inside STM transaction
 newtype CannotAddAlreadySubscribed =
@@ -70,8 +70,8 @@ instance Exception TableDoesNotExistInLobby
 
 data Table = Table
   { subscribers :: [Username] -- observing public game state includes players sat down
-  , subscribersOutput :: Output GameMsgOut -- outgoing MsgOuts broadcasts -> write source for msgs to propagate new game states to clients
-  , subscribersInput :: Input GameMsgOut --incoming gamestates -> read (consume) source for new game states
+  , gameInMailbox :: Output Game -- outgoing MsgOuts broadcasts -> write source for msgs to propagate new game states to clients
+  , gameOutMailbox :: Input Game --incoming gamestates -> read (consume) source for new game states
   , waitlist :: [Username] -- waiting to join a full table
   , game :: Game
   , channel :: TChan MsgOut
@@ -90,7 +90,7 @@ instance Ord Table where
     game1 `compare` game2
 
 data Client = Client
-  { 
+  {
     clientUsername :: Text
   , conn :: WS.Connection -- do we need this? could just use the mailbox?
   , outgoingMailbox :: Output MsgOut
@@ -106,8 +106,9 @@ data ServerState = ServerState
   }
 
 instance Eq Client where
-  Client { clientUsername = clientUsername1 } == Client { clientUsername = clientUsername2 } = clientUsername1 == clientUsername2
-  
+  Client { clientUsername = clientUsername1 } == Client { clientUsername = clientUsername2 }
+    = clientUsername1 == clientUsername2
+
 -- incoming messages from a ws client
 data MsgIn
   = GetTables

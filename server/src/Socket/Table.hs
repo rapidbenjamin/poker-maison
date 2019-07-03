@@ -37,6 +37,8 @@ import           Socket.Types
 import qualified Data.List                     as L
 
 import           System.Random
+import           Data.Map.Lazy                  ( Map )
+import qualified Data.Map.Lazy                 as M
 
 import           Poker.ActionValidation
 import           Poker.Game.Blinds
@@ -82,8 +84,8 @@ import qualified Pipes.Prelude                 as P
 
 
 
-tableGameStates :: Input Game -> Producer Game IO ()
-tableGameStates source = fromInput source
+gameStateProducer :: Input Game -> Producer Game IO ()
+gameStateProducer source = fromInput source
 
 
 gameToMsgOut :: TableName -> Pipe Game MsgOut IO ()
@@ -106,6 +108,29 @@ propagateGame subscribers g = undefined
 logGame :: Pipe Game Game IO ()
 logGame = P.chain print
 
+-- Lookups up a table with the given name and writes the new game state
+-- to the gameIn mailbox for propagation to observers.
+--
+-- If table with tableName is not found in the serverState lobby 
+-- then we just return () and do nothing.
+writeGameState :: TVar ServerState -> TableName -> MsgOut -> IO ()
+writeGameState s name game = do
+  table' <- atomically $ getTable s name
+  forM_ table' (runEffect . toMailbox)
+  where toMailbox Table {..} = yield game >-> toOutput gameInMailbox
+
+
+
+getTable :: TVar ServerState -> TableName -> STM (Maybe Table)
+getTable s tableName = do
+  ServerState {..} <- readTVar s
+  return $ M.lookup tableName $ unLobby lobby
+
+-- PROGRESS GAME HERE AFTER ACTIONS RATHER THAN ELSEWHERE SO
+-- PROGRESSIONS AND EVAL PLAYER ACTIONS ARE DECOUPLED
+
+--handleGameStateUpdate = gameStateProducer >->
+
 -- Get a combined outgoing mailbox for a group of clients who are observing a table
 -- 
 -- Here we monoidally combined so we then have one mailbox 
@@ -113,7 +138,7 @@ logGame = P.chain print
 -- socket connection under the hood
 -- 
 -- Warning:
--- You will pay a performance price if you combine thousands of Outputs 
+-- You will pay a performance price if you combine thousands of Outputs ("mailboxes")
 -- (thousands of subscribers) or more.
 --
 -- This is because by doing so will create a very large STM transaction. You can improve performance for very large broadcasts 
