@@ -1,7 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
-
+{- 
+  Public API for Poker Game Logic
+-}
 module Poker.Poker
   ( initialGameState
   , initPlayer
@@ -33,7 +35,8 @@ import           Poker.Game.Hands
 import           Poker.Game.Utils
 import           Poker.Types
 
--- this is public api of the poker module 
+
+
 -- the function takes a player action and returns either a new game for a valid 
 -- player action or an err signifying an invalid player action with the reason why
 -- if the current game stage is showdown then the next game state will have a newly shuffled
