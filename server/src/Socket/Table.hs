@@ -90,15 +90,14 @@ import qualified Pipes.Prelude                 as P
 -- 4. log new gameState
 
 -- TODO USE SERVERSTATE TVAR SO CAN GET SUBSCRIBERS TO BROADCAST TO AT ANYTIME
-setUpTablePipes :: TableName -> Table -> IO (Async ())
-setUpTablePipes name Table {..} =
+setUpTablePipes :: TVar ServerState -> TableName -> Table -> IO (Async ())
+setUpTablePipes s name Table {..} = do 
   async
     $   forever
     $   runEffect
     $   fromInput gameOutMailbox
     >-> logGame name
-    >-> P.map show
-    >-> P.stdoutLn
+    >-> broadcaster s name
     -- progressGame
    -- >->  -- broadcast
     -- writeGameToDB
@@ -106,6 +105,7 @@ setUpTablePipes name Table {..} =
 
 progressGame'' :: Pipe Game Game IO ()
 progressGame'' = undefined
+
 
 gameStateProducer :: Input Game -> Producer Game IO ()
 gameStateProducer source = fromInput source
@@ -115,7 +115,6 @@ gameToMsgOut :: TableName -> Pipe Game MsgOut IO ()
 gameToMsgOut name = P.map $ NewGameState name
 
 ---- yields MsgOuts from new game states
-gamePropagator = undefined
 
 --getMsgOut :: TableName -> Pipe Game MsgOut IO ()
 --getMsgOut name outgoingMailboxes g = forever $ do 
@@ -124,9 +123,19 @@ gamePropagator = undefined
 
 -- write MsgOuts for new game states to outgoing mailbox for
 -- client's who are observing the table
-propagateGame :: [Client] -> Game -> Effect IO ()
-propagateGame subscribers g = undefined
+informSubscriber :: TableName -> Game -> Output MsgOut ->  IO ()
+informSubscriber n g outMailbox = do 
+  print "informing subscriber"
+  runEffect $ yield msgOut >-> toOutput outMailbox 
+  return ()
+  where msgOut = NewGameState n g
 
+-- sends new game states to subscribers
+broadcaster :: TVar ServerState -> TableName -> Consumer Game IO ()
+broadcaster s n = do
+  g <- await
+  ServerState{..} <- liftIO $ readTVarIO s
+  lift  $ mapM_ (informSubscriber n g . outgoingMailbox) clients
 
 logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do

@@ -52,7 +52,6 @@ initialLobby = do
                      , game           = initialGameState shuffledDeck'
                      , channel        = chan
                      }
-  setUpTablePipes tableName table'
   return $ Lobby $ M.fromList [("Black", table')]
   where maxChanLength = 10000
 
