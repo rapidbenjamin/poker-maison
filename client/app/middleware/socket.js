@@ -74,7 +74,7 @@ function connHandler(dispatch, action) {
 
   if (action.data && connectedSocket) {
     if (connectedSocket.readyState === 1)
-      connectedSocket.send('data', action.payload)
+      connectedSocket.send(action.payload)
   }
 }
 

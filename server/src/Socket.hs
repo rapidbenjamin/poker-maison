@@ -198,11 +198,11 @@ actionHandler g = forever $ do
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
 -- We return input source which emits our received socket msgs.
-websocketInMailbox :: MsgHandlerConfig -> IO (Output MsgOut)
+websocketInMailbox :: MsgHandlerConfig -> IO (Output MsgIn, Output MsgOut)
 websocketInMailbox conf@MsgHandlerConfig {..} = do
   (writeMsgInSource , readMsgInSource ) <- spawn unbounded
   (writeMsgOutSource, readMsgOutSource) <- spawn unbounded
-  async $ socketMsgInWriter clientConn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
+  --async $ socketMsgInWriter clientConn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
   async
     $   forever
     $   runEffect
@@ -211,7 +211,7 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
     >-> toOutput writeMsgOutSource -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
   async $ socketMsgOutWriter clientConn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
   --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
-  return writeMsgOutSource
+  return (writeMsgInSource, writeMsgOutSource)
     -- encode MsgOut values to JSON bytestring to send to socket
 
 
@@ -358,9 +358,11 @@ application secretKey dbConnString redisConfig s pending = do
   case eUsername of
     Right u@(Username clientUsername) -> do
       sendMsg conn AuthSuccess
-      outgoingMailbox <- websocketInMailbox $ msgConf conn u
+      (incomingMailbox, outgoingMailbox) <- websocketInMailbox $ msgConf conn u
       atomically $ addClient s Client { .. }
-      forever (WS.receiveData conn :: IO Text)
+      forever $ do 
+        m <- (WS.receiveData conn )
+        runEffect $ msgInDecoder (yield m >-> logMsgIn) >-> toOutput incomingMailbox
     Left err -> sendMsg conn (ErrMsg err)
  where
   msgConf c username = MsgHandlerConfig
