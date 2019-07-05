@@ -119,6 +119,13 @@ gamePipeline connStr s key name outMailbox inMailbox =
     >-> logGame name
     >-> writeGameToDB connStr key
 
+
+pause :: Int -> Pipe a a IO ()
+pause seconds = do
+  a <- await
+  _ <- liftIO $ threadDelay $ seconds * 1000000
+  yield a
+
   -- progressGame inMailbox
   -- writeGameToDB
 
