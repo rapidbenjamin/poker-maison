@@ -5,11 +5,16 @@ import           Control.Concurrent      hiding ( yield )
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import qualified Data.Map.Lazy                 as M
-import           Database.Persist.Postgresql    ( ConnectionString )
+import           Database.Persist.Postgresql    
 import qualified Network.WebSockets            as WS
 import           Prelude
 
-
+import           Database.Persist
+import           Database.Persist.Postgresql    ( ConnectionString
+                                                , SqlPersistT
+                                                , runMigration
+                                                , withPostgresqlConn
+                                                )
 import           Types
 
 import           Control.Lens            hiding ( Fold )
@@ -48,6 +53,9 @@ import           Poker.Game.Utils
 import           Socket.Types
 import           Socket.Utils
 import           Data.ByteString.UTF8           ( fromString )
+
+import           Database
+import           Schema
 
 import           Poker.Poker
 import           Crypto.JWT
@@ -90,18 +98,26 @@ import qualified Pipes.Prelude                 as P
 -- 4. log new gameState
 
 -- TODO USE SERVERSTATE TVAR SO CAN GET SUBSCRIBERS TO BROADCAST TO AT ANYTIME
-setUpTablePipes :: TVar ServerState -> TableName -> Table -> IO (Async ())
-setUpTablePipes s name Table {..} = do 
+setUpTablePipes :: ConnectionString -> TVar ServerState -> TableName -> Table -> IO (Async ())
+setUpTablePipes connStr s name Table {..} = do
+  t <- dbGetTableEntity connStr name
+  let (Entity key _) = fromMaybe notFoundErr t
   async
     $   forever
     $   runEffect
-    $   fromInput gameOutMailbox
-    >-> logGame name
-    >-> broadcaster s name
+    $   gamePipeline connStr s name gameOutMailbox
+    where
+       notFoundErr = error $ "Table " <> show name <> " doesn't exist in DB"
     -- progressGame
    -- >->  -- broadcast
     -- writeGameToDB
 
+-- this is the effect we want to run everytime a new game state is placed in the tables
+-- incoming mailbox for new game states.
+-- New game states are send to the table's incoming mailbox every time a player acts
+-- in a way that follows the game rules 
+gamePipeline :: ConnectionString -> TVar ServerState -> TableName -> Input Game -> Effect IO ()
+gamePipeline connStr s name inMailbox = fromInput inMailbox >-> logGame name >-> broadcast s name
 
 progressGame'' :: Pipe Game Game IO ()
 progressGame'' = undefined
@@ -131,8 +147,9 @@ informSubscriber n g outMailbox = do
   where msgOut = NewGameState n g
 
 -- sends new game states to subscribers
-broadcaster :: TVar ServerState -> TableName -> Consumer Game IO ()
-broadcaster s n = do
+-- At the moment all clients receive updates from every game indiscriminately
+broadcast :: TVar ServerState -> TableName -> Consumer Game IO ()
+broadcast s n = do
   g <- await
   ServerState{..} <- liftIO $ readTVarIO s
   lift  $ mapM_ (informSubscriber n g . outgoingMailbox) clients

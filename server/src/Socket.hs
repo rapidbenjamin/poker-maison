@@ -117,7 +117,7 @@ runSocketServer secretKey port connString redisConfig = do
   lobby           <- initialLobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   -- set up pipelines for broadcasting, progressing and logging new game states
-  traverse  (\(tableName, table) -> setUpTablePipes serverStateTVar tableName table) (M.toList $ unLobby lobby)
+  traverse  (\(tableName, table) -> setUpTablePipes connString serverStateTVar tableName table) (M.toList $ unLobby lobby)
   -- workers for refilling chips
   forkBackgroundJobs connString serverStateTVar lobby
   print $ "Socket server listening on " ++ (show port :: String)
