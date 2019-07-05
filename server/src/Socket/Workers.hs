@@ -31,7 +31,7 @@ forkBackgroundJobs
 forkBackgroundJobs connString serverStateTVar lobby = do
   forkChipRefillDBWriter connString chipRefillInterval chipRefillThreshold -- Periodically refill player chip balances when too low.
   forkGameDBWriters connString lobby -- At the end of game write new game and player data to the DB.
-  forkAllNotifySubscribersThreads serverStateTVar -- Create a thread for each table which broadcasts updates to clients listening for table and game updates.
+  -- forkAllNotifySubscribersThreads serverStateTVar -- Create a thread for each table which broadcasts updates to clients listening for table and game updates.
  where
   chipRefillInterval  = 100000000 -- 2 mins
   chipRefillThreshold = 200000 -- any lower chip count will be topped up on refill to this amount
@@ -62,6 +62,8 @@ forkGameDBWriter connString chan tableName = do
   forkGameWriter tableKey =
     async (writeNewGameStatesToDB connString chan tableKey)
 
+
+
 writeNewGameStatesToDB
   :: ConnectionString -> TChan MsgOut -> Key TableEntity -> IO ()
 writeNewGameStatesToDB connString chan tableKey = do
@@ -73,6 +75,7 @@ writeNewGameStatesToDB connString chan tableKey = do
       --  void (dbInsertGame connString game tableKey)
       _                             -> return ()
 
+
 -- Fork a thread which refills low player chips balances in DB at a given interval
 forkChipRefillDBWriter :: ConnectionString -> Int -> Int -> IO (Async ())
 forkChipRefillDBWriter connString interval chipsThreshold =
@@ -80,9 +83,10 @@ forkChipRefillDBWriter connString interval chipsThreshold =
 
     dbRefillAvailableChips connString chipsThreshold
     threadDelay interval
-
+{-
 forkAllNotifySubscribersThreads :: TVar ServerState -> IO [Async ()]
 forkAllNotifySubscribersThreads serverState = do
   ServerState {..} <- readTVarIO serverState
   let tableNames = M.keys $ unLobby lobby
   traverse (notifyTableSubscribersLoop serverState) tableNames
+-}

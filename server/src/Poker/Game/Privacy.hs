@@ -24,7 +24,7 @@ import           Poker.Types
 excludeOtherPlayerCards :: PlayerName -> Game -> Game
 excludeOtherPlayerCards playerName = excludePrivateCards $ Just playerName
 
--- For spectators who aren't in game
+--  -- For spectators who aren't in game
 excludeAllPlayerCards :: Game -> Game
 excludeAllPlayerCards = excludePrivateCards Nothing
 

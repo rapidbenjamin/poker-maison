@@ -42,6 +42,7 @@ getTableSubscribers tableName (Lobby lobby) = case M.lookup tableName lobby of
   Nothing         -> []
   Just Table {..} -> subscribers
 
+  {-
 -- | Connects the table channel which emits table updates to the client's socket connection
 -- After a player subscribes to a table they are added to the subscribers list
 -- This function forks a thread which broadcasts all the msgs from a tables channel to the
@@ -63,3 +64,4 @@ notifyTableSubscribersLoop serverState tableName = do
         let tableSubscribers = getTableSubscribers tableName lobby
    --     print "TABLE SUBSCRIPTION LOOP CALLED!!!!!!!!!!!!!!!!!-------"
         broadcastMsg clients tableSubscribers tableUpdateMsgOut
+-}

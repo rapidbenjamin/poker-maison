@@ -68,6 +68,7 @@ gameMsgHandler msg@TakeSeat{}  = takeSeatHandler msg
 gameMsgHandler msg@LeaveSeat{} = leaveSeatHandler msg
 gameMsgHandler msg@GameMove{}  = gameActionHandler msg
 
+{-
 -- process msgs sent by the client socket
 handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} = forever $ do
@@ -114,6 +115,7 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
         )
       )
       (removeClient username serverStateTVar)
+-}
 
 -- | Forks a thread which timeouts the player when they dont act in sufficient time
 -- We fork this thread using async once a player sits down at a table
@@ -412,6 +414,7 @@ gameActionHandler gameMove@(GameMove tableName action) = do
                   PlayerAction { name = unUsername username, .. }
               of
                 Left gameErr -> do
+                  
                  -- liftIO $ print "Error! :<"
                  -- liftIO $ print gameErr
                   throwError $ GameErr gameErr

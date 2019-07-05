@@ -241,9 +241,9 @@ socketMsgOutWriter conn is = forever $ runEffect $ for
   (lift . WS.sendTextData conn)
 
 
-encodeMsgOutToJSON :: MsgOut -> Text
-encodeMsgOutToJSON msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
-
+--encodeMsgOutToJSON :: MsgOut -> Text
+--encodeMsgOutToJSON msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
+--
 
 -- Converts a websocket connection into a producer 
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
@@ -275,12 +275,12 @@ msgInDecoder rawMsgProducer = do
       msgInDecoder p'
 
 
-msgOutEncoder :: Pipe MsgOut BS.ByteString IO ()
+msgOutEncoder :: Pipe MsgOut Text IO ()
 msgOutEncoder = do
   msgOut <- await
-  --lift $ print "encoding msg: "
-  --lift $ print msgOut
-  yield $ fromString $ T.unpack $ X.toStrict $ D.decodeUtf8 $ A.encode msgOut
+  lift $ print "encoding msg: "
+  lift $ print msgOut
+  yield $ encodeMsgToJSON  msgOut
 
 
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
@@ -291,6 +291,8 @@ msgInHandler conf@MsgHandlerConfig {..} = do
   msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
   case msgOutE of
     Right m@(NewGameState tableName g) -> do
+      liftIO $ print "2222222222222222"
+      liftIO $ print $ length $  _players g
       liftIO $ async $ toGameInMailbox serverStateTVar tableName g
       liftIO $ handleNewGameState dbConn serverStateTVar m
     Right m   -> yield m
@@ -315,7 +317,7 @@ logMsgIn = do
 logMsgOut :: Pipe MsgOut MsgOut IO ()
 logMsgOut = do
   msg <- await
- -- lift $ putStrLn "logging MsgOut"
+  lift $ putStrLn "logging MsgOut"
   x   <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error

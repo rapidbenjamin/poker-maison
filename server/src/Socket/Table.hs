@@ -86,8 +86,8 @@ import           Pipes.Parse             hiding ( decode
                                                 , encode
                                                 )
 import qualified Pipes.Prelude                 as P
-
-
+import Poker.Game.Privacy
+import Socket.Clients
 
 setUpTablePipes
   :: ConnectionString -> TVar ServerState -> TableName -> Table -> IO (Async ())
@@ -160,14 +160,17 @@ writeGameToDB connStr tableKey = do
   yield g
 
 
+  
+
 -- write MsgOuts for new game states to outgoing mailbox for
 -- client's who are observing the table
-informSubscriber :: TableName -> Game -> Output MsgOut -> IO ()
-informSubscriber n g outMailbox = do
+-- ensure they only get to see data they are allowed to see
+informSubscriber :: TableName -> Game -> Client -> IO ()
+informSubscriber n g Client{..} = do
   print "informing subscriber"
-  runEffect $ yield msgOut >-> toOutput outMailbox
+  let filteredGame = excludeOtherPlayerCards clientUsername g
+  runEffect $ yield (NewGameState n filteredGame) >-> toOutput outgoingMailbox
   return ()
-  where msgOut = NewGameState n g
 
 
 -- sends new game states to subscribers
@@ -176,12 +179,25 @@ broadcast :: TVar ServerState -> TableName -> Pipe Game Game IO ()
 broadcast s n =  do
   g <- await
   ServerState {..} <- liftIO $ readTVarIO s
-  liftIO $ mapM_ (informSubscriber n g . outgoingMailbox) clients
+  liftIO $ print "BROADCASTING"
+  liftIO $ print "BROADCASTING"
+  liftIO $ print "BROADCASTING"
+  liftIO $ print "BROADCASTING"
+  liftIO $ print "BROADCASTING"
+  liftIO $ print "BROADCASTING"
+  liftIO $ print "BROADCASTING"
+  let usernames' = M.keys clients -- usernames to broadcast to
+  -- TODO
+  -- 
+  -- MUST filter out private data 
+  liftIO $ async $ mapM_ (informSubscriber n g ) clients
   yield g
 
 logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do
   g <- await
+  liftIO $ print "111111111111111111111"
+  liftIO $ print $ length $  _players g
   liftIO $ print
     "woop /n \n \n table \n /n \n pipe \n got \n  a \n \n \n /n/n/n\n\n game"
   liftIO $ print g
