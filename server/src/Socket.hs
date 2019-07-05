@@ -32,7 +32,7 @@ import           Control.Lens            hiding ( Fold )
 import           Database
 import           Poker.Types             hiding ( LeaveSeat )
 --import           Data.Traversable
-
+import           Data.Foldable                  ( traverse_ )
 
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy.Char8    as C

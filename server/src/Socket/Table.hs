@@ -52,6 +52,8 @@ import           Poker.Game.Utils
 --import           Socket
 import           Socket.Types
 import           Socket.Utils
+import           System.Random
+
 import           Data.ByteString.UTF8           ( fromString )
 
 import           Database
@@ -118,6 +120,8 @@ gamePipeline connStr s key name outMailbox inMailbox =
     >-> broadcast s name
     >-> logGame name
     >-> writeGameToDB connStr key
+    >-> pause 3
+    >-> progress inMailbox
 
 
 pause :: Int -> Pipe a a IO ()
@@ -129,12 +133,21 @@ pause seconds = do
   -- progressGame inMailbox
   -- writeGameToDB
 
-writeGameToDB :: ConnectionString -> Key TableEntity -> Consumer Game IO ()
+
+-- when the game can be progressed we get the progressed game an place it into the 
+-- mailbox for the table which processes new game states
+progress :: Output Game -> Consumer Game IO ()
+progress inMailbox = do
+  g <- await
+  when (canProgressGame g) (progress' g)
+ where
+  progress' game = do
+    gen <- liftIO getStdGen
+    runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
+
+
+writeGameToDB :: ConnectionString -> Key TableEntity -> Pipe Game Game IO ()
 writeGameToDB connStr tableKey = P.mapM_ $ dbInsertGame connStr tableKey
-
-progressGame'' :: Pipe Game Game IO ()
-progressGame'' = undefined
-
 
 
 -- write MsgOuts for new game states to outgoing mailbox for
