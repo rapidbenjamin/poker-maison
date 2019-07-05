@@ -117,7 +117,11 @@ runSocketServer secretKey port connString redisConfig = do
   lobby           <- initialLobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   -- set up pipelines for broadcasting, progressing and logging new game states
-  traverse  (\(tableName, table) -> setUpTablePipes connString serverStateTVar tableName table) (M.toList $ unLobby lobby)
+  traverse_
+    (\(tableName, table) ->
+      setUpTablePipes connString serverStateTVar tableName table
+    )
+    (M.toList $ unLobby lobby)
   -- workers for refilling chips
   forkBackgroundJobs connString serverStateTVar lobby
   print $ "Socket server listening on " ++ (show port :: String)
@@ -360,9 +364,11 @@ application secretKey dbConnString redisConfig s pending = do
       sendMsg conn AuthSuccess
       (incomingMailbox, outgoingMailbox) <- websocketInMailbox $ msgConf conn u
       atomically $ addClient s Client { .. }
-      forever $ do 
-        m <- (WS.receiveData conn )
-        runEffect $ msgInDecoder (yield m >-> logMsgIn) >-> toOutput incomingMailbox
+      forever $ do
+        m <- (WS.receiveData conn)
+        runEffect
+          $   msgInDecoder (yield m >-> logMsgIn)
+          >-> toOutput incomingMailbox
     Left err -> sendMsg conn (ErrMsg err)
  where
   msgConf c username = MsgHandlerConfig
