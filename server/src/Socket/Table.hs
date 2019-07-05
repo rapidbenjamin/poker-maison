@@ -130,8 +130,6 @@ pause seconds = do
   _ <- liftIO $ threadDelay $ seconds * 1000000
   yield a
 
-  -- progressGame inMailbox
-  -- writeGameToDB
 
 
 -- when the game can be progressed we get the progressed game an place it into the 
