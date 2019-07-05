@@ -72,10 +72,10 @@ gameMsgHandler msg@GameMove{}  = gameActionHandler msg
 handleReadChanMsgs :: MsgHandlerConfig -> IO ()
 handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} = forever $ do
   msg <- atomically $ readTChan socketReadChan
-  print msg
-  print "aboooo"
+ -- print msg
+ -- print "aboooo"
   msgOutE <- runExceptT $ runReaderT (msgHandler msg) msgHandlerConfig
-  pPrint msgOutE
+  --pPrint msgOutE
   case msgOutE of
     Right m@NewGameState{} ->
       sendMsg clientConn m >> handleNewGameState dbConn serverStateTVar m
@@ -195,7 +195,7 @@ updateGameAndBroadcastT serverStateTVar tableName newGame = do
 handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
 handleNewGameState connString serverStateTVar (NewGameState tableName newGame)
   = do
-    print "BROADCASTING!!!!!!!!!!!"
+   -- print "BROADCASTING!!!!!!!!!!!"
     newServerState <- atomically
       $ updateGameAndBroadcastT serverStateTVar tableName newGame
     async (progressGame' connString serverStateTVar tableName newGame)
@@ -210,10 +210,10 @@ progressGame' connString serverStateTVar tableName game@Game {..} = do
   when (canProgressGame game) $ do
     gen <- getStdGen
     let progressedGame = progressGame gen game
-    pPrint "PROGRESED GAME"
-    pPrint progressedGame
-    print "haveAllPlayersActed:"
-    print (haveAllPlayersActed progressedGame)
+  --  pPrint "PROGRESED GAME"
+  --  pPrint progressedGame
+  --  print "haveAllPlayersActed:"
+  --  print (haveAllPlayersActed progressedGame)
 
     let currentStreet = progressedGame ^. street
     atomically
@@ -393,7 +393,7 @@ getPlayersAvailableChips = do
 gameActionHandler
   :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameActionHandler gameMove@(GameMove tableName action) = do
-  liftIO $ print action
+ -- liftIO $ print action
   MsgHandlerConfig {..} <- ask
   ServerState {..}      <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
@@ -412,10 +412,10 @@ gameActionHandler gameMove@(GameMove tableName action) = do
                   PlayerAction { name = unUsername username, .. }
               of
                 Left gameErr -> do
-                  liftIO $ print "Error! :<"
-                  liftIO $ print gameErr
+                 -- liftIO $ print "Error! :<"
+                 -- liftIO $ print gameErr
                   throwError $ GameErr gameErr
                 Right newGame -> do
-                  liftIO $ print "No error :)"
-                  liftIO $ pPrint newGame
+               --   liftIO $ print "No error :)"
+               --   liftIO $ pPrint newGame
                   return $ NewGameState tableName newGame

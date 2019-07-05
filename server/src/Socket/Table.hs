@@ -115,7 +115,16 @@ gamePipeline
   -> Input Game
   -> Output Game
   -> Effect IO ()
-gamePipeline connStr s key name outMailbox inMailbox =
+gamePipeline connStr s key name outMailbox inMailbox = do
+  liftIO $ print "EFFECT"
+  liftIO $ print "EFFECT"
+  liftIO $ print "EFFECT"
+  liftIO $ print "EFFECT"
+  liftIO $ print "EFFECT"
+  liftIO $ print "EFFECT"
+  liftIO $ print "EFFECT"
+  liftIO $ print "EFFECT"
+  liftIO $ print "EFFECT" 
   fromInput outMailbox
     >-> broadcast s name
     >-> logGame name
@@ -175,6 +184,7 @@ logGame tableName = do
   g <- await
   liftIO $ print
     "woop /n \n \n table \n /n \n pipe \n got \n  a \n \n \n /n/n/n\n\n game"
+  liftIO $ print g
   yield g
 
 

@@ -265,12 +265,12 @@ msgInDecoder rawMsgProducer = do
     Nothing       -> return ()
     Just (Left a) -> do
       (x, p'') <- lift $ runStateT draw p'
-      lift $ print "left err"
-      lift $ print x
+     -- lift $ print "left err"
+     -- lift $ print x
       -- x is the problem input msg which failed to parse. We ignore it here by just resuming
       msgInDecoder p''
     Just c@(Right msgIn) -> do -- successful parsing case
-      lift $ print c
+   --   lift $ print c
       yield msgIn
       msgInDecoder p'
 
@@ -278,20 +278,20 @@ msgInDecoder rawMsgProducer = do
 msgOutEncoder :: Pipe MsgOut BS.ByteString IO ()
 msgOutEncoder = do
   msgOut <- await
-  lift $ print "encoding msg: "
-  lift $ print msgOut
+  --lift $ print "encoding msg: "
+  --lift $ print msgOut
   yield $ fromString $ T.unpack $ X.toStrict $ D.decodeUtf8 $ A.encode msgOut
 
 
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
 msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
-  liftIO $ print "msghandler : "
-  liftIO $ print msgIn
+  --liftIO $ print "msghandler : "
+  --liftIO $ print msgIn
   msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
   case msgOutE of
     Right m@(NewGameState tableName g) -> do
-      liftIO $ toGameInMailbox serverStateTVar tableName g
+      liftIO $ async $ toGameInMailbox serverStateTVar tableName g
       liftIO $ handleNewGameState dbConn serverStateTVar m
     Right m   -> yield m
     Left  err -> yield $ ErrMsg err
