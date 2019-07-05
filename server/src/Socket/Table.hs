@@ -92,7 +92,12 @@ setUpTablePipes
 setUpTablePipes connStr s name Table {..} = do
   t <- dbGetTableEntity connStr name
   let (Entity key _) = fromMaybe notFoundErr t
-  async $ forever $ runEffect $ gamePipeline connStr s key name gameOutMailbox
+  async $ forever $ runEffect $ gamePipeline connStr
+                                             s
+                                             key
+                                             name
+                                             gameOutMailbox
+                                             gameInMailbox
   where notFoundErr = error $ "Table " <> show name <> " doesn't exist in DB"
 
 
@@ -106,14 +111,15 @@ gamePipeline
   -> Key TableEntity
   -> TableName
   -> Input Game
+  -> Output Game
   -> Effect IO ()
-gamePipeline connStr s key name inMailbox =
-  fromInput inMailbox
+gamePipeline connStr s key name outMailbox inMailbox =
+  fromInput outMailbox
     >-> broadcast s name
     >-> logGame name
     >-> writeGameToDB connStr key
 
-  -- progressGame
+  -- progressGame inMailbox
   -- writeGameToDB
 
 writeGameToDB :: ConnectionString -> Key TableEntity -> Consumer Game IO ()
@@ -149,7 +155,6 @@ logGame tableName = do
     "woop /n \n \n table \n /n \n pipe \n got \n  a \n \n \n /n/n/n\n\n game"
   yield g
 
-  -- P.chain print
 
 
 -- Lookups up a table with the given name and writes the new game state
