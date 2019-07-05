@@ -5,7 +5,7 @@ import           Control.Concurrent      hiding ( yield )
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import qualified Data.Map.Lazy                 as M
-import           Database.Persist.Postgresql    
+import           Database.Persist.Postgresql
 import qualified Network.WebSockets            as WS
 import           Prelude
 
@@ -86,63 +86,50 @@ import           Pipes.Parse             hiding ( decode
 import qualified Pipes.Prelude                 as P
 
 
--- PROGRESS GAME HERE AFTER ACTIONS RATHER THAN ELSEWHERE SO
--- PROGRESSIONS AND EVAL PLAYER ACTIONS ARE DECOUPLED
 
--- fork a new thread which does the following tasks when a new gameState
--- 
---  
--- 1. when possible progress game to next staged 
--- 2. and broadcast
--- 3.  write new game state to db 
--- 4. log new gameState
-
--- TODO USE SERVERSTATE TVAR SO CAN GET SUBSCRIBERS TO BROADCAST TO AT ANYTIME
-setUpTablePipes :: ConnectionString -> TVar ServerState -> TableName -> Table -> IO (Async ())
+setUpTablePipes
+  :: ConnectionString -> TVar ServerState -> TableName -> Table -> IO (Async ())
 setUpTablePipes connStr s name Table {..} = do
   t <- dbGetTableEntity connStr name
   let (Entity key _) = fromMaybe notFoundErr t
-  async
-    $   forever
-    $   runEffect
-    $   gamePipeline connStr s name gameOutMailbox
-    where
-       notFoundErr = error $ "Table " <> show name <> " doesn't exist in DB"
-    -- progressGame
-   -- >->  -- broadcast
-    -- writeGameToDB
+  async $ forever $ runEffect $ gamePipeline connStr s key name gameOutMailbox
+  where notFoundErr = error $ "Table " <> show name <> " doesn't exist in DB"
+
 
 -- this is the effect we want to run everytime a new game state is placed in the tables
 -- incoming mailbox for new game states.
 -- New game states are send to the table's incoming mailbox every time a player acts
 -- in a way that follows the game rules 
-gamePipeline :: ConnectionString -> TVar ServerState -> TableName -> Input Game -> Effect IO ()
-gamePipeline connStr s name inMailbox = fromInput inMailbox >-> logGame name >-> broadcast s name
+gamePipeline
+  :: ConnectionString
+  -> TVar ServerState
+  -> Key TableEntity
+  -> TableName
+  -> Input Game
+  -> Effect IO ()
+gamePipeline connStr s key name inMailbox =
+  fromInput inMailbox
+    >-> logGame name
+    >-> writeGameToDB connStr key
+    >-> broadcast s name
+
+  -- progressGame
+  -- writeGameToDB
+
+writeGameToDB :: ConnectionString -> Key TableEntity -> Pipe Game Game IO ()
+writeGameToDB connStr tableKey = P.chain $ dbInsertGame connStr tableKey
 
 progressGame'' :: Pipe Game Game IO ()
 progressGame'' = undefined
 
 
-gameStateProducer :: Input Game -> Producer Game IO ()
-gameStateProducer source = fromInput source
-
-
-gameToMsgOut :: TableName -> Pipe Game MsgOut IO ()
-gameToMsgOut name = P.map $ NewGameState name
-
----- yields MsgOuts from new game states
-
---getMsgOut :: TableName -> Pipe Game MsgOut IO ()
---getMsgOut name outgoingMailboxes g = forever $ do 
---    g <- await
---    yield (NewGameState name g)
 
 -- write MsgOuts for new game states to outgoing mailbox for
 -- client's who are observing the table
-informSubscriber :: TableName -> Game -> Output MsgOut ->  IO ()
-informSubscriber n g outMailbox = do 
+informSubscriber :: TableName -> Game -> Output MsgOut -> IO ()
+informSubscriber n g outMailbox = do
   print "informing subscriber"
-  runEffect $ yield msgOut >-> toOutput outMailbox 
+  runEffect $ yield msgOut >-> toOutput outMailbox
   return ()
   where msgOut = NewGameState n g
 
@@ -150,9 +137,9 @@ informSubscriber n g outMailbox = do
 -- At the moment all clients receive updates from every game indiscriminately
 broadcast :: TVar ServerState -> TableName -> Consumer Game IO ()
 broadcast s n = do
-  g <- await
-  ServerState{..} <- liftIO $ readTVarIO s
-  lift  $ mapM_ (informSubscriber n g . outgoingMailbox) clients
+  g                <- await
+  ServerState {..} <- liftIO $ readTVarIO s
+  lift $ mapM_ (informSubscriber n g . outgoingMailbox) clients
 
 logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do

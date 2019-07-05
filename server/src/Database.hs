@@ -160,11 +160,11 @@ dbInsertTableEntity :: ConnectionString -> Text -> IO (Key TableEntity)
 dbInsertTableEntity connString tableName =
   runAction connString (insert (TableEntity { tableEntityName = tableName }))
 
-dbInsertGame
-  :: ConnectionString -> Game -> Key TableEntity -> IO (Key GameEntity)
-dbInsertGame connString Game {..} tableId = do
+dbInsertGame :: ConnectionString -> Key TableEntity -> Game -> IO ()
+dbInsertGame connString tableId Game {..} = do
   timestamp <- getCurrentTime
   runAction connString (insert (gameEntity timestamp))
+  return ()
  where
   gameEntity timestamp = GameEntity
     { gameEntityTableID         = tableId
