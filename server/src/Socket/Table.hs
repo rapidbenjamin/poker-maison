@@ -109,15 +109,15 @@ gamePipeline
   -> Effect IO ()
 gamePipeline connStr s key name inMailbox =
   fromInput inMailbox
+    >-> broadcast s name
     >-> logGame name
     >-> writeGameToDB connStr key
-    >-> broadcast s name
 
   -- progressGame
   -- writeGameToDB
 
-writeGameToDB :: ConnectionString -> Key TableEntity -> Pipe Game Game IO ()
-writeGameToDB connStr tableKey = P.chain $ dbInsertGame connStr tableKey
+writeGameToDB :: ConnectionString -> Key TableEntity -> Consumer Game IO ()
+writeGameToDB connStr tableKey = P.mapM_ $ dbInsertGame connStr tableKey
 
 progressGame'' :: Pipe Game Game IO ()
 progressGame'' = undefined
@@ -133,13 +133,14 @@ informSubscriber n g outMailbox = do
   return ()
   where msgOut = NewGameState n g
 
+
 -- sends new game states to subscribers
 -- At the moment all clients receive updates from every game indiscriminately
-broadcast :: TVar ServerState -> TableName -> Consumer Game IO ()
-broadcast s n = do
-  g                <- await
+broadcast :: TVar ServerState -> TableName -> Pipe Game Game IO ()
+broadcast s n = P.chain $ \g -> do
   ServerState {..} <- liftIO $ readTVarIO s
-  lift $ mapM_ (informSubscriber n g . outgoingMailbox) clients
+  mapM_ (informSubscriber n g . outgoingMailbox) clients
+
 
 logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do
