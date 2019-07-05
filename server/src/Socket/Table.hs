@@ -145,7 +145,10 @@ progress inMailbox = do
 
 
 writeGameToDB :: ConnectionString -> Key TableEntity -> Pipe Game Game IO ()
-writeGameToDB connStr tableKey = P.mapM_ $ dbInsertGame connStr tableKey
+writeGameToDB connStr tableKey = do 
+  g <- await
+  liftIO $ dbInsertGame connStr tableKey g
+  yield g
 
 
 -- write MsgOuts for new game states to outgoing mailbox for
@@ -161,10 +164,11 @@ informSubscriber n g outMailbox = do
 -- sends new game states to subscribers
 -- At the moment all clients receive updates from every game indiscriminately
 broadcast :: TVar ServerState -> TableName -> Pipe Game Game IO ()
-broadcast s n = P.chain $ \g -> do
+broadcast s n =  do
+  g <- await
   ServerState {..} <- liftIO $ readTVarIO s
-  mapM_ (informSubscriber n g . outgoingMailbox) clients
-
+  liftIO $ mapM_ (informSubscriber n g . outgoingMailbox) clients
+  yield g
 
 logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do
@@ -203,7 +207,6 @@ toGameInMailbox s name game = do
 -- instead of STM.
 combineOutMailboxes :: [Client] -> Consumer MsgOut IO ()
 combineOutMailboxes clients = toOutput $ foldMap outgoingMailbox clients
-
 
 
 getTable :: TVar ServerState -> TableName -> STM (Maybe Table)
