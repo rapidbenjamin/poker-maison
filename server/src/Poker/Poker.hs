@@ -53,6 +53,7 @@ runPlayerAction game gen playerAction'@PlayerAction {..} =
 
 canProgressGame :: Game -> Bool
 canProgressGame game@Game {..}
+  | (length _players) < 2 = False
   | _street == Showdown = True
   | _street == PreDeal && haveRequiredBlindsBeenPosted game = True
   | otherwise           = haveAllPlayersActed game
