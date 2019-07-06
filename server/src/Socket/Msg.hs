@@ -52,7 +52,7 @@ import           Socket.Lobby
 import           Socket.Subscriptions
 import           Socket.Types
 import           Socket.Utils
-
+import Socket.Table
 import           System.Timeout
 import           Types
 import           System.Random
@@ -189,7 +189,7 @@ updateGameAndBroadcastT serverStateTVar tableName newGame = do
   case M.lookup tableName $ unLobby lobby of
     Nothing               -> throwSTM $ TableDoesNotExistInLobby tableName
     Just table@Table {..} -> do
-      writeTChan channel $ NewGameState tableName newGame
+      --writeTChan channel $ NewGameState tableName newGame
       let updatedLobby = updateTableGame tableName newGame lobby
       swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
       return ()
@@ -200,7 +200,7 @@ handleNewGameState connString serverStateTVar (NewGameState tableName newGame)
    -- print "BROADCASTING!!!!!!!!!!!"
     newServerState <- atomically
       $ updateGameAndBroadcastT serverStateTVar tableName newGame
-    async (progressGame' connString serverStateTVar tableName newGame)
+   --- async (progressGame' connString serverStateTVar tableName newGame)
     return ()
 handleNewGameState _ _ msg = return ()
 
@@ -224,7 +224,7 @@ progressGame' connString serverStateTVar tableName game@Game {..} = do
  --          (currentStreet == Showdown)
  --          (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
  --        pPrint progressedGame
-    progressGame' connString serverStateTVar tableName progressedGame
+   -- progressGame' connString serverStateTVar tableName progressedGame
   where stagePauseDuration = 5000000
 
 
@@ -271,7 +271,7 @@ subscribeToTable tableName MsgHandlerConfig {..} = do
       then do
         let updatedTable =
               Table { subscribers = subscribers <> [username], .. }
-        let updatedLobby   = updateTable tableName updatedTable lobby
+        let updatedLobby   = insertTable tableName updatedTable lobby
         let newServerState = ServerState { lobby = updatedLobby, .. }
         swapTVar serverStateTVar newServerState
         return ()

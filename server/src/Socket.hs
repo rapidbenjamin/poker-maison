@@ -287,12 +287,9 @@ msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
 msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
   --liftIO $ print "msghandler : "
-  --liftIO $ print msgIn
   msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
   case msgOutE of
     Right m@(NewGameState tableName g) -> do
-      liftIO $ print "2222222222222222"
-      liftIO $ print $ length $  _players g
       liftIO $ async $ toGameInMailbox serverStateTVar tableName g
       liftIO $ handleNewGameState dbConn serverStateTVar m
     Right m   -> yield m

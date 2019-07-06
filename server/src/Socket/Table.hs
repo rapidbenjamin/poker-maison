@@ -128,17 +128,25 @@ gamePipeline connStr s key name outMailbox inMailbox = do
   fromInput outMailbox
     >-> broadcast s name
     >-> logGame name
+    >-> updateTable s name
     >-> writeGameToDB connStr key
-    >-> pause 3
+    >-> pause
     >-> progress inMailbox
 
+    -- updateServerState (lobby)
 
-pause :: Int -> Pipe a a IO ()
-pause seconds = do
-  a <- await
-  _ <- liftIO $ threadDelay $ seconds * 1000000
-  yield a
+-- Delay to enhance UX based on game stages
+pause :: Pipe Game Game IO ()
+pause = do
+  g <- await
+  _ <- liftIO $ threadDelay $ pauseDuration g
+  yield g
 
+
+pauseDuration :: Game -> Int
+pauseDuration Game{..} 
+    | _street == PreDeal = 0
+    | otherwise = 3 * 1000000 -- 3 seconds
 
 
 -- when the game can be progressed we get the progressed game an place it into the 
@@ -146,10 +154,15 @@ pause seconds = do
 progress :: Output Game -> Consumer Game IO ()
 progress inMailbox = do
   g <- await
+  liftIO $ print "can progress game in pipe?"
+  liftIO $ print $ (canProgressGame g)
   when (canProgressGame g) (progress' g)
  where
   progress' game = do
     gen <- liftIO getStdGen
+    liftIO $ print "PIPE PROGRESSING GAME"
+    liftIO $ print "PIPE PROGRESSING GAME"
+    liftIO $ print "PIPE PROGRESSING GAME"
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 
 
@@ -239,3 +252,25 @@ getTable :: TVar ServerState -> TableName -> STM (Maybe Table)
 getTable s tableName = do
   ServerState {..} <- readTVar s
   return $ M.lookup tableName $ unLobby lobby
+
+
+updateTable :: TVar ServerState -> TableName -> Pipe Game Game IO ()
+updateTable serverStateTVar tableName = do
+   g <- await
+   liftIO $ async $ atomically $ updateTable' serverStateTVar tableName g
+   yield g
+
+updateTable' :: TVar ServerState -> TableName -> Game -> STM ()
+updateTable' serverStateTVar tableName newGame = do
+  ServerState {..} <- readTVar serverStateTVar
+  case M.lookup tableName $ unLobby lobby of
+    Nothing               -> throwSTM $ TableDoesNotExistInLobby tableName
+    Just table@Table {..} -> do
+      let updatedLobby = updateTableGame tableName newGame lobby
+      swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
+      return ()
+
+updateTableGame :: TableName -> Game -> Lobby -> Lobby
+updateTableGame tableName newGame (Lobby lobby) = Lobby
+  $ M.adjust updateTable tableName lobby
+  where updateTable Table {..} = Table { game = newGame, .. }

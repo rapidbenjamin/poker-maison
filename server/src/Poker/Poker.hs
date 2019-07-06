@@ -44,11 +44,12 @@ import           Poker.Types
 runPlayerAction
   :: RandomGen g => Game -> g -> PlayerAction -> Either GameErr Game
 runPlayerAction game gen playerAction'@PlayerAction {..} =
-  case handlePlayerAction game playerAction' of
-    Left  err          -> Left err
-    Right newGameState -> if canProgressGame newGameState
-      then Right $ progressGame gen newGameState
-      else Right newGameState
+  handlePlayerAction game playerAction' 
+  --case of
+  --  Left  err          -> Left err
+  --  Right newGameState -> if canProgressGame newGameState
+  --    then Right $ progressGame gen newGameState
+  --    else Right newGameState
 
 
 canProgressGame :: Game -> Bool

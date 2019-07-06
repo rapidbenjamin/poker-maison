@@ -66,18 +66,14 @@ joinTableWaitlist :: Username -> Table -> Table
 joinTableWaitlist username Table {..} =
   Table { waitlist = waitlist <> [username], .. }
 
-updateTable :: TableName -> Table -> Lobby -> Lobby
-updateTable tableName newTable (Lobby lobby) =
+insertTable :: TableName -> Table -> Lobby -> Lobby
+insertTable tableName newTable (Lobby lobby) =
   Lobby $ M.insert tableName newTable lobby
 
 -- to do - return an either as there are multiple errs for why plyr cant join game ie no chips
 canJoinGame :: Game -> Bool
 canJoinGame Game {..} = length _players < _maxPlayers
 
-updateTableGame :: TableName -> Game -> Lobby -> Lobby
-updateTableGame tableName newGame (Lobby lobby) = Lobby
-  $ M.adjust updateTable tableName lobby
-  where updateTable Table {..} = Table { game = newGame, .. }
 
 summariseGame :: TableName -> Table -> TableSummary
 summariseGame tableName Table { game = Game {..}, ..} = TableSummary
