@@ -162,7 +162,7 @@ progress inMailbox = do
     liftIO $ print "PIPE PROGRESSING GAME"
     liftIO $ print "PIPE PROGRESSING GAME"
     liftIO $ print "PIPE PROGRESSING GAME"
-    liftIO $ threadDelay $ pauseDuration game AHHHH
+    liftIO $ threadDelay $ pauseDuration game
     
 
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox

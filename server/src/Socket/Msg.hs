@@ -197,35 +197,13 @@ updateGameAndBroadcastT serverStateTVar tableName newGame = do
 handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
 handleNewGameState connString serverStateTVar (NewGameState tableName newGame)
   = do
-   -- print "BROADCASTING!!!!!!!!!!!"
+    print " OLD BROADCASTING!!!!!!!!!!!"
     newServerState <- atomically
       $ updateGameAndBroadcastT serverStateTVar tableName newGame
-   --- async (progressGame' connString serverStateTVar tableName newGame)
     return ()
 handleNewGameState _ _ msg = return ()
 
 
-progressGame'
-  :: ConnectionString -> TVar ServerState -> TableName -> Game -> IO ()
-progressGame' connString serverStateTVar tableName game@Game {..} = do
-  threadDelay stagePauseDuration
-  when (canProgressGame game) $ do
-    gen <- getStdGen
-    let progressedGame = progressGame gen game
-  --  pPrint "PROGRESED GAME"
-  --  pPrint progressedGame
-  --  print "haveAllPlayersActed:"
-  --  print (haveAllPlayersActed progressedGame)
-
-    let currentStreet = progressedGame ^. street
-    atomically
-      $ updateGameAndBroadcastT serverStateTVar tableName progressedGame
- --        when
- --          (currentStreet == Showdown)
- --          (dbUpdateUsersChips connString $ getPlayerChipCounts progressedGame)
- --        pPrint progressedGame
-   -- progressGame' connString serverStateTVar tableName progressedGame
-  where stagePauseDuration = 5000000
 
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut

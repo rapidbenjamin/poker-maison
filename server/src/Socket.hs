@@ -460,7 +460,7 @@ runBotAction dbConn serverStateTVar g pName = do
         Left  gameErr -> print (show $ GameErr gameErr) >> return ()
         Right newGame -> do
           atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
-          progressGame' dbConn serverStateTVar tableName newGame
+          --progressGame' dbConn serverStateTVar tableName newGame
  where
   tableName  = "Black"
   chipsToSit = 2000
