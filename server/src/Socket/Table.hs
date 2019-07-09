@@ -130,7 +130,6 @@ gamePipeline connStr s key name outMailbox inMailbox = do
     >-> logGame name
     >-> updateTable s name
     >-> writeGameToDB connStr key
-    >-> pause
     >-> progress inMailbox
 
     -- updateServerState (lobby)
@@ -146,7 +145,7 @@ pause = do
 pauseDuration :: Game -> Int
 pauseDuration Game{..} 
     | _street == PreDeal = 0
-    | otherwise = 3 * 1000000 -- 3 seconds
+    | otherwise = 2 * 1000000 -- 2 seconds
 
 
 -- when the game can be progressed we get the progressed game an place it into the 
@@ -163,6 +162,9 @@ progress inMailbox = do
     liftIO $ print "PIPE PROGRESSING GAME"
     liftIO $ print "PIPE PROGRESSING GAME"
     liftIO $ print "PIPE PROGRESSING GAME"
+    liftIO $ threadDelay $ pauseDuration game AHHHH
+    
+
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 
 
