@@ -131,6 +131,7 @@ gamePipeline connStr s key name outMailbox inMailbox = do
     >-> updateTable s name
     >-> writeGameToDB connStr key
     >-> progress inMailbox
+    -- should all be in stm monad not IO
 
     -- updateServerState (lobby)
 

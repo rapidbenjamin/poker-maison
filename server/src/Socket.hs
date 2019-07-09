@@ -291,7 +291,8 @@ msgInHandler conf@MsgHandlerConfig {..} = do
   case msgOutE of
     Right m@(NewGameState tableName g) -> do
       liftIO $ async $ toGameInMailbox serverStateTVar tableName g
-      liftIO $ handleNewGameState dbConn serverStateTVar m
+      liftIO $ atomically $ updateTable' serverStateTVar tableName g
+      return ()
     Right m   -> yield m
     Left  err -> yield $ ErrMsg err
   where sampleMsg = GameMsgOut PlayerLeft

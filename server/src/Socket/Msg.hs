@@ -307,7 +307,9 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                     --liftIO $ link asyncGameReceiveLoop
                     liftIO $ sendMsg clientConn
                                      (SuccessfullySatDown tableName newGame)
-                    return $ NewGameState tableName newGame
+                    let msgOut =  NewGameState tableName newGame
+                    liftIO $ handleNewGameState dbConn serverStateTVar msgOut
+                    return msgOut
 
 leaveSeatHandler
   :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
@@ -338,7 +340,9 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
                   liftIO $ dbWithdrawChipsFromPlay dbConn
                                                    (unUsername username)
                                                    chipsInPlay
-                  return $ NewGameState tableName newGame
+                  let msgOut =  NewGameState tableName newGame
+                  liftIO $ handleNewGameState dbConn serverStateTVar msgOut
+                  return msgOut
 
 canTakeSeat
   :: Int
