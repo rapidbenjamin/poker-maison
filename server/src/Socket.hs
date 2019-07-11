@@ -96,8 +96,8 @@ import           Pipes.Parse             hiding ( decode
 import qualified Pipes.Prelude                 as P
 
 import           Socket.Table
-import Socket.TimeAction
-import Bots
+import           Socket.TimeAction
+import           Bots
 
 
 initialServerState :: Lobby -> ServerState
@@ -118,11 +118,8 @@ runSocketServer secretKey port connString redisConfig = do
   lobby           <- initialLobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   -- set up pipelines for broadcasting, progressing and logging new game states
-  traverse_
-    (\(tableName, table) ->
-      setUpTablePipes connString serverStateTVar tableName table
-    )
-    (M.toList $ unLobby lobby)
+  traverse_ (uncurry $ setUpTablePipes connString serverStateTVar)
+            (M.toList $ unLobby lobby)
   -- workers for refilling chips
   forkBackgroundJobs connString serverStateTVar lobby
   print $ "Socket server listening on " ++ (show port :: String)
@@ -233,7 +230,7 @@ msgOutEncoder = do
   msgOut <- await
   lift $ print "encoding msg: "
   lift $ print msgOut
-  yield $ encodeMsgToJSON  msgOut
+  yield $ encodeMsgToJSON msgOut
 
 
 -- branches of code which do not yield messages place the burden of informing the client
@@ -243,14 +240,14 @@ msgOutEncoder = do
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
 msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
-  res <- lift $ runReaderT (msgHandler msgIn) conf
+  res   <- lift $ runReaderT (msgHandler msgIn) conf
   case res of
-    Left err -> yield $ ErrMsg err 
+    Left  err                        -> yield $ ErrMsg err
     Right (NewGameState tableName g) -> do
       liftIO $ async $ toGameInMailbox serverStateTVar tableName g
       liftIO $ atomically $ updateTable' serverStateTVar tableName g
       return ()
-    Right m -> yield m 
+    Right m -> yield m
 
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
@@ -270,7 +267,7 @@ logMsgOut :: Pipe MsgOut MsgOut IO ()
 logMsgOut = do
   msg <- await
   lift $ putStrLn "logging MsgOut"
-  x   <- lift $ try $ print msg
+  x <- lift $ try $ print msg
   case x of
       -- Gracefully terminate if we got a broken pipe error
     Left e@G.IOError { G.ioe_type = t } ->
@@ -314,7 +311,7 @@ application secretKey dbConnString redisConfig s pending = do
       (incomingMailbox, outgoingMailbox) <- websocketInMailbox $ msgConf conn u
       atomically $ addClient s Client { .. }
       forever $ do
-        m <- (WS.receiveData conn)
+        m <- WS.receiveData conn
         runEffect
           $   msgInDecoder (yield m >-> logMsgIn)
           >-> toOutput incomingMailbox

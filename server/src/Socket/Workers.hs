@@ -27,11 +27,10 @@ import           Socket.Types
 import           Socket.Utils
 
 forkBackgroundJobs
-  :: ConnectionString -> TVar ServerState -> Lobby -> IO ([Async ()])
+  :: ConnectionString -> TVar ServerState -> Lobby -> IO [Async ()]
 forkBackgroundJobs connString serverStateTVar lobby = do
   forkChipRefillDBWriter connString chipRefillInterval chipRefillThreshold -- Periodically refill player chip balances when too low.
   forkGameDBWriters connString lobby -- At the end of game write new game and player data to the DB.
-  -- forkAllNotifySubscribersThreads serverStateTVar -- Create a thread for each table which broadcasts updates to clients listening for table and game updates.
  where
   chipRefillInterval  = 100000000 -- 2 mins
   chipRefillThreshold = 200000 -- any lower chip count will be topped up on refill to this amount
@@ -72,7 +71,6 @@ writeNewGameStatesToDB connString chan tableKey = do
     chanMsg <- atomically $ readTChan dupChan
     case chanMsg of
       (NewGameState tableName game) -> return ()
-      --  void (dbInsertGame connString game tableKey)
       _                             -> return ()
 
 
@@ -83,10 +81,3 @@ forkChipRefillDBWriter connString interval chipsThreshold =
 
     dbRefillAvailableChips connString chipsThreshold
     threadDelay interval
-{-
-forkAllNotifySubscribersThreads :: TVar ServerState -> IO [Async ()]
-forkAllNotifySubscribersThreads serverState = do
-  ServerState {..} <- readTVarIO serverState
-  let tableNames = M.keys $ unLobby lobby
-  traverse (notifyTableSubscribersLoop serverState) tableNames
--}

@@ -52,7 +52,7 @@ import           Socket.Lobby
 import           Socket.Subscriptions
 import           Socket.Types
 import           Socket.Utils
-import Socket.Table
+import           Socket.Table
 import           System.Timeout
 import           Types
 import           System.Random
@@ -66,21 +66,22 @@ msgHandler (GameMsgIn msg)        = gameMsgHandler msg
 
 
 gameMsgHandler :: GameMsgIn -> ReaderT MsgHandlerConfig IO (Either Err MsgOut)
-gameMsgHandler msg@TakeSeat{}  = takeSeatHandler msg
-gameMsgHandler msg@LeaveSeat{} = leaveSeatHandler msg
-gameMsgHandler m@(GameMove tableName action) =  do
-  conf@MsgHandlerConfig{..}  <- ask
+gameMsgHandler msg@TakeSeat{}                = takeSeatHandler msg
+gameMsgHandler msg@LeaveSeat{}               = leaveSeatHandler msg
+gameMsgHandler m@(GameMove tableName action) = do
+  conf@MsgHandlerConfig {..} <- ask
   let playerAction = PlayerAction { name = unUsername username, .. }
   moveResult <- liftIO $ playMove conf tableName playerAction
-  return $ either Left ( Right . (NewGameState tableName)) moveResult
+  return $ NewGameState tableName <$> moveResult
 
 
-playMove :: MsgHandlerConfig -> TableName -> PlayerAction -> IO (Either Err Game)
-playMove conf@MsgHandlerConfig{..} tableName playerAction  = do 
-   maybeTable <- liftIO $ atomically $ getTable serverStateTVar tableName
-   case maybeTable of
-     Nothing -> return $ Left $ TableDoesNotExist tableName
-     Just Table{..} -> do 
+playMove
+  :: MsgHandlerConfig -> TableName -> PlayerAction -> IO (Either Err Game)
+playMove conf@MsgHandlerConfig {..} tableName playerAction = do
+  maybeTable <- liftIO $ atomically $ getTable serverStateTVar tableName
+  case maybeTable of
+    Nothing -> return $ Left $ TableDoesNotExist tableName
+    Just Table {..} ->
       return $ either (Left . GameErr) Right $ runPlayerAction game playerAction
 
 
@@ -91,7 +92,7 @@ getTablesHandler = do
   let tableSummaries = TableList $ summariseTables lobby
   liftIO $ print tableSummaries
   liftIO $ sendMsg clientConn tableSummaries
-  return $ Right $ tableSummaries
+  return $ Right tableSummaries
 
 
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
@@ -103,12 +104,10 @@ getTablesHandler = do
 takeSeatHandler :: GameMsgIn -> ReaderT MsgHandlerConfig IO (Either Err MsgOut)
 takeSeatHandler (TakeSeat tableName chipsToSit) = do
   conf@MsgHandlerConfig {..} <- ask
-  ServerState {..}                       <- liftIO $ readTVarIO serverStateTVar
+  ServerState {..}           <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
     Nothing               -> return $ Left $ TableDoesNotExist tableName
     Just table@Table {..} -> do
-      liftIO $ print "GAME STATE AFTER TAKE SEAT ACTION RECVD"
-      liftIO $ print game
       canSit <- canTakeSeat chipsToSit tableName table
       case canSit of
         Left  err -> return $ Left err
@@ -128,18 +127,18 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
               Left  gameErr -> return $ Left $ GameErr gameErr
               Right newGame -> do
                 liftIO $ postTakeSeat conf tableName chipsToSit
-                liftIO $ sendMsg clientConn
-                                 (SuccessfullySatDown tableName newGame)
+                liftIO
+                  $ sendMsg clientConn (SuccessfullySatDown tableName newGame)
                 let msgOut = NewGameState tableName newGame
-                liftIO $ atomically $ updateTable' serverStateTVar tableName newGame
+                liftIO $ atomically $ updateTable' serverStateTVar
+                                                   tableName
+                                                   newGame
                 return $ Right msgOut
 
 
 postTakeSeat :: MsgHandlerConfig -> TableName -> Int -> IO ()
-postTakeSeat conf@MsgHandlerConfig{..} name chipsSatWith = do
-  dbDepositChipsIntoPlay dbConn
-    (unUsername username)
-    chipsSatWith
+postTakeSeat conf@MsgHandlerConfig {..} name chipsSatWith =
+  dbDepositChipsIntoPlay dbConn (unUsername username) chipsSatWith
   --when
   --  (username `notElem` subscribers)
   --  (atomically $ subscribeToTable name conf)
@@ -171,35 +170,33 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
                   liftIO $ dbWithdrawChipsFromPlay dbConn
                                                    (unUsername username)
                                                    chipsInPlay
-                  let msgOut =  NewGameState tableName newGame
-                  liftIO $ atomically $ updateTable' serverStateTVar tableName newGame
+                  let msgOut = NewGameState tableName newGame
+                  liftIO $ atomically $ updateTable' serverStateTVar
+                                                     tableName
+                                                     newGame
                   return $ Right msgOut
 
 canTakeSeat
-  :: Int
-  -> Text
-  -> Table
-  -> ReaderT MsgHandlerConfig IO (Either Err ())
+  :: Int -> Text -> Table -> ReaderT MsgHandlerConfig IO (Either Err ())
 canTakeSeat chipsToSit tableName Table { game = Game {..}, ..}
   | chipsToSit >= _minBuyInChips && chipsToSit <= _maxBuyInChips = do
-    availableChipsE <- getPlayersAvailableChips
-    MsgHandlerConfig{..} <- ask
+    availableChipsE       <- getPlayersAvailableChips
+    MsgHandlerConfig {..} <- ask
     case availableChipsE of
-      Left  err            -> return $ Left err
-      Right chips -> do 
-        tableE <- liftIO $ checkTableExists serverStateTVar tableName 
+      Left  err   -> return $ Left err
+      Right chips -> do
+        tableE <- liftIO $ checkTableExists serverStateTVar tableName
         return $ tableE <* hasEnoughChips chips chipsToSit
   | otherwise = return $ Left $ ChipAmountNotWithinBuyInRange tableName
-  where 
-    hasEnoughChips availableChips chipsNeeded = 
-      if availableChips >= chipsToSit
-      then return $ Right ()
-      else return $ Left NotEnoughChipsToSit
-    checkTableExists s name = do
-          t <- atomically $ getTable s name
-          case t of 
-            Nothing -> return $ Left $ TableDoesNotExist name
-            _ -> return $ Right ()
+ where
+  hasEnoughChips availableChips chipsNeeded = if availableChips >= chipsToSit
+    then return $ Right ()
+    else return $ Left NotEnoughChipsToSit
+  checkTableExists s name = do
+    t <- atomically $ getTable s name
+    case t of
+      Nothing -> return $ Left $ TableDoesNotExist name
+      _       -> return $ Right ()
 
 
 getPlayersAvailableChips :: ReaderT MsgHandlerConfig IO (Either Err Int)

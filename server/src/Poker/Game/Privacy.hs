@@ -24,9 +24,11 @@ import           Poker.Types
 excludeOtherPlayerCards :: PlayerName -> Game -> Game
 excludeOtherPlayerCards playerName = excludePrivateCards $ Just playerName
 
+
 --  -- For spectators who aren't in game
 excludeAllPlayerCards :: Game -> Game
 excludeAllPlayerCards = excludePrivateCards Nothing
+
 
 -- Exclude player cards and Deck so spectators can't see private cards.
 --
@@ -56,11 +58,13 @@ excludePrivateCards maybePlayerName game =
     (updatePocketCardsForPlayer showAllActivesCards)
     maybePlayerName
 
+
 updatePocketCardsForSpectator :: Bool -> (Player -> Player)
 updatePocketCardsForSpectator showAllActivesCards
   | showAllActivesCards = \player@Player {..} ->
     if _playerState == In then player else Player { _pockets = Nothing, .. }
   | otherwise = \Player {..} -> Player { _pockets = Nothing, .. }
+
 
 updatePocketCardsForPlayer :: Bool -> PlayerName -> (Player -> Player)
 updatePocketCardsForPlayer showAllActivesCards playerName
