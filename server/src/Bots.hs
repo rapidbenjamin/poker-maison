@@ -46,6 +46,7 @@ import           Text.Pretty.Simple             ( pPrint )
 import           Control.Concurrent.Async
 import           Poker.ActionValidation
 import           Poker.Game.Game
+import           Poker.Game.Blinds
 import           Poker.Game.Utils
 import           Poker.Poker
 import           Poker.Types             hiding ( LeaveSeat )
@@ -56,11 +57,102 @@ import           Socket.Subscriptions
 import           Socket.Types
 import           Socket.Msg
 import           Socket.Utils
-import           Socket
+
 import           Database
 
 import           System.Random
 import           Types
+
+
+
+
+
+delayThenSeatPlayer
+  :: ConnectionString -> Int -> TVar ServerState -> Player -> IO ()
+delayThenSeatPlayer dbConn delayDuration s p = do
+  print "delaying before sit down bot ... "
+  _ <- threadDelay delayDuration
+  print "about to sit down bot ... "
+  sitDownBot dbConn p s
+  print "... done . bot sat down "
+
+
+bot1 :: Player
+bot1 = initPlayer "1@1" 2000
+
+bot2 :: Player
+bot2 = initPlayer "2@2" 2000
+
+bot3 :: Player
+bot3 = initPlayer "3@3" 2000
+
+bot4 :: Player
+bot4 = initPlayer "101@101" 2000
+
+bot5 :: Player
+bot5 = initPlayer "102@102" 2000
+
+--    dupTableChanMsg <- atomically $ readTChan dupTableChan
+
+startBotActionLoops
+  :: ConnectionString -> TVar ServerState -> Int -> [PlayerName] -> IO ()
+startBotActionLoops db s playersToWaitFor botNames = do
+--  threadDelay 1180000 --delay so bots dont start game until all of them sat down
+  ServerState {..} <- readTVarIO s
+  case M.lookup tableName $ unLobby lobby of
+    Nothing -> error "TableDoesNotExist "
+    Just table@Table {..} ->
+      mapM_ (botActionLoop db s channel playersToWaitFor) botNames
+  where tableName = "Black"
+
+
+botActionLoop
+  :: ConnectionString
+  -> TVar ServerState
+  -> TChan MsgOut
+  -> Int
+  -> PlayerName
+  -> IO ThreadId
+botActionLoop dbConn s tableChan playersToWaitFor botName = forkIO $ do
+  chan <- atomically $ dupTChan tableChan
+  print botName
+  print "create action loop"
+  forever $ do
+    msg <- atomically $ readTChan chan
+    print "action received"
+    case msg of
+      NewGameState tableName g ->
+        unless (shouldn'tStartGameYet g) (actIfNeeded g botName)
+      _ -> return ()
+ where
+  shouldn'tStartGameYet Game {..} =
+    (_street == PreDeal && ((length $ _players) < playersToWaitFor))
+  actIfNeeded g' pName' =
+    let hasToAct = doesPlayerHaveToAct pName' g'
+    in  when (hasToAct || (blindRequiredByPlayer g' pName' /= NoBlind)) $ do
+          print hasToAct
+          runBotAction dbConn s g' pName'
+
+
+runBotAction
+  :: ConnectionString -> TVar ServerState -> Game -> PlayerName -> IO ()
+runBotAction dbConn serverStateTVar g pName = do
+  maybeAction <- getValidAction g pName
+  print g
+  print ("Random action from " <> show pName <> " is " <> show maybeAction)
+  case maybeAction of
+    Nothing -> return ()
+    Just a  -> do
+      gen <- getStdGen
+      let eitherNewGame = runPlayerAction g gen a
+      case eitherNewGame of
+        Left  gameErr -> print (show $ GameErr gameErr) >> return ()
+        Right newGame -> do
+          atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
+          --progressGame' dbConn serverStateTVar tableName newGame
+ where
+  tableName  = "Black"
+  chipsToSit = 2000
 
 sitDownBot :: ConnectionString -> Player -> TVar ServerState -> IO ()
 sitDownBot dbConn player@Player {..} serverStateTVar = do
@@ -69,10 +161,10 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
   case M.lookup tableName $ unLobby lobby of
     Nothing         -> error "table doesnt exist" >> return ()
     Just Table {..} -> do
-      gen <- liftIO $ getStdGen
+      gen <- getStdGen
       let eitherNewGame = runPlayerAction game gen takeSeatAction
       case eitherNewGame of
-        Left  gameErr -> error (show $ GameErr gameErr) >> return ()
+        Left  gameErr -> print $ GameErr gameErr
         Right newGame -> do
           dbDepositChipsIntoPlay dbConn _playerName chipsToSit
           atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
@@ -85,22 +177,34 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
 --runBotAction serverS tableName g botAction = do
 
 
-actions :: Int -> [Action]
-actions chips =
-  [PostBlind Big, PostBlind Small, Check, Call, Fold, Bet chips, Raise chips]
+actions :: Street -> Int -> [Action]
+actions st chips | st == PreDeal = [PostBlind Big, PostBlind Small]
+                 | otherwise     = [Check, Call, Fold, Bet chips, Raise chips]
 
 
-getValidAction :: Game -> PlayerName -> PlayerAction -> IO PlayerAction
-getValidAction g@Game {..} name action = do
-  betAmount' <- randomRIO (lowerBetBound, _chips)
-  let validActions =
-        filter (isRight . validateAction g name) (actions betAmount')
-  if null validActions then panic else return ()
-  randIx <- randomRIO (0, length validActions - 1)
-  return $ PlayerAction { action = validActions !! randIx, .. }
+getValidAction :: Game -> PlayerName -> IO (Maybe PlayerAction)
+getValidAction g@Game {..} name
+  | length _players < 2 = return Nothing
+  | _street == PreDeal = return $ case blindRequiredByPlayer g name of
+    Small   -> Just $ PlayerAction { action = PostBlind Small, .. }
+    Big     -> Just $ PlayerAction { action = PostBlind Big, .. }
+    NoBlind -> Nothing
+  | otherwise = do
+    betAmount' <- randomRIO (lowerBetBound, chipCount)
+    let possibleActions  = (actions _street betAmount')
+    let actionsValidated = validateAction g name <$> possibleActions
+    let actionPairs      = zip possibleActions actionsValidated
+    print actionPairs
+    let validActions = (<$>) fst $ filter (isRight . snd) actionPairs
+    print validActions
+    if null validActions then panic else return ()
+
+    randIx <- randomRIO (0, length validActions - 1)
+
+    return $ Just $ PlayerAction { action = validActions !! randIx, .. }
  where
-  lowerBetBound = if (_bet > 0) then (2 * _bet) else 1
-  Player {..}   = fromJust $ getGamePlayer g name
+  lowerBetBound = if (_maxBet > 0) then (2 * _maxBet) else _bigBlind
+  chipCount     = fromMaybe 0 ((^. chips) <$> (getGamePlayer g name))
   panic         = do
     print $ "UHOH no valid actions for " <> show name
     print g
