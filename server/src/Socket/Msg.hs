@@ -117,62 +117,6 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
       (removeClient username serverStateTVar)
 -}
 
--- | Forks a thread which timeouts the player when they dont act in sufficient time
--- We fork this thread using async once a player sits down at a table
---
--- Duplicates the channel which reads table updates and starts a timeout if it is the players turn to act
--- If no valid game action is received from the socket msg read thread then we update the game with a special
--- timeout action which will usually check or fold the player.
---
--- Note that timeouts are only enforced when the expediency of the player's action is required
--- to avoid halting the progress of the game.
-playerTimeoutLoop :: TableName -> TChan MsgOut -> MsgHandlerConfig -> IO ()
-playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
-  msgReaderDup <- atomically $ dupTChan socketReadChan
-  dupTableChan <- atomically $ dupTChan channel
-  forever $ do
-    dupTableChanMsg <- atomically $ readTChan dupTableChan
-    case dupTableChanMsg of
-      (NewGameState tableName newGame) ->
-        let playerHasToAct = doesPlayerHaveToAct (unUsername username) newGame
-        in  when playerHasToAct $ awaitTimedPlayerAction socketReadChan
-                                                         newGame
-                                                         tableName
-                                                         username
-      _ -> return ()
-
--- We read from a duplicate of the channel which reads msgs from the client socket.
--- We use a duplicate to listen to the client so as to not consume messages intended for other tables
-awaitValidPlayerAction
-  :: TableName -> Game -> PlayerName -> TChan MsgIn -> STM MsgIn
-awaitValidPlayerAction tableName game name dupChan =
-  readTChan dupChan >>= \msg -> if isValidAction game name msg
-    then return msg
-    else awaitValidPlayerAction tableName game name dupChan
- where
-  isValidAction game name = \case
-    GameMsgIn (GameMove tableName' action) ->
-      (isRight $ validateAction game name action) && tableName == tableName'
-    _ -> False
-
--- Race the timer and the blocking read call which awaits a valid player msg.
--- The race results in an Either where the Left signals a timeout and a 
--- Right denotes a valid game action was received from the client in sufficient
--- time.
-awaitTimedPlayerAction :: TChan MsgIn -> Game -> TableName -> Username -> IO ()
-awaitTimedPlayerAction socketReadChan game tableName (Username playerName) = do
-  delayTVar         <- registerDelay timeoutDuration
-  dupChan           <- atomically $ dupTChan socketReadChan
-  validPlayerAction <- async $ atomically $ awaitValidPlayerAction tableName
-                                                                   game
-                                                                   playerName
-                                                                   dupChan
-  timer           <- async $ atomically $ readTVar delayTVar >>= check
-  msgInOrTimedOut <- waitEitherCancel timer validPlayerAction
-  when (isLeft msgInOrTimedOut) $ atomically $ writeTChan
-    socketReadChan
-    (GameMsgIn $ GameMove tableName Timeout)
-  where timeoutDuration = 6500000
 
 --- If the game gets to a state where no player action is possible 
 --  then we need to recursively progress the game to a state where an action 
@@ -199,11 +143,9 @@ handleNewGameState connString serverStateTVar (NewGameState tableName newGame)
   = do
     print " OLD BROADCASTING!!!!!!!!!!!"
     newServerState <- atomically
-      $ updateGameAndBroadcastT serverStateTVar tableName newGame
+       $ updateGameAndBroadcastT serverStateTVar tableName newGame
     return ()
 handleNewGameState _ _ msg = return ()
-
-
 
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
@@ -214,6 +156,7 @@ getTablesHandler = do
   liftIO $ print tableSummaries
   liftIO $ sendMsg clientConn tableSummaries
   return tableSummaries
+
 
 -- First we check the table exists and if the user is not already subscribed then we add them to the list of subscribers
 -- Game and any other table updates will be propagated to those on the subscriber list
@@ -254,6 +197,8 @@ subscribeToTable tableName MsgHandlerConfig {..} = do
         swapTVar serverStateTVar newServerState
         return ()
       else throwSTM $ CannotAddAlreadySubscribed tableName
+
+ 
 
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
 -- We link the new thread to the current thread so on any exception in either then both threads are
@@ -301,10 +246,6 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                       (liftIO $ atomically $ subscribeToTable tableName
                                                               msgHandlerConfig
                       )
-                    --asyncGameReceiveLoop <-
-                    --  liftIO $
-                    --  async (playerTimeoutLoop tableName channel msgHandlerConfig)
-                    --liftIO $ link asyncGameReceiveLoop
                     liftIO $ sendMsg clientConn
                                      (SuccessfullySatDown tableName newGame)
                     let msgOut =  NewGameState tableName newGame

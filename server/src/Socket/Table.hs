@@ -148,6 +148,7 @@ pauseDuration Game{..}
     | _street == PreDeal = 0
     | otherwise = 2 * 1000000 -- 2 seconds
 
+    
 
 -- when the game can be progressed we get the progressed game an place it into the 
 -- mailbox for the table which processes new game states
@@ -174,7 +175,6 @@ writeGameToDB connStr tableKey = do
   g <- await
   liftIO $ dbInsertGame connStr tableKey g
   yield g
-
 
   
 
