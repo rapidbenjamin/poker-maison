@@ -243,7 +243,7 @@ msgOutEncoder = do
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
 msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
-  res <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
+  res <- lift $ runReaderT (msgHandler msgIn) conf
   case res of
     Left err -> yield $ ErrMsg err 
     Right (NewGameState tableName g) -> do

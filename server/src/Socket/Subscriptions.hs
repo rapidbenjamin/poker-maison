@@ -54,26 +54,24 @@ getTableSubscribers tableName (Lobby lobby) = case M.lookup tableName lobby of
 -- First we check the table exists and if the user is not already subscribed then we add them to the list of subscribers
 -- Game and any other table updates will be propagated to those on the subscriber list
 subscribeToTableHandler
-  :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+  :: MsgIn -> ReaderT MsgHandlerConfig IO (Either Err MsgOut)
 subscribeToTableHandler (SubscribeToTable tableName) = do
-  liftIO $ putStrLn "CALLLLLLLLLLLLLLLLLLLLLLLLLED3"
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..}                       <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
-    Nothing         -> throwError $ TableDoesNotExist tableName
+    Nothing         -> return $ Left $ TableDoesNotExist tableName
     Just Table {..} -> do
       liftIO $ print subscribers
       if username `notElem` subscribers
         then do
           liftIO $ atomically $ subscribeToTable tableName msgHandlerConfig
-          --liftIO $ sendMsg clientConn (GameMsgOut $ NewGameState tableName game)
           liftIO $ sendMsg clientConn
                            (SuccessfullySubscribedToTable tableName game)
-          return $ SuccessfullySubscribedToTable tableName game
+          return $ Right $ SuccessfullySubscribedToTable tableName game
         else do
           liftIO
             $ sendMsg clientConn (ErrMsg $ AlreadySubscribedToTable tableName)
-          return $ ErrMsg $ AlreadySubscribedToTable tableName
+          return $ Left $ AlreadySubscribedToTable tableName
 
           
 subscribeToTable :: TableName -> MsgHandlerConfig -> STM ()
