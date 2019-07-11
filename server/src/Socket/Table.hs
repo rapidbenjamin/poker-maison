@@ -150,8 +150,20 @@ pauseDuration Game{..}
 
     
 
--- when the game can be progressed we get the progressed game an place it into the 
--- mailbox for the table which processes new game states
+-- Progresses to the next state which awaits a player action.
+--
+--- If the next game state is one where no player action is possible 
+--  then we need to recursively progress the game.
+
+--  These such states are:
+--
+--  1. everyone is all in.
+--  1. All but one player has folded or the game. 
+--  3. Game is in the Showdown stage.
+--
+-- After each progression the new game state is sent to the table 
+-- mailbox. This sends the new game state through the pipeline that 
+-- the previous game state just went through.
 progress :: Output Game -> Consumer Game IO ()
 progress inMailbox = do
   g <- await
@@ -277,3 +289,4 @@ updateTableGame :: TableName -> Game -> Lobby -> Lobby
 updateTableGame tableName newGame (Lobby lobby) = Lobby
   $ M.adjust updateTable tableName lobby
   where updateTable Table {..} = Table { game = newGame, .. }
+

@@ -100,8 +100,6 @@ getTablesHandler = do
   return tableSummaries
 
 
- 
-
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
 -- We link the new thread to the current thread so on any exception in either then both threads are
 -- killed to prevent memory leaks.
@@ -138,9 +136,10 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                 liftIO $ postTakeSeat conf tableName chipsToSit
                 liftIO $ sendMsg clientConn
                                  (SuccessfullySatDown tableName newGame)
-                let msgOut =  NewGameState tableName newGame
-                liftIO $ handleNewGameState dbConn serverStateTVar msgOut
+                let msgOut = NewGameState tableName newGame
+                liftIO $ atomically $ updateTable' serverStateTVar tableName newGame
                 return msgOut
+
 
 postTakeSeat :: MsgHandlerConfig -> TableName -> Int -> IO ()
 postTakeSeat conf@MsgHandlerConfig{..} name chipsSatWith = do
@@ -179,7 +178,7 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
                                                    (unUsername username)
                                                    chipsInPlay
                   let msgOut =  NewGameState tableName newGame
-                  liftIO $ handleNewGameState dbConn serverStateTVar msgOut
+                  liftIO $ atomically $ updateTable' serverStateTVar tableName newGame
                   return msgOut
 
 canTakeSeat
