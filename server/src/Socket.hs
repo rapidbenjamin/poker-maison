@@ -261,6 +261,7 @@ msgInHandler conf@MsgHandlerConfig {..} = do
            liftIO $ atomically $ updateTable' serverStateTVar tableName g
            return ()
          Left  err -> yield $ ErrMsg err
+      
     m -> do 
       msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
       case msgOutE of
@@ -271,18 +272,6 @@ msgInHandler conf@MsgHandlerConfig {..} = do
         Right m   -> yield m
         Left  err -> yield $ ErrMsg err
   where sampleMsg = GameMsgOut PlayerLeft
-
-
-playMove :: MsgHandlerConfig -> GameMsgIn -> IO (Either Err Game)
-playMove conf@MsgHandlerConfig{..}  m@(GameMove tableName action)   = do 
-   maybeTable <- liftIO $ atomically $ getTable serverStateTVar tableName
-   case maybeTable of
-     Nothing -> return $ Left $ TableDoesNotExist tableName
-     Just Table{..} -> do 
-      return $ either (Left . GameErr) Right $ runPlayerAction game playerAction
-   where
-       playerAction = PlayerAction { name = unUsername username, .. }
-
 
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()

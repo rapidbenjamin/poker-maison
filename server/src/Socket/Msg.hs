@@ -70,24 +70,17 @@ gameMsgHandler msg@LeaveSeat{} = leaveSeatHandler msg
 gameMsgHandler msg@GameMove{}  = undefined --FIX ME -- ADJUST TYPES
 
 
---- If the game gets to a state where no player action is possible 
---  then we need to recursively progress the game to a state where an action 
---  is possible. The game states which would lead to this scenario where the game 
---  needs to be manually progressed are:
---   
---  1. everyone is all in.
---  1. All but one player has folded or the game. 
---  3. Game is in the Showdown stage.
---
 
+playMove :: MsgHandlerConfig -> GameMsgIn -> IO (Either Err Game)
+playMove conf@MsgHandlerConfig{..}  m@(GameMove tableName action)   = do 
+   maybeTable <- liftIO $ atomically $ getTable serverStateTVar tableName
+   case maybeTable of
+     Nothing -> return $ Left $ TableDoesNotExist tableName
+     Just Table{..} -> do 
+      return $ either (Left . GameErr) Right $ runPlayerAction game playerAction
+   where
+       playerAction = PlayerAction { name = unUsername username, .. }
 
-handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
-handleNewGameState connString serverStateTVar (NewGameState tableName newGame)
-  = do
-    print " OLD BROADCASTING!!!!!!!!!!!"
-    newServerState <- atomically  $ updateTable' serverStateTVar tableName newGame
-    return ()
-handleNewGameState _ _ msg = return ()
 
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
