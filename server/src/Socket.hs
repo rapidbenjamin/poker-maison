@@ -115,7 +115,6 @@ runSocketServer secretKey port connString redisConfig = do
   putStrLn $ T.unpack $ encodeMsgX
     (GameMsgIn $ GameMove "black" $ PostBlind Big)
 
-
   lobby           <- initialLobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   -- set up pipelines for broadcasting, progressing and logging new game states
@@ -167,7 +166,6 @@ websocketInMailbox :: MsgHandlerConfig -> IO (Output MsgIn, Output MsgOut)
 websocketInMailbox conf@MsgHandlerConfig {..} = do
   (writeMsgInSource , readMsgInSource ) <- spawn unbounded
   (writeMsgOutSource, readMsgOutSource) <- spawn unbounded
-  --async $ socketMsgInWriter clientConn writeMsgInSource -- read parsed MsgIn's from socket and place in incoming mailbox
   async
     $   forever
     $   runEffect
@@ -175,9 +173,7 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
     >-> msgInHandler conf
     >-> toOutput writeMsgOutSource -- process received MsgIn's and place resulting MsgOut in outgoing mailbox
   async $ socketMsgOutWriter clientConn readMsgOutSource -- send encoded MsgOuts from outgoing mailbox to socket
-  --async $ runEffect $ for (fromInput readMsgOutSource >-> logMsgOut) (lift . WS.sendTextData newConn . encodeMsgOutToJSON) -- send MsgOut's waiting in mailbox through socket
   return (writeMsgInSource, writeMsgOutSource)
-    -- encode MsgOut values to JSON bytestring to send to socket
 
 
 -- Runs an IO action forever which parses read MsgIn's from the websocket connection 
@@ -201,10 +197,6 @@ socketMsgOutWriter conn is = forever $ runEffect $ for
   (fromInput is >-> msgOutEncoder)
   (lift . WS.sendTextData conn)
 
-
---encodeMsgOutToJSON :: MsgOut -> Text
---encodeMsgOutToJSON msgOut = X.toStrict $ D.decodeUtf8 $ A.encode msgOut
---
 
 -- Converts a websocket connection into a producer 
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
@@ -286,11 +278,6 @@ logMsgOut = do
     -- Otherwise loop
     Right () -> yield msg >> logMsgOut
 
-
--- tables are stream abstractions which take in game msgs and yield game states
---data Game = Producer GameMsgIn (Either GameErr Game) IO ()
-
---newtype Table' = Table' (Pipe PlayerAction gameMove IO Game)
 
 -- get a pipe which only forwards the game moves which occur at the given table
 filterMsgsForTable :: Monad m => TableName -> Pipe GameMsgIn GameMsgIn m ()

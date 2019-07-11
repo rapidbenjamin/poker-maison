@@ -58,6 +58,7 @@ import           Types
 import           System.Random
 import           Database
 
+
 msgHandler :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 msgHandler GetTables{}            = getTablesHandler
 msgHandler msg@SubscribeToTable{} = subscribeToTableHandler msg
