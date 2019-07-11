@@ -159,47 +159,6 @@ updateGame s tableName g = do
   let newLobby = updateTableGame tableName g lobby
   writeTVar s ServerState { lobby = newLobby, .. }
 
--- and writes GameOutMsg to outgoing mailbox in table so it is propagated to clients
---broadcast'
---broadcast' 
---
-
-evalPlayerAction
-  :: Game -> Pipe PlayerAction (Either GameErr Game) IO (Either GameErr Game)
-evalPlayerAction g =  --P.map $ runPlayerAction g
-                     forever $ do
-  playerAction <- await
-  gen          <- liftIO $ getStdGen
-  let res = runPlayerAction g gen playerAction
-  yield res
-
-
--- An illegal player moves result in the err being sent back to the client who made the move
--- whereas if the player move is legal we get a new game state (Right) which is written to  
--- the table mailbox for propagation to clients who are observing the game
--- (~>) composes our consumers which handle the success and failure cases of 
--- player action evaluation. This composition returns a new consumer which abstracts
--- away the machinery of handling failure for illegal player actions.
-playerActionHandler'
-  :: (GameErr -> Consumer PlayerAction IO ())
-  -> (Game -> Consumer PlayerAction IO ())
-  -> Game
-  -> Consumer PlayerAction IO (Either GameErr Game)
-playerActionHandler' failureConsumer successConsumer =
-  evalPlayerAction ~> divertResult
- where
-  divertResult = \case
-    Left  e -> failureConsumer e
-    Right g -> successConsumer g
-
-
-actionHandler :: Game -> Pipe PlayerAction (Either GameErr Game) IO ()
-actionHandler g = forever $ do
-  a   <- await
-  gen <- liftIO getStdGen
-  yield $ runPlayerAction g gen a
-  return ()
-
 
 -- creates a mailbox which has both an input sink and output source which
 -- models the bidirectionality of websockets.
@@ -285,19 +244,44 @@ msgOutEncoder = do
   yield $ encodeMsgToJSON  msgOut
 
 
+-- branches of code which do not yield messages place the burden of informing the client
+-- onto the table pipeline as opposed to the remaining components after the player's socket
+-- pipeline. Or in other words without yielding a msg this pipe will not directly inform the client
+-- about what has happened.
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
 msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
   --liftIO $ print "msghandler : "
-  msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
-  case msgOutE of
-    Right m@(NewGameState tableName g) -> do
-      liftIO $ async $ toGameInMailbox serverStateTVar tableName g
-      liftIO $ atomically $ updateTable' serverStateTVar tableName g
-      return ()
-    Right m   -> yield m
-    Left  err -> yield $ ErrMsg err
+  case msgIn of 
+    GameMsgIn m@(GameMove tableName _) -> do
+       res <- liftIO $ playMove conf m
+       case res of
+         Right g -> do
+           liftIO $ async $ toGameInMailbox serverStateTVar tableName g
+           liftIO $ atomically $ updateTable' serverStateTVar tableName g
+           return ()
+         Left  err -> yield $ ErrMsg err
+    m -> do 
+      msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
+      case msgOutE of
+        Right m@(NewGameState tableName g) -> do
+          liftIO $ async $ toGameInMailbox serverStateTVar tableName g
+          liftIO $ atomically $ updateTable' serverStateTVar tableName g
+          return ()
+        Right m   -> yield m
+        Left  err -> yield $ ErrMsg err
   where sampleMsg = GameMsgOut PlayerLeft
+
+
+playMove :: MsgHandlerConfig -> GameMsgIn -> IO (Either Err Game)
+playMove conf@MsgHandlerConfig{..}  m@(GameMove tableName action)   = do 
+   maybeTable <- liftIO $ atomically $ getTable serverStateTVar tableName
+   case maybeTable of
+     Nothing -> return $ Left $ TableDoesNotExist tableName
+     Just Table{..} -> do 
+      return $ either (Left . GameErr) Right $ runPlayerAction game playerAction
+   where
+       playerAction = PlayerAction { name = unUsername username, .. }
 
 
 
@@ -380,3 +364,4 @@ application secretKey dbConnString redisConfig s pending = do
     , redisConfig     = redisConfig
     , ..
     }
+

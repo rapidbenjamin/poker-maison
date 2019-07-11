@@ -63,59 +63,11 @@ msgHandler GetTables{}            = getTablesHandler
 msgHandler msg@SubscribeToTable{} = subscribeToTableHandler msg
 msgHandler (GameMsgIn msg)        = gameMsgHandler msg
 
+
 gameMsgHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler msg@TakeSeat{}  = takeSeatHandler msg
 gameMsgHandler msg@LeaveSeat{} = leaveSeatHandler msg
 gameMsgHandler msg@GameMove{}  = gameActionHandler msg
-
-{-
--- process msgs sent by the client socket
-handleReadChanMsgs :: MsgHandlerConfig -> IO ()
-handleReadChanMsgs msgHandlerConfig@MsgHandlerConfig {..} = forever $ do
-  msg <- atomically $ readTChan socketReadChan
- -- print msg
- -- print "aboooo"
-  msgOutE <- runExceptT $ runReaderT (msgHandler msg) msgHandlerConfig
-  --pPrint msgOutE
-  case msgOutE of
-    Right m@NewGameState{} ->
-      sendMsg clientConn m >> handleNewGameState dbConn serverStateTVar m
-    Right m   -> sendMsg clientConn m
-    Left  err -> sendMsg clientConn (ErrMsg err)
-
-
--- This function writes msgs received from the websocket to the socket threads msgReader channel 
--- then forks a new thread to read msgs from the authenticated client
--- The use of channels in this way makes it feasible to implement timeouts
--- if an expected msg in not received in a given time without killing threads.
--- This is preferable as killing threads inside IO actions is not safe 
-authenticatedMsgLoop :: MsgHandlerConfig -> IO ()
-authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
-  withAsync (handleReadChanMsgs msgHandlerConfig) $ \sockMsgReaderThread ->
-    finally
-      (catch
-        (forever $ do
-          msg <- WS.receiveData clientConn
-          print msg
-          let parsedMsg = parseMsgFromJSON msg
-          print "parsed msg:"
-          print parsedMsg
-          for_ parsedMsg $ atomically . writeTChan socketReadChan
-        )
-        (\e -> do
-          let err = show (e :: IOException)
-          print
-            (  "Warning: Exception occured in authenticatedMsgLoop for "
-            ++ show username
-            ++ ": "
-            ++ err
-            )
-          removeClient username serverStateTVar
-          return ()
-        )
-      )
-      (removeClient username serverStateTVar)
--}
 
 
 --- If the game gets to a state where no player action is possible 
@@ -217,11 +169,9 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
                                               , action = SitDown player
                                               }
                   takeSeatAction = GameMove tableName (SitDown player)
-              gen <- liftIO $ getStdGen
               case
                   runPlayerAction
                     game
-                    gen
                     PlayerAction { name   = unUsername username
                                  , action = SitDown player
                                  }
@@ -253,10 +203,8 @@ leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
       if unUsername username `notElem` getGamePlayerNames game
         then throwError $ NotSatInGame tableName
         else do
-          gen <- liftIO $ getStdGen
           let eitherProgressedGame = runPlayerAction
                 game
-                gen
                 PlayerAction { name = unUsername username, action = LeaveSeat' }
 
           case eitherProgressedGame of
@@ -318,12 +266,10 @@ gameActionHandler gameMove@(GameMove tableName action) = do
       in
         if not satAtTable
           then throwError $ NotSatAtTable tableName
-          else do
-            gen <- liftIO $ getStdGen
+          else 
             case
                 runPlayerAction
                   game
-                  gen
                   PlayerAction { name = unUsername username, .. }
               of
                 Left gameErr -> do

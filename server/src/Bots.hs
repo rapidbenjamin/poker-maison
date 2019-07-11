@@ -144,8 +144,7 @@ runBotAction dbConn serverStateTVar g pName = do
   case maybeAction of
     Nothing -> return ()
     Just a  -> do
-      gen <- getStdGen
-      let eitherNewGame = runPlayerAction g gen a
+      let eitherNewGame = runPlayerAction g a
       case eitherNewGame of
         Left  gameErr -> print (show $ GameErr gameErr) >> return ()
         Right g -> do
@@ -162,8 +161,7 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
   case M.lookup tableName $ unLobby lobby of
     Nothing         -> error "table doesnt exist" >> return ()
     Just Table {..} -> do
-      gen <- getStdGen
-      let eitherNewGame = runPlayerAction game gen takeSeatAction
+      let eitherNewGame = runPlayerAction game takeSeatAction
       case eitherNewGame of
         Left  gameErr -> print $ GameErr gameErr
         Right g -> do
@@ -174,9 +172,6 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
     chipsToSit     = 2000
     tableName      = "Black"
     takeSeatAction = PlayerAction { name = _playerName, action = SitDown player }
-
---runBotAction :: TVar ServerState -> TableName -> Game -> PlayerAction -> STM ()
---runBotAction serverS tableName g botAction = do
 
 
 actions :: Street -> Int -> [Action]
@@ -200,9 +195,7 @@ getValidAction g@Game {..} name
     let validActions = (<$>) fst $ filter (isRight . snd) actionPairs
     print validActions
     if null validActions then panic else return ()
-
     randIx <- randomRIO (0, length validActions - 1)
-
     return $ Just $ PlayerAction { action = validActions !! randIx, .. }
  where
   lowerBetBound = if (_maxBet > 0) then (2 * _maxBet) else _bigBlind

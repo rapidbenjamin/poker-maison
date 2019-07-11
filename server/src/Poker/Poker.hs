@@ -42,14 +42,9 @@ import           Poker.Types
 -- if the current game stage is showdown then the next game state will have a newly shuffled
 -- deck and pocket cards/ bets reset
 runPlayerAction
-  :: RandomGen g => Game -> g -> PlayerAction -> Either GameErr Game
-runPlayerAction game gen playerAction'@PlayerAction {..} =
+  :: Game -> PlayerAction -> Either GameErr Game
+runPlayerAction game playerAction'@PlayerAction {..} =
   handlePlayerAction game playerAction' 
-  --case of
-  --  Left  err          -> Left err
-  --  Right newGameState -> if canProgressGame newGameState
-  --    then Right $ progressGame gen newGameState
-  --    else Right newGameState
 
 
 canProgressGame :: Game -> Bool
@@ -102,17 +97,17 @@ progressGame gen game@Game {..}
 
 handlePlayerAction :: Game -> PlayerAction -> Either GameErr Game
 handlePlayerAction game@Game {..} PlayerAction {..} = case action of
-  PostBlind blind ->
-    validateAction game name action $> postBlind blind name game
+  PostBlind blind -> validateAction game name action $> postBlind blind name game
   Fold           -> validateAction game name action $> foldCards name game
   Call           -> validateAction game name action $> call name game
   Raise amount   -> validateAction game name action $> makeBet amount name game
   Check          -> validateAction game name action $> check name game
   Bet amount     -> validateAction game name action $> makeBet amount name game
-  Timeout        -> handlePlayerTimeout name game
   SitDown player -> validateAction game name action $> seatPlayer player game
   SitIn          -> validateAction game name action $> sitIn name game
   LeaveSeat'     -> validateAction game name action $> leaveSeat name game
+  Timeout        -> handlePlayerTimeout name game
+
 
 -- TODO - "Except" or ExceptT Identity has a more reliable Alternative instance.
 -- Use except and remove the guards and just use <|> to combine all the 
