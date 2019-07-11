@@ -56,6 +56,7 @@ import           Socket.Lobby
 import           Socket.Subscriptions
 import           Socket.Types
 import           Socket.Msg
+import Socket.Table
 import           Socket.Utils
 
 import           Database
@@ -147,9 +148,9 @@ runBotAction dbConn serverStateTVar g pName = do
       let eitherNewGame = runPlayerAction g gen a
       case eitherNewGame of
         Left  gameErr -> print (show $ GameErr gameErr) >> return ()
-        Right newGame -> do
-          atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
-          --progressGame' dbConn serverStateTVar tableName newGame
+        Right g -> do
+          liftIO $ async $ toGameInMailbox serverStateTVar tableName g
+          liftIO $ atomically $ updateTable' serverStateTVar tableName g
  where
   tableName  = "Black"
   chipsToSit = 2000
@@ -165,13 +166,14 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
       let eitherNewGame = runPlayerAction game gen takeSeatAction
       case eitherNewGame of
         Left  gameErr -> print $ GameErr gameErr
-        Right newGame -> do
+        Right g -> do
           dbDepositChipsIntoPlay dbConn _playerName chipsToSit
-          atomically $ updateGameAndBroadcastT serverStateTVar tableName newGame
- where
-  chipsToSit     = 2000
-  tableName      = "Black"
-  takeSeatAction = PlayerAction { name = _playerName, action = SitDown player }
+          liftIO $ async $ toGameInMailbox serverStateTVar tableName g
+          liftIO $ atomically $ updateTable' serverStateTVar tableName g
+  where
+    chipsToSit     = 2000
+    tableName      = "Black"
+    takeSeatAction = PlayerAction { name = _playerName, action = SitDown player }
 
 --runBotAction :: TVar ServerState -> TableName -> Game -> PlayerAction -> STM ()
 --runBotAction serverS tableName g botAction = do

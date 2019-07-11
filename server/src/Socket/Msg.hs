@@ -127,23 +127,13 @@ authenticatedMsgLoop msgHandlerConfig@MsgHandlerConfig {..} =
 --  1. All but one player has folded or the game. 
 --  3. Game is in the Showdown stage.
 --
-updateGameAndBroadcastT :: TVar ServerState -> TableName -> Game -> STM ()
-updateGameAndBroadcastT serverStateTVar tableName newGame = do
-  ServerState {..} <- readTVar serverStateTVar
-  case M.lookup tableName $ unLobby lobby of
-    Nothing               -> throwSTM $ TableDoesNotExistInLobby tableName
-    Just table@Table {..} -> do
-      --writeTChan channel $ NewGameState tableName newGame
-      let updatedLobby = updateTableGame tableName newGame lobby
-      swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
-      return ()
+
 
 handleNewGameState :: ConnectionString -> TVar ServerState -> MsgOut -> IO ()
 handleNewGameState connString serverStateTVar (NewGameState tableName newGame)
   = do
     print " OLD BROADCASTING!!!!!!!!!!!"
-    newServerState <- atomically
-       $ updateGameAndBroadcastT serverStateTVar tableName newGame
+    newServerState <- atomically  $ updateTable' serverStateTVar tableName newGame
     return ()
 handleNewGameState _ _ msg = return ()
 
