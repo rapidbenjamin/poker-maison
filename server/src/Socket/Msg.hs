@@ -67,7 +67,7 @@ msgHandler (GameMsgIn msg)        = gameMsgHandler msg
 gameMsgHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler msg@TakeSeat{}  = takeSeatHandler msg
 gameMsgHandler msg@LeaveSeat{} = leaveSeatHandler msg
-gameMsgHandler msg@GameMove{}  = gameActionHandler msg
+gameMsgHandler msg@GameMove{}  = undefined --FIX ME -- ADJUST TYPES
 
 
 --- If the game gets to a state where no player action is possible 
@@ -157,43 +157,40 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
     Just table@Table {..} -> do
       liftIO $ print "GAME STATE AFTER TAKE SEAT ACTION RECVD"
       liftIO $ print game
-      if unUsername username `elem` getGamePlayerNames game
-        then throwError $ AlreadySatInGame tableName
-        else do
-          hasEnoughChipsErrE <- canTakeSeat chipsToSit tableName table
-          case hasEnoughChipsErrE of
-            Left  err -> throwError err
-            Right ()  -> do
-              let player       = initPlayer (unUsername username) chipsToSit
-                  playerAction = PlayerAction { name   = unUsername username
-                                              , action = SitDown player
-                                              }
-                  takeSeatAction = GameMove tableName (SitDown player)
-              case
-                  runPlayerAction
-                    game
-                    PlayerAction { name   = unUsername username
-                                 , action = SitDown player
-                                 }
-                of
-                  Left  gameErr -> throwError $ GameErr gameErr
-                  Right newGame -> do
-                    liftIO $ dbDepositChipsIntoPlay dbConn
-                                                    (unUsername username)
-                                                    chipsToSit
-                    when
-                      (username `notElem` subscribers)
-                      (liftIO $ atomically $ subscribeToTable tableName
-                                                              msgHandlerConfig
-                      )
-                    liftIO $ sendMsg clientConn
-                                     (SuccessfullySatDown tableName newGame)
-                    let msgOut =  NewGameState tableName newGame
-                    liftIO $ handleNewGameState dbConn serverStateTVar msgOut
-                    return msgOut
+      canSit <- canTakeSeat chipsToSit tableName table
+      case canSit of
+        Left  err -> throwError err
+        Right ()  -> do
+          let player       = initPlayer (unUsername username) chipsToSit
+              playerAction = PlayerAction { name   = unUsername username
+                                          , action = SitDown player
+                                          }
+              takeSeatAction = GameMove tableName (SitDown player)
+          case
+              runPlayerAction
+                game
+                PlayerAction { name   = unUsername username
+                             , action = SitDown player
+                             }
+            of
+              Left  gameErr -> throwError $ GameErr gameErr
+              Right newGame -> do
+                liftIO $ dbDepositChipsIntoPlay dbConn
+                                                (unUsername username)
+                                                chipsToSit
+                when
+                  (username `notElem` subscribers)
+                  (liftIO $ atomically $ subscribeToTable tableName
+                                                          msgHandlerConfig
+                  )
+                liftIO $ sendMsg clientConn
+                                 (SuccessfullySatDown tableName newGame)
+                let msgOut =  NewGameState tableName newGame
+                liftIO $ handleNewGameState dbConn serverStateTVar msgOut
+                return msgOut
 
-leaveSeatHandler
-  :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
+
+leaveSeatHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 leaveSeatHandler leaveSeatMove@(LeaveSeat tableName) = do
   msgHandlerConfig@MsgHandlerConfig {..} <- ask
   ServerState {..}                       <- liftIO $ readTVarIO serverStateTVar
@@ -231,15 +228,26 @@ canTakeSeat
 canTakeSeat chipsToSit tableName Table { game = Game {..}, ..}
   | chipsToSit >= _minBuyInChips && chipsToSit <= _maxBuyInChips = do
     availableChipsE <- getPlayersAvailableChips
+    MsgHandlerConfig{..} <- ask
     case availableChipsE of
       Left  err            -> throwError err
-      Right availableChips -> if availableChips >= chipsToSit
-        then return $ Right ()
-        else return $ Left NotEnoughChipsToSit
+      Right chips -> do 
+        tableE <- liftIO $ checkTableExists serverStateTVar tableName 
+        return $ tableE <* hasEnoughChips chips chipsToSit
   | otherwise = return $ Left $ ChipAmountNotWithinBuyInRange tableName
+  where 
+    hasEnoughChips availableChips chipsNeeded = 
+      if availableChips >= chipsToSit
+      then return $ Right ()
+      else return $ Left NotEnoughChipsToSit
+    checkTableExists s name = do
+          t <- atomically $ getTable s name
+          case t of 
+            Nothing -> return $ Left $ TableDoesNotExist name
+            _ -> return $ Right ()
 
-getPlayersAvailableChips
-  :: ReaderT MsgHandlerConfig (ExceptT Err IO) (Either Err Int)
+
+getPlayersAvailableChips :: ReaderT MsgHandlerConfig (ExceptT Err IO) (Either Err Int)
 getPlayersAvailableChips = do
   MsgHandlerConfig {..} <- ask
   maybeUser             <- liftIO $ dbGetUserByUsername dbConn username
@@ -247,37 +255,3 @@ getPlayersAvailableChips = do
     Nothing -> Left $ UserDoesNotExistInDB (unUsername username)
     Just UserEntity {..} ->
       Right $ userEntityAvailableChips - userEntityChipsInPlay
-
-
--- first we check that table exists and player is sat the game at table otherwise we throw an error
--- then the player move is applied to the table which results in either a new game state which is 
--- broadcast to all table subscribers or an error is returned which is then only sent to the
--- originator of the invalid in-game move
-gameActionHandler
-  :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-gameActionHandler gameMove@(GameMove tableName action) = do
- -- liftIO $ print action
-  MsgHandlerConfig {..} <- ask
-  ServerState {..}      <- liftIO $ readTVarIO serverStateTVar
-  case M.lookup tableName $ unLobby lobby of
-    Nothing -> throwError $ TableDoesNotExist tableName
-    Just table@Table {..} ->
-      let satAtTable = unUsername username `elem` getGamePlayerNames game
-      in
-        if not satAtTable
-          then throwError $ NotSatAtTable tableName
-          else 
-            case
-                runPlayerAction
-                  game
-                  PlayerAction { name = unUsername username, .. }
-              of
-                Left gameErr -> do
-                  
-                 -- liftIO $ print "Error! :<"
-                 -- liftIO $ print gameErr
-                  throwError $ GameErr gameErr
-                Right newGame -> do
-               --   liftIO $ print "No error :)"
-               --   liftIO $ pPrint newGame
-                  return $ NewGameState tableName newGame
