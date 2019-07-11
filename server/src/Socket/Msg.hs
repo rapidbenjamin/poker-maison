@@ -150,7 +150,7 @@ subscribeToTable tableName MsgHandlerConfig {..} = do
 -- the waitlist is a queue awaiting the next predeal stage of the game
 takeSeatHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 takeSeatHandler (TakeSeat tableName chipsToSit) = do
-  msgHandlerConfig@MsgHandlerConfig {..} <- ask
+  conf@MsgHandlerConfig {..} <- ask
   ServerState {..}                       <- liftIO $ readTVarIO serverStateTVar
   case M.lookup tableName $ unLobby lobby of
     Nothing               -> throwError $ TableDoesNotExist tableName
@@ -175,19 +175,21 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
             of
               Left  gameErr -> throwError $ GameErr gameErr
               Right newGame -> do
-                liftIO $ dbDepositChipsIntoPlay dbConn
-                                                (unUsername username)
-                                                chipsToSit
-                when
-                  (username `notElem` subscribers)
-                  (liftIO $ atomically $ subscribeToTable tableName
-                                                          msgHandlerConfig
-                  )
+                liftIO $ postTakeSeat conf tableName chipsToSit
                 liftIO $ sendMsg clientConn
                                  (SuccessfullySatDown tableName newGame)
                 let msgOut =  NewGameState tableName newGame
                 liftIO $ handleNewGameState dbConn serverStateTVar msgOut
                 return msgOut
+
+postTakeSeat :: MsgHandlerConfig -> TableName -> Int -> IO ()
+postTakeSeat conf@MsgHandlerConfig{..} name chipsSatWith = do
+  dbDepositChipsIntoPlay dbConn
+    (unUsername username)
+    chipsSatWith
+  --when
+  --  (username `notElem` subscribers)
+  --  (atomically $ subscribeToTable name conf)
 
 
 leaveSeatHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
