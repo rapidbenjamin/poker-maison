@@ -100,46 +100,6 @@ getTablesHandler = do
   return tableSummaries
 
 
--- First we check the table exists and if the user is not already subscribed then we add them to the list of subscribers
--- Game and any other table updates will be propagated to those on the subscriber list
-subscribeToTableHandler
-  :: MsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
-subscribeToTableHandler (SubscribeToTable tableName) = do
-  liftIO $ putStrLn "CALLLLLLLLLLLLLLLLLLLLLLLLLED3"
-  msgHandlerConfig@MsgHandlerConfig {..} <- ask
-  ServerState {..}                       <- liftIO $ readTVarIO serverStateTVar
-  case M.lookup tableName $ unLobby lobby of
-    Nothing         -> throwError $ TableDoesNotExist tableName
-    Just Table {..} -> do
-      liftIO $ print subscribers
-      if username `notElem` subscribers
-        then do
-          liftIO $ atomically $ subscribeToTable tableName msgHandlerConfig
-          --liftIO $ sendMsg clientConn (GameMsgOut $ NewGameState tableName game)
-          liftIO $ sendMsg clientConn
-                           (SuccessfullySubscribedToTable tableName game)
-          return $ SuccessfullySubscribedToTable tableName game
-        else do
-          liftIO
-            $ sendMsg clientConn (ErrMsg $ AlreadySubscribedToTable tableName)
-          return $ ErrMsg $ AlreadySubscribedToTable tableName
-
-subscribeToTable :: TableName -> MsgHandlerConfig -> STM ()
-subscribeToTable tableName MsgHandlerConfig {..} = do
-  ServerState {..} <- readTVar serverStateTVar
-  let maybeTable = M.lookup tableName $ unLobby lobby
-  case maybeTable of
-    Nothing               -> throwSTM $ TableDoesNotExistInLobby tableName
-    Just table@Table {..} -> if username `notElem` subscribers
-      then do
-        let updatedTable =
-              Table { subscribers = subscribers <> [username], .. }
-        let updatedLobby   = insertTable tableName updatedTable lobby
-        let newServerState = ServerState { lobby = updatedLobby, .. }
-        swapTVar serverStateTVar newServerState
-        return ()
-      else throwSTM $ CannotAddAlreadySubscribed tableName
-
  
 
 -- We fork a new thread for each game joined to receive game updates and propagate them to the client
