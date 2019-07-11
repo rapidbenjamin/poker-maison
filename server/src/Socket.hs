@@ -251,27 +251,14 @@ msgOutEncoder = do
 msgInHandler :: MsgHandlerConfig -> Pipe MsgIn MsgOut IO ()
 msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
-  --liftIO $ print "msghandler : "
-  case msgIn of 
-    GameMsgIn m@(GameMove tableName _) -> do
-       res <- liftIO $ playMove conf m
-       case res of
-         Right g -> do
-           liftIO $ async $ toGameInMailbox serverStateTVar tableName g
-           liftIO $ atomically $ updateTable' serverStateTVar tableName g
-           return ()
-         Left  err -> yield $ ErrMsg err
-      
-    m -> do 
-      msgOutE <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
-      case msgOutE of
-        Right m@(NewGameState tableName g) -> do
-          liftIO $ async $ toGameInMailbox serverStateTVar tableName g
-          liftIO $ atomically $ updateTable' serverStateTVar tableName g
-          return ()
-        Right m   -> yield m
-        Left  err -> yield $ ErrMsg err
-  where sampleMsg = GameMsgOut PlayerLeft
+  res <- lift $ runExceptT $ runReaderT (msgHandler msgIn) conf
+  case res of
+    Left err -> yield $ ErrMsg err 
+    Right (NewGameState tableName g) -> do
+      liftIO $ async $ toGameInMailbox serverStateTVar tableName g
+      liftIO $ atomically $ updateTable' serverStateTVar tableName g
+      return ()
+    Right m -> yield m 
 
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()

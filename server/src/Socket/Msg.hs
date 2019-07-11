@@ -67,20 +67,20 @@ msgHandler (GameMsgIn msg)        = gameMsgHandler msg
 gameMsgHandler :: GameMsgIn -> ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
 gameMsgHandler msg@TakeSeat{}  = takeSeatHandler msg
 gameMsgHandler msg@LeaveSeat{} = leaveSeatHandler msg
-gameMsgHandler msg@GameMove{}  = undefined --FIX ME -- ADJUST TYPES
+gameMsgHandler m@(GameMove tableName action) =  do
+  conf@MsgHandlerConfig{..}  <- ask
+  let playerAction = PlayerAction { name = unUsername username, .. }
+  moveResult <- liftIO $ playMove conf tableName playerAction
+  return $ either ErrMsg (NewGameState tableName) moveResult
 
 
-
-playMove :: MsgHandlerConfig -> GameMsgIn -> IO (Either Err Game)
-playMove conf@MsgHandlerConfig{..}  m@(GameMove tableName action)   = do 
+playMove :: MsgHandlerConfig -> TableName -> PlayerAction -> IO (Either Err Game)
+playMove conf@MsgHandlerConfig{..} tableName playerAction  = do 
    maybeTable <- liftIO $ atomically $ getTable serverStateTVar tableName
    case maybeTable of
      Nothing -> return $ Left $ TableDoesNotExist tableName
      Just Table{..} -> do 
       return $ either (Left . GameErr) Right $ runPlayerAction game playerAction
-   where
-       playerAction = PlayerAction { name = unUsername username, .. }
-
 
 
 getTablesHandler :: ReaderT MsgHandlerConfig (ExceptT Err IO) MsgOut
