@@ -1,7 +1,7 @@
 {
-  "name": "fae-poker-client",
+  "name": "poker-client",
   "version": "1.0.0",
-  "description": "Client for fae poker server",
+  "description": "Poker Client",
   "repository": {
     "type": "git",
     "url": "git://github.com/flexdinesh/react-redux-boilerplate.git"
