@@ -86,8 +86,8 @@ import           Pipes.Parse             hiding ( decode
                                                 , encode
                                                 )
 import qualified Pipes.Prelude                 as P
-import Poker.Game.Privacy
-import Socket.Clients
+import           Poker.Game.Privacy
+import           Socket.Clients
 
 setUpTablePipes
   :: ConnectionString -> TVar ServerState -> TableName -> Table -> IO (Async ())
@@ -124,7 +124,7 @@ gamePipeline connStr s key name outMailbox inMailbox = do
   liftIO $ print "EFFECT"
   liftIO $ print "EFFECT"
   liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT" 
+  liftIO $ print "EFFECT"
   fromInput outMailbox
     >-> broadcast s name
     >-> logGame name
@@ -133,7 +133,6 @@ gamePipeline connStr s key name outMailbox inMailbox = do
     >-> progress inMailbox
     -- should all be in stm monad not IO
 
-    -- updateServerState (lobby)
 
 -- Delay to enhance UX based on game stages
 pause :: Pipe Game Game IO ()
@@ -144,11 +143,9 @@ pause = do
 
 
 pauseDuration :: Game -> Int
-pauseDuration Game{..} 
-    | _street == PreDeal = 0
-    | otherwise = 2 * 1000000 -- 2 seconds
+pauseDuration Game {..} | _street == PreDeal = 0
+                        | otherwise          = 2 * 1000000 -- 2 seconds
 
-    
 
 -- Progresses to the next state which awaits a player action.
 --
@@ -174,27 +171,23 @@ progress inMailbox = do
   progress' game = do
     gen <- liftIO getStdGen
     liftIO $ print "PIPE PROGRESSING GAME"
-    liftIO $ print "PIPE PROGRESSING GAME"
-    liftIO $ print "PIPE PROGRESSING GAME"
     liftIO $ threadDelay $ pauseDuration game
-    
-
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 
 
 writeGameToDB :: ConnectionString -> Key TableEntity -> Pipe Game Game IO ()
-writeGameToDB connStr tableKey = do 
+writeGameToDB connStr tableKey = do
   g <- await
   liftIO $ dbInsertGame connStr tableKey g
   yield g
 
-  
+
 
 -- write MsgOuts for new game states to outgoing mailbox for
 -- client's who are observing the table
 -- ensure they only get to see data they are allowed to see
 informSubscriber :: TableName -> Game -> Client -> IO ()
-informSubscriber n g Client{..} = do
+informSubscriber n g Client {..} = do
   print "informing subscriber"
   let filteredGame = excludeOtherPlayerCards clientUsername g
   runEffect $ yield (NewGameState n filteredGame) >-> toOutput outgoingMailbox
@@ -204,33 +197,22 @@ informSubscriber n g Client{..} = do
 -- sends new game states to subscribers
 -- At the moment all clients receive updates from every game indiscriminately
 broadcast :: TVar ServerState -> TableName -> Pipe Game Game IO ()
-broadcast s n =  do
-  g <- await
+broadcast s n = do
+  g                <- await
   ServerState {..} <- liftIO $ readTVarIO s
-  liftIO $ print "BROADCASTING"
-  liftIO $ print "BROADCASTING"
-  liftIO $ print "BROADCASTING"
-  liftIO $ print "BROADCASTING"
-  liftIO $ print "BROADCASTING"
-  liftIO $ print "BROADCASTING"
   liftIO $ print "BROADCASTING"
   let usernames' = M.keys clients -- usernames to broadcast to
   -- TODO
   -- 
   -- MUST filter out private data 
-  liftIO $ async $ mapM_ (informSubscriber n g ) clients
+  liftIO $ async $ mapM_ (informSubscriber n g) clients
   yield g
 
 logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do
   g <- await
-  liftIO $ print "111111111111111111111"
-  liftIO $ print $ length $  _players g
-  liftIO $ print
-    "woop /n \n \n table \n /n \n pipe \n got \n  a \n \n \n /n/n/n\n\n game"
   liftIO $ print g
   yield g
-
 
 
 -- Lookups up a table with the given name and writes the new game state
@@ -271,9 +253,10 @@ getTable s tableName = do
 
 updateTable :: TVar ServerState -> TableName -> Pipe Game Game IO ()
 updateTable serverStateTVar tableName = do
-   g <- await
-   liftIO $ async $ atomically $ updateTable' serverStateTVar tableName g
-   yield g
+  g <- await
+  liftIO $ async $ atomically $ updateTable' serverStateTVar tableName g
+  yield g
+
 
 updateTable' :: TVar ServerState -> TableName -> Game -> STM ()
 updateTable' serverStateTVar tableName newGame = do
@@ -284,6 +267,7 @@ updateTable' serverStateTVar tableName newGame = do
       let updatedLobby = updateTableGame tableName newGame lobby
       swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
       return ()
+
 
 updateTableGame :: TableName -> Game -> Lobby -> Lobby
 updateTableGame tableName newGame (Lobby lobby) = Lobby

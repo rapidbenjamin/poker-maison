@@ -87,9 +87,8 @@ import           Pipes.Parse             hiding ( decode
                                                 , encode
                                                 )
 import qualified Pipes.Prelude                 as P
-import Poker.Game.Privacy
-import Socket.Clients
-
+import           Poker.Game.Privacy
+import           Socket.Clients
 
 
 -- | Forks a thread which timeouts the player when they dont act in sufficient time
@@ -115,8 +114,6 @@ playerTimeoutLoop tableName channel msgHandlerConfig@MsgHandlerConfig {..} = do
                                                          tableName
                                                          username
       _ -> return ()
-
-
 
 
 -- We read from a duplicate of the channel which reads msgs from the client socket.

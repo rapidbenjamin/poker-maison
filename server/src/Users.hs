@@ -84,10 +84,6 @@ fetchUserProfileHandler connString username' = do
 hashPassword :: Text -> Text
 hashPassword password = T.pack $ C.unpack $ H.hash $ encodeUtf8 password
 
-------------------------------------------------------------------------
--- | Handlers
-
-
 
 --unprotectedUsers :: JWTSettings -> Server Unprotected
 --unprotectedUsers jwts = checkCreds cs jwts :<|> serveDirectory "example/static"

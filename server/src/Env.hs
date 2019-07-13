@@ -37,6 +37,7 @@ getRedisHostFromEnv defaultHostName = do
       return $ defaultConnectInfo { connectHost = hostname }
   where defaultRedisConn = defaultConnectInfo { connectHost = defaultHostName }
 
+
 -- get the postgres connection string from dbConnStr env variable
 getDBConnStrFromEnv :: IO C.ByteString
 getDBConnStrFromEnv = do
@@ -44,6 +45,7 @@ getDBConnStrFromEnv = do
   case dbConnStr of
     Nothing   -> error "Missing dbConnStr in env"
     Just conn -> return $ C.pack conn
+
 
 -- get the port from the userAPIPort env variable
 getAuthAPIPort :: Int -> IO Int
@@ -53,6 +55,7 @@ getAuthAPIPort defaultPort = do
     Nothing   -> return defaultPort
     Just port -> maybe (return defaultPort) return (readMaybe port)
 
+
 -- get the port from the socketAPIPort env variable
 getSocketAPIPort :: Int -> IO Int
 getSocketAPIPort defaultPort = do
@@ -61,6 +64,7 @@ getSocketAPIPort defaultPort = do
     Nothing   -> return defaultPort
     Just port -> maybe (return defaultPort) return (readMaybe port)
 
+    
 -- get the secret key for signing JWT authentication tokens
 getSecretKey = do
   maybeSecretKey <- lookupEnv "secret"

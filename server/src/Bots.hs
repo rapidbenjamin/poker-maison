@@ -56,15 +56,13 @@ import           Socket.Lobby
 import           Socket.Subscriptions
 import           Socket.Types
 import           Socket.Msg
-import Socket.Table
+import           Socket.Table
 import           Socket.Utils
 
 import           Database
 
 import           System.Random
 import           Types
-
-
 
 
 
@@ -93,7 +91,6 @@ bot4 = initPlayer "101@101" 2000
 bot5 :: Player
 bot5 = initPlayer "102@102" 2000
 
---    dupTableChanMsg <- atomically $ readTChan dupTableChan
 
 startBotActionLoops
   :: ConnectionString -> TVar ServerState -> Int -> [PlayerName] -> IO ()
@@ -127,7 +124,7 @@ botActionLoop dbConn s tableChan playersToWaitFor botName = forkIO $ do
       _ -> return ()
  where
   shouldn'tStartGameYet Game {..} =
-    (_street == PreDeal && ((length $ _players) < playersToWaitFor))
+    _street == PreDeal && ((length _players) < playersToWaitFor)
   actIfNeeded g' pName' =
     let hasToAct = doesPlayerHaveToAct pName' g'
     in  when (hasToAct || (blindRequiredByPlayer g' pName' /= NoBlind)) $ do
@@ -147,7 +144,7 @@ runBotAction dbConn serverStateTVar g pName = do
       let eitherNewGame = runPlayerAction g a
       case eitherNewGame of
         Left  gameErr -> print (show $ GameErr gameErr) >> return ()
-        Right g -> do
+        Right g       -> do
           liftIO $ async $ toGameInMailbox serverStateTVar tableName g
           liftIO $ atomically $ updateTable' serverStateTVar tableName g
  where
@@ -164,14 +161,14 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
       let eitherNewGame = runPlayerAction game takeSeatAction
       case eitherNewGame of
         Left  gameErr -> print $ GameErr gameErr
-        Right g -> do
+        Right g       -> do
           dbDepositChipsIntoPlay dbConn _playerName chipsToSit
           liftIO $ async $ toGameInMailbox serverStateTVar tableName g
           liftIO $ atomically $ updateTable' serverStateTVar tableName g
-  where
-    chipsToSit     = 2000
-    tableName      = "Black"
-    takeSeatAction = PlayerAction { name = _playerName, action = SitDown player }
+ where
+  chipsToSit     = 2000
+  tableName      = "Black"
+  takeSeatAction = PlayerAction { name = _playerName, action = SitDown player }
 
 
 actions :: Street -> Int -> [Action]
@@ -194,12 +191,12 @@ getValidAction g@Game {..} name
     print actionPairs
     let validActions = (<$>) fst $ filter (isRight . snd) actionPairs
     print validActions
-    if null validActions then panic else return ()
+    when (null validActions) panic
     randIx <- randomRIO (0, length validActions - 1)
     return $ Just $ PlayerAction { action = validActions !! randIx, .. }
  where
-  lowerBetBound = if (_maxBet > 0) then (2 * _maxBet) else _bigBlind
-  chipCount     = fromMaybe 0 ((^. chips) <$> (getGamePlayer g name))
+  lowerBetBound = if (_maxBet > 0) then 2 * _maxBet else _bigBlind
+  chipCount     = maybe 0 (^. chips) (getGamePlayer g name)
   panic         = do
     print $ "UHOH no valid actions for " <> show name
     print g
