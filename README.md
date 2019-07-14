@@ -27,7 +27,7 @@ Start server
 
 Run local server to serve static assets
 
-``cd client/static && static-server`
+`cd client/static && static-server`
 
 Start front end
 
