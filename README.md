@@ -3,8 +3,7 @@
 Multiplayer poker site built with Haskell and React.
 
 
-![alt text](https://ibb.co/gvh5rqF "poker")
-
+![screenshot](https://i.imgur.com/lO9B6dB.png)
 
 
 To run the app locally carry out the following steps.
