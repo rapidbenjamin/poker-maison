@@ -14,20 +14,20 @@ const getSeatedPlayer = (
   position,
   isTurnToAct
 ) => (
-  <Seat
-    key={position}
-    position={position}
-    playerName={player.get('_playerName')}
-    chips={player.get('_chips')}
-    hasPocketCards={
-      player.get('_playerName') !== username &&
-      player.get('_playerState') === 'In' &&
-      gameStage !== 'PreDeal' &&
-      gameStage !== 'Showdown'
-    }
-    isTurnToAct={isTurnToAct && gameStage !== 'Showdown'}
-  />
-)
+    <Seat
+      key={position}
+      position={position}
+      playerName={player.get('_playerName')}
+      chips={player.get('_chips')}
+      hasPocketCards={
+        player.get('_playerName') !== username &&
+        player.get('_playerState') === 'In' &&
+        gameStage !== 'PreDeal' &&
+        gameStage !== 'Showdown'
+      }
+      isTurnToAct={isTurnToAct && gameStage !== 'Showdown'}
+    />
+  )
 
 const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct) =>
   Array(maxPlayers)
@@ -39,8 +39,8 @@ const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct) =>
       return player ? (
         getSeatedPlayer(username, player, gameStage, i, isTurnToAct)
       ) : (
-        <Seat key={i} position={i} />
-      )
+          <Seat key={i} position={i} />
+        )
     })
 
 const getPocketCards = players =>
@@ -61,8 +61,8 @@ const getPocketCards = players =>
         </div>
       </div>
     ) : (
-      ''
-    )
+        ''
+      )
   })
 
 const getPlayerBets = players =>
@@ -78,8 +78,8 @@ const getPlayerBets = players =>
           </div>
         </div>
       ) : (
-        ''
-      )
+          ''
+        )
   )
 
 const Game = props => {
@@ -87,7 +87,6 @@ const Game = props => {
 
   if (game) {
     const jsgame = game.toJS()
-    console.log(jsgame)
     const players = game.get('_players')
     const dealerPos = game.get('_dealer')
     const maxPlayers = 6
@@ -122,13 +121,6 @@ const Game = props => {
     return (
       <div className="game-view-grid">
         <div className="game-container">
-          <p style={{ height: '300px', top: '80px', position: 'absolute' }}>
-            {JSON.stringify(
-              { ...jsgame, isTurnToAct, username },
-              undefined,
-              '\n'
-            )}
-          </p>
           <div className="table-container">
             {getPocketCards(players)}
             {getSeats(
@@ -143,11 +135,11 @@ const Game = props => {
                 players.count() > 1 ? (
                   <div className={`dealer-btn-pos-${dealerPos}`} />
                 ) : (
-                  ''
-                )
+                    ''
+                  )
               ) : (
-                ''
-              )}
+                  ''
+                )}
               <Board cards={game.get('_board')} />
               {getPlayerBets(players)}
               <h4 className="pot-label">
@@ -158,8 +150,8 @@ const Game = props => {
                   {`${mainShowdownPotHandPlayers} wins with ${mainShowdownPotHandRanking}`}
                 </p>
               ) : (
-                ''
-              )}
+                  ''
+                )}
             </div>
             <div className="game-table" />
           </div>

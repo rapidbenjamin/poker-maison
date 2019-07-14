@@ -1,18 +1,42 @@
 # Haskell Poker
 
-Start dev DB
+Multiplayer poker site built with Haskell and React.
+
+
+![alt text](https://ibb.co/gvh5rqF "poker")
+
+
+
+To run the app locally carry out the following steps.
+
+System dependencies you need are nodejs, ghc, stack, docker and libpq (c bindings to postgres)
+
+Start Postgres DB
+
 `docker-compose up`
+
+Alternatively you can skip docker and just connect to a postgres server you have running.
+
+Start redis server
+
+`redis-server`
 
 Start server
 
-`dbConnStr='host=0.0.0.0 port=5432 user=postgres dbname=poker2 password=postgres' secret="secret" stack run`
+`dbConnStr='host=0.0.0.0 port=5432 user=postgres dbname=postgres password=postgres' secret="secret" stack run`
 
-run local server to serve static assets (this should be incorporated into servant server)
+
+Run local server to serve static assets
+
 ``cd client/static && static-server`
 
-Run front end
+Start front end
 
-`cd client && yarn start`
+`cd client && yarn install && yarn start`
+
+
+If you are interested in contributing have a look at the issues.
+
 
 ## License
 
