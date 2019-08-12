@@ -35,11 +35,8 @@
     "bs-clean": "bsb -clean-world"
   },
   "dependencies": {
-    "@glennsl/bs-json": "^4.0.0",
     "axios": "^0.18.0",
     "babel-polyfill": "6.26.0",
-    "bs-abstract": "^0.17.0",
-    "bs-fetch": "^0.4.0",
     "chalk": "^2.3.2",
     "compression": "1.7.3",
     "cross-env": "^5.1.6",
