@@ -138,9 +138,19 @@ filterPrivateGameData username (NewGameState tableName game) =
   NewGameState tableName (excludeOtherPlayerCards username game)
 filterPrivateGameData _ unfilteredMsg = unfilteredMsg
 
-getSubscribedGames :: Client -> Lobby -> [(TableName, Table)]
-getSubscribedGames Client{..} (Lobby lobby) = 
-    filter (subscriberIncludesClient . snd) (M.toList lobby) 
+getTablesUserSubscribedTo :: Client -> Lobby -> [(TableName, Table)]
+getTablesUserSubscribedTo Client{..} (Lobby lobby) = 
+  filter (subscriberIncludesClient . snd) (M.toList lobby) 
     where
       subscriberIncludesClient Table{..} = 
         elem (Username clientUsername) subscribers 
+
+tablesToMsgs :: Text -> [(TableName, Table)] -> [MsgOut]
+tablesToMsgs clientUsername' =  (<$>) toFilteredMsg
+  where 
+    gameToMsg (tableName, Table{..}) = NewGameState tableName game
+    toFilteredMsg = ((filterPrivateGameData clientUsername') . gameToMsg)
+
+getLatestSubscribedGames :: Client -> Lobby -> [MsgOut]
+getLatestSubscribedGames c@Client{..} l = (tablesToMsgs clientUsername $ getTablesUserSubscribedTo c l)
+
