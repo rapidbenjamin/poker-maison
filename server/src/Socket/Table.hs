@@ -171,7 +171,7 @@ progress inMailbox = do
   progress' game = do
     gen <- liftIO getStdGen
     liftIO $ print "PIPE PROGRESSING GAME"
-    liftIO $ threadDelay $ pauseDuration game
+    when (everyoneAllIn game) $ liftIO $ threadDelay $ pauseDuration game
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 
 
