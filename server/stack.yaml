@@ -37,7 +37,7 @@ extra-deps:
   - reason-export-0.1.2.0@sha256:0b2747ef19bf6f3c8a305b5ad55e9fa19c917d96ef7d6bf4a238402338418f09
 
 nix:
-  enable: true
+  enable: false
   pure: false
   packages: [ postgresql zlib ]
 

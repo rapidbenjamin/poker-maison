@@ -308,11 +308,12 @@ application secretKey dbConnString redisConfig s pending = do
                                  (Token authMsg)
   case eUsername of
     Right u@(Username clientUsername) -> do
+      (incomingMailbox, outgoingMailbox) <- websocketInMailbox $ msgConf conn u
       let client = Client {..}
       sendMsg conn AuthSuccess
-      (incomingMailbox, outgoingMailbox) <- websocketInMailbox $ msgConf conn u
+      let isReconnect = client `elem` clients
+      when isReconnct $ updateWithLatestGames client@Client{..} lobby
       atomically $ addClient s client
-      updateWithLatestGames client lobby
       forever $ do
         m <- WS.receiveData conn
         runEffect
@@ -329,9 +330,6 @@ application secretKey dbConnString redisConfig s pending = do
     }
 
 
---    runEffect
---    $   msgInDecoder (yield m >-> logMsgIn)
---    >-> toOutput incomingMailbox
 --  
 ---- used so that reconnected users can get up to speed on games when they regain connection
 ---- after a disconnect.
