@@ -312,7 +312,7 @@ application secretKey dbConnString redisConfig s pending = do
       let client = Client {..}
       sendMsg conn AuthSuccess
       let isReconnect = client `elem` clients
-      when isReconnct $ updateWithLatestGames client@Client{..} lobby
+      when isReconnect $ updateWithLatestGames client lobby
       atomically $ addClient s client
       forever $ do
         m <- WS.receiveData conn
@@ -333,10 +333,11 @@ application secretKey dbConnString redisConfig s pending = do
 --  
 ---- used so that reconnected users can get up to speed on games when they regain connection
 ---- after a disconnect.
-updateWithLatestGames client@Client{..} lobby = 
+updateWithLatestGames client@Client{..} lobby = do
     async
       $ runEffect
-      $ for (each latestGameStates) (\msg -> yield msg >-> toOutput outgoingMailbox) 
+      $ for (each latestGameStates) (\msg -> yield msg >-> toOutput outgoingMailbox)
+    return ()
   where latestGameStates = getSubscribedGameStates client lobby
 
 
