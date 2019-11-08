@@ -6,7 +6,9 @@ Multiplayer poker site built with Haskell and React.
 ![screenshot](https://i.imgur.com/lO9B6dB.png)
 
 
-To run the app locally carry out the following steps.
+# Server
+
+To run the server locally carry out the following steps.
 
 System dependencies you need are nodejs, ghc, stack, docker and libpq (c bindings to postgres)
 
@@ -25,9 +27,14 @@ Start server
 `dbConnStr='host=0.0.0.0 port=5432 user=postgres dbname=postgres password=postgres' secret="secret" stack run`
 
 
-Run local server to serve static assets
+# Client
 
-`cd client/static && static-server`
+Install system dependency needed for node-sass 
+`sudo apt-get install libpng-dev`
+
+Run a little local server to serve static assets
+Enter this from project root.
+`npm i -g static-server && cd client/static && static-server`
 
 Start front end
 
