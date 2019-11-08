@@ -46,6 +46,7 @@ import           Poker.Game.Privacy             ( excludeAllPlayerCards
 import qualified Data.ByteString.Lazy.Char8    as C
 import           Socket.Auth
 import           Pipes.Concurrent
+import Prelude
 
 authClient
   :: BS.ByteString
@@ -136,3 +137,10 @@ filterPrivateGameData username (SuccessfullySubscribedToTable tableName game) =
 filterPrivateGameData username (NewGameState tableName game) =
   NewGameState tableName (excludeOtherPlayerCards username game)
 filterPrivateGameData _ unfilteredMsg = unfilteredMsg
+
+getSubscribedGames :: Client -> Lobby -> [(TableName, Table)]
+getSubscribedGames Client{..} (Lobby lobby) = 
+    filter (subscriberIncludesClient . snd) (M.toList lobby) 
+    where
+      subscriberIncludesClient Table{..} = 
+        elem (Username clientUsername) subscribers 
