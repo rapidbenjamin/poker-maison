@@ -4,7 +4,7 @@
 module Socket.Clients where
 
 
-import           Control.Concurrent
+import           Control.Concurrent hiding (each, yield)
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
 import           Control.Concurrent.STM.TChan
@@ -45,6 +45,10 @@ import           Poker.Game.Privacy             ( excludeAllPlayerCards
                                                 )
 import qualified Data.ByteString.Lazy.Char8    as C
 import           Socket.Auth
+import           Pipes.Aeson
+import           Pipes
+import           Pipes.Core                     ( push )
+import           Pipes.Concurrent
 import           Pipes.Concurrent
 import Prelude
 
@@ -154,3 +158,13 @@ tablesToMsgs clientUsername' =  (<$>) toFilteredMsg
 getSubscribedGameStates :: Client -> Lobby -> [MsgOut]
 getSubscribedGameStates c@Client{..} l = (tablesToMsgs clientUsername $ getTablesUserSubscribedTo c l)
 
+
+
+---- used so that reconnected users can get up to speed on games when they regain connection
+---- after a disconnect.
+updateWithLatestGames client@Client{..} lobby = do
+  async
+    $ runEffect
+    $ for (each latestGameStates) (\msg -> yield msg >-> toOutput outgoingMailbox)
+  return ()
+  where latestGameStates = getSubscribedGameStates client lobby
