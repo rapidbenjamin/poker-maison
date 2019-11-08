@@ -151,6 +151,6 @@ tablesToMsgs clientUsername' =  (<$>) toFilteredMsg
     gameToMsg (tableName, Table{..}) = NewGameState tableName game
     toFilteredMsg = ((filterPrivateGameData clientUsername') . gameToMsg)
 
-getLatestSubscribedGames :: Client -> Lobby -> [MsgOut]
-getLatestSubscribedGames c@Client{..} l = (tablesToMsgs clientUsername $ getTablesUserSubscribedTo c l)
+getSubscribedGameStates :: Client -> Lobby -> [MsgOut]
+getSubscribedGameStates c@Client{..} l = (tablesToMsgs clientUsername $ getTablesUserSubscribedTo c l)
 

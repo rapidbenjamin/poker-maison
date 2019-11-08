@@ -69,9 +69,8 @@ subscribeToTableHandler (SubscribeToTable tableName) = do
                            (SuccessfullySubscribedToTable tableName game)
           return $ Right $ SuccessfullySubscribedToTable tableName game
         else do
-          liftIO
-            $ sendMsg clientConn (ErrMsg $ AlreadySubscribedToTable tableName)
-          return $ Left $ AlreadySubscribedToTable tableName
+          return $ Right $ SuccessfullySubscribedToTable tableName game
+
 
           
 subscribeToTable :: TableName -> MsgHandlerConfig -> STM ()

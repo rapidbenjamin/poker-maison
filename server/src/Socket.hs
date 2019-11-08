@@ -28,7 +28,7 @@ import           Socket.Types
 import           Socket.Workers
 import           Types
 
-import           Control.Lens            hiding ( Fold )
+import           Control.Lens            hiding ( Fold, each)
 import           Database
 import           Poker.Types             hiding ( LeaveSeat )
 --import           Data.Traversable
@@ -98,6 +98,7 @@ import qualified Pipes.Prelude                 as P
 import           Socket.Table
 import           Socket.TimeAction
 import           Bots
+import Socket.Clients (getSubscribedGameStates)
 
 
 initialServerState :: Lobby -> ServerState
@@ -307,9 +308,11 @@ application secretKey dbConnString redisConfig s pending = do
                                  (Token authMsg)
   case eUsername of
     Right u@(Username clientUsername) -> do
+      let client = Client {..}
       sendMsg conn AuthSuccess
       (incomingMailbox, outgoingMailbox) <- websocketInMailbox $ msgConf conn u
-      atomically $ addClient s Client { .. }
+      atomically $ addClient s client
+      updateWithLatestGames client lobby
       forever $ do
         m <- WS.receiveData conn
         runEffect
@@ -324,4 +327,18 @@ application secretKey dbConnString redisConfig s pending = do
     , redisConfig     = redisConfig
     , ..
     }
+
+
+--    runEffect
+--    $   msgInDecoder (yield m >-> logMsgIn)
+--    >-> toOutput incomingMailbox
+--  
+---- used so that reconnected users can get up to speed on games when they regain connection
+---- after a disconnect.
+updateWithLatestGames client@Client{..} lobby = 
+    async
+      $ runEffect
+      $ for (each latestGameStates) (\msg -> yield msg >-> toOutput outgoingMailbox) 
+  where latestGameStates = getSubscribedGameStates client lobby
+
 
