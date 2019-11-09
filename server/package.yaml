@@ -38,6 +38,7 @@ dependencies:
   - ekg
   - containers
   - cryptohash
+  - hashable
   - bytestring
   - servant-reason
   - reason-export
