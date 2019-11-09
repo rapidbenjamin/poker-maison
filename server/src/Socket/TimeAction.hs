@@ -60,8 +60,6 @@ import           Data.ByteString.UTF8           ( fromString )
 import           Database
 import           Schema
 
-import           Poker.Poker
-import           Crypto.JWT
 import qualified Data.Aeson                    as A
 
 import           Data.ByteString.Lazy           ( fromStrict
@@ -71,7 +69,7 @@ import           Data.ByteString.Lazy           ( fromStrict
 import           Data.Aeson                     ( FromJSON
                                                 , ToJSON
                                                 )
-import           Poker.Types
+import           Data.Hashable
 
 import           Control.Monad
 import           Control.Exception
@@ -87,9 +85,19 @@ import           Pipes.Parse             hiding ( decode
                                                 , encode
                                                 )
 import qualified Pipes.Prelude                 as P
+
 import           Poker.Game.Privacy
 import           Socket.Clients
+import           Poker.Types
+import           Poker.Poker
 
+                
+                
+--  when playerHasToAct $ do
+
+
+-----------------------------------------
+-- VERSION 1 OF TIMEOUTS BELOW ---------
 
 -- | Forks a thread which timeouts the player when they dont act in sufficient time
 -- We fork this thread using async once a player sits down at a table

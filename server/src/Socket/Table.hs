@@ -58,6 +58,7 @@ import           Data.ByteString.UTF8           ( fromString )
 
 import           Database
 import           Schema
+import qualified Data.List.Safe                as Safe
 
 import           Poker.Poker
 import           Crypto.JWT
@@ -115,7 +116,7 @@ gamePipeline
   -> Input Game
   -> Output Game
   -> Effect IO ()
-gamePipeline connStr s key name outMailbox inMailbox = do
+gamePipeline connStr s key tableName outMailbox inMailbox = do
   liftIO $ print "EFFECT"
   liftIO $ print "EFFECT"
   liftIO $ print "EFFECT"
@@ -126,13 +127,58 @@ gamePipeline connStr s key name outMailbox inMailbox = do
   liftIO $ print "EFFECT"
   liftIO $ print "EFFECT"
   fromInput outMailbox
-    >-> broadcast s name
-    >-> logGame name
-    >-> updateTable s name
+    >-> broadcast s tableName
+    >-> logGame tableName
+    >-> updateTable s tableName
     >-> writeGameToDB connStr key
-    >-> pause
+   -- >-> pause
+    >-> timePlayer s tableName
     >-> progress inMailbox
     -- should all be in stm monad not IO
+
+
+-- Delay to enhance UX based on game stages
+timePlayer ::  TVar ServerState -> TableName -> Pipe Game Game IO ()
+timePlayer s tableName = do
+  g <- await
+  liftIO $ forM_ (currPlayerNameToAct g) $ runPlayerTimer s tableName g
+  yield g
+  where
+    currPlayerNameToAct g@Game{..} = 
+        ((!!) (getGamePlayerNames g)) <$> _currentPosToAct
+
+-----------------------------------
+-- VERSION 2 OF TIMEOUTS  - v1 is in timeaction file---------
+
+-- this version is better than version one because now
+-- each client thread isn't watching to see if there is a 
+--need to time their respective player
+--
+-- Instead, there is just one centralised game watcher which just uses
+-- the game state when the timer starts and compares it with 
+-- the game state when the timer ends.
+-- if the is the same then the game state hasn't changed
+-- which means the player we are timing hasnt acted.
+
+-- If this is the case then we can deliver a timeout action
+-- to force the progression of the game.
+runPlayerTimer :: TVar ServerState -> TableName -> Game -> PlayerName -> IO (Async ())
+runPlayerTimer s tableName gameWhenTimerStarts plyrName = 
+  async $ do 
+    threadDelay (5 * 1000000) -- 5 seconds
+    mbTable <- atomically $ getTable s tableName
+    case mbTable of 
+      Nothing -> return ()
+      Just Table{..} -> do 
+        let
+          gameHasNotProgressed = gameWhenTimerStarts == game
+          playerStillHasToAct = doesPlayerHaveToAct plyrName game
+        when (gameHasNotProgressed && playerStillHasToAct) $
+           case runPlayerAction game timeoutAction of
+              Left err -> print err
+              Right progressedGame -> 
+                runEffect $ yield progressedGame >-> toOutput gameInMailbox  
+  where timeoutAction = PlayerAction {name = plyrName, action = Timeout }
 
 
 -- Delay to enhance UX based on game stages
@@ -182,7 +228,6 @@ writeGameToDB connStr tableKey = do
   g <- await
   liftIO $ dbInsertGame connStr tableKey g
   yield g
-
 
 
 -- write MsgOuts for new game states to outgoing mailbox for
