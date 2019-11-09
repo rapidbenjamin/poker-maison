@@ -17,6 +17,7 @@ import           Data.Text
 import           Database.Persist.TH
 import qualified Data.Text.Lazy                as LT
 import           GHC.Generics
+import           Data.Hashable
 
 import           Text.Pretty.Simple
 
@@ -35,7 +36,7 @@ data Rank
   | Queen
   | King
   | Ace
-  deriving (Eq, Read, Ord, Bounded, Enum, Generic, ToJSON, FromJSON)
+  deriving (Eq, Read, Ord, Bounded, Enum, Generic, ToJSON, FromJSON, Hashable)
 
 instance Show Rank where
   show x = case x of
@@ -58,7 +59,7 @@ data Suit
   | Diamonds
   | Hearts
   | Spades
-  deriving (Eq, Ord, Bounded, Enum, Read, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Bounded, Enum, Read, Generic, ToJSON, FromJSON, Hashable)
 
 instance Show Suit where
   show x = case x of
@@ -70,7 +71,7 @@ instance Show Suit where
 data Card = Card
   { rank :: Rank
   , suit :: Suit
-  } deriving (Eq, Read, Generic, ToJSON, FromJSON)
+  } deriving (Eq, Read, Generic, ToJSON, FromJSON, Hashable)
 
 instance Ord Card where
   compare = compare `on` rank
@@ -88,7 +89,7 @@ data HandRank
   | FullHouse
   | Quads
   | StraightFlush
-  deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Show, Read, Generic, ToJSON, FromJSON, Hashable)
 
 type Bet = Int
 
@@ -97,7 +98,7 @@ data PlayerState
   = SatOut -- SatOut denotes a player that will not be dealt cards unless they send a postblinds action to the server
   | Folded
   | In
-  deriving (Eq, Show, Ord, Enum, Bounded, Read, Generic, ToJSON, FromJSON)
+  deriving (Eq, Show, Ord, Enum, Bounded, Read, Generic, ToJSON, FromJSON, Hashable)
 
 data Street
   = PreDeal
@@ -106,7 +107,7 @@ data Street
   | Turn
   | River
   | Showdown
-  deriving (Eq, Ord, Show, Read, Bounded, Enum, Generic, ToJSON, FromJSON)
+  deriving (Eq, Ord, Show, Read, Bounded, Enum, Generic, ToJSON, FromJSON, Hashable)
 
 data Player = Player
   { _pockets :: Maybe PocketCards
@@ -116,11 +117,11 @@ data Player = Player
   , _playerName :: Text
   , _committed :: Bet
   , _actedThisTurn :: Bool
-  } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  } deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 data PocketCards =
   PocketCards Card Card
-  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 
 unPocketCards :: PocketCards -> [Card]
@@ -130,7 +131,7 @@ unPocketCards (PocketCards c1 c2) = [c1, c2]
 -- during the Showdown stage of the game (last stage)
 newtype PlayerShowdownHand =
   PlayerShowdownHand [Card]
-  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 unPlayerShowdownHand :: PlayerShowdownHand -> [Card]
 unPlayerShowdownHand (PlayerShowdownHand cards) = cards
@@ -146,11 +147,11 @@ data Winners
   = MultiPlayerShowdown [((HandRank, PlayerShowdownHand), PlayerName)]
   | SinglePlayerShowdown PlayerName -- occurs when everyone folds to one player
   | NoWinners -- todo - remove this and wrap whole type in a Maybe
-  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 newtype Deck =
   Deck [Card]
-  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 unDeck :: Deck -> [Card]
 unDeck (Deck cards) = cards
@@ -171,7 +172,7 @@ data Game = Game
   , _maxBet :: Bet
   , _dealer :: Int
   , _currentPosToAct :: Maybe Int -- Nothing if no player can act (i.e everyone all in)
-  } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 instance Show Game where
   show Game {..} =
@@ -206,12 +207,12 @@ data Blind
   = Small
   | Big
   | NoBlind
-  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 data PlayerAction = PlayerAction {
   name :: PlayerName ,
   action :: Action
-} deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+} deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 
 -- If you can check, that is you aren't facing an amount you have to call, 
@@ -238,7 +239,7 @@ data Action
   | SitOut
   | SitIn
   | Timeout
-  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Read, Ord, Generic, ToJSON, FromJSON, Hashable)
 
 data GameErr
   = NotEnoughChips PlayerName

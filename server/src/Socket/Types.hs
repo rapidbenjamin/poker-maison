@@ -32,6 +32,8 @@ import           Types                          ( RedisConfig
 
 import           Pipes.Concurrent
 
+
+
 data MsgHandlerConfig = MsgHandlerConfig
   { dbConn :: ConnectionString
   , serverStateTVar :: TVar ServerState
