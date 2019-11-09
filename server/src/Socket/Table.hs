@@ -108,6 +108,9 @@ setUpTablePipes connStr s name Table {..} = do
 -- incoming mailbox for new game states.
 -- New game states are send to the table's incoming mailbox every time a player acts
 -- in a way that follows the game rules 
+--
+-- Delays at the end of each game stage (Flop, River etc) for UX
+-- are done client side.
 gamePipeline
   :: ConnectionString
   -> TVar ServerState

@@ -278,6 +278,7 @@ initPlayer playerName chips = Player { _pockets       = Nothing
                                      , _bet           = 0
                                      , _playerState   = In
                                      , _playerName    = playerName
+                                     , _possibleActions = []
                                      , _committed     = 0
                                      , _actedThisTurn = False
                                      , _chips         = chips
@@ -397,8 +398,9 @@ everyoneAllIn :: Game -> Bool
 everyoneAllIn = (== 0) . countPlayersNotAllIn
 
 countPlayersNotAllIn :: Game -> Int
-countPlayersNotAllIn game@Game {..} | numPlayersIn < 2 = 0
-                                    | otherwise = numPlayersIn - numPlayersAllIn
+countPlayersNotAllIn game@Game {..} 
+  | numPlayersIn < 2 = 0
+  | otherwise = numPlayersIn - numPlayersAllIn
  where
   numPlayersIn = length $ getActivePlayers _players
   numPlayersAllIn =
