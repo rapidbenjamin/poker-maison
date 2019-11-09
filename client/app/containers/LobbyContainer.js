@@ -8,7 +8,8 @@ import Lobby from '../components/Lobby'
 
 class LobbyContainer extends React.Component {
   componentDidMount() {
-    this.props.getLobby()
+    // delay until socket connected
+    setTimeout(() => this.props.getLobby(), 700);
   }
 
   render() {

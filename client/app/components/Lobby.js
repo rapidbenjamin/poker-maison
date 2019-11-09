@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Lobby = ({ lobby, history, subscribeToATable }) =>
-  <table className="table game-table-list">
+  < table className="table game-table-list" >
     <thead>
       <tr>
         <th>Name</th>
@@ -31,6 +31,6 @@ const Lobby = ({ lobby, history, subscribeToATable }) =>
         </tr>
       })}
     </tbody >
-  </table>
+  </table >
 
 export default Lobby;
