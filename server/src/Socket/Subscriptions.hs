@@ -44,6 +44,7 @@ import           Socket.Utils
 import           System.Timeout
 
 import           Types
+import           Poker.Game.Privacy
 
 getTableSubscribers :: TableName -> Lobby -> [Username]
 getTableSubscribers tableName (Lobby lobby) = case M.lookup tableName lobby of
@@ -61,16 +62,16 @@ subscribeToTableHandler (SubscribeToTable tableName) = do
   case M.lookup tableName $ unLobby lobby of
     Nothing         -> return $ Left $ TableDoesNotExist tableName
     Just Table {..} -> do
-      liftIO $ print subscribers
+      let 
+        privatisedGame = excludePrivateCards (Just (unUsername username)) game
+        msg' = SuccessfullySubscribedToTable tableName privatisedGame
       if username `notElem` subscribers
         then do
           liftIO $ atomically $ subscribeToTable tableName msgHandlerConfig
-          liftIO $ sendMsg clientConn
-                           (SuccessfullySubscribedToTable tableName game)
-          return $ Right $ SuccessfullySubscribedToTable tableName game
+          liftIO $ sendMsg clientConn msg'
+          return $ Right msg'
         else do
-          return $ Right $ SuccessfullySubscribedToTable tableName game
-
+          return $ Right msg'
 
           
 subscribeToTable :: TableName -> MsgHandlerConfig -> STM ()

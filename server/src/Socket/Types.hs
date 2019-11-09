@@ -46,10 +46,9 @@ type TableName = Text
 
 newtype Lobby =
   Lobby (Map TableName Table)
-  deriving (Ord, Eq)
+  deriving (Ord, Eq, Show)
 
-instance Show Lobby where
-  show _ = ""
+
 
 instance Show ServerState where
   show _ = ""

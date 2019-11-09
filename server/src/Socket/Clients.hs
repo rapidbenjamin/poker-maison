@@ -51,6 +51,7 @@ import           Pipes.Core                     ( push )
 import           Pipes.Concurrent
 import           Pipes.Concurrent
 import Prelude
+import Poker.Game.Privacy
 
 authClient
   :: BS.ByteString
@@ -112,10 +113,6 @@ sendMsgs :: [WS.Connection] -> MsgOut -> IO ()
 sendMsgs conns msg = forM_ conns $ \conn -> sendMsg conn msg
 
 sendMsg :: WS.Connection -> MsgOut -> IO ()
-sendMsg conn (SuccessfullySubscribedToTable tableName game) =
-  let msg' =
-          SuccessfullySubscribedToTable tableName (excludeAllPlayerCards game)
-  in  WS.sendTextData conn (encodeMsgToJSON msg')
 sendMsg conn msg = WS.sendTextData conn (encodeMsgToJSON msg)
 
 sendMsgX :: WS.Connection -> MsgIn -> IO ()
@@ -137,7 +134,7 @@ filterPrivateGameData username (SuccessfullySatDown tableName game) =
   SuccessfullySatDown tableName (excludeOtherPlayerCards username game)
 filterPrivateGameData username (SuccessfullySubscribedToTable tableName game) =
   SuccessfullySubscribedToTable tableName
-                                (excludeOtherPlayerCards username game)
+                                (excludePrivateCards (Just username) game)
 filterPrivateGameData username (NewGameState tableName game) =
   NewGameState tableName (excludeOtherPlayerCards username game)
 filterPrivateGameData _ unfilteredMsg = unfilteredMsg
