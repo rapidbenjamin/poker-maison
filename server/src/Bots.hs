@@ -135,7 +135,7 @@ botActionLoop dbConn s tableChan playersToWaitFor botName = forkIO $ do
 runBotAction
   :: ConnectionString -> TVar ServerState -> Game -> PlayerName -> IO ()
 runBotAction dbConn serverStateTVar g pName = do
-  maybeAction <- getValidAction g pName
+  maybeAction <- getValidBotAction g pName
   print g
   print ("Random action from " <> show pName <> " is " <> show maybeAction)
   case maybeAction of
@@ -171,13 +171,10 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
   takeSeatAction = PlayerAction { name = _playerName, action = SitDown player }
 
 
-actions :: Street -> Int -> [Action]
-actions st chips | st == PreDeal = [PostBlind Big, PostBlind Small]
-                 | otherwise     = [Check, Call, Fold, Bet chips, Raise chips]
 
 
-getValidAction :: Game -> PlayerName -> IO (Maybe PlayerAction)
-getValidAction g@Game {..} name
+getBotValidAction :: Game -> PlayerName -> IO (Maybe PlayerAction)
+getBotValidAction g@Game {..} name
   | length _players < 2 = return Nothing
   | _street == PreDeal = return $ case blindRequiredByPlayer g name of
     Small   -> Just $ PlayerAction { action = PostBlind Small, .. }
@@ -187,14 +184,17 @@ getValidAction g@Game {..} name
     betAmount' <- randomRIO (lowerBetBound, chipCount)
     let possibleActions  = (actions _street betAmount')
     let actionsValidated = validateAction g name <$> possibleActions
-    let actionPairs      = zip possibleActions actionsValidated
-    print actionPairs
-    let validActions = (<$>) fst $ filter (isRight . snd) actionPairs
+    let pNameActionPairs      = zip possibleActions actionsValidated
+    print pNameActionPairs
+    let validActions = (<$>) fst $ filter (isRight . snd) pNameActionPairs
     print validActions
     when (null validActions) panic
     randIx <- randomRIO (0, length validActions - 1)
     return $ Just $ PlayerAction { action = validActions !! randIx, .. }
  where
+  actions :: Street -> Int -> [Action]
+  actions st chips | st == PreDeal = [PostBlind Big, PostBlind Small]
+                   | otherwise     = [Check, Call, Fold, Bet chips, Raise chips]
   lowerBetBound = if (_maxBet > 0) then 2 * _maxBet else _bigBlind
   chipCount     = maybe 0 (^. chips) (getGamePlayer g name)
   panic         = do

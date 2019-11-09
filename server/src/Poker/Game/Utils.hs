@@ -16,7 +16,7 @@ import qualified Data.Map.Lazy                 as M
 import           Data.Maybe
 import           Data.Monoid
 
-import           Control.Lens
+import           Control.Lens hiding (Fold)
 
 import           Poker.Types
 

@@ -143,3 +143,37 @@ initialGameState shuffledDeck = Game { _players         = []
                                      , _maxBet          = 0
                                      , _winners         = NoWinners
                                      }
+
+
+
+getValidPlayerActions :: Game -> PlayerName -> IO [Action]
+getValidPlayerActions g@Game {..} name
+  | length _players < 2 = return []
+  | _street == PreDeal = 
+    return $ 
+      case blindRequiredByPlayer g name of
+        Small   -> pure $ PlayerAction { action = PostBlind Small, .. }
+        Big     -> pure $ PlayerAction { action = PostBlind Big, .. }
+        NoBlind -> []
+  | otherwise = do
+    let 
+      minRaise = 2 * _maxBet
+      possibleActions  = actions _street chipCount
+      actionsValidated = validateAction g name <$> possibleActions
+      actionPairs = zip possibleActions actionsValidated
+    print actionPairs
+    let validActions = (<$>) fst $ filter (isRight . snd) actionPairs
+    print validActions
+    return validActions
+ where
+  actions :: Street -> Int -> [Action]
+  actions st chips | st == PreDeal = [PostBlind Big, PostBlind Small]
+                   | otherwise     = [Check, Call, Fold, Bet chips, Raise chips]
+  lowerBetBound = if (_maxBet > 0) then 2 * _maxBet else _bigBlind
+  chipCount     = maybe 0 (^. chips) (getGamePlayer g name)
+  panic         = do
+    print $ "UHOH no valid actions for " <> show name
+    print g
+    error $ "UHOH no valid actions"
+                                       
+                                       
