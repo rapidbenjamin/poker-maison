@@ -11,6 +11,7 @@ module Poker.Poker
   , canProgressGame
   , runPlayerAction
   , handlePlayerTimeout
+  , getAllValidPlayerActions
   )
 where
 
@@ -144,27 +145,30 @@ initialGameState shuffledDeck = Game { _players         = []
                                      , _winners         = NoWinners
                                      }
 
+getAllValidPlayerActions :: Game -> [[Action]] 
+getAllValidPlayerActions g@Game{..} = 
+  (getValidPlayerActions g) . _playerName <$> _players 
 
-
-getValidPlayerActions :: Game -> PlayerName -> IO [Action]
+getValidPlayerActions :: Game -> PlayerName -> [Action]
 getValidPlayerActions g@Game {..} name
-  | length _players < 2 = return []
-  | _street == PreDeal = 
-    return $ 
-      case blindRequiredByPlayer g name of
-        Small   -> pure $ PlayerAction { action = PostBlind Small, .. }
-        Big     -> pure $ PlayerAction { action = PostBlind Big, .. }
-        NoBlind -> []
-  | otherwise = do
+  -- | not canPlayerAct = []  -- PAUSE THREEADALY INTERFERS WITH TIMEPLAYER - MOVE PROGRESS PAUSE TO CLIENT
+  | length _players < 2 = []
+  | _street == PreDeal = -- && (isNothing _currentPosToAct) = -- game not underway so any player an can post any blind to get a game started
+   --  [PostBlind Small, PostBlind Big]
+    case blindRequiredByPlayer g name of
+          Small   -> [PostBlind Small]
+          Big     -> [PostBlind Big]
+          NoBlind -> []
+--  | _street == PreDeal = 
+--    let possibleActions = actions _street chipCount
+--    in
+--       filter (isRight . validateAction g name) possibleActions
+  | otherwise = 
     let 
       minRaise = 2 * _maxBet
       possibleActions  = actions _street chipCount
-      actionsValidated = validateAction g name <$> possibleActions
-      actionPairs = zip possibleActions actionsValidated
-    print actionPairs
-    let validActions = (<$>) fst $ filter (isRight . snd) actionPairs
-    print validActions
-    return validActions
+    in
+       filter (isRight . validateAction g name) possibleActions
  where
   actions :: Street -> Int -> [Action]
   actions st chips | st == PreDeal = [PostBlind Big, PostBlind Small]

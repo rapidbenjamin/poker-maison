@@ -289,12 +289,7 @@ filterMsgsForTable tableName =
 --
 -- After the client has been authenticated we fork a thread which writes
 -- the clients msgs to a channel.
-application
-  :: BS.ByteString
-  -> ConnectionString
-  -> RedisConfig
-  -> TVar ServerState
-  -> WS.ServerApp
+application :: BS.ByteString -> ConnectionString -> RedisConfig -> TVar ServerState -> WS.ServerApp
 application secretKey dbConnString redisConfig s pending = do
   conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
@@ -312,7 +307,11 @@ application secretKey dbConnString redisConfig s pending = do
       let client = Client {..}
       sendMsg conn AuthSuccess
       let isReconnect = client `elem` clients -- if client already on our list of clients then this is a reconnect
-      when isReconnect $ updateWithLatestGames client lobby -- Sync game state with reconnected clients
+      when isReconnect $ do
+        updateWithLatestGames client lobby -- Sync game state with reconnected clients
+        let tableSummaries = TableList $ summariseTables lobby
+        liftIO $ print tableSummaries
+        liftIO $ sendMsg conn tableSummaries
       atomically $ addClient s client
       forever $ do
         m <- WS.receiveData conn

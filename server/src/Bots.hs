@@ -173,8 +173,8 @@ sitDownBot dbConn player@Player {..} serverStateTVar = do
 
 
 
-getBotValidAction :: Game -> PlayerName -> IO (Maybe PlayerAction)
-getBotValidAction g@Game {..} name
+getValidBotAction :: Game -> PlayerName -> IO (Maybe PlayerAction)
+getValidBotAction g@Game {..} name
   | length _players < 2 = return Nothing
   | _street == PreDeal = return $ case blindRequiredByPlayer g name of
     Small   -> Just $ PlayerAction { action = PostBlind Small, .. }

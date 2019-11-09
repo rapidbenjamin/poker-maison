@@ -130,6 +130,7 @@ gamePipeline connStr s key name outMailbox inMailbox = do
     >-> logGame name
     >-> updateTable s name
     >-> writeGameToDB connStr key
+    >-> pause
     >-> progress inMailbox
     -- should all be in stm monad not IO
 
@@ -140,11 +141,13 @@ pause = do
   g <- await
   _ <- liftIO $ threadDelay $ pauseDuration g
   yield g
-
-
-pauseDuration :: Game -> Int
-pauseDuration Game {..} | _street == PreDeal = 0
-                        | otherwise          = 2 * 1000000 -- 2 seconds
+ where 
+    pauseDuration :: Game -> Int
+    pauseDuration g@Game{..} 
+      | _street == PreDeal = 0
+      | _street == PreDeal = 5 * 1000000 -- 5 seconds
+      | haveAllPlayersActed g = 3 * 1000000 -- 3 seconds
+      | otherwise          = 0
 
 
 -- Progresses to the next state which awaits a player action.
@@ -171,7 +174,6 @@ progress inMailbox = do
   progress' game = do
     gen <- liftIO getStdGen
     liftIO $ print "PIPE PROGRESSING GAME"
-    when (everyoneAllIn game) $ liftIO $ threadDelay $ pauseDuration game
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 
 
@@ -212,6 +214,8 @@ logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do
   g <- await
   liftIO $ print g
+  liftIO $ print "VALID PLAYER ACTIONS"
+  liftIO $ print $ getAllValidPlayerActions g
   yield g
 
 
