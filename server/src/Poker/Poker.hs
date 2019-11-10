@@ -37,16 +37,13 @@ import           Poker.Game.Utils
 import           Poker.Types
 
 
-
 -- the function takes a player action and returns either a new game for a valid 
 -- player action or an err signifying an invalid player action with the reason why
 -- if the current game stage is showdown then the next game state will have a newly shuffled
 -- deck and pocket cards/ bets reset
-runPlayerAction
-  :: Game -> PlayerAction -> Either GameErr Game
+runPlayerAction :: Game -> PlayerAction -> Either GameErr Game
 runPlayerAction game playerAction'@PlayerAction {..} =
-  handlePlayerAction game playerAction' 
-
+  updatePlayersPossibleActions <$> handlePlayerAction game playerAction'
 
 canProgressGame :: Game -> Bool
 canProgressGame game@Game {..}
@@ -71,27 +68,22 @@ canProgressGame game@Game {..}
 -- toDO - make function pure by taking stdGen as an arg
 progressGame :: RandomGen g => g -> Game -> Game
 progressGame gen game@Game {..}
-  | _street == Showdown
-  = nextHand
-  | notEnoughPlayersToStartGame
-  = nextHand
+  | _street == Showdown = nextHand
+  | notEnoughPlayersToStartGame = nextHand
   | haveAllPlayersActed game
     && (  not (allButOneFolded game)
        || (_street == PreDeal || _street == Showdown)
-       )
-  = case getNextStreet _street of
-    PreFlop  -> progressToPreFlop game
-    Flop     -> progressToFlop game
-    Turn     -> progressToTurn game
-    River    -> progressToRiver game
-    Showdown -> progressToShowdown game
-    PreDeal  -> nextHand
-  | allButOneFolded game && _street /= Showdown
-  = progressToShowdown game
-  | otherwise
-  = game
+       ) = case getNextStreet _street of
+      PreFlop  -> progressToPreFlop game
+      Flop     -> progressToFlop game
+      Turn     -> progressToTurn game
+      River    -> progressToRiver game
+      Showdown -> progressToShowdown game
+      PreDeal  -> nextHand
+  | allButOneFolded game && _street /= Showdown = progressToShowdown game
+  | otherwise = game
  where
-  nextHand           = getNextHand game (shuffledDeck gen)
+  nextHand = getNextHand game (shuffledDeck gen)
   numberPlayersSatIn = length $ getActivePlayers _players
   notEnoughPlayersToStartGame =
     _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2
@@ -99,15 +91,15 @@ progressGame gen game@Game {..}
 handlePlayerAction :: Game -> PlayerAction -> Either GameErr Game
 handlePlayerAction game@Game {..} PlayerAction {..} = case action of
   PostBlind blind -> validateAction game name action $> postBlind blind name game
-  Fold           -> validateAction game name action $> foldCards name game
-  Call           -> validateAction game name action $> call name game
-  Raise amount   -> validateAction game name action $> makeBet amount name game
-  Check          -> validateAction game name action $> check name game
-  Bet amount     -> validateAction game name action $> makeBet amount name game
-  SitDown player -> validateAction game name action $> seatPlayer player game
-  SitIn          -> validateAction game name action $> sitIn name game
-  LeaveSeat'     -> validateAction game name action $> leaveSeat name game
-  Timeout        -> handlePlayerTimeout name game
+  Fold            -> validateAction game name action $> foldCards name game
+  Call            -> validateAction game name action $> call name game
+  Raise amount    -> validateAction game name action $> makeBet amount name game
+  Check           -> validateAction game name action $> check name game
+  Bet amount      -> validateAction game name action $> makeBet amount name game
+  SitDown player  -> validateAction game name action $> seatPlayer player game
+  SitIn           -> validateAction game name action $> sitIn name game
+  LeaveSeat'      -> validateAction game name action $> leaveSeat name game
+  Timeout         -> handlePlayerTimeout name game
 
 
 -- TODO - "Except" or ExceptT Identity has a more reliable Alternative instance.
@@ -128,22 +120,29 @@ handlePlayerTimeout name game@Game {..}
 
 
 initialGameState :: Deck -> Game
-initialGameState shuffledDeck = Game { _players         = []
-                                     , _waitlist        = []
-                                     , _minBuyInChips   = 1500
-                                     , _maxBuyInChips   = 3000
-                                     , _maxPlayers      = 5
-                                     , _dealer          = 0
-                                     , _currentPosToAct = Nothing
-                                     , _board           = []
-                                     , _deck            = shuffledDeck
-                                     , _smallBlind      = 25
-                                     , _bigBlind        = 50
-                                     , _pot             = 0
-                                     , _street          = PreDeal
-                                     , _maxBet          = 0
-                                     , _winners         = NoWinners
-                                     }
+initialGameState shuffledDeck = Game
+   {  _players         = []
+    , _waitlist        = []
+    , _minBuyInChips   = 1500
+    , _maxBuyInChips   = 3000
+    , _maxPlayers      = 5
+    , _dealer          = 0
+    , _currentPosToAct = Nothing
+    , _board           = []
+    , _deck            = shuffledDeck
+    , _smallBlind      = 25
+    , _bigBlind        = 50
+    , _pot             = 0
+    , _street          = PreDeal
+    , _maxBet          = 0
+    , _winners         = NoWinners
+  }
+
+updatePlayersPossibleActions :: Game -> Game
+updatePlayersPossibleActions g@Game {..} = Game { _players = updatedPlayers , ..}
+  where
+    updatedPlayers = (\Player{..} ->
+      Player { _possibleActions = getValidPlayerActions g _playerName , ..}) <$> _players
 
 getAllValidPlayerActions :: Game -> [[Action]] 
 getAllValidPlayerActions g@Game{..} = 
@@ -173,7 +172,7 @@ getValidPlayerActions g@Game {..} name
   actions :: Street -> Int -> [Action]
   actions st chips | st == PreDeal = [PostBlind Big, PostBlind Small]
                    | otherwise     = [Check, Call, Fold, Bet chips, Raise chips]
-  lowerBetBound = if (_maxBet > 0) then 2 * _maxBet else _bigBlind
+  lowerBetBound = if _maxBet > 0 then 2 * _maxBet else _bigBlind
   chipCount     = maybe 0 (^. chips) (getGamePlayer g name)
   panic         = do
     print $ "UHOH no valid actions for " <> show name

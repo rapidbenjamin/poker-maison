@@ -25,6 +25,7 @@ const getSeatedPlayer = (
         gameStage !== 'PreDeal' &&
         gameStage !== 'Showdown'
       }
+      playerState={player.get('_playerState')}
       isTurnToAct={isTurnToAct && gameStage !== 'Showdown'}
     />
   )
@@ -87,6 +88,9 @@ const Game = props => {
 
   if (game) {
     const jsgame = game.toJS()
+    console.log(jsgame)
+    console.log(jsgame._players)
+
     const players = game.get('_players')
     const dealerPos = game.get('_dealer')
     const maxPlayers = 6
@@ -164,7 +168,7 @@ const Game = props => {
       </div>
     )
   }
-  return <h2>no Game State</h2>
+  return <h2>Failed to load game.</h2>
 }
 
 export default Game
