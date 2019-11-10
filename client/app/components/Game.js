@@ -100,6 +100,7 @@ const Game = props => {
       .get('_players')
       .find(p => p.get('_playerName') === username)
     const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
+    const userAvailableActions = userPlayer ? userPlayer.get('_possibleActions') : null
     const currentPosToAct = game.get('_currentPosToAct')
     const isMultiplayerShowdown =
       game.get('_winners').get('tag') == 'MultiPlayerShowdown'
@@ -164,6 +165,7 @@ const Game = props => {
           {...props}
           gameStage={gameStage}
           userPocketCards={userPocketCards}
+          availableActions={userAvailableActions}
         />
       </div>
     )

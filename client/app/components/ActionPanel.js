@@ -31,8 +31,10 @@ const ActionPanel = ({
   userPocketCards,
   gameStage,
   sitIn,
-  isTurnToAct
+  isTurnToAct,
+  availableActions,
 }) => {
+  console.log('available actions', availableActions)
 
   return (
     <div className='action-panel'>
