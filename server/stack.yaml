@@ -70,6 +70,10 @@ local-bin-path: build
 # arch: i386
 # arch: x86_64
 #
+ghc-options:
+  "$locals": -j # Parallel Builds
+  "$locals": -O0 # No GHC optimisations
+
 # Extra directories used by stack for building
 # extra-include-dirs: [/path/to/dir]
 # extra-lib-dirs: [/path/to/dir]
