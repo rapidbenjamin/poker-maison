@@ -12,6 +12,9 @@ import           Control.Concurrent.STM
 import           Control.Concurrent.STM.TChan
 import           Control.Monad.STM
 
+import Control.Lens
+import Control.Lens.At
+
 import           Control.Monad                  ( void )
 import           Control.Monad.Except
 import           Control.Monad.Logger           ( LoggingT
@@ -53,13 +56,10 @@ initialLobby = do
                      , channel        = chan
                      }
   return $ Lobby $ M.fromList [("Black", table')]
-  where maxChanLength = 10000
 
 joinGame :: Username -> Int -> Game -> Game
-joinGame (Username username) chips Game {..} = Game
-  { _players = _players <> [player]
-  , ..
-  }
+joinGame (Username username) chips Game {..} = 
+    Game { _players = _players <> pure player , .. }
   where player = initPlayer username chips
 
 joinTableWaitlist :: Username -> Table -> Table
@@ -67,13 +67,11 @@ joinTableWaitlist username Table {..} =
   Table { waitlist = waitlist <> [username], .. }
 
 insertTable :: TableName -> Table -> Lobby -> Lobby
-insertTable tableName newTable (Lobby lobby) =
-  Lobby $ M.insert tableName newTable lobby
+insertTable tableName newTable = Lobby . (at tableName .~ Just newTable) . unLobby
 
 -- to do - return an either as there are multiple errs for why plyr cant join game ie no chips
 canJoinGame :: Game -> Bool
 canJoinGame Game {..} = length _players < _maxPlayers
-
 
 summariseGame :: TableName -> Table -> TableSummary
 summariseGame tableName Table { game = Game {..}, ..} = TableSummary

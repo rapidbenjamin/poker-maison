@@ -12,6 +12,9 @@ import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.Reader
+import Control.Lens hiding (each , fold)
+import Control.Lens.At
+
 import           Data.Either
 import           Data.Foldable
 import           Data.Map.Lazy                  ( Map )
@@ -97,7 +100,7 @@ addClient s c@Client {..} = do
     )
 
 getClient :: Map Username Client -> Username -> Maybe Client
-getClient clients username = M.lookup username clients
+getClient cs username = cs ^.at username 
 
 broadcastAllClients :: Map Username Client -> MsgOut -> IO ()
 broadcastAllClients clients msg =

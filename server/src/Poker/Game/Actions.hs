@@ -31,7 +31,7 @@ placeBet value plyr =
   let chips'         = plyr ^. chips
       hasEnoughChips = chips' > value
       betAmount      = bool chips' value hasEnoughChips
-  in  plyr
+  in plyr
         & (chips -~ betAmount)
         . (bet +~ betAmount)
         . (committed +~ betAmount)
@@ -70,22 +70,29 @@ postBlind blind pName game@Game {..} =
   gamePlayerNames = (\Player {..} -> _playerName) <$> _players
   blindValue      = if blind == Small then _smallBlind else _bigBlind
   newMaxBet       = if blindValue > _maxBet then blindValue else _maxBet
-  positionOfBlindPoster =
-    fromJust $ findIndex ((== pName) . (^. playerName)) _players
+  positionOfBlindPoster = fromJust $ findIndex ((== pName) . (^. playerName)) _players
   nextRequiredBlindPos = getPosNextBlind positionOfBlindPoster game
 
 makeBet :: Int -> PlayerName -> Game -> Game
 makeBet amount pName game@Game {..} =
   updateMaxBet amount game
-    & (players .~ newPlayers)
+    & (players %~ markPlayerActed)
     . (currentPosToAct .~ nextPosToAct game)
     . (pot +~ amount)
  where
-  newPlayers =
-    (\p@Player {..} ->
-        if _playerName == pName then (markActed . placeBet amount) p else p
-      )
-      <$> _players
+  updatePlayerState p@Player{..} = 
+    if _playerName == pName 
+      then (markActed . placeBet amount) p
+      else p
+  markPlayerActed = (<$>) updatePlayerState
+
+--markPlayerActedAndPlaceBet = 
+--  newPlayers =
+--    (\p@Player {..} -> if _playerName == pName
+--        then (markInForHand . markActed . placeBet blindValue) p
+--        else p
+--      )
+--      <$> _players
 
 foldCards :: PlayerName -> Game -> Game
 foldCards pName game@Game {..} =
@@ -108,14 +115,13 @@ call pName game@Game {..} =
   player = fromJust $ find (\Player {..} -> _playerName == pName) _players --horrible performance use map for players
   callAmount =
     let maxBetShortfall = _maxBet - (player ^. bet)
-        playerChips     = (player ^. chips)
-    in  if maxBetShortfall > playerChips then playerChips else maxBetShortfall
+        playerChips     = player ^. chips
+    in if maxBetShortfall > playerChips then playerChips else maxBetShortfall
   newPlayers =
     (\p@Player {..} ->
         if _playerName == pName then (markActed . placeBet callAmount) p else p
       )
       <$> _players
-
 
 check :: PlayerName -> Game -> Game
 check pName game@Game {..} =
