@@ -135,7 +135,7 @@ gamePipeline connStr s key tableName outMailbox inMailbox = do
     >-> updateTable s tableName
     >-> writeGameToDB connStr key
    -- >-> pause
-    >-> timePlayer s tableName
+   -- >-> timePlayer s tableName
     >-> progress inMailbox
     -- should all be in stm monad not IO
 

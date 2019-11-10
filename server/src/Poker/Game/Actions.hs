@@ -55,17 +55,11 @@ markInForHand = playerState .~ In
 postBlind :: Blind -> PlayerName -> Game -> Game
 postBlind blind pName game@Game {..} =
   game
-    & (players .~ newPlayers)
+    & (players %~ markActedAndPlaceBet pName blindValue)
     . (pot +~ blindValue)
     . (currentPosToAct .~ pure nextRequiredBlindPos)
     . (maxBet .~ newMaxBet)
  where
-  newPlayers =
-    (\p@Player {..} -> if _playerName == pName
-        then (markInForHand . markActed . placeBet blindValue) p
-        else p
-      )
-      <$> _players
   isFirstBlind    = sum ((\Player {..} -> _bet) <$> _players) == 0
   gamePlayerNames = (\Player {..} -> _playerName) <$> _players
   blindValue      = if blind == Small then _smallBlind else _bigBlind
@@ -74,25 +68,17 @@ postBlind blind pName game@Game {..} =
   nextRequiredBlindPos = getPosNextBlind positionOfBlindPoster game
 
 makeBet :: Int -> PlayerName -> Game -> Game
-makeBet amount pName game@Game {..} =
-  updateMaxBet amount game
-    & (players %~ markPlayerActed)
+makeBet bet pName game@Game {..} =
+  updateMaxBet bet game
+    & (players %~  markActedAndPlaceBet pName bet)
     . (currentPosToAct .~ nextPosToAct game)
-    . (pot +~ amount)
- where
-  updatePlayerState p@Player{..} = 
-    if _playerName == pName 
-      then (markActed . placeBet amount) p
-      else p
-  markPlayerActed = (<$>) updatePlayerState
+    . (pot +~ bet)
 
---markPlayerActedAndPlaceBet = 
---  newPlayers =
---    (\p@Player {..} -> if _playerName == pName
---        then (markInForHand . markActed . placeBet blindValue) p
---        else p
---      )
---      <$> _players
+markActedAndPlaceBet :: Functor f => PlayerName -> Int -> f Player -> f Player
+markActedAndPlaceBet pName bet = 
+  (<$>) (\p@Player {..} -> if _playerName == pName
+            then (markInForHand . markActed . placeBet bet) p
+            else p)
 
 foldCards :: PlayerName -> Game -> Game
 foldCards pName game@Game {..} =
@@ -108,20 +94,19 @@ foldCards pName game@Game {..} =
 call :: PlayerName -> Game -> Game
 call pName game@Game {..} =
   game
-    & (players .~ newPlayers)
+    & (players %~ markActedAndPlaceBet pName callAmount)
     . (currentPosToAct .~ nextPosToAct game)
     . (pot +~ callAmount)
  where
   player = fromJust $ find (\Player {..} -> _playerName == pName) _players --horrible performance use map for players
   callAmount =
     let maxBetShortfall = _maxBet - (player ^. bet)
-        playerChips     = player ^. chips
-    in if maxBetShortfall > playerChips then playerChips else maxBetShortfall
-  newPlayers =
-    (\p@Player {..} ->
-        if _playerName == pName then (markActed . placeBet callAmount) p else p
-      )
-      <$> _players
+        playerChips = player ^. chips
+    in 
+      if maxBetShortfall > playerChips 
+        then playerChips 
+      else maxBetShortfall
+
 
 check :: PlayerName -> Game -> Game
 check pName game@Game {..} =
@@ -149,7 +134,7 @@ sitIn plyrName = players %~ (<$>)
   )
 
 seatPlayer :: Player -> Game -> Game
-seatPlayer plyr = players <>~ [plyr]
+seatPlayer plyr = players <>~ pure plyr
 
 joinWaitlist :: Player -> Game -> Game
 joinWaitlist plyr = waitlist %~ (:) (plyr ^. playerName)

@@ -60,9 +60,8 @@ validateAction game@Game {..} name' = \case
 -- An active player is one whose playerState is set to In.
 canPostBlind :: Game -> PlayerName -> Blind -> Either GameErr ()
 canPostBlind game@Game {..} name blind
-  | activePlayersCount < 2 = Left
-  $ InvalidMove name
-  $ CannotPostBlind
+  |  _street /= PreDeal = Left $ InvalidMove name InvalidActionForStreet
+  | activePlayersCount < 2 = Left $ InvalidMove name $ CannotPostBlind
       "Cannot post blind unless a minimum of two active players are sat at table"
   | otherwise = case blind of
     Big     -> if chipCount < _bigBlind then notEnoughChipsErr else Right ()

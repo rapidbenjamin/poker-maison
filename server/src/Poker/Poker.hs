@@ -35,7 +35,7 @@ import           Poker.Game.Game
 import           Poker.Game.Hands
 import           Poker.Game.Utils
 import           Poker.Types
-
+import Debug.Trace
 
 -- the function takes a player action and returns either a new game for a valid 
 -- player action or an err signifying an invalid player action with the reason why
@@ -62,12 +62,14 @@ canProgressGame game@Game {..}
 -- A similar situation occurs when no further player action is possible but  the game is not over
 -- - in other words more than one players are active and all or all but one are all in
 
+progressGame :: RandomGen g => g -> Game -> Game
+progressGame gen = updatePlayersPossibleActions . nextStage gen
 
 -- | Just get the identity function if not all players acted otherwise we return 
 -- the function necessary to progress the game to the next stage.
 -- toDO - make function pure by taking stdGen as an arg
-progressGame :: RandomGen g => g -> Game -> Game
-progressGame gen game@Game {..}
+nextStage :: RandomGen g => g -> Game -> Game
+nextStage gen game@Game {..}
   | _street == Showdown = nextHand
   | notEnoughPlayersToStartGame = nextHand
   | haveAllPlayersActed game
@@ -87,6 +89,7 @@ progressGame gen game@Game {..}
   numberPlayersSatIn = length $ getActivePlayers _players
   notEnoughPlayersToStartGame =
     _street == PreDeal && haveAllPlayersActed game && numberPlayersSatIn < 2
+
 
 handlePlayerAction :: Game -> PlayerAction -> Either GameErr Game
 handlePlayerAction game@Game {..} PlayerAction {..} = case action of
@@ -142,7 +145,7 @@ updatePlayersPossibleActions :: Game -> Game
 updatePlayersPossibleActions g@Game {..} = Game { _players = updatedPlayers , ..}
   where
     updatedPlayers = (\Player{..} ->
-      Player { _possibleActions = getValidPlayerActions g _playerName , ..}) <$> _players
+      Player { _possibleActions = traceShow (replicate 8 $ getValidPlayerActions g _playerName) (getValidPlayerActions g _playerName) , ..}) <$> _players
 
 getAllValidPlayerActions :: Game -> [[Action]] 
 getAllValidPlayerActions g@Game{..} = 
@@ -167,7 +170,7 @@ getValidPlayerActions g@Game {..} name
       minRaise = 2 * _maxBet
       possibleActions  = actions _street chipCount
     in
-       filter (isRight . validateAction g name) possibleActions
+       traceShow  ((validateAction g name) <$> possibleActions) (filter (isRight . validateAction g name) possibleActions)
  where
   actions :: Street -> Int -> [Action]
   actions st chips | st == PreDeal = [PostBlind Big, PostBlind Small]

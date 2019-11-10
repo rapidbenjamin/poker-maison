@@ -16,6 +16,8 @@ const getPocketCards = cards =>
   }) : ''
 
 
+
+
 const ActionPanel = ({
   handleChange,
   betValue,
@@ -35,6 +37,47 @@ const ActionPanel = ({
   availableActions,
 }) => {
   console.log('available actions', availableActions)
+
+
+  const preDealActions =
+    gameStage === "PreDeal" ? <React.Fragment>
+
+      {availableActions.includes("PostBigBlind") ?
+        <button
+          type="button"
+          onClick={() => postBigBlind()} className="button">
+          Post Big Blind
+      </button> : ''}
+
+      {availableActions.includes("PostSmallBlind") ?
+        <button
+          type="button" onClick={() => postSmallBlind()} className="button">
+          post Small Blind
+      </button> : ' '}
+
+      <button
+        type="button"
+        onClick={() => sitDown(betValue)}
+        className="button">
+        Sit Down Bet <span className='monospaced-font'>
+          {betValue}</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => sitIn()}
+        className="button">
+        Sit In
+          </button>
+
+      <button
+        type="button"
+        onClick={() => leaveGameSeat()}
+        className="button">
+        Leave Seat
+    </button>
+
+    </React.Fragment> : '';
 
   return (
     <div className='action-panel'>
@@ -57,62 +100,39 @@ const ActionPanel = ({
             value={betValue}
             onChange={handleChange}
           /> : ''}
-        {gameStage === 'PreDeal' ?
+        {preDealActions}
+        {true ?   // gameStage !== 'Showdown' && gameStage !== 'PreDeal' && isTurnToAct ?
           <React.Fragment>
-            <button
-              type="button"
-              onClick={() => sitDown(betValue)}
-              className="button">
-              Sit Down Bet <span className='monospaced-font'>
-                {betValue}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => postBigBlind()} className="button">
-              Post Big Blind
-          </button>
-            <button
-              type="button"
-              onClick={() => leaveGameSeat()}
-              className="button">
-              Leave Seat
-          </button>
-            <button
-              type="button" onClick={() => postSmallBlind()} className="button">
-              post Small Blind
-          </button>
-          </React.Fragment>
-          : ''}
-        {gameStage !== 'Showdown' && gameStage !== 'PreDeal' && isTurnToAct ?
-          <React.Fragment>
-            <button type="button" onClick={() => check()} className="button">
-              Check
-          </button>
-            <button type="button" onClick={() => call()} className="button">
-              Call</button>
-            <button
+
+            {availableActions.includes("Check") ?
+              <button type="button" onClick={() => check()} className="button">
+                Check
+       </button> : ''}
+
+
+            {availableActions.includes("Call") ?
+              <button type="button" onClick={() => call()} className="button">
+                Call</button> : ''}
+
+            {availableActions.includes("Bet") ? <button
               type="button"
               onClick={() => bet(betValue)} className="button">Bet <span className='monospaced-font'>
-                {betValue}</span></button>
-            <button
-              type="button"
-              onClick={() => raise(betValue)}
-              className="button">
-              Raise {betValue}</button>
-            <button
+                {betValue}</span></button> : ''}
+            {availableActions.includes("Raise") ?
+              <button
+                type="button"
+                onClick={() => raise(betValue)}
+                className="button">
+                Raise {betValue}</button> : ''}
+            {availableActions.includes("Fold") ? <button
               type="button"
               onClick={() => fold()}
               className="button">
               Fold
-          </button>
+          </button> : ''}
           </React.Fragment>
           : ''}
-        <button
-          type="button"
-          onClick={() => sitIn()}
-          className="button">
-          Sit In
-          </button>
+
 
       </div>
     </div>)

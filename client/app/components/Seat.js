@@ -1,5 +1,6 @@
 import React from 'react';
 
+
 const Seat = ({ playerName, chips, isTurnToAct, hasPocketCards, position, playerState }) => (
   <div className={`seat-${position}-container`}>
     {hasPocketCards ?

@@ -5,7 +5,7 @@ import Board from './Board'
 import Seat from './Seat'
 import Card from './Card'
 
-import { fromJS } from 'immutable'
+import { fromJS, toJS, List } from 'immutable'
 
 const getSeatedPlayer = (
   username,
@@ -83,6 +83,31 @@ const getPlayerBets = players =>
         )
   )
 
+const parseAvailableActions = actions => {
+  console.log(actions)
+
+
+  if (List.size === 0) {
+    return actions
+  } else {
+    const actionsJS = actions.toJS()
+    return actionsJS.map(a => {
+      console.log(a)
+
+
+      if (a.tag === "PostBlind") {
+        if (a.contents === "Big") {
+          return "PostBigBlind"
+        } else {
+          return "PostSmallBlind"
+        }
+      } else {
+        return a.tag
+      }
+    })
+  }
+}
+
 const Game = props => {
   const { game, username, isTurnToAct } = props
 
@@ -100,7 +125,8 @@ const Game = props => {
       .get('_players')
       .find(p => p.get('_playerName') === username)
     const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
-    const userAvailableActions = userPlayer ? userPlayer.get('_possibleActions') : null
+    const userAvailableActions = userPlayer ? userPlayer.get('_possibleActions') : fromJS([])
+    console.log(((parseAvailableActions(userAvailableActions))).toJS)
     const currentPosToAct = game.get('_currentPosToAct')
     const isMultiplayerShowdown =
       game.get('_winners').get('tag') == 'MultiPlayerShowdown'
@@ -165,7 +191,7 @@ const Game = props => {
           {...props}
           gameStage={gameStage}
           userPocketCards={userPocketCards}
-          availableActions={userAvailableActions}
+          availableActions={parseAvailableActions(userAvailableActions)}
         />
       </div>
     )
