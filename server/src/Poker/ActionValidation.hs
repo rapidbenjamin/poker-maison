@@ -172,7 +172,7 @@ canCall :: PlayerName -> Game -> Either GameErr ()
 canCall name game@Game {..}
   | _street == Showdown || _street == PreDeal = Left
   $ InvalidMove name InvalidActionForStreet
-  | _maxBet == 0 && _street /= PreFlop = Left
+  | amountNeededToCall == 0 = Left
   $ InvalidMove name CannotCallZeroAmountCheckOrBetInstead
   | otherwise = Right ()
  where
