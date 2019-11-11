@@ -81,19 +81,20 @@ isPlayerActingOutOfTurn game@Game {..} name
   | currPosToActOutOfBounds = error "_currentPosToAct too big"
   | isNothing _currentPosToAct = Left $ InvalidMove name $ NoPlayerCanAct
   | (fromJust _currentPosToAct) < 0 = error "_currentPosToAct player < 0"
-  | _street == PreDeal = Right ()
-  | -- first predeal blind bet can be done from any position
-    otherwise = case name `elemIndex` gamePlayerNames of
-    Nothing  -> Left $ NotAtTable name
-    Just pos -> if doesPlayerHaveToAct name game
-      then Right ()
-      else
-        Left
-        $  InvalidMove name
-        $  OutOfTurn
-        $  CurrentPlayerToActErr
-        $  gamePlayerNames
-        !! (fromJust _currentPosToAct)
+  | _street == PreDeal && isNothing _currentPosToAct =
+     Right () -- first blind posting when a new game is starting can be done
+              -- from any position
+  | otherwise = case name `elemIndex` gamePlayerNames of
+      Nothing  -> Left $ NotAtTable name
+      Just pos -> if doesPlayerHaveToAct name game
+        then Right ()
+        else
+          Left
+          $  InvalidMove name
+          $  OutOfTurn
+          $  CurrentPlayerToActErr
+          $  gamePlayerNames
+          !! (fromJust _currentPosToAct)
  where
   gamePlayerNames = getGamePlayerNames game
   numberOfPlayersSatIn =

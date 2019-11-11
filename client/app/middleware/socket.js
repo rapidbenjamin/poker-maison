@@ -7,7 +7,7 @@ import {
   socketAuthErr,
   socketAuthSuccess
 } from '../actions/socket'
-import { newLobby } from '../actions/lobby'
+import { newLobby, getLobby } from '../actions/lobby'
 import { newGameState } from '../actions/games'
 
 import * as types from '../actions/types'
@@ -28,7 +28,15 @@ function addHandlers(socket, authToken, dispatch) {
     dispatch(disconnectSocket())
     // try and reconnect nearly instantly which is  
     // useful when the client has refreshed their web browser
-    setTimeout(() => connect(), 250);
+    setTimeout(() => {
+
+      if (socket.connect) {
+        socket.connect()
+      }
+      else {
+
+      }
+    }, 750);
 
   }
 
@@ -97,6 +105,7 @@ function connHandler(dispatch, action) {
 const reduxSocketMiddleware = ({ dispatch, getState }) => next => action => {
   connHandler(dispatch, action)
   console.log(action)
+
   const criteria = 'server/'
 
   if (connectedSocket) {

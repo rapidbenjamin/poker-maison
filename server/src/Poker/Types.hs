@@ -171,7 +171,10 @@ data Game = Game
   , _pot :: Int
   , _maxBet :: Bet
   , _dealer :: Int
-  , _currentPosToAct :: Maybe Int -- Nothing if no player can act (i.e everyone all in)
+  , _currentPosToAct :: Maybe Int -- If Nothing and not PreDeal stage of game then this signifies that 
+    -- no  player can act (i.e everyone all in) or 
+    -- if during PreDeal (blinds stage) any player can act first in order to get the game started
+    -- TODO refactor this logic into ADT such as  Nobody | Anyone | PlayerAtPosition int
   } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Game where
