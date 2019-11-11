@@ -174,7 +174,7 @@ data Game = Game
   , _currentPosToAct :: Maybe Int -- If Nothing and not PreDeal stage of game then this signifies that 
     -- no  player can act (i.e everyone all in) or 
     -- if during PreDeal (blinds stage) any player can act first in order to get the game started
-    -- TODO refactor this logic into ADT such as  Nobody | Anyone | PlayerAtPosition int
+    -- TODO refactor this logic into ADT such as  Nobody | Anyone | Someone PlayerName PlayerPos
   } deriving (Eq, Read, Ord, Generic, ToJSON, FromJSON)
 
 instance Show Game where

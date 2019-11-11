@@ -75,6 +75,9 @@ modDec num modulo | decNum < modulo = 0
 getActivePlayers :: [Player] -> [Player]
 getActivePlayers = filter (\Player {..} -> _playerState == In)
 
+countActive :: [Player] -> Int
+countActive = length . getActivePlayers
+
 -- get all players who are not currently sat out
 getPlayersSatIn :: [Player] -> [Player]
 getPlayersSatIn = filter ((/= SatOut) . (^. playerState))

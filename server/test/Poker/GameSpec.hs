@@ -315,6 +315,16 @@ spec = do
       let playerBets = (^. bet) <$> _players preFlopGame
       playerBets `shouldBe` [25, 50]
 
+    it "Dealer position acts first during Preflop game stage when Heads Up (2 plyrs)" $ do
+        let game =
+              (street .~ PreDeal) . (currentPosToAct .~ Just 0) .
+              (players .~ [player1, player1]) . 
+              (dealer .~ 0)
+              $
+              initialGameState'
+        _currentPosToAct preFlopGame `shouldBe` Just (_dealer game)
+
+
   describe "progressToFlop" $ do
     let preFlopGame =
           (street .~ Flop) . (maxBet .~ 1000) . (pot .~ 1000) .
@@ -869,22 +879,6 @@ spec = do
             it "When awaiting player action nextPosToAct should never be Nothing" $ require prop_when_awaiting_action_nextPos_always_Just
            
             describe "Heads Up" $ do
-              it "Next position at end of PreDeal (PreFlop) is dealer" $ do
-                let game =
-                      (street .~ PreDeal) . (currentPosToAct .~ Just 1) .
-                      (players .~ [player1, player1]) $
-                      initialGameState'
-                nextPosToAct game `shouldBe` Just (_dealer game)
-
-              it "Next position at end of PreDeal (PreFlop) is big blind position" $ do
-                let game =
-                      (street .~ PreDeal) . (currentPosToAct .~ Just 1) .
-                      (players .~
-                          [  player1 & (playerName .~ "player0") . (committed .~ 25)
-                           , player1 &  (committed .~ 50)
-                          ]) $
-                      initialGameState'
-                nextPosToAct game `shouldBe` Just 1
 
               it "should modulo increment position for two players who are both In" $ do
                 let game =

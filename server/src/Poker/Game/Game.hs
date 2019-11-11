@@ -81,10 +81,15 @@ progressToPreFlop :: Game -> Game
 progressToPreFlop game@Game {..} =
   game
     & (street .~ PreFlop)
-    . (currentPosToAct .~ nextPosToAct game)
+    . (currentPosToAct .~ firstPosToAct)
     . (players %~ (<$>) (actedThisTurn .~ False))
     . deal
     . updatePlayersInHand
+    where
+      firstPosToAct 
+        | countActive _players == 2 = pure _dealer -- When heads up dealer goes first
+        | otherwise = nextPosToAct game
+
 
 progressToFlop :: Game -> Game
 progressToFlop game

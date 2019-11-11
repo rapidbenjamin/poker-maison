@@ -79,11 +79,10 @@ canPostBlind game@Game {..} name blind
 isPlayerActingOutOfTurn :: Game -> PlayerName -> Either GameErr ()
 isPlayerActingOutOfTurn game@Game {..} name
   | currPosToActOutOfBounds = error "_currentPosToAct too big"
-  | isNothing _currentPosToAct = Left $ InvalidMove name $ NoPlayerCanAct
+  | isNothing _currentPosToAct && _street /= PreDeal = Left $ InvalidMove name $ NoPlayerCanAct
   | (fromJust _currentPosToAct) < 0 = error "_currentPosToAct player < 0"
-  | _street == PreDeal && isNothing _currentPosToAct =
-     Right () -- first blind posting when a new game is starting can be done
-              -- from any position
+  | isNewGame = Right () -- Only Permit First Blind Posting to Be at Any Position When 
+             -- starting new Game"
   | otherwise = case name `elemIndex` gamePlayerNames of
       Nothing  -> Left $ NotAtTable name
       Just pos -> if doesPlayerHaveToAct name game
@@ -101,6 +100,7 @@ isPlayerActingOutOfTurn game@Game {..} name
     length $ filter (\Player {..} -> _playerState == In) _players
   currPosToActOutOfBounds =
     maybe False ((<) ((length _players) - 1)) _currentPosToAct
+  isNewGame = _street == PreDeal && isNothing _currentPosToAct
 
 checkPlayerSatAtTable :: Game -> PlayerName -> Either GameErr ()
 checkPlayerSatAtTable game@Game {..} name | not atTable = Left $ NotAtTable name
