@@ -135,6 +135,8 @@ canRaise :: PlayerName -> Int -> Game -> Either GameErr ()
 canRaise name amount game@Game {..}
   | _street == Showdown || _street == PreDeal
   = Left $ InvalidMove name InvalidActionForStreet
+  | _street == PreFlop && _maxBet == _bigBlind 
+  = Left $ InvalidMove name CannotRaiseShouldBetInstead -- a blind doesnt count as a sufficient bet to qualify a raise  
   | _maxBet == 0
   = Left $ InvalidMove name CannotRaiseShouldBetInstead
   | amount < minRaise && amount /= chipCount
