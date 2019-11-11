@@ -1,25 +1,25 @@
-@import 'game/table';
-@import 'game/actionPanel';
-@import 'game/boardCards';
-@import 'game/cards';
-@import 'game/seat';
+@import "game/table";
+@import "game/actionPanel";
+@import "game/boardCards";
+@import "game/cards";
+@import "game/seat";
 
 .game-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    grid-column-start: 2;
-    grid-row-start: 2;
-    margin-top: 5.5em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  grid-column-start: 2;
+  grid-row-start: 2;
+  margin-top: 5.5em;
 
-    @include md {
-       margin-top: 5.5em;
-    }
+  @include md {
+    margin-top: 5.5em;
+  }
 }
 
 .game-grid {
-    grid-area: 2/2/5/5;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(6, 1fr);
+  grid-area: 2/2/5/5;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(6, 1fr);
 }

@@ -1,4 +1,3 @@
-
 /*
 
 The real power of mixins comes when you pass them arguments. 
@@ -19,80 +18,79 @@ header{ @include default-box(#666, block, 10px); }
 footer{ @include default-box(#999, inline-block, 5px);
 */
 /* Mixins */
-@import '../../common';
+@import "../../common";
 
 .player-chip-count {
-    margin: auto;
-    margin-top: 0.5em;
+  margin: auto;
+  margin-top: 0.5em;
 }
 
-// current seated player's turn to act 
+// current seated player's turn to act
 .active-player {
-  border: 0.20em;
+  border: 0.2em;
   border-style: solid;
   border-color: white;
-
 }
 
 .seat-0 {
-    @extend %seat;
+  @extend %seat;
 }
 
 .seat-0-container {
-    grid-area: 5/3;
+  grid-area: 5/3;
 }
 
 .seat-1 {
-    @extend %seat;
+  @extend %seat;
 }
 
 .seat-1-container {
-    grid-area: 4/1;
+  grid-area: 4/1;
 }
 
 .seat-2 {
-    @extend %seat;
-    grid-area: 2/1;
+  @extend %seat;
+  grid-area: 2/1;
 }
 
 .seat-2-container {
-    grid-area: 2/1;
+  grid-area: 2/1;
 }
 
 .seat-3 {
-    @extend %seat;
-    grid-area: 1/3;
+  @extend %seat;
+  grid-area: 1/3;
 }
 
 .seat-3-container {
-    grid-area: 1/3;
+  grid-area: 1/3;
 }
 
 .seat-4 {
-    @extend %seat;
-    grid-area: 2/5;
+  @extend %seat;
+  grid-area: 2/5;
 }
 
 .seat-4-container {
-    grid-area: 2/5;
+  grid-area: 2/5;
 }
 
 .seat-5 {
-    @extend %seat;
+  @extend %seat;
 }
 
 .seat-5-container {
-    grid-area: 4/5;
+  grid-area: 4/5;
 }
 
-
 .empty-seat {
-    opacity: 0.4;
-    color: transparent;
+  opacity: 0.4;
+
+  color: transparent;
 }
 
 .empty-seat:hover {
-    opacity: 0.88;
-    transition: ease-in-out 0.10s;
-    color: white;
+  opacity: 0.88;
+  transition: ease-in-out 0.1s;
+  color: white;
 }

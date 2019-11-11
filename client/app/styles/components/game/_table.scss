@@ -1,21 +1,21 @@
 /* Six Player Table */
 .table-container {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1.5fr 1fr 1.5fr;
-    grid-template-rows: repeat(5, 5fr);
-    width: 100%;
-    height: 100%;
-    margin-left: 14vw;
-    margin-right: 14vw;
-    
-    @include md {
-      margin: auto;
-    }
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1.5fr 1fr 1.5fr;
+  grid-template-rows: repeat(5, 5fr);
+  width: 100%;
+  height: 100%;
+  margin-left: 14vw;
+  margin-right: 14vw;
+
+  @include md {
+    margin: auto;
+  }
 }
 
 .table-container h2 {
-    justify-self: center;
-    margin: 0;
+  justify-self: center;
+  margin: 0;
 }
 
 /* 
@@ -23,8 +23,8 @@
   
   Adds whitespace between player name and chip count
 */
-.table-container h2+h2 {
-    padding: 0.7em 0 0 0;
+.table-container h2 + h2 {
+  padding: 0.7em 0 0 0;
 }
 
 .game-table {
@@ -45,38 +45,38 @@
 }
 
 .winners-label {
-    grid-area: 2/1/3/6;
-    justify-self: center;
-    top: 0.75em;
-    position: relative;
+  grid-area: 2/1/3/6;
+  justify-self: center;
+  top: 0.75em;
+  position: relative;
 }
 
 .dealer-btn-pos-0 {
-    @extend %dealer-btn;
-    grid-area: 6/2;
+  @extend %dealer-btn;
+  grid-area: 6/2;
 }
 
 .dealer-btn-pos-1 {
-    @extend %dealer-btn;
-    grid-area: 4/1;
-    align-self: center;
+  @extend %dealer-btn;
+  grid-area: 4/1;
+  align-self: center;
 }
 
 .dealer-btn-pos-2 {
-    @extend %dealer-btn;
-    grid-area: 2/1;
-    justify-self: center;
+  @extend %dealer-btn;
+  grid-area: 2/1;
+  justify-self: center;
 }
 
 .dealer-btn-pos-3 {
-    @extend %dealer-btn;
-    grid-area: 1/4;
+  @extend %dealer-btn;
+  grid-area: 1/4;
 }
 
 .dealer-btn-pos-4 {
-    @extend %dealer-btn;
-    grid-area: 2/5;
-    justify-self: center;
+  @extend %dealer-btn;
+  grid-area: 2/5;
+  justify-self: center;
 }
 
 .dealer-btn-pos-5 {
@@ -85,85 +85,81 @@
   justify-self: center;
 }
 
-.player-bet-label  {
-    margin-right: 0.25em;
-    margin-left: 0.25em;
-    height: 1.25em;
-    width: 2.25em;
+.player-bet-label {
+  margin-right: 0.25em;
+  margin-left: 0.25em;
+  height: 1.25em;
+  width: 2.25em;
 }
 
 .player-bet-chip {
-    background-color: $color-primary;
-    height: 1.25em;
-    width: 1.25em;
-    border-radius: 1.25em;    
-    box-shadow: 1px 1px 1px 0px rgba(0,0,0,0.55);
+  background-color: $color-primary;
+  height: 1.25em;
+  width: 1.25em;
+  border-radius: 1.25em;
+  box-shadow: 1px 1px 1px 0px rgba(0, 0, 0, 0.55);
 }
 
 .player-bet-container-pos-0 {
-    grid-area: 5/3;
+  grid-area: 5/3;
 }
 
 .player-bet-pos-0 {
-    display: flex;
-    justify-content: center;
+  display: flex;
+  justify-content: center;
 }
 
 .player-bet-container-pos-1 {
-    grid-area: 5/1;
+  grid-area: 5/1;
 }
 
 .player-bet-pos-1 {
-    text-align: right;
-    display: flex;
+  text-align: right;
+  display: flex;
 }
 
-.player-bet-container-pos-2 {   
-    grid-area: 2/1;
-    position: relative;
+.player-bet-container-pos-2 {
+  grid-area: 2/1;
+  position: relative;
 }
 
 .player-bet-pos-2 {
-   text-align: right;
-    display: flex;
-    position: absolute;
-    bottom: 0;
-    right: 0;
+  text-align: right;
+  display: flex;
+  position: absolute;
+  bottom: 0;
+  right: 0;
 }
 
 .player-bet-container-pos-3 {
-    margin-top: 20%;
-    grid-area: 1/3;
+  margin-top: 20%;
+  grid-area: 1/3;
 }
-
 
 .player-bet-pos-3 {
-    display: flex;
-    justify-content: center;
+  display: flex;
+  justify-content: center;
 }
 
-
 .player-bet-container-pos-4 {
-    grid-area: 2/5;
-    position: relative;
+  grid-area: 2/5;
+  position: relative;
 }
 
 .player-bet-pos-4 {
   position: absolute;
   bottom: 0;
   display: flex;
-      flex-direction: row-reverse;
-
+  flex-direction: row-reverse;
 }
 
-
 .player-bet-container-pos-5 {
-    grid-area: 5/5;
-    position: relative;
+  grid-area: 5/5;
+  position: relative;
 }
 
 .player-bet-pos-5 {
-    position: absolute;
-    display: flex;
-        flex-direction: row-reverse;
+  position: absolute;
+  display: flex;
+  flex-direction: row-reverse;
 }
