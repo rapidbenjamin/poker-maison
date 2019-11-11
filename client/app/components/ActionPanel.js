@@ -63,7 +63,7 @@ const ActionPanel = ({
           {betValue}</span>
       </button>}
 
-      {userPlayer.get("_playerState") === "SatOut" ? <button
+      {userPlayer && (userPlayer.get("_playerState") === "SatOut") ? <button
         type="button"
         onClick={() => sitIn()}
         className="button">

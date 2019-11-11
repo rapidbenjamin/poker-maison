@@ -26,6 +26,10 @@ function addHandlers(socket, authToken, dispatch) {
 
   socket.onclose = event => {
     dispatch(disconnectSocket())
+    // try and reconnect nearly instantly which is  
+    // useful when the client has refreshed their web browser
+    setTimeout(() => connect(), 250);
+
   }
 
   socket.onmessage = msg => {
