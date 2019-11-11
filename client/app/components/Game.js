@@ -121,12 +121,18 @@ const Game = props => {
     const maxPlayers = 6
     const gameStage = game.get('_street')
     const potSize = game.get('_pot')
+
     const userPlayer = game
       .get('_players')
       .find(p => p.get('_playerName') === username)
+    console.log(userPlayer)
+    console.log(userPlayer)
+    console.log(userPlayer)
+
     const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
     const userAvailableActions = userPlayer ? userPlayer.get('_possibleActions') : fromJS([])
     console.log(((parseAvailableActions(userAvailableActions))).toJS)
+
     const currentPosToAct = game.get('_currentPosToAct')
     const isMultiplayerShowdown =
       game.get('_winners').get('tag') == 'MultiPlayerShowdown'
@@ -192,6 +198,7 @@ const Game = props => {
           gameStage={gameStage}
           userPocketCards={userPocketCards}
           availableActions={parseAvailableActions(userAvailableActions)}
+          userPlayer={userPlayer}
         />
       </div>
     )

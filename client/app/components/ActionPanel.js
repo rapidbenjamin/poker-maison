@@ -35,9 +35,9 @@ const ActionPanel = ({
   sitIn,
   isTurnToAct,
   availableActions,
+  userPlayer
 }) => {
   console.log('available actions', availableActions)
-
 
   const preDealActions =
     gameStage === "PreDeal" ? <React.Fragment>
@@ -55,27 +55,27 @@ const ActionPanel = ({
           post Small Blind
       </button> : ' '}
 
-      <button
+      {userPlayer ? '' : <button
         type="button"
         onClick={() => sitDown(betValue)}
         className="button">
         Sit Down Bet <span className='monospaced-font'>
           {betValue}</span>
-      </button>
+      </button>}
 
-      <button
+      {userPlayer.get("_playerState") === "SatOut" ? <button
         type="button"
         onClick={() => sitIn()}
         className="button">
         Sit In
-          </button>
+          </button> : ''}
 
-      <button
+      {userPlayer ? <button
         type="button"
         onClick={() => leaveGameSeat()}
         className="button">
         Leave Seat
-    </button>
+    </button> : ' '}
 
     </React.Fragment> : '';
 
@@ -109,7 +109,6 @@ const ActionPanel = ({
                 Check
        </button> : ''}
 
-
             {availableActions.includes("Call") ?
               <button type="button" onClick={() => call()} className="button">
                 Call</button> : ''}
@@ -132,7 +131,6 @@ const ActionPanel = ({
           </button> : ''}
           </React.Fragment>
           : ''}
-
 
       </div>
     </div>)
