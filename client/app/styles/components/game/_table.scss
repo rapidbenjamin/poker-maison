@@ -36,7 +36,7 @@
   top: -13.4%;
   border-radius: 100%;
   z-index: -10;
-  background: $neutral-accent-600;
+  background: radial-gradient($primary-colour-600, $primary-colour-900); //  $neutral-accent-900;
   //$witching-hour;
 }
 
