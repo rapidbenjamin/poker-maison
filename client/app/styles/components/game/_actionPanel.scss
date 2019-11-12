@@ -1,45 +1,13 @@
-
 .action-panel {
-    grid-column-start: 2;
-    grid-row-start: 3;
-    display: flex;
-    margin-top: 7em;
+  grid-column-start: 2;
+  grid-row-start: 3;
+  display: flex;
 
-    @include md {
-        border-radius: 3em 3em 0 0;
-    }
-}
-
-.action-panel-left-container {
-    height: 100%;
-    width: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: auto;
-
-    @include xxl {
-      width: 40%;
-    }
-}
-
-/* cards behind player oval representing opponent pockets outwith showdown */
-.action-panel-left-container .card {
-    font-size: 2.2em;
-}
-
-.action-panel-left-container:first-child {
-    margin-left: 0;
-}
-
-.action-panel-left-container:last-child {
-    margin-right: 0.2em;
-
-    @include sm {
-      margin-left: 0;
-    }
+  @include md {
+    border-radius: 3em 3em 0 0;
+  }
 }
 
 .user-actions-container {
-    margin: auto;
+  margin: auto;
 }

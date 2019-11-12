@@ -1,13 +1,13 @@
-@import '../common/mixins';
+@import "../common/mixins";
 
 %full-screen {
   position: absolute;
   height: 100%;
-  width: 100%
+  width: 100%;
 }
 
 .app {
-    @extend %full-screen;
+  @extend %full-screen;
 }
 
 .app-wrapper {
@@ -16,22 +16,23 @@
   grid-template-columns: auto;
   grid-template-rows: 0.8fr 15fr;
   grid-template-areas:
-    'navbar'
-    'main'
+    "navbar"
+    "main";
 }
 
 .game-view-grid {
   display: grid;
   grid-template-columns: max-content;
+  grid-template-rows: 75vh 10vh;
 
   @include md {
-      margin-left: 19vw;
-      margin-right: 19vw;
+    margin-left: 14vw;
+    margin-right: 14vw;
   }
 
-   /* Prevents table Aspect Ratio from being too wide on wider screens. */
-   @include xl {
-        margin-left: 28vw;
-        margin-right: 28vw;
-    }
+  /* Prevents table Aspect Ratio from being too wide on wider screens. */
+  @include xl {
+    margin-left: 23vw;
+    margin-right: 23vw;
+  }
 }

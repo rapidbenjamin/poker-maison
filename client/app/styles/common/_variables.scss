@@ -6,6 +6,57 @@
 ---------------------------------
 */
 
+$primary-colour-100: #edf6fc;
+$primary-colour-200: #a0d7ff;
+$primary-colour-300: #4bb3fd;
+$primary-colour-400: #14a1ff;
+$primary-colour-500: #027cce;
+$primary-colour-600: #015c99;
+$primary-colour-700: #014877;
+$primary-colour-800: #004272;
+$primary-colour-900: #002e47;
+
+$neutral-colour-100: #e5f1f9;
+$neutral-colour-200: #dee2e2;
+$neutral-colour-300: #cee2e2;
+$neutral-colour-400: #5d8989;
+$neutral-colour-500: #4f535b;
+$neutral-colour-600: #244242;
+$neutral-colour-700: #243942;
+$neutral-colour-800: #131414;
+
+$neutral-accent-100: #cfe8f9;
+$neutral-accent-200: #a0c9e5;
+$neutral-accent-300: #6698ba;
+$neutral-accent-400: #56819e;
+$neutral-accent-500: #495c68;
+$neutral-accent-600: #37454f;
+$neutral-accent-700: #121b21;
+
+//$success-accent-100:
+//$success-accent-200:
+//$success-accent-300:
+//$success-accent-400:
+//$success-accent-500:
+//$success-accent-600:
+//$success-accent-700:
+//
+//$warning-accent-100:
+//$warning-accent-200:
+//$warning-accent-300:
+//$warning-accent-400:
+//$warning-accent-500:
+//$warning-accent-600:
+//$warning-accent-700:
+//
+//$danger-accent-100:
+//$danger-accent-200:
+//$danger-accent-300:
+//$danger-accent-400:
+//$danger-accent-500:
+//$danger-accent-600:
+//$danger-accent-700:
+
 // table gradient should comprise of mixed palette colours
 $dark-imperial-blue: #003e60;
 
@@ -17,6 +68,9 @@ $eerie-black: #161925;
 $deep-space-purple: #415a77;
 
 $outer-space-grey: #424b54;
+
+$color-grey-400: $outer-space-grey;
+
 // or
 $orioles-orange: #f34213; // perhaps busies the palette too much
 

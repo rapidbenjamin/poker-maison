@@ -1,7 +1,7 @@
 // Import Modular Scale Plugin
-@import '~modularscale-sass/stylesheets/modularscale';
+@import "~modularscale-sass/stylesheets/modularscale";
 
-@import 'variables';
+@import "variables";
 
 /*
 ---------------------------------
@@ -11,92 +11,81 @@
 
 // TODO - remove the repetition of font-face with mixin functions
 @font-face {
-  font-family: 'Gotham-Narrow-Book';
-  src: url('http://localhost:9080/fonts/GothamPro/GothamNarrow-Book.ttf')
-    format('ttf');
+  font-family: "Gotham-Narrow-Book";
+  src: url("http://localhost:9080/fonts/GothamPro/GothamNarrow-Book.ttf") format("ttf");
 }
 
 @font-face {
-  font-family: 'Gotham-Narrow-Medium';
-  src: url('http://localhost:9080/fonts/GothamPro/GothamNarrow-Medium.ttf')
-    format('ttf');
+  font-family: "Gotham-Narrow-Medium";
+  src: url("http://localhost:9080/fonts/GothamPro/GothamNarrow-Medium.ttf") format("ttf");
 }
 
 @font-face {
-  font-family: 'Gotham-Narrow-Bold';
-  src: url('http://localhost:9080/fonts/GothamPro/GothamNarrow-Bold.ttf')
-    format('ttf');
+  font-family: "Gotham-Narrow-Bold";
+  src: url("http://localhost:9080/fonts/GothamPro/GothamNarrow-Bold.ttf") format("ttf");
 }
 
 @font-face {
-  font-family: 'GothamPro-Black';
-  src: url('http://localhost:9080/fonts/GothamPro/GothamPro-Black.woff2')
-      format('woff2'),
-    url('http://localhost:9080/fonts/GothamPro/GothamPro-Black.ttf')
-      format('ttf');
+  font-family: "GothamPro-Black";
+  src: url("http://localhost:9080/fonts/GothamPro/GothamPro-Black.woff2") format("woff2"),
+    url("http://localhost:9080/fonts/GothamPro/GothamPro-Black.ttf") format("ttf");
   font-weight: 600;
 }
 
 @font-face {
-  font-family: 'GothamPro-Bold';
-  src: url('http://localhost:9080/fonts/GothamPro/GothamPro-Bold.woff2')
-      format('woff2'),
-    url('http://localhost:9080/fonts/GothamPro/GothamPro-Bold.ttf')
-      format('ttf');
+  font-family: "GothamPro-Bold";
+  src: url("http://localhost:9080/fonts/GothamPro/GothamPro-Bold.woff2") format("woff2"),
+    url("http://localhost:9080/fonts/GothamPro/GothamPro-Bold.ttf") format("ttf");
   font-weight: 600;
 }
 
 @font-face {
-  font-family: 'GothamPro-Medium';
-  src: url('http://localhost:9080/fonts/GothamPro/GothamPro-Medium.woff2')
-      format('woff2'),
-    url('http://localhost:9080/fonts/GothamPro/GothamPro-Medium.ttf')
-      format('ttf');
+  font-family: "GothamPro-Medium";
+  src: url("http://localhost:9080/fonts/GothamPro/GothamPro-Medium.woff2") format("woff2"),
+    url("http://localhost:9080/fonts/GothamPro/GothamPro-Medium.ttf") format("ttf");
   font-weight: 400;
 }
 
 @font-face {
-  font-family: 'GothamPro-Light';
-  src: url('http://localhost:9080/fonts/GothamPro/GothamPro-Light.woff2')
-      format('woff2'),
-    url('http://localhost:9080/fonts/GothamPro/GothamPro-Light.ttf')
-      format('ttf');
+  font-family: "GothamPro-Light";
+  src: url("http://localhost:9080/fonts/GothamPro/GothamPro-Light.woff2") format("woff2"),
+    url("http://localhost:9080/fonts/GothamPro/GothamPro-Light.ttf") format("ttf");
   font-weight: 200;
 }
 
 @font-face {
-  font-family: 'Aktiv-Grotesk';
-  src: url('http://localhost:9080/fonts/aktivgrotesk.ttf') format('ttf');
+  font-family: "Aktiv-Grotesk";
+  src: url("http://localhost:9080/fonts/aktivgrotesk.ttf") format("ttf");
   font-weight: 400;
 }
 
 @font-face {
-  font-family: 'Aktiv-Grotesk-Bold';
-  src: url('http://localhost:9080/fonts/aktivgrotesk-bold.ttf') format('ttf');
+  font-family: "Aktiv-Grotesk-Bold";
+  src: url("http://localhost:9080/fonts/aktivgrotesk-bold.ttf") format("ttf");
   font-weight: 600;
 }
 
 @font-face {
-  font-family: 'Aktiv-Grotesk-Black';
-  src: url('http://localhost:9080/fonts/aktivgrotesk-black.ttf') format('ttf');
+  font-family: "Aktiv-Grotesk-Black";
+  src: url("http://localhost:9080/fonts/aktivgrotesk-black.ttf") format("ttf");
   font-weight: 800;
 }
 
 @font-face {
-  font-family: 'Sentinel-Book';
-  src: url('http://localhost:9080/fonts/sentinel-book.ttf') format('ttf');
+  font-family: "Sentinel-Book";
+  src: url("http://localhost:9080/fonts/sentinel-book.ttf") format("ttf");
   font-weight: 400;
 }
 
 @font-face {
-  font-family: 'Sentinel-Light';
-  src: url('http://localhost:9080/fonts/sentinel-light.ttf') format('ttf');
+  font-family: "Sentinel-Light";
+  src: url("http://localhost:9080/fonts/sentinel-light.ttf") format("ttf");
   font-weight: 300;
 }
 
-$monospaced-font: 'Gotham-Narrow-Bold', sans-serif;
+$monospaced-font: "Gotham-Narrow-Bold", sans-serif;
 
-$monospaced-font2: 'Gotham-Narrow-Book', sans-serif;
+$monospaced-font2: "Gotham-Narrow-Book", sans-serif;
 
 .monospaced-font {
   font-family: $monospaced-font;
@@ -159,19 +148,19 @@ h5 {
 h1,
 .h1 {
   @include ms-respond(font-size, 5);
-  font-family: 'GothamPro-Bold', sans-serif;
+  font-family: "GothamPro-Bold", sans-serif;
 }
 
 h2,
 .h2 {
   @include ms-respond(font-size, 4);
-  font-family: 'GothamPro-Bold', sans-serif;
+  font-family: "GothamPro-Bold", sans-serif;
 }
 
 h3,
 .h3 {
   @include ms-respond(font-size, 3);
-  font-family: 'GothamPro-Bold', sans-serif;
+  font-family: "GothamPro-Bold", sans-serif;
   letter-spacing: 1.3px;
 }
 
@@ -179,35 +168,53 @@ h4,
 .h4 {
   @include ms-respond(font-size, 1);
   letter-spacing: 0.8px;
-  font-family: 'GothamPro-Medium', sans-serif;
+  font-family: "GothamPro-Medium", sans-serif;
 }
 
 h5,
 .h5 {
   @include ms-respond(font-size, 1);
   letter-spacing: 1px;
-  font-family: 'GothamPro-Medium', sans-serif;
+  font-family: "GothamPro-Medium", sans-serif;
   font-weight: 400;
 }
 
 body,
 .body {
   @include ms-respond(font-size, 0);
-  font-family: 'Sentinel-Light', sans-serif;
+  font-family: "Sentinel-Light", sans-serif;
   letter-spacing: 1px;
 }
 
 .brand-title {
   letter-spacing: 1.4px;
-  font-family: 'GothamPro-Bold', sans-serif;
+  font-family: "GothamPro-Bold", sans-serif;
 }
 
 .card {
   font-size: 1.6em;
-  font-family: 'GothamPro-Black', sans-serif;
+  @include md {
+    font-size: 1.8em;
+  }
+
+  @include xl {
+    font-size: 2.3em;
+  }
+  font-family: "GothamPro-Black", sans-serif;
+}
+
+@include md {
+  margin-left: 14vw;
+  margin-right: 14vw;
+}
+
+/* Prevents table Aspect Ratio from being too wide on wider screens. */
+@include xl {
+  margin-left: 20vw;
+  margin-right: 20vw;
 }
 
 .button {
-  font-family: 'Gotham-Narrow-Medium', sans-serif;
+  font-family: "Gotham-Narrow-Medium", sans-serif;
   letter-spacing: 0.09em;
 }

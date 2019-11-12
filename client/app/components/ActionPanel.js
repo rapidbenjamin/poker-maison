@@ -81,18 +81,7 @@ const ActionPanel = ({
 
   return (
     <div className='action-panel'>
-      <div className='action-panel-left-container'>
-        {userPocketCards ? userPocketCards.map(card => {
-          const rank = card.get('rank')
-          const suit = card.get('suit')
 
-          return (<Card
-            key={rank + suit}
-            rank={rank}
-            suit={suit}
-          />)
-        }) : ''}
-      </div>
       <div className='user-actions-container'>
         {gameStage === 'PreDeal' || (gameStage !== 'PreDeal' && isTurnToAct) ?
           <input

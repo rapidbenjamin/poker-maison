@@ -22,8 +22,7 @@
   position: absolute;
   z-index: -1;
   margin: 0;
-  height: 2.5em;
-  width: 1.8em;
+  height: 3em;
   top: -1em;
 }
 
@@ -47,8 +46,9 @@
 /* Cards displayed at showdown  */
 .showdown-pocket-cards-container {
   width: 100%;
-  margin: auto;
+
   display: flex;
+  margin: 0;
 }
 
 .showdown-pocket-cards-container:first-child {

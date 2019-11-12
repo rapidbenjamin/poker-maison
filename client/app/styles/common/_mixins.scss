@@ -55,14 +55,19 @@
   align-content: center;
   display: grid;
   width: 100%;
-  height: 5.5em;
+  height: 70%;
   border-radius: 7em;
+  min-height: 5rem;
+  //  @include xl {
+  //    margin-left: 14vw;
+  //    margin-right: 14vw;
+  //  }
 }
 
 %showdown-pocket-cards {
-  margin-left: auto;
-  margin-right: auto;
-  bottom: 0;
+  margin: 0;
+
+  justify-self: center;
   align-self: end;
   z-index: -1;
 }

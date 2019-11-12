@@ -1,15 +1,13 @@
 .board-cards {
-  margin: auto;
+  justify-self: center;
+  align-self: center;
   grid-area: 3/1/5/6;
 }
 
 .board-cards-container {
   display: flex;
-  height:100%;
-  width: 100%
-}
-
-.board-cards .card {
-  margin-top: auto;
-  margin-bottom: auto;
+  height: 100%;
+  width: 100%;
+  justify-self: center;
+  align-self: center;
 }

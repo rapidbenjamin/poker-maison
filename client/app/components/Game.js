@@ -17,6 +17,7 @@ const getSeatedPlayer = (
     <Seat
       key={position}
       position={position}
+
       playerName={player.get('_playerName')}
       chips={player.get('_chips')}
       hasPocketCards={
@@ -40,7 +41,9 @@ const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct) =>
       return player ? (
         getSeatedPlayer(username, player, gameStage, i, isTurnToAct)
       ) : (
-          <Seat key={i} position={i} />
+          <Seat
+            key={i}
+            position={i} />
         )
     })
 

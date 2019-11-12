@@ -1,5 +1,9 @@
 import React from 'react';
 
+let isPlayerInactive = playerState =>
+  playerState === 'Folded' ||
+  playerState === 'SatOut'
+
 
 const Seat = ({ playerName, chips, isTurnToAct, hasPocketCards, position, playerState }) => (
   <div className={`seat-${position}-container`}>
@@ -14,7 +18,7 @@ const Seat = ({ playerName, chips, isTurnToAct, hasPocketCards, position, player
       className={`seat-${position}
         ${isTurnToAct ? 'active-player' : ''} 
         ${playerName ? '' : 'empty-seat'}
-        ${playerState == 'SatOut' ? '' : 'disabled'}`
+        ${isPlayerInactive(playerState) ? 'disabled' : ''}`
       }>
       <h5 className={playerName ? 'player-name' : ''}>{playerName || 'Take Seat'}</h5>
       <h5 className={playerState ? 'player-state' : ''}>

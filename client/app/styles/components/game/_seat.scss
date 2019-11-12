@@ -32,6 +32,10 @@ footer{ @include default-box(#999, inline-block, 5px);
   border-color: white;
 }
 
+.disabled {
+  background-color: $color-grey-400;
+}
+
 .seat-0 {
   @extend %seat;
 }
@@ -84,8 +88,7 @@ footer{ @include default-box(#999, inline-block, 5px);
 }
 
 .empty-seat {
-  opacity: 0.4;
-
+  opacity: 0.2;
   color: transparent;
 }
 
