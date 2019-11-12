@@ -1,19 +1,19 @@
 /* Main App Grid */
-@import 'layout/app';
+@import "layout/app";
 
 /* Improt common modules */
-@import 'common';
+@import "common";
 
 /* Components */
-@import 'components/game';
-@import 'components/footer';
-@import 'components/navbar';
-@import 'components/buttons';
-@import 'components/lobby';
+@import "components/game";
+@import "components/footer";
+@import "components/navbar";
+@import "components/buttons";
+@import "components/lobby";
 
 // Main Layout Colours
 html {
-  color: white;
-  background: $gotham;
+  color: $neutral-colour-100;
+  background: $gradient; // #10212d;
   height: 100%;
 }

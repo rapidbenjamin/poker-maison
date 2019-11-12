@@ -1,29 +1,32 @@
-@import 'variables';
+@import "variables";
 
 .card {
-    background-color: $anti-flash-white;
-    color: $eerie-black;
+  background-color: $neutral-colour-100;
+  color: $neutral-colour-800;
 }
 
-.navbar, .action-panel  {
-    background-color: $color-secondary;
+.navbar {
+  background-color: $neutral-colour-700;
+  //  background-color: $neutral-accent-600;
 }
-
+.action-panel {
+  background-color: $neutral-accent-600;
+}
 
 .hidden-pocket-cards .card {
-    background-color: $dark-imperial-blue;
+  background-color: $neutral-accent-400; // $neutral-colour-100;
 }
 
 %seat {
-    background-color: $color-light;
+  background-color: $primary-colour-700;
 }
 
-
 .button {
-    background: $color-primary;
+  background: $primary-colour-700;
 }
 
 .button:hover {
-  background-color: $color-light;
+  //background-color: $color-light;
+  opacity: 0.8;
   animation: ease-in-out 0.2s;
 }

@@ -9,83 +9,19 @@
 ---------------------------------
 */
 
-// TODO - remove the repetition of font-face with mixin functions
 @font-face {
-  font-family: "Gotham-Narrow-Book";
-  src: url("http://localhost:9080/fonts/GothamPro/GothamNarrow-Book.ttf") format("ttf");
+  font-family: "PT-Mono";
+  src: url("../../static/fonts/PTMono.ttf") format("ttf"); /* Pretty Modern Browsers */
 }
 
 @font-face {
-  font-family: "Gotham-Narrow-Medium";
-  src: url("http://localhost:9080/fonts/GothamPro/GothamNarrow-Medium.ttf") format("ttf");
+  font-family: "PT-Mono-Bold";
+  src: url("../../static/fonts/PTMonoBold.ttf") format("ttf"); /* Pretty Modern Browsers */
 }
 
-@font-face {
-  font-family: "Gotham-Narrow-Bold";
-  src: url("http://localhost:9080/fonts/GothamPro/GothamNarrow-Bold.ttf") format("ttf");
-}
+$monospaced-font: "PT-Mono", sans-serif;
 
-@font-face {
-  font-family: "GothamPro-Black";
-  src: url("http://localhost:9080/fonts/GothamPro/GothamPro-Black.woff2") format("woff2"),
-    url("http://localhost:9080/fonts/GothamPro/GothamPro-Black.ttf") format("ttf");
-  font-weight: 600;
-}
-
-@font-face {
-  font-family: "GothamPro-Bold";
-  src: url("http://localhost:9080/fonts/GothamPro/GothamPro-Bold.woff2") format("woff2"),
-    url("http://localhost:9080/fonts/GothamPro/GothamPro-Bold.ttf") format("ttf");
-  font-weight: 600;
-}
-
-@font-face {
-  font-family: "GothamPro-Medium";
-  src: url("http://localhost:9080/fonts/GothamPro/GothamPro-Medium.woff2") format("woff2"),
-    url("http://localhost:9080/fonts/GothamPro/GothamPro-Medium.ttf") format("ttf");
-  font-weight: 400;
-}
-
-@font-face {
-  font-family: "GothamPro-Light";
-  src: url("http://localhost:9080/fonts/GothamPro/GothamPro-Light.woff2") format("woff2"),
-    url("http://localhost:9080/fonts/GothamPro/GothamPro-Light.ttf") format("ttf");
-  font-weight: 200;
-}
-
-@font-face {
-  font-family: "Aktiv-Grotesk";
-  src: url("http://localhost:9080/fonts/aktivgrotesk.ttf") format("ttf");
-  font-weight: 400;
-}
-
-@font-face {
-  font-family: "Aktiv-Grotesk-Bold";
-  src: url("http://localhost:9080/fonts/aktivgrotesk-bold.ttf") format("ttf");
-  font-weight: 600;
-}
-
-@font-face {
-  font-family: "Aktiv-Grotesk-Black";
-  src: url("http://localhost:9080/fonts/aktivgrotesk-black.ttf") format("ttf");
-  font-weight: 800;
-}
-
-@font-face {
-  font-family: "Sentinel-Book";
-  src: url("http://localhost:9080/fonts/sentinel-book.ttf") format("ttf");
-  font-weight: 400;
-}
-
-@font-face {
-  font-family: "Sentinel-Light";
-  src: url("http://localhost:9080/fonts/sentinel-light.ttf") format("ttf");
-  font-weight: 300;
-}
-
-$monospaced-font: "Gotham-Narrow-Bold", sans-serif;
-
-$monospaced-font2: "Gotham-Narrow-Book", sans-serif;
+$monospaced-font2: "PT-Mono-Bold", sans-serif;
 
 .monospaced-font {
   font-family: $monospaced-font;

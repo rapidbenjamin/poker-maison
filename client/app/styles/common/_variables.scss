@@ -14,7 +14,7 @@ $primary-colour-500: #027cce;
 $primary-colour-600: #015c99;
 $primary-colour-700: #014877;
 $primary-colour-800: #004272;
-$primary-colour-900: #002e47;
+$primary-colour-900: #003856;
 
 $neutral-colour-100: #e5f1f9;
 $neutral-colour-200: #dee2e2;
@@ -30,8 +30,13 @@ $neutral-accent-200: #a0c9e5;
 $neutral-accent-300: #6698ba;
 $neutral-accent-400: #56819e;
 $neutral-accent-500: #495c68;
-$neutral-accent-600: #37454f;
-$neutral-accent-700: #121b21;
+$neutral-accent-600: #213b4f;
+$neutral-accent-700: #172630;
+$neutral-accent-900: #121b21;
+
+//2c3e50
+//$gradient: radial-gradient($neutral-accent-900, $neutral-accent-600);
+$gradient: radial-gradient($neutral-accent-700, $neutral-accent-600);
 
 //$success-accent-100:
 //$success-accent-200:
