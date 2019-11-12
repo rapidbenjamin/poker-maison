@@ -88,6 +88,9 @@ getPlayersSatIn = filter ((/= SatOut) . (^. playerState))
 getPlayerPosition :: [PlayerName] -> PlayerName -> Maybe Int
 getPlayerPosition playersSatIn playerName = playerName `elemIndex` playersSatIn
 
+getPlayerPosition' :: PlayerName -> [Player] -> Maybe Int
+getPlayerPosition' playerName = (flip getPlayerPosition) playerName . getPlayerNames . getPlayersSatIn
+
 getGameStage :: Game -> Street
 getGameStage game = game ^. street
 
@@ -112,6 +115,22 @@ getPlayerChipCounts Game {..} =
 
 getPlayerNames :: [Player] -> [Text]
 getPlayerNames players = (^. playerName) <$> players
+
+-- Nothing for currentPosToAct during Predeal means that the first blind
+-- can be posted from any position as this is the first blind to get a new game started
+-- on the otherhand a value of Just pos means that pos is the position that we require a blind to 
+-- be posted from next as a game is underway.
+inPositionToAct :: PlayerName -> Game -> Bool
+inPositionToAct playerName Game{..} =
+  case playerPos of
+    Nothing -> False
+    Just pos -> case _currentPosToAct of 
+      Nothing -> _street == PreDeal -- Wheareas Nothing during Predeal means anyone can act
+      -- Nothing in currentPostToAct field after predeal means no player can act.
+      Just posToAct -> pos == posToAct 
+  where 
+    playerPos = getPlayerPosition' playerName _players
+
 
 maximums :: Ord a => [(a, b)] -> [(a, b)]
 maximums []       = []

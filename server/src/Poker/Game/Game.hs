@@ -312,28 +312,23 @@ initPlayer playerName chips = Player { _pockets       = Nothing
 doesPlayerHaveToAct :: Text -> Game -> Bool
 doesPlayerHaveToAct playerName game@Game {..}
   | length _players < 2 = False
-  | isNothing _currentPosToAct = False
+  | not $ inPositionToAct playerName game = False
   | otherwise = if currPosToActOutOfBounds
     then error $ "_currentPosToAct too large " <> show game
     else case _players Safe.!! (fromJust _currentPosToAct) of
       Nothing -> False
       Just Player {..}
-        | _chips == 0
-        -> False
-        | _street
-          == Showdown
+        | _chips == 0 -> False
+        | _street == Showdown
           || (activePlayerCount < 2)
           || haveAllPlayersActed game
-          || _playerState
-          /= In
+          || _playerState /= In
           || (_street == PreDeal && _maxBet == 0)
-        -> False
-        | _street == PreDeal
-        -> _playerName
-          == playerName
-          && (blindRequiredByPlayer game playerName /= NoBlind)
-        | otherwise
-        -> _playerName == playerName
+             -> False
+        | _street == PreDeal -> _playerName == playerName
+          && (blindRequiredByPlayer game playerName /= NoBlind) 
+          
+        | otherwise -> _playerName == playerName
  where
   activePlayerCount =
     length $ filter (\Player {..} -> _playerState == In) _players

@@ -85,7 +85,8 @@ isPlayerActingOutOfTurn game@Game {..} name
              -- starting new Game"
   | otherwise = case name `elemIndex` gamePlayerNames of
       Nothing  -> Left $ NotAtTable name
-      Just pos -> if doesPlayerHaveToAct name game
+      Just pos -> 
+        if doesPlayerHaveToAct name game
         then Right ()
         else
           Left

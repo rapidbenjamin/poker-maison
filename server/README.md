@@ -1,4 +1,6 @@
-# poker-server
+Monoid <> Poker
+
+## poker-server
 
 For development install docker and docker-machine.
 
