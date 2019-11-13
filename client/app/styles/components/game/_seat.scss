@@ -27,6 +27,9 @@ footer{ @include default-box(#999, inline-block, 5px);
 .active-player {
   border: 0.3em;
   border-style: solid;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
   border-color: $neutral-accent-100;
 }
 

@@ -2,18 +2,19 @@
   width: 100%; /* Width of the outside container */
   margin: auto;
   text-align: center;
+  padding-bottom: 1.5rem;
 }
 
 /* The slider itself */
 .slider {
   -webkit-appearance: none; /* Override default CSS styles */
   appearance: none;
-  width: 80%; /* Full-width */
+  width: 50%; /* Full-width */
 
-  height: 0.7em; /* Specified height */
+  height: 0.3em; /* Specified height */
   background: $neutral-colour-700; /* Grey background */
   outline: none; /* Remove outline */
-  opacity: 0.76; /* Set transparency (for mouse-over effects on hover) */
+  opacity: 0.5; /* Set transparency (for mouse-over effects on hover) */
   -webkit-transition: 0.2s; /* 0.2 seconds transition on hover */
   transition: opacity 0.2s;
 }
@@ -29,7 +30,7 @@
   appearance: none;
   width: 1.1em; /* Set a specific slider handle width */
   height: 1.1em; /* Slider handle height */
-  background: $neutral-accent-400;
+  background: $neutral-accent-200;
   border-radius: 100%;
   cursor: pointer; /* Cursor on hover */
 }

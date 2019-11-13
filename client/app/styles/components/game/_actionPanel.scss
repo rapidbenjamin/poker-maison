@@ -1,6 +1,9 @@
 .action-panel {
   grid-column-start: 2;
-  grid-row-start: 3;
+  grid-row-start: 2;
+  width: 70%;
+  margin: auto;
+  grid-row-end: 4;
   display: flex;
 
   @include md {
