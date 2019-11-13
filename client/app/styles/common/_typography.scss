@@ -208,8 +208,8 @@ body,
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  font-size: 1.1em;
-  line-height: 1.1em;
+  font-size: 1em;
+  line-height: 1em;
 }
 
 .button > .monospaced-font-bold {
@@ -222,8 +222,9 @@ body,
 //.monospaced-font
 .player-name {
   //font-family: $monospaced-font;
-  color: $neutral-colour-100;
-  font-weight: 300;
+  color: $neutral-colour-300;
+  font-weight: 700;
+  font-size: 1.3em;
   text-align: center;
   text-transform: uppercase;
 }

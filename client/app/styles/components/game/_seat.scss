@@ -20,7 +20,14 @@ footer{ @include default-box(#999, inline-block, 5px);
 /* Mixins */
 @import "../../common";
 
-.player-chip-count {
+.player-chip-count > .monospaced-font-bold {
+  font-size: 1.2em;
+  @include lg {
+    font-size: 1.2em;
+  }
+  @include xxl {
+    font-size: 1.33em;
+  }
 }
 
 // current seated player's turn to act
