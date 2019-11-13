@@ -28,7 +28,7 @@ const Seat = ({ playerName, chips, isTurnToAct, hasPocketCards, position, player
       {playerName ?
         <h4 className='player-chip-count'>
           <span className='monospaced-font-bold'>
-            {playerState == 'In' && chips == 0 ? '' : chips}</span></h4> : ''}
+            {playerState == 'In' && chips == 0 ? '' : `$${chips}`}</span></h4> : ''}
     </div>
   </div>);
 
