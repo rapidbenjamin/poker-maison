@@ -10,7 +10,7 @@
   //  background-color: $neutral-accent-600;
 }
 .action-panel {
-  background-color: $neutral-accent-600;
+  background-color: $neutral-accent-700;
 }
 
 .hidden-pocket-cards .card {
@@ -19,14 +19,4 @@
 
 %seat {
   background-color: $primary-colour-700;
-}
-
-.button {
-  background: $primary-colour-700;
-}
-
-.button:hover {
-  //background-color: $color-light;
-  opacity: 0.8;
-  animation: ease-in-out 0.2s;
 }

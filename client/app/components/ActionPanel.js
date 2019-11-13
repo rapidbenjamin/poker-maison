@@ -59,7 +59,7 @@ const ActionPanel = ({
         type="button"
         onClick={() => sitDown(betValue)}
         className="button">
-        Sit Down Bet <span className='monospaced-font'>
+        Sit Down Bet <span className='monospaced-font-bold'>
           {betValue}</span>
       </button>}
 
@@ -104,7 +104,7 @@ const ActionPanel = ({
 
             {availableActions.includes("Bet") ? <button
               type="button"
-              onClick={() => bet(betValue)} className="button">Bet <span className='monospaced-font'>
+              onClick={() => bet(betValue)} className="button">Bet <span className='monospaced-font-bold'>
                 {betValue}</span></button> : ''}
             {availableActions.includes("Raise") ?
               <button

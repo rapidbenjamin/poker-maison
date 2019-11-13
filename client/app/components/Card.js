@@ -34,7 +34,7 @@ const showRank = rank => {
 const Card = ({ rank, suit }) => (
   <div className='card'>
     <div className="rank">
-      {showRank(rank)}
+      <span className="monospace-font-bold">{showRank(rank)}</span>
     </div>
     <div className="suit">
       <img alt={suit} src={`http://localhost:9080/${suit}.svg`} />

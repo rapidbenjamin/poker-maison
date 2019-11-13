@@ -1,6 +1,8 @@
 @import "../../common";
 
 .rank {
+  font-family: "MonoP-Bold", sans-serif;
+  font-weight: 800;
 }
 
 .suit > img {
@@ -48,7 +50,6 @@
   width: 100%;
 
   display: flex;
-  margin: 0;
 }
 
 .showdown-pocket-cards-container:first-child {

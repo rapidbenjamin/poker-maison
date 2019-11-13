@@ -21,13 +21,14 @@ const Seat = ({ playerName, chips, isTurnToAct, hasPocketCards, position, player
         ${isPlayerInactive(playerState) ? 'disabled' : ''}`
       }>
       <h5 className={playerName ? 'player-name' : ''}>{playerName || 'Take Seat'}</h5>
-      <h5 className={playerState ? 'player-state' : ''}>
+      <h4 className={playerState ? 'player-state' : ''}>
         {playerState == 'In' && chips == 0 ? 'All In' : ''}
         {playerState == 'Folded' ? 'Folded' : ''}
-        {playerState == 'SatOut' ? 'Sat Out' : ''}</h5>
-      {playerName ? <h5 className='player-chip-count'>
-        <span className='monospaced-font'>
-          {playerState == 'In' && chips == 0 ? '' : chips}</span></h5> : ''}
+        {playerState == 'SatOut' ? 'Sat Out' : ''}</h4>
+      {playerName ?
+        <h4 className='player-chip-count'>
+          <span className='monospaced-font-bold'>
+            {playerState == 'In' && chips == 0 ? '' : chips}</span></h4> : ''}
     </div>
   </div>);
 

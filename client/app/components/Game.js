@@ -77,7 +77,7 @@ const getPlayerBets = players =>
           <div className={`player-bet-pos-${i}`}>
             <div className="player-bet-chip" />
             <div className="player-bet-label">
-              <span className="monospaced-font">{`$${p.get('_bet')}`}</span>
+              <h3><span className="monospaced-font-bold">{`$${p.get('_bet')}`}</span></h3>
             </div>
           </div>
         </div>
@@ -182,9 +182,9 @@ const Game = props => {
                 )}
               <Board cards={game.get('_board')} />
               {getPlayerBets(players)}
-              <h4 className="pot-label">
-                <span className="monospaced-font">{`$${potSize}`}</span>
-              </h4>
+              <h3 className="pot-label">
+                <span className="monospaced-font-bold">{`$${potSize}`}</span>
+              </h3>
               {mainShowdownPot ? (
                 <p className="winners-label">
                   {`${mainShowdownPotHandPlayers} wins with ${mainShowdownPotHandRanking}`}

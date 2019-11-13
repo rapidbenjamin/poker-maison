@@ -19,12 +19,26 @@
   src: url("../../static/fonts/PTMonoBold.ttf") format("ttf"); /* Pretty Modern Browsers */
 }
 
-$monospaced-font: "PT-Mono", sans-serif;
+@font-face {
+  font-family: "MonoP";
+  src: url("../../static/fonts/MonoP-Medium.woff") format("woff"); /* Pretty Modern Browsers */
+}
 
-$monospaced-font2: "PT-Mono-Bold", sans-serif;
+@font-face {
+  font-family: "MonoP-Bold";
+  src: url("../../static/fonts/MonoP-Bold.woff") format("woff"); /* Pretty Modern Browsers */
+}
+
+$monospaced-font: "MonoP", sans-serif;
+
+$monospaced-font2: "MonoP-Bold", sans-serif;
 
 .monospaced-font {
   font-family: $monospaced-font;
+}
+
+.monospaced-font-bold {
+  font-family: $monospaced-font2;
 }
 
 .player-name {
@@ -34,8 +48,9 @@ $monospaced-font2: "PT-Mono-Bold", sans-serif;
 }
 
 .button {
-  font-family: $monospaced-font;
-  font-weight: 400;
+  font-family: $monospaced-font2;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .navbar-username {
@@ -44,7 +59,9 @@ $monospaced-font2: "PT-Mono-Bold", sans-serif;
 }
 
 .pot-label {
-  font-weight: 700;
+  font-weight: 800;
+  align-self: center;
+  justify-self: center;
 }
 
 // Configure modular-scale plugin
@@ -64,11 +81,11 @@ $modularscale: (
     ratio: 1.25
   ),
   $screen-xl-min: (
-    base: 0.9em,
+    base: 1em,
     ratio: 1.25
   ),
   $screen-xxl-min: (
-    base: 0.9em,
+    base: 1em,
     ratio: 1.333
   )
 );
@@ -104,7 +121,8 @@ h4,
 .h4 {
   @include ms-respond(font-size, 1);
   letter-spacing: 0.8px;
-  font-family: "GothamPro-Medium", sans-serif;
+
+  font-family: "GothamPro", sans-serif;
 }
 
 h5,
@@ -124,7 +142,7 @@ body,
 
 .brand-title {
   letter-spacing: 1.4px;
-  font-family: "GothamPro-Bold", sans-serif;
+  font-family: "PT-Mono", sans-serif;
 }
 
 .card {
