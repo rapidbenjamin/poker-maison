@@ -9,15 +9,7 @@
 ---------------------------------
 */
 
-@font-face {
-  font-family: "PT-Mono";
-  src: url("../../static/fonts/PTMono.ttf") format("ttf"); /* Pretty Modern Browsers */
-}
-
-@font-face {
-  font-family: "PT-Mono-Bold";
-  src: url("../../static/fonts/PTMonoBold.ttf") format("ttf"); /* Pretty Modern Browsers */
-}
+// Monospaced
 
 @font-face {
   font-family: "MonoP";
@@ -41,28 +33,65 @@ $monospaced-font2: "MonoP-Bold", sans-serif;
   font-family: $monospaced-font2;
 }
 
-.player-name {
-  font-family: $monospaced-font;
-  font-weight: 400;
-  text-align: center;
-}
+// Raleway
 
-.button {
-  font-family: $monospaced-font2;
-  font-weight: 800;
-  text-transform: uppercase;
+/* raleway-200 - latin */
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 200;
+  src: local("Raleway ExtraLight"), local("Raleway-ExtraLight"),
+    url("../../static/fonts/raleway/raleway-v14-latin-200.woff2") format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */ url("../../static/fonts/raleway/raleway-v14-latin-200.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
-
-.navbar-username {
-  font-family: $monospaced-font2;
+/* raleway-300 - latin */
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
   font-weight: 300;
+  src: local("Raleway Light"), local("Raleway-Light"),
+    url("../../static/fonts/raleway/raleway-v14-latin-300.woff2") format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */ url("../../static/fonts/raleway/raleway-v14-latin-300.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* raleway-regular - latin */
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Raleway"), local("Raleway-Regular"),
+    url("../../static/fonts/raleway/raleway-v14-latin-regular.woff2") format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */ url("../../static/fonts/raleway/raleway-v14-latin-regular.woff")
+      format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* raleway-500 - latin */
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Raleway Medium"), local("Raleway-Medium"),
+    url("../../static/fonts/raleway/raleway-v14-latin-500.woff2") format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */ url("../../static/fonts/raleway/raleway-v14-latin-500.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* raleway-700 - latin */
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Raleway Bold"), local("Raleway-Bold"),
+    url("../../static/fonts/raleway/raleway-v14-latin-700.woff2") format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */ url("../../static/fonts/raleway/raleway-v14-latin-700.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* raleway-800 - latin */
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 800;
+  src: local("Raleway ExtraBold"), local("Raleway-ExtraBold"),
+    url("../../static/fonts/raleway/raleway-v14-latin-800.woff2") format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */ url("../../static/fonts/raleway/raleway-v14-latin-800.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
-.pot-label {
-  font-weight: 800;
-  align-self: center;
-  justify-self: center;
-}
+$raleway-bold: "Raleway Bold", sans-serif;
 
 // Configure modular-scale plugin
 $modularscale: (
@@ -101,48 +130,51 @@ h5 {
 h1,
 .h1 {
   @include ms-respond(font-size, 5);
-  font-family: "GothamPro-Bold", sans-serif;
+  font-family: "Raleway", sans-serif;
+  font-weight: 800;
 }
 
 h2,
 .h2 {
   @include ms-respond(font-size, 4);
-  font-family: "GothamPro-Bold", sans-serif;
+  font-family: "Raleway", sans-serif;
+  font-weight: 800;
 }
 
 h3,
 .h3 {
   @include ms-respond(font-size, 3);
-  font-family: "GothamPro-Bold", sans-serif;
+  font-family: "Raleway", sans-serif;
   letter-spacing: 1.3px;
+  font-weight: 800;
 }
 
 h4,
 .h4 {
   @include ms-respond(font-size, 1);
   letter-spacing: 0.8px;
-
-  font-family: "GothamPro", sans-serif;
+  font-weight: 800;
+  font-family: "Raleway", sans-serif;
 }
 
 h5,
 .h5 {
   @include ms-respond(font-size, 1);
   letter-spacing: 1px;
-  font-family: "GothamPro-Medium", sans-serif;
-  font-weight: 400;
+  font-family: "Raleway", sans-serif;
+  font-weight: 800;
 }
 
 body,
 .body {
   @include ms-respond(font-size, 0);
-  font-family: "Sentinel-Light", sans-serif;
-  letter-spacing: 1px;
+  font-family: "Raleway", sans-serif;
+  //letter-spacing: 1px;
 }
 
 .brand-title {
   letter-spacing: 1.4px;
-  font-family: "PT-Mono", sans-serif;
+  font-family: "Raleway", sans-serif;
 }
 
 .card {
@@ -152,7 +184,7 @@ body,
   }
 
   @include xl {
-    font-size: 2.3em;
+    font-size: 2em;
   }
   font-family: "GothamPro-Black", sans-serif;
 }
@@ -169,6 +201,35 @@ body,
 }
 
 .button {
-  font-family: "Gotham-Narrow-Medium", sans-serif;
-  letter-spacing: 0.09em;
+  font-family: "Raleway", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-size: 1.17em;
+  line-height: 1.17em;
+}
+
+.button > .monospaced-font-bold {
+  font-size: 1.2em;
+  //font-family: "Raleway", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+//.monospaced-font
+.player-name {
+  font-family: $monospaced-font;
+  font-weight: 400;
+  text-align: center;
+}
+
+.navbar-username {
+  font-family: $monospaced-font2;
+  font-weight: 300;
+}
+
+.pot-label {
+  font-weight: 800;
+  align-self: center;
+  justify-self: center;
 }
