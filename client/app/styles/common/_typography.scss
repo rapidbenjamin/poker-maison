@@ -222,9 +222,10 @@ body,
 //.monospaced-font
 .player-name {
   //font-family: $monospaced-font;
-
+  color: $neutral-colour-100;
   font-weight: 300;
   text-align: center;
+  text-transform: uppercase;
 }
 
 .navbar-username {
