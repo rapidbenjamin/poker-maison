@@ -180,11 +180,14 @@ body,
 .card {
   font-size: 1.6em;
   @include md {
+    font-size: 1.7em;
+  }
+  @include lg {
     font-size: 1.8em;
   }
 
-  @include xl {
-    font-size: 2em;
+  @include xxl {
+    font-size: 2.2em;
   }
   font-family: "GothamPro-Black", sans-serif;
 }

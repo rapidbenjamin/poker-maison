@@ -6,8 +6,10 @@
 }
 
 .navbar {
-  background-color: $neutral-colour-700;
+  //background-color: $neutral-colour-700;
+  background-color: #e8e9f3; // #a18276; // #39a9db; // #39a9db;
   //  background-color: $neutral-accent-600;
+  color: $neutral-colour-800;
 }
 .action-panel {
   background-color: $neutral-accent-700;

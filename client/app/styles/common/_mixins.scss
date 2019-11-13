@@ -85,9 +85,15 @@
 }
 
 %dealer-btn {
-  height: 1.5em;
-  width: 1.5em;
-  border-radius: 1.5em;
-  background-color: $neutral-accent-400;
+  height: 1.9em;
+  width: 1.9em;
+  font-family: "Raleway", sans-serif;
+  font-weight: 200;
+  font-size: 1em;
+  line-height: 2em;
+  text-align: center;
+  letter-spacing: -0.1em;
+  border-radius: 1.7em;
+  background-color: $neutral-accent-600;
   box-shadow: 1px 1px 1px 0px rgba(18, 27, 33, 0.55);
 }

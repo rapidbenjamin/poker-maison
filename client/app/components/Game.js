@@ -173,7 +173,7 @@ const Game = props => {
             <div className="game-grid">
               {players ? (
                 players.count() > 1 ? (
-                  <div className={`dealer-btn-pos-${dealerPos}`} />
+                  <div className={`dealer-btn-pos-${dealerPos}`}>D</div>
                 ) : (
                     ''
                   )

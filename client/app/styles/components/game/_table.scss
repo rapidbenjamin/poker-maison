@@ -93,10 +93,19 @@
   margin-right: 0.25em;
   margin-left: 0.32em;
   height: 1.25em;
-  width: 3.8em;
+  width: 3.95em;
+  @include sm {
+    width: 4.5em;
+  }
 
+  @include md {
+    width: 5.3em;
+  }
   @include xl {
     width: 5.3em;
+  }
+  @include xxl {
+    width: 6.3em;
   }
 }
 
