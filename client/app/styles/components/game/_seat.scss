@@ -21,8 +21,6 @@ footer{ @include default-box(#999, inline-block, 5px);
 @import "../../common";
 
 .player-chip-count {
-  margin: auto;
-  margin-top: 0.5em;
 }
 
 // current seated player's turn to act
@@ -33,7 +31,17 @@ footer{ @include default-box(#999, inline-block, 5px);
 }
 
 .disabled {
-  background-color: $color-grey-400;
+  opacity: 0.9;
+}
+
+div[class^="seat-"] > h4 {
+  margin: 0;
+}
+div[class^="seat-"] > h5 {
+  margin: 0;
+}
+div[class^="seat-"] > h3 {
+  margin: 0;
 }
 
 .seat-0 {

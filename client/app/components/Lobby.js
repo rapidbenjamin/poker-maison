@@ -4,12 +4,13 @@ const Lobby = ({ lobby, history, subscribeToATable }) =>
   < table className="table game-table-list" >
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Players</th>
-        <th>Waitlist</th>
-        <th>Min Buy In</th>
-        <th>Max Buy In</th>
-        <th>Big Blind</th>
+        <th><h4>Name</h4></th>
+        <th><h4>Players</h4></th>
+        <th><h4>Waitlist</h4></th>
+        <th><h4>Min Buy In</h4></th>
+        <th><h4>Max Buy In</h4></th>
+        <th><h4>Big Blind</h4></th>
+        <th></th>
       </tr>
     </thead>
     <tbody >
@@ -18,16 +19,17 @@ const Lobby = ({ lobby, history, subscribeToATable }) =>
 
         return <tr
           key={tableName}
-          onClick={() => {
-            subscribeToATable(tableName)
-            history.push(`/game/${tableName}`)
-          }}>
+        >
           <td>{tableName}</td>
           <td>{`${table.get('_playerCount')} / ${table.get('_maxPlayers')}`}</td>
           <td>{table.get('_waitlistCount')}</td>
           <td>{table.get('_minBuyInChips')}</td>
           <td>{table.get('_maxBuyInChips')}</td>
           <td>{table.get('_bigBlind')}</td>
+          <td><button className="button" style={{ fontSize: "0.8em", paddingBottom: '0.2em', paddingTop: '0.2em', width: "5.7em", height: "3.8em" }} onClick={() => {
+            subscribeToATable(tableName)
+            history.push(`/game/${tableName}`)
+          }}>Join</button></td>
         </tr>
       })}
     </tbody >

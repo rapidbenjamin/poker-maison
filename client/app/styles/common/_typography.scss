@@ -218,8 +218,9 @@ body,
 
 //.monospaced-font
 .player-name {
-  font-family: $monospaced-font;
-  font-weight: 400;
+  //font-family: $monospaced-font;
+
+  font-weight: 300;
   text-align: center;
 }
 
@@ -232,4 +233,10 @@ body,
   font-weight: 800;
   align-self: center;
   justify-self: center;
+}
+
+td {
+  font-weight: 700;
+  @include ms-respond(font-size, 1);
+  letter-spacing: 0.8px;
 }
