@@ -35,24 +35,23 @@
   margin: 7%;
 }
 
+.navbar-item-active {
+  color: $neutral-colour-500;
+}
+
 .navbar-item h4 {
-  font-weight: 400;
+  font-weight: 700;
 }
 
 .navbar-item:hover {
-  color: $eerie-black;
-  transition: color 0.08s linear;
+  opacity: 0.82;
+  transition: all 0.08s linear;
 }
 
 .navbar-item-active {
   width: 7em;
   margin: 7%;
   color: $eerie-black;
-}
-
-.brand-title:hover {
-  color: $eerie-black;
-  transition: color 0.08s linear;
 }
 
 .brand-title {

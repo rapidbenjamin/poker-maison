@@ -114,6 +114,8 @@ const parseAvailableActions = actions => {
 const Game = props => {
   const { game, username, isTurnToAct } = props
 
+
+
   if (game) {
     const jsgame = game.toJS()
     console.log(jsgame)
@@ -158,6 +160,7 @@ const Game = props => {
       ? mainShowdownPot.get(1)
       : null
 
+
     return (
       <div className="game-view-grid">
         <div className="game-container">
@@ -198,10 +201,13 @@ const Game = props => {
         </div>
         <ActionPanel
           {...props}
+
           gameStage={gameStage}
           userPocketCards={userPocketCards}
           availableActions={parseAvailableActions(userAvailableActions)}
           userPlayer={userPlayer}
+          maxCurrBet={game.get("_maxBet")}
+          bigBlind={game.get("_bigBlind")}
         />
       </div>
     )

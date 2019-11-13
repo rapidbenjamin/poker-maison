@@ -19,7 +19,7 @@ const getPocketCards = cards =>
 
 
 const ActionPanel = ({
-  handleChange,
+  updateBetValue,
   betValue,
   bet,
   raise,
@@ -33,6 +33,8 @@ const ActionPanel = ({
   userPocketCards,
   gameStage,
   sitIn,
+  bigBlind,
+  maxCurrBet,
   isTurnToAct,
   availableActions,
   userPlayer
@@ -79,16 +81,27 @@ const ActionPanel = ({
 
     </React.Fragment> : '';
 
-  return (
+
+  let minBet = maxCurrBet >= bigBlind ? 2 * maxCurrBet : bigBlind
+
+  return availableActions.length === 0 ? '' : (
     <div className='action-panel'>
 
+
       <div className='user-actions-container'>
-        {gameStage === 'PreDeal' || (gameStage !== 'PreDeal' && isTurnToAct) ?
-          <input
-            type="text"
-            value={betValue}
-            onChange={handleChange}
-          /> : ''}
+        {(availableActions.includes("Bet") || availableActions.includes("Raise")) ?
+          <div className="slidecontainer">
+            <input type="range"
+
+              max={userPlayer.get("_chips")}
+              min={minBet}
+              step={5}
+              value={betValue}
+              className="slider"
+              id="myRange"
+              value={betValue}
+              onChange={updateBetValue} />
+          </div> : ''}
         {preDealActions}
         {true ?   // gameStage !== 'Showdown' && gameStage !== 'PreDeal' && isTurnToAct ?
           <React.Fragment>

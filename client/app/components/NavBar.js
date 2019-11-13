@@ -20,22 +20,16 @@ const NavBar = ({
           {isAuthenticated ? (
             <React.Fragment>
               <div
+                onClick={() => history.push('/lobby')}
                 className={`navbar-item${
                   currRoute === '/lobby' ? '-active' : ''
                   }`}
               >
-                <a onClick={() => history.push('/lobby')}>
+                <a >
                   <h4>Lobby</h4>
                 </a>
               </div>
 
-              <div
-                className={`navbar-item${currRoute === '/game' ? '-active' : ''}`}
-              >
-                <a onClick={() => history.push('/game')}>
-                  <h4>Game</h4>
-                </a>
-              </div>
             </React.Fragment>
           ) : (
               ''

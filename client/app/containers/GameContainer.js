@@ -19,7 +19,7 @@ class GameContainer extends React.Component {
   }
 
   render() {
-    return (<Game handleChange={this.handleChange} betValue={this.state.betValue} {...this.props} />)
+    return (<Game updateBetValue={this.handleChange} betValue={this.state.betValue} {...this.props} />)
   }
 }
 
