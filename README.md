@@ -82,10 +82,14 @@ Then just run.
 yarn start
 ```
 
-Now play poker! 
+Now you are ready to play poker! 
+
+### Simulating a multiplayer game locally
 
 You may want to play against yourself when you are developing locally so just 
-run the clients on two separate ports In your first terminal run
+run the clients on two separate ports.
+
+In your first terminal run
 ```
 PORT=8001 yarn start
 ```
