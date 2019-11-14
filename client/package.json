@@ -15,7 +15,7 @@
   "scripts": {
     "serve-static-dev": "npm i -g http-server && cd static-server && http-server -a localhost -p 9080",
     "prebuild": "npm run build:clean",
-    "build": "NODE_ENV=production webpack --config config/webpack.prod.babel.js --color -p --progress --hide-modules --display-optimization-bailout",
+    "build:prod": "NODE_ENV=production webpack --config config/webpack.prod.babel.js --color -p --progress --hide-modules --display-optimization-bailout",
     "build:clean": "rimraf ./build",
     "start": "cross-env NODE_ENV=development node server",
     "start:production": "npm run test && npm run build && npm run start:prod",
