@@ -1,5 +1,10 @@
 import React from 'react';
 
+import clubs from '../../static/Clubs.svg'
+import hearts from '../../static/Hearts.svg'
+import spades from '../../static/Spades.svg'
+import diamonds from '../../static/Diamonds.svg'
+
 const showRank = rank => {
   switch (rank) {
     case 'Ace':
@@ -31,13 +36,26 @@ const showRank = rank => {
   }
 }
 
+const suitSVG = suit => {
+  switch (suit) {
+    case 'Spades':
+      return spades
+    case 'Diamonds':
+      return diamonds
+    case 'Hearts':
+      return hearts
+    case 'Clubs':
+      return clubs
+  }
+}
+
 const Card = ({ rank, suit }) => (
   <div className='card'>
     <div className="rank">
       <span className="monospace-font-bold">{showRank(rank)}</span>
     </div>
     <div className="suit">
-      <img alt={suit} src={`http://localhost:9080/${suit}.svg`} />
+      <img alt={suit} src={suitSVG(suit)} />
     </div>
   </div>);
 
