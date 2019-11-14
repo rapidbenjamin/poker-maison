@@ -1,6 +1,6 @@
 ![alt text](https://i.imgur.com/big5Pqa.png "Ten Poker")
 
-## A multiplayer app crafted with Haskell, React and <3.
+## A multiplayer app crafted with Haskell, React and ❤️.
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/c21ef5e4-5227-4a24-87a8-b71961650fd5/deploy-status)](https://app.netlify.com/sites/tenpoker/deploys)
 
