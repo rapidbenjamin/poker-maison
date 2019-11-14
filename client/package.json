@@ -29,7 +29,7 @@
     "prettier:fix": "node ./node_modules/prettier/bin-prettier.js --write app /**/*.js",
     "test:clean": "rimraf ./coverage",
     "test": "cross-env NODE_ENV=test jest --coverage",
-    "test:watch": "cross-env NODE_ENV=test jest --watchAll",
+    "test:watch": "cross-env NODE_ENV=test jest --watchAll"
   },
   "dependencies": {
     "axios": "^0.19.0",
