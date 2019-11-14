@@ -1,56 +1,34 @@
-# Haskell Poker
+![alt text](https://i.imgur.com/big5Pqa.png "Ten Poker")
 
-Multiplayer poker site built with Haskell and React.
+## A Multiplayer Poker App built with Haskell, React and <3.
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/c21ef5e4-5227-4a24-87a8-b71961650fd5/deploy-status)](https://app.netlify.com/sites/tenpoker/deploys)
 
-
-# Server
-
-To run the server locally carry out the following steps.
-
-System dependencies you need are nodejs, ghc, stack, docker and libpq (c bindings to postgres)
-
-Start Postgres DB
-
-`docker-compose up`
-
-Alternatively you can skip docker and just connect to a postgres server you have running.
-
-Start redis server
-
-`redis-server`
-
-Start server
-
-`dbConnStr='host=0.0.0.0 port=5432 user=postgres dbname=postgres password=postgres' secret="secret" stack run`
-
-
-
-
-# Ten Poker
-## A Multiplayer Poker App built with Haskell, React and <3.
-
 > “The guy who invented poker was bright, but the guy who invented the chip was a genius.” ~ Julius Weintraub
+
 
 ## How to get everything working on your local machine.
 
-## Back End
+### Back End
 
-install our c bindings to talk to postgres
-`sudo apt-get install libpq-dev`
+Firstly make sure you have ghc and stack installed in order to compile the back end written in Haskell.
+If you need to install the Haskell platform then run
+```curl -sSL https://get.haskellstack.org/ | sh```
+
+
+Then install libpq (c bindings to postgres)
+```sudo apt-get install libpq-dev```
 
 install redis
-`sudo apt-get install redis`
-
+```sudo apt-get install redis```
 
 
 Go to the server/ directory with
-`cd server`
+```cd server```
 
 now compile the back end poker server.
 
-`stack build`
+```stack build```
 
 ### Now we need to set some config.
 
@@ -58,48 +36,45 @@ Ensure postgresql 10 is installed and running.
 
 Set the env var so that the server has the postgresql connection string.
 Of course you will need to change the db connection parameters below to match your local database.
-`export dbConnStr='host=0.0.0.0 port=5432 user=tom dbname=defaultdb password=pass'`
+```export dbConnStr='host=0.0.0.0 port=5432 user=tom dbname=defaultdb password=pass'```
 
 Set env variable with the secret key for generating auth tokens.
-`export secret="your-super-secret"`
+```export secret="your-super-secret"```
 
 Lastly ensure redis-server is running in the background on default port 
-`redis-server`
+```redis-server```
 
 Now run the server locally. The default user API port is 8000 and websocket port is 5000. 
-`stack run`
+```stack run```
 
 
 ### Front End
 
 Install system dependency needed for node-sass 
-`sudo apt-get install libpng-dev`
+```sudo apt-get install libpng-dev```
 
 Go to the client/ directory with
-`cd client`
+```cd client```
 
 and just hit 
-`yarn start`
+```yarn start```
 
 Now play poker! 
 
 You may want to play against yourself when you are developing locally so just 
 run the clients on two separate ports In your first terminal run
-`PORT=8001 yarn start`
+```PORT=8001 yarn start```
 
 Then open another terminal and run
-`PORT=8002 yarn start`
+```PORT=8002 yarn start```
 
 Now just open two tabs in your browser navigating to 
-`localhost:8001` and `localhost:8002`.
+```localhost:8001` and `localhost:8002```
 
 
+## Contributions Welcome
 
-
-## Contributing
-
-If you are interested in contributing have a look at the issues.
-
+Have a look at the issues if you want some starting ideas on how to get involved.
 
 ## License
 
