@@ -1,6 +1,6 @@
 ![alt text](https://i.imgur.com/big5Pqa.png "Ten Poker")
 
-## A Multiplayer Poker App built with Haskell, React and <3.
+## A multiplayer app crafted with Haskell, React and <3.
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/c21ef5e4-5227-4a24-87a8-b71961650fd5/deploy-status)](https://app.netlify.com/sites/tenpoker/deploys)
 
@@ -15,19 +15,16 @@ Firstly make sure you have ghc and stack installed in order to compile the back 
 If you need to install the Haskell platform then run
 ```curl -sSL https://get.haskellstack.org/ | sh```
 
-
-Then install libpq (c bindings to postgres)
+Secondly install libpq (c bindings to postgres)
 ```sudo apt-get install libpq-dev```
 
-install redis
+Next install redis.
 ```sudo apt-get install redis```
 
-
-Go to the server/ directory with
+Navigate to the server/ directory.
 ```cd server```
 
-now compile the back end poker server.
-
+Compile the back end poker server.
 ```stack build```
 
 ### Now we need to set some config.
@@ -50,13 +47,13 @@ Now run the server locally. The default user API port is 8000 and websocket port
 
 ### Front End
 
-Install system dependency needed for node-sass 
+Install a required system dependency for node-sass .
 ```sudo apt-get install libpng-dev```
 
-Go to the client/ directory with
+Navigate to the client/ directory with
 ```cd client```
 
-and just hit 
+Then just run.
 ```yarn start```
 
 Now play poker! 
@@ -75,6 +72,8 @@ Now just open two tabs in your browser navigating to
 ## Contributions Welcome
 
 Have a look at the issues if you want some starting ideas on how to get involved.
+
+Feel free to open any issues with potential enhancements or bugs you have found.
 
 ## License
 
