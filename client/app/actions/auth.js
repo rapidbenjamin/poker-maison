@@ -22,9 +22,7 @@ export const logoutUser = history => dispatch => {
 
 console.log('env var', process.env)
 
-/* Action Creators for User API authentication */
-const AUTH_API_URL = process.env.NODE_ENV === 'production' ?
-  (process.env.AUTH_API_URL || 'http://18.130.171.128:8000') : (process.env.AUTH_API_URL || 'http://localhost:8000')
+const AUTH_API_URL = process.env.AUTH_API_URL ? 'http://209.97.176.231' : 'http://localhost:8000'
 
 export const authRequested = () => ({ type: types.AUTH_REQUESTED })
 

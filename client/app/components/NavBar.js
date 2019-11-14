@@ -11,7 +11,7 @@ const NavBar = ({
       <div className="navbar-brand">
         <div>
           <a onClick={() => history.push('/')}>
-            <h4 className="brand-title">Poker</h4>
+            <h4 className="brand-title">10 Poker</h4>
           </a>
         </div>
       </div>

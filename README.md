@@ -2,8 +2,7 @@
 
 Multiplayer poker site built with Haskell and React.
 
-
-![screenshot](https://i.imgur.com/lO9B6dB.png)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/c21ef5e4-5227-4a24-87a8-b71961650fd5/deploy-status)](https://app.netlify.com/sites/tenpoker/deploys)
 
 
 # Server
@@ -37,6 +36,9 @@ Enter this from project root.
 `npm i -g static-server && cd client/static && static-server`
 
 Start front end
+
+  dbConnStr='host=0.0.0.0 port=5432 user=tom dbname=poker2 password=tom' secret="wwaaifidsa9109f0dasdakjdm,4jhkbnsdv768tkjhbnsfda-=2-13" stack run
+
 
 `cd client && yarn install && yarn start`
 

@@ -15,7 +15,7 @@
   "scripts": {
     "serve-static-dev": "npm i -g http-server && cd static-server && http-server -a localhost -p 9080",
     "prebuild": "npm run build:clean",
-    "build": "SOCKET_API_URL=ws://18.130.171.128:5000 AUTH_API_URL=http://18.130.171.128:8000 NODE_ENV=production webpack --config config/webpack.prod.babel.js --color -p --progress --hide-modules --display-optimization-bailout",
+    "build": "NODE_ENV=production webpack --config config/webpack.prod.babel.js --color -p --progress --hide-modules --display-optimization-bailout",
     "build:clean": "rimraf ./build",
     "start": "cross-env NODE_ENV=development node server",
     "start:production": "npm run test && npm run build && npm run start:prod",
@@ -29,7 +29,7 @@
     "prettier:fix": "node ./node_modules/prettier/bin-prettier.js --write app /**/*.js",
     "test:clean": "rimraf ./coverage",
     "test": "cross-env NODE_ENV=test jest --coverage",
-    "test:watch": "cross-env NODE_ENV=test jest --watchAll"
+    "test:watch": "cross-env NODE_ENV=test jest --watchAll",
   },
   "dependencies": {
     "axios": "^0.19.0",

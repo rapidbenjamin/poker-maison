@@ -40,7 +40,7 @@ const ActionPanel = ({
   userPlayer
 }) => {
   console.log('available actions', availableActions)
-
+  console.log(gameStage)
   const preDealActions =
     gameStage === "PreDeal" ? <React.Fragment>
 
@@ -84,22 +84,22 @@ const ActionPanel = ({
 
   let minBet = maxCurrBet >= bigBlind ? 2 * maxCurrBet : bigBlind
 
-  return availableActions.length === 0 ? '' : (
+  return (
     <div className='action-panel'>
 
 
       <div className='user-actions-container'>
-        {(availableActions.includes("Bet") || availableActions.includes("Raise")) ?
+        {(availableActions.includes("Bet") || !userPlayer || availableActions.includes("Raise")) ?
           <div className="slidecontainer">
             <input type="range"
 
-              max={userPlayer.get("_chips")}
+              max={userPlayer ? userPlayer.get("_chips") : 2000}
               min={minBet}
               step={5}
               value={betValue}
               className="slider"
               id="myRange"
-              value={betValue}
+
               onChange={updateBetValue} />
           </div> : ''}
         {preDealActions}
