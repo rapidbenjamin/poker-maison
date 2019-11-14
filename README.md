@@ -109,6 +109,15 @@ localhost:8002
 ```
 
 
+## Running Test Suite
+
+To run the test suite on the backend which has over a hundred tests
+
+```bash
+cd server && stack test
+```
+
+
 ## Contributions Welcome
 
 Have a look at the issues if you want some starting ideas on how to get involved.
