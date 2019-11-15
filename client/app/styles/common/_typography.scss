@@ -175,6 +175,10 @@ body,
 .brand-title {
   letter-spacing: 1.4px;
   font-family: "Raleway", sans-serif;
+  font-weight: 700;
+  opacity: 0.85;
+  color: $neutral-colour-100;
+  text-transform: uppercase;
 }
 
 .card {

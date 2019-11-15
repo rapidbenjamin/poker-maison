@@ -12,7 +12,7 @@ import { newGameState } from '../actions/games'
 
 import * as types from '../actions/types'
 
-const SOCKET_API_URL = process.env.NODE_ENV === 'production' ? 'ws://209.97.176.231:5000' : 'ws://localhost:5000'
+const SOCKET_API_URL = process.env.NODE_ENV === 'production' ? 'ws://tenpoker.co.uk:5000' : 'ws://localhost:5000'
 
 function addHandlers(socket, authToken, dispatch) {
   socket.onopen = event => {

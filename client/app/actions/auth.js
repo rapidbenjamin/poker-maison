@@ -22,7 +22,7 @@ export const logoutUser = history => dispatch => {
 
 console.log('env var', process.env)
 
-const AUTH_API_URL = process.env.NODE_ENV === 'production' ? 'http://209.97.176.231' : 'http://localhost:8000'
+const AUTH_API_URL = process.env.NODE_ENV === 'production' ? 'https://tenpoker.co.uk' : 'http://localhost:8000'
 
 export const authRequested = () => ({ type: types.AUTH_REQUESTED })
 
