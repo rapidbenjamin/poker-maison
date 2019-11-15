@@ -1,13 +1,19 @@
 ![alt text](https://i.imgur.com/big5Pqa.png "Ten Poker")
 
-## A multiplayer app crafted with Haskell, React and ❤️
-
-> “The guy who invented poker was bright, but the guy who invented the chip was a genius.” ~ Julius Weintraub
-
+## A multiplayer app crafted with Haskell and React
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/c21ef5e4-5227-4a24-87a8-b71961650fd5/deploy-status)](https://app.netlify.com/sites/tenpoker/deploys)
 
 <br />
+
+
+## Running Tests
+
+To run the test suite on the backend which has over a hundred tests
+
+```bash
+cd server && stack test
+```
 
 ## How to get everything working on your local machine.
 
@@ -106,15 +112,6 @@ localhost:8001
 and 
 ```
 localhost:8002
-```
-
-
-## Running Test Suite
-
-To run the test suite on the backend which has over a hundred tests
-
-```bash
-cd server && stack test
 ```
 
 
