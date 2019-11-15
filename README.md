@@ -73,6 +73,11 @@ stack run
 
 ## Front End
 
+Install node version 10.16.3 and then install yarn globally
+```bash
+npm i -g yarn@1.17.3
+```
+
 Install a required system dependency for node-sass .
 ```bash
 sudo apt-get install libpng-dev
