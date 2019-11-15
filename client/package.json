@@ -21,7 +21,7 @@
     "start:production": "npm run test && npm run build && npm run start:prod",
     "start:prod": "cross-env NODE_ENV=production node server",
     "copy-static": "cp -r static build/static",
-    "deploy": "npm run build:clean && yarn run copy-static && yarn run build && aws s3 sync build/ s3://fae-poker-client --delete",
+    "deploy": "npm run build:clean && yarn run copy-static && yarn run build && aws s3 sync build/ s3://poker-client --delete",
     "clean": "npm run test:clean && npm run build:clean",
     "lint": "npm run lint:eslint",
     "lint:eslint": "eslint .",
