@@ -1,3 +1,10 @@
+[build]
+  publish = "build"
+  command = "yarn run build:prod"
+
+# [build.environment]
+#   AUTH_API_URL = "value"
+
 # The following redirect is intended for use with most SPAs that handle
 # routing internally.
 [[redirects]]
