@@ -162,8 +162,8 @@ updateGame s tableName g = do
 -- We return input source which emits our received socket msgs.
 websocketInMailbox :: MsgHandlerConfig -> IO (Output MsgIn, Output MsgOut)
 websocketInMailbox conf@MsgHandlerConfig {..} = do
-  (writeMsgInSource , readMsgInSource ) <- spawn unbounded
-  (writeMsgOutSource, readMsgOutSource) <- spawn unbounded
+  (writeMsgInSource , readMsgInSource ) <- spawn $ newest 1
+  (writeMsgOutSource, readMsgOutSource) <- spawn $ newest 1
   async
     $   forever
     $   runEffect

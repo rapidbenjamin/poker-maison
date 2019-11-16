@@ -46,7 +46,7 @@ initialLobby = do
   chan <- atomically newBroadcastTChan
   g    <- getStdGen
   let shuffledDeck' = shuffledDeck g
-  (output, input) <- spawn unbounded
+  (output, input) <- spawn $ newest 1
   let tableName = "Black"
   let table' = Table { subscribers    = []
                      , gameInMailbox  = output
