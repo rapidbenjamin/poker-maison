@@ -33,13 +33,19 @@ export const authError = error => ({ type: types.AUTHENTICATION_ERROR, error })
 
 export const logout = () => ({ type: types.UNAUTHENTICATED })
 
+
 export function login(username, password, history) {
   return async dispatch => {
     dispatch(authRequested())
     axios
       .post(`${AUTH_API_URL}/login`, {
         loginUsername: username,
-        loginPassword: password
+        loginPassword: password,
+
+      }, {
+        headers: {
+          "Access-Control-Allow-Origin": "*"
+        }
       })
       .then(({ data }) => {
         const { access_token } = data

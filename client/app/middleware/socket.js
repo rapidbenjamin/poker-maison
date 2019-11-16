@@ -12,7 +12,13 @@ import { newGameState } from '../actions/games'
 
 import * as types from '../actions/types'
 
-const SOCKET_API_URL = process.env.NODE_ENV === 'production' ? 'wss://tengame.co.uk' : 'ws://localhost:5000'
+const SOCKET_API_URL = 'wss://tengame.co.uk'
+
+import ReconnectingWebSocket from 'reconnecting-websocket';
+
+
+
+//process.env.NODE_ENV === 'production' ? 'wss://tengame.co.uk' : 'ws://localhost:5000'
 
 function addHandlers(socket, authToken, dispatch) {
   socket.onopen = event => {
@@ -71,7 +77,9 @@ let connectedSocket = null
 function connHandler(dispatch, action) {
   if (action.type === types.CONNECT_SOCKET) {
     const { token } = action
-    connectedSocket = new WebSocket(SOCKET_API_URL)
+    connectedSocket = new ReconnectingWebSocket(SOCKET_API_URL);
+    // new WebSocket(SOCKET_API_URL)
+
     addHandlers(connectedSocket, token, dispatch)
   }
 
