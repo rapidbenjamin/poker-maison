@@ -90,8 +90,8 @@ function connHandler(dispatch, action) {
   }
 
   if (action.data && connectedSocket) {
-    if (connectedSocket.readyState === 1)
-      connectedSocket.send(action.payload)
+    //if (connectedSocket.readyState === 1)
+    // connectedSocket.send(action.payload)
   }
 }
 
