@@ -1,0 +1,12 @@
+[Unit]
+Description=server
+
+[Service]
+Type=simple
+ExecStart=/opt/server/poker-server-exe
+Restart=always
+User=ubuntu
+EnvironmentFile=/etc/systemd/system/prod.env
+
+[Install]
+WantedBy=default.target 
