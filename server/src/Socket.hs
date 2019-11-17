@@ -332,9 +332,14 @@ application secretKey dbConnString redisConfig s pending = do
         liftIO $ print m
         liftIO $ print "-------------------------------------------------------"
         liftIO $ print ""
-        runEffect
-          $   msgInDecoder (yield m >-> logMsgIn)
-          >-> toOutput incomingMailbox
+        _ <- async $ do 
+          liftIO $ print "----------Transferred effect to socket -> mailbox -----------"
+          runEffect
+            $   msgInDecoder (yield m >-> logMsgIn)
+            >-> toOutput incomingMailbox
+        return ()
+        
+
     Left err -> sendMsg conn (ErrMsg err)
  where
   msgConf c username = MsgHandlerConfig
