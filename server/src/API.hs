@@ -53,6 +53,7 @@ type API auths =
 type UnprotectedUsersAPI = 
        "login" :> ReqBody '[ JSON] Login :> Post '[ JSON] ReturnToken      
   :<|> "register" :> ReqBody '[ JSON] Register :> Post '[ JSON] ReturnToken
+  :<|> "lobby" :> Get '[ JSON] NoContent
     
 type ProtectedUsersAPI =
   "profile" :> Get '[ JSON] UserProfile   
@@ -112,7 +113,8 @@ server j c r = protectedUsersServer j c r :<|> unprotectedUsersServer j c r
 unprotectedUsersServer :: JWTSettings -> ConnectionString -> RedisConfig -> Server UnprotectedUsersAPI
 unprotectedUsersServer jwtSettings connString redisConfig =
     loginHandler jwtSettings connString :<|>
-    registerUserHandler jwtSettings connString redisConfig
+    registerUserHandler jwtSettings connString redisConfig :<|>
+    getLobbyHandler jwtSettings connString redisConfig
 
 protectedUsersServer :: JWTSettings -> ConnectionString -> RedisConfig -> AuthResult Username -> Server ProtectedUsersAPI
 protectedUsersServer j c r (Authenticated username') = fetchUserProfileHandler c username'
