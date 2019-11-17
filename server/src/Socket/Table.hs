@@ -209,8 +209,8 @@ pause = do
 progress :: Output Game -> Consumer Game IO ()
 progress inMailbox = do
   g <- await
-  --liftIO $ print "can progress game in pipe?"
-  --liftIO $ print $ (canProgressGame g)
+  liftIO $ print "can progress game in pipe?"
+  liftIO $ print $ (canProgressGame g)
   when (canProgressGame g) (progress' g)
  where
   progress' game = do
@@ -222,7 +222,7 @@ progress inMailbox = do
 writeGameToDB :: ConnectionString -> Key TableEntity -> Pipe Game Game IO ()
 writeGameToDB connStr tableKey = do
   g <- await
-  liftIO $ dbInsertGame connStr tableKey g
+  _ <- liftIO $ async $ dbInsertGame connStr tableKey g
   yield g
 
 
@@ -244,6 +244,7 @@ broadcast s n = do
   g                <- await
   ServerState {..} <- liftIO $ readTVarIO s
   liftIO $ print "BROADCASTING"
+  liftIO $ print g
   let usernames' = M.keys clients -- usernames to broadcast to
   -- TODO
   -- 

@@ -180,13 +180,12 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
 -- are silently ignored but logged anyway.
 socketMsgInWriter :: WS.Connection -> Output MsgIn -> IO ()
 socketMsgInWriter conn writeMsgInSource = do
-  a <-
-    async
+  _ <- async
     $   forever
     $   runEffect
     $   msgInDecoder (socketReader conn >-> logMsgIn)
     >-> toOutput writeMsgInSource
-  link a
+  return ()
 
 
 socketMsgOutWriter :: WS.Connection -> Input MsgOut -> IO (Async ())
@@ -246,8 +245,8 @@ msgInHandler conf@MsgHandlerConfig {..} = do
   case res of
     Left  err                        -> yield $ ErrMsg err
     Right (NewGameState tableName g) -> do
-      liftIO $ async $ toGameInMailbox serverStateTVar tableName g
       liftIO $ atomically $ updateTable' serverStateTVar tableName g
+      liftIO $ async $ toGameInMailbox serverStateTVar tableName g
       return ()
     Right m -> yield m
 
@@ -327,17 +326,18 @@ application secretKey dbConnString redisConfig s pending = do
       liftIO $ print ""
       forever $ do
         m <- WS.receiveData conn
-        liftIO $ print ""
-        liftIO $ print "-------------- Raw msg received from socket -----------"
-        liftIO $ print m
-        liftIO $ print "-------------------------------------------------------"
-        liftIO $ print ""
-        _ <- async $ do 
-          liftIO $ print "----------Transferred effect to socket -> mailbox -----------"
-          runEffect
-            $   msgInDecoder (yield m >-> logMsgIn)
-            >-> toOutput incomingMailbox
+       -- liftIO $ print ""
+       -- liftIO $ print "-------------- Raw msg received from socket -----------"
+       -- liftIO $ print m
+       -- liftIO $ print "-------------------------------------------------------"
+       -- liftIO $ print ""
+       -- liftIO $ print "----------Transferred effect to socket -> mailbox -----------"
+       
+        runEffect
+          $   msgInDecoder (yield m >-> logMsgIn)
+          >-> toOutput incomingMailbox
         return ()
+
         
 
     Left err -> sendMsg conn (ErrMsg err)
