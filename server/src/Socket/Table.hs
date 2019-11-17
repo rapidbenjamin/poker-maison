@@ -104,12 +104,14 @@ setUpTablePipes connStr s name Table {..} = do
   where notFoundErr = error $ "Table " <> show name <> " doesn't exist in DB"
 
 
--- this is the effect we want to run everytime a new game state is placed in the tables
+-- this is the pipeline of effects we run everytime a new game state
+-- is placed in the tables
 -- incoming mailbox for new game states.
+--
 -- New game states are send to the table's incoming mailbox every time a player acts
 -- in a way that follows the game rules 
 --
--- Delays at the end of each game stage (Flop, River etc) for UX
+-- Delays with "pause" at the end of each game stage (Flop, River etc) for UX
 -- are done client side.
 gamePipeline
   :: ConnectionString
@@ -120,15 +122,6 @@ gamePipeline
   -> Output Game
   -> Effect IO ()
 gamePipeline connStr s key tableName outMailbox inMailbox = do
-  liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT"
-  liftIO $ print "EFFECT"
   fromInput outMailbox
     >-> broadcast s tableName
     >-> logGame tableName
@@ -137,7 +130,7 @@ gamePipeline connStr s key tableName outMailbox inMailbox = do
    -- >-> pause
    -- >-> timePlayer s tableName
     >-> progress inMailbox
-    -- should all be in stm monad not IO
+    -- should all be in stm monad not IO -- perhaps
 
 
 -- Delay to enhance UX based on game stages
@@ -216,13 +209,13 @@ pause = do
 progress :: Output Game -> Consumer Game IO ()
 progress inMailbox = do
   g <- await
-  liftIO $ print "can progress game in pipe?"
-  liftIO $ print $ (canProgressGame g)
+  --liftIO $ print "can progress game in pipe?"
+  --liftIO $ print $ (canProgressGame g)
   when (canProgressGame g) (progress' g)
  where
   progress' game = do
     gen <- liftIO getStdGen
-    liftIO $ print "PIPE PROGRESSING GAME"
+    --liftIO $ print "PIPE PROGRESSING GAME"
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 
 
@@ -238,7 +231,7 @@ writeGameToDB connStr tableKey = do
 -- ensure they only get to see data they are allowed to see
 informSubscriber :: TableName -> Game -> Client -> IO ()
 informSubscriber n g Client {..} = do
-  print "informing subscriber"
+ -- print "informing subscriber"
   let filteredGame = excludeOtherPlayerCards clientUsername g
   runEffect $ yield (NewGameState n filteredGame) >-> toOutput outgoingMailbox
   return ()
@@ -261,9 +254,10 @@ broadcast s n = do
 logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do
   g <- await
-  liftIO $ print g
-  liftIO $ print "VALID PLAYER ACTIONS"
-  liftIO $ print $ getAllValidPlayerActions g
+  liftIO $ print ":::::::::::: New Game State :::::::::::::::::::::"
+  --liftIO $ print g
+  --liftIO $ print "VALID PLAYER ACTIONS"
+  --liftIO $ print $ getAllValidPlayerActions g
   yield g
 
 
@@ -274,7 +268,6 @@ logGame tableName = do
 -- then we just return () and do nothing.
 toGameInMailbox :: TVar ServerState -> TableName -> Game -> IO ()
 toGameInMailbox s name game = do
-  print "SENT TO GAME IN MAILBOX \n \n \n __"
   table' <- atomically $ getTable s name
   forM_ table' send
   where send Table {..} = runEffect $ yield game >-> toOutput gameInMailbox

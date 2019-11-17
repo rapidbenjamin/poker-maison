@@ -99,6 +99,12 @@ addClient s c@Client {..} = do
       }
     )
 
+--handleNewConnection :: Map Username Clients -> Username -> Socket
+--handleNewConnection cs username conn = 
+--  case getClient cs username of 
+--      Just Client -> 
+
+
 getClient :: Map Username Client -> Username -> Maybe Client
 getClient cs username = cs ^.at username 
 

@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
@@ -200,7 +199,9 @@ socketMsgOutWriter conn is = forever $ runEffect $ for
 socketReader :: WS.Connection -> Producer BS.ByteString IO ()
 socketReader conn = forever $ do
   msg <- liftIO $ WS.receiveData conn
-  liftIO $ putStrLn $ "received a raw msg from socket: " ++ show msg
+  liftIO $ print "oooooooooo Pipes Produced msg from Connection ooooooooooo"
+  liftIO $ print msg
+  liftIO $ print "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
   yield msg
 
 
@@ -229,8 +230,8 @@ msgInDecoder rawMsgProducer = do
 msgOutEncoder :: Pipe MsgOut Text IO ()
 msgOutEncoder = do
   msgOut <- await
-  lift $ print "encoding msg: "
-  lift $ print msgOut
+  -- lift $ print "encoding msg: "
+  -- lift $ print msgOut
   yield $ encodeMsgToJSON msgOut
 
 
@@ -255,26 +256,30 @@ logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
 logMsgIn = do
   msg <- await
   lift $ putStrLn "logging MsgIn"
-  x <- lift $ try $ print msg
-  case x of
-      -- Gracefully terminate if we got a broken pipe error
-    Left e@G.IOError { G.ioe_type = t } ->
-      lift $ unless (t == G.ResourceVanished) $ throwIO e
-    -- Otherwise loop
-    Right () -> yield msg >> logMsgIn
+  liftIO $ print msg
+  yield msg
+  --case x of
+  --    -- Gracefully terminate if we got a broken pipe error
+  --  Left e@G.IOError { G.ioe_type = t } ->
+  --    lift $ unless (t == G.ResourceVanished) $ throwIO e
+  --  -- Otherwise loop
+  --  Right () -> yield msg >> logMsgIn
 
 
 logMsgOut :: Pipe MsgOut MsgOut IO ()
 logMsgOut = do
   msg <- await
-  lift $ putStrLn "logging MsgOut"
-  x <- lift $ try $ print msg
-  case x of
-      -- Gracefully terminate if we got a broken pipe error
-    Left e@G.IOError { G.ioe_type = t } ->
-      lift $ unless (t == G.ResourceVanished) $ throwIO e
-    -- Otherwise loop
-    Right () -> yield msg >> logMsgOut
+  --lift $ putStrLn "logging MsgOut"
+  --print msg
+  yield msg
+
+
+  -- case x of
+  --     -- Gracefully terminate if we got a broken pipe error
+  --   Left e@G.IOError { G.ioe_type = t } ->
+  --     lift $ unless (t == G.ResourceVanished) $ throwIO e
+  --   -- Otherwise loop
+  --   Right () -> yield msg >> logMsgOut
 
 
 -- get a pipe which only forwards the game moves which occur at the given table
@@ -307,14 +312,26 @@ application secretKey dbConnString redisConfig s pending = do
       let client = Client {..}
       sendMsg conn AuthSuccess
       let isReconnect = client `elem` clients -- if client already on our list of clients then this is a reconnect
-      when isReconnect $ do
-        updateWithLatestGames client lobby -- Sync game state with reconnected clients
-        let tableSummaries = TableList $ summariseTables lobby
-        liftIO $ print tableSummaries
-        liftIO $ sendMsg conn tableSummaries
+      --when isReconnect $ do
+      updateWithLatestGames client lobby -- Sync game state with reconnected clients
+      let tableSummaries = TableList $ summariseTables lobby
+     --   liftIO $ print tableSummaries
+      liftIO $ sendMsg conn tableSummaries
       atomically $ addClient s client
+      ServerState {..} <- liftIO $ atomically $ readTVar s
+      liftIO $ print ""
+      liftIO $ print "[[[[[[[[[[[[[[[[[[[[[[[[[[[["
+      liftIO $ print $ T.pack "New Connection " <> (clientUsername)
+      liftIO $ print clients
+      liftIO $ print "[[[[[[[[[[[[[[[[[[[[[[[[[[[["
+      liftIO $ print ""
       forever $ do
         m <- WS.receiveData conn
+        liftIO $ print ""
+        liftIO $ print "-------------- Raw msg received from socket -----------"
+        liftIO $ print m
+        liftIO $ print "-------------------------------------------------------"
+        liftIO $ print ""
         runEffect
           $   msgInDecoder (yield m >-> logMsgIn)
           >-> toOutput incomingMailbox
