@@ -75,6 +75,9 @@ modDec num modulo | decNum < modulo = 0
 getActivePlayers :: [Player] -> [Player]
 getActivePlayers = filter (\Player {..} -> _playerState == In)
 
+filterPlayersWithLtChips :: Int -> [Player] -> [Player]
+filterPlayersWithLtChips count = filter (\Player {..} -> _chips >= count)
+
 countActive :: [Player] -> Int
 countActive = length . getActivePlayers
 

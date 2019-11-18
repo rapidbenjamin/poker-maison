@@ -198,11 +198,11 @@ getNextHand Game {..} shuffledDeck = Game
   , ..
   }
  where
-  incAmount       = 1
+  incAmount = 1
   newDealer = modInc incAmount _dealer (length (getPlayersSatIn _players) - 1)
-  freeSeatsNo     = _maxPlayers - length _players
-  newPlayers      = resetPlayerCardsAndBets <$> _players
-  newWaitlist     = drop freeSeatsNo _waitlist
+  freeSeatsNo = _maxPlayers - length _players
+  newPlayers = filterPlayersWithLtChips _bigBlind $ resetPlayerCardsAndBets <$> _players
+  newWaitlist = drop freeSeatsNo _waitlist
   nextPlayerToAct = modInc incAmount newDealer (length newPlayers - 1)
 
 -- | If all players have acted and their bets are equal 

@@ -32,7 +32,7 @@ forkBackgroundJobs connString serverStateTVar lobby = do
   forkChipRefillDBWriter connString chipRefillInterval chipRefillThreshold -- Periodically refill player chip balances when too low.
   forkGameDBWriters connString lobby -- At the end of game write new game and player data to the DB.
  where
-  chipRefillInterval  = 100000000 -- 2 mins
+  chipRefillInterval  = 50000000 -- 1 mins
   chipRefillThreshold = 200000 -- any lower chip count will be topped up on refill to this amount
 
 -- Fork a new thread for each table that writes game updates received from the table channel to the DB
