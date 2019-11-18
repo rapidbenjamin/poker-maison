@@ -80,15 +80,18 @@ import qualified GHC.IO.Exception              as G
 import qualified Network.WebSockets            as WS
 
 import           Pipes.Aeson
-import           Pipes
+import           Pipes hiding (next)
 import           Pipes.Core                     ( push )
 import           Pipes.Concurrent
 import           Pipes.Parse             hiding ( decode
                                                 , encode
+                                                , next
                                                 )
 import qualified Pipes.Prelude                 as P
 import           Poker.Game.Privacy
 import           Socket.Clients
+
+
 
 setUpTablePipes
   :: ConnectionString -> TVar ServerState -> TableName -> Table -> IO (Async ())
@@ -215,6 +218,7 @@ progress inMailbox = do
  where
   progress' game = do
     gen <- liftIO getStdGen
+    liftIO $ setStdGen $ snd $ next gen 
     --liftIO $ print "PIPE PROGRESSING GAME"
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 

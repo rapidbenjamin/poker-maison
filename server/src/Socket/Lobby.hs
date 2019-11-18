@@ -44,8 +44,8 @@ import           Socket.Table
 initialLobby :: IO Lobby
 initialLobby = do
   chan <- atomically newBroadcastTChan
-  g    <- getStdGen
-  let shuffledDeck' = shuffledDeck g
+  randGen   <- getStdGen
+  let shuffledDeck' = shuffledDeck randGen
   (output, input) <- spawn $ newest 1
   let tableName = "Black"
   let table' = Table { subscribers    = []

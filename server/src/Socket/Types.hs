@@ -31,7 +31,7 @@ import           Types                          ( RedisConfig
                                                 )
 
 import           Pipes.Concurrent
-
+import System.Random
 
 
 data MsgHandlerConfig = MsgHandlerConfig

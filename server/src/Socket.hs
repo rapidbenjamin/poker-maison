@@ -246,7 +246,7 @@ msgInHandler conf@MsgHandlerConfig {..} = do
     Left  err                        -> yield $ ErrMsg err
     Right (NewGameState tableName g) -> do
       liftIO $ atomically $ updateTable' serverStateTVar tableName g
-      liftIO $ async $ toGameInMailbox serverStateTVar tableName g
+      liftIO $ toGameInMailbox serverStateTVar tableName g
       return ()
     Right m -> yield m
 
