@@ -192,7 +192,7 @@ nextStagePause = do
     pauseDuration g@Game{..} 
       | _street == PreDeal = 0
       | _street == Showdown = 5 * 1000000 -- 5 seconds
-      | otherwise = 3 * 1000000 -- 3 seconds
+      | otherwise = 2 * 1000000 -- 2 seconds
 
 
 -- Progresses to the next state which awaits a player action.

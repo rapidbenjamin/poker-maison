@@ -7,17 +7,37 @@ import Card from './Card'
 
 import { fromJS, toJS, List } from 'immutable'
 
+let isEveryoneAllIn = players => {
+  let activesCount = players.filter(p =>
+    p.get("_playerState") == "In").size
+  let allInCount = players.filter(p =>
+    (p.get("_playerState") == "In") && (p.get("_chips") === 0)).size
+
+  console.log('actives count', activesCount)
+  console.log('all in count', allInCount)
+  if (activesCount < 2) {
+    return false;
+  }
+  else {
+    let notAllInCount = activesCount - allInCount
+    return notAllInCount <= 1
+  }
+}
+
+
+
 const getSeatedPlayer = (
   username,
   player,
   gameStage,
   position,
-  isTurnToAct
+  isTurnToAct,
+  isEveryoneAllIn
 ) => (
     <Seat
       key={position}
       position={position}
-
+      isEveryoneAllIn={isEveryoneAllIn}
       playerName={player.get('_playerName')}
       chips={player.get('_chips')}
       hasPocketCards={
@@ -31,7 +51,7 @@ const getSeatedPlayer = (
     />
   )
 
-const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct) =>
+const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct, isEveryoneAllIn) =>
   Array(maxPlayers)
     .fill(null)
     .map((_, i) => {
@@ -39,7 +59,7 @@ const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct) =>
       const isTurnToAct = i === currentPosToAct
 
       return player ? (
-        getSeatedPlayer(username, player, gameStage, i, isTurnToAct)
+        getSeatedPlayer(username, player, gameStage, i, isTurnToAct, isEveryoneAllIn)
       ) : (
           <Seat
             key={i}
@@ -119,7 +139,7 @@ const Game = props => {
   if (game) {
     const jsgame = game.toJS()
     console.log(jsgame)
-    console.log(jsgame._players)
+    console.log('everyone all in ', isEveryoneAllIn(game.get("_players")))
 
     const players = game.get('_players')
     const dealerPos = game.get('_dealer')
@@ -171,7 +191,8 @@ const Game = props => {
               maxPlayers,
               players,
               gameStage,
-              currentPosToAct
+              currentPosToAct,
+              isEveryoneAllIn(game.get("_players"))
             )}
             <div className="game-grid">
               {players ? (
