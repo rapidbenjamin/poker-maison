@@ -5,7 +5,7 @@ export const getGames = state => state.get('global').get('games')
 export const getGame = tableName =>
   createSelector(getGames, games => games.get(tableName))
 
-export const getCurrentPlayerToAct = tableName => createSelector(
+export const getCurrentPlayerToAct = tableName => (
   getGame(tableName),
   game => {
     if (!game) {
@@ -17,7 +17,11 @@ export const getCurrentPlayerToAct = tableName => createSelector(
     if (Number.isInteger(currentPosToAct)) {
       const player = game.get('_players').get(currentPosToAct)
 
-      if (player) return player.get('_playerName')
+      if (player.get("_hasActed") == true) {
+        return null
+      } else {
+        return player.get('_playerName')
+      }
     }
 
     return null

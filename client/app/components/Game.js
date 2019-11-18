@@ -27,7 +27,7 @@ const getSeatedPlayer = (
         gameStage !== 'Showdown'
       }
       playerState={player.get('_playerState')}
-      isTurnToAct={isTurnToAct && gameStage !== 'Showdown'}
+      isTurnToAct={isTurnToAct && (player.get('_actedThisTurn') === false) && gameStage !== 'Showdown'}
     />
   )
 
