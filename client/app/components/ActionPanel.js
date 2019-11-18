@@ -94,7 +94,7 @@ const ActionPanel = ({
             <input type="range"
 
               max={userPlayer ? userPlayer.get("_chips") : 2000}
-              min={minBet}
+              min={userPlayer ? minBet : 1500}
               step={5}
               value={betValue}
               className="slider"
