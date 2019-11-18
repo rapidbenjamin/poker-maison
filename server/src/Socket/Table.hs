@@ -291,7 +291,7 @@ getTable s tableName = do
 updateTable :: TVar ServerState -> TableName -> Pipe Game Game IO ()
 updateTable serverStateTVar tableName = do
   g <- await
-  liftIO $ async $ atomically $ updateTable' serverStateTVar tableName g
+  liftIO $ atomically $ updateTable' serverStateTVar tableName g
   yield g
 
 updateTable' :: TVar ServerState -> TableName -> Game -> STM ()
@@ -303,6 +303,16 @@ updateTable' serverStateTVar tableName newGame = do
       let updatedLobby = updateTableGame tableName newGame lobby
       swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
       return ()
+
+updateTableAndGetMailbox :: TVar ServerState -> TableName -> Game -> STM (Maybe (Output Game))
+updateTableAndGetMailbox serverStateTVar tableName newGame = do
+  ServerState {..} <- readTVar serverStateTVar
+  case M.lookup tableName $ unLobby lobby of
+    Nothing               -> throwSTM $ TableDoesNotExistInLobby tableName
+    Just table@Table {..} -> do
+      let updatedLobby = updateTableGame tableName newGame lobby
+      swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
+      return $ Just gameInMailbox
 
 updateTableGame :: TableName -> Game -> Lobby -> Lobby
 updateTableGame tableName newGame (Lobby lobby) = Lobby

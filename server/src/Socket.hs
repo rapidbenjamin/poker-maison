@@ -235,12 +235,30 @@ msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
   res   <- lift $ runReaderT (msgHandler msgIn) conf
   case res of
-    Left  err                        -> yield $ ErrMsg err
+    Left  err -> yield $ ErrMsg err
     Right (NewGameState tableName g) -> do
-      liftIO $ atomically $ updateTable' serverStateTVar tableName g
-      liftIO $ toGameInMailbox serverStateTVar tableName g
-      return ()
+--      liftIO $ atomically $ updateTable' serverStateTVar tableName g
+      mbGameInMailbox' <- liftIO $ atomically $ updateTableAndGetMailbox serverStateTVar tableName g    
+      case mbGameInMailbox' of 
+        Nothing -> return ()
+        Just gameInMailbox' -> 
+          liftIO $ runEffect $ yield g >-> toOutput gameInMailbox'
+      --liftIO $ threadDelay 50000
+      --liftIO $ toGameInMailbox serverStateTVar tableName g
+     -- return ()
     Right m -> yield m
+
+-- -- Lookups up a table with the given name and writes the new game state
+-- -- to the gameIn mailbox for propagation to observers.
+-- --
+-- -- If table with tableName is not found in the serverState lobby 
+-- -- then we just return () and do nothing.
+-- toGameInMailbox :: TVar ServerState -> TableName -> Game -> IO ()
+-- toGameInMailbox s name game = do
+--   table' <- atomically $ getTable s name
+--   forM_ table' send
+--   where send Table {..} =
+--     runEffect $ yield game >-> toOutput gameInMailbox
 
 
 logMsgIn :: Pipe BS.ByteString BS.ByteString IO ()
