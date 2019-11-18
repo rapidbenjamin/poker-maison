@@ -189,10 +189,11 @@ nextStagePause = do
   yield g
  where 
     pauseDuration :: Game -> Int
-    pauseDuration g@Game{..} 
-      | _street == PreDeal = 0
-      | _street == Showdown = 5 * 1000000 -- 5 seconds
-      | otherwise = 2 * 1000000 -- 2 seconds
+    pauseDuration g@Game{..}
+      | _street == PreDeal =  250000 -- 0.25 second
+      | _street == Showdown = 4 * 1000000 -- 4 seconds
+      | everyoneAllIn g = 4 * 1000000
+      | otherwise = 1 * 1000000 -- 1 seconds
 
 
 -- Progresses to the next state which awaits a player action.

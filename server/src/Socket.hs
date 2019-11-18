@@ -236,17 +236,37 @@ msgInHandler conf@MsgHandlerConfig {..} = do
   res   <- lift $ runReaderT (msgHandler msgIn) conf
   case res of
     Left  err -> yield $ ErrMsg err
-    Right (NewGameState tableName g) -> do
---      liftIO $ atomically $ updateTable' serverStateTVar tableName g
-      mbGameInMailbox' <- liftIO $ atomically $ updateTableAndGetMailbox serverStateTVar tableName g    
-      case mbGameInMailbox' of 
-        Nothing -> return ()
-        Just gameInMailbox' -> 
-          liftIO $ runEffect $ yield g >-> toOutput gameInMailbox'
-      --liftIO $ threadDelay 50000
-      --liftIO $ toGameInMailbox serverStateTVar tableName g
-     -- return ()
+    Right (NewGameState tableName g) ->
+      liftIO $ atomically $ updateGameState serverStateTVar tableName g  
+--  --     liftIO $ atomically $ updateTable' serverStateTVar tableName g
+    --   mb liftIO $
+    --        atomically $ updateGame serverStateTVar tableName g    
+    --   case mbGameInMailbox' of 
+    --     Nothing -> return ()
+    --     Just gameInMailbox' -> do
+    --       liftIO $ threadDelay 1500000
+    --       liftIO $ atomically $ send gameInMailbox' g
+    --       return ()
+    --       -- liftIO $ runEffect $ yield g >-> toOutput gameInMailbox'
+    --   --liftIO $ toGameInMailbox serverStateTVar tableName g
+    --  -- return ()
     Right m -> yield m
+
+-- The main function for handling game updates which consists of 
+-- a series of events whose order must be guaranteed which 
+-- is why they are grouped in a STM block.
+--
+-- 1 - We update our game in the server state 
+-- 2 - We send new game to 
+-- the table's mailbox for broadcasting to clients and other actions 
+-- such as progressing the game along if possible 
+updateGameState :: TVar ServerState -> TableName -> Game -> STM ()
+updateGameState serverStateTVar tableName newGame = do
+    mbGameInMailbox' <- updateTableAndGetMailbox serverStateTVar tableName newGame
+    case mbGameInMailbox' of 
+      Nothing -> return ()
+      Just gameInMailbox' -> send gameInMailbox' newGame >> return ()
+
 
 -- -- Lookups up a table with the given name and writes the new game state
 -- -- to the gameIn mailbox for propagation to observers.
