@@ -130,7 +130,7 @@ gamePipeline connStr s key tableName outMailbox inMailbox = do
     >-> logGame tableName
     >-> updateTable s tableName
     >-> writeGameToDB connStr key
-   -- >-> nextStagePause
+    >-> nextStagePause
    -- >-> timePlayer s tableName
     >-> progress inMailbox
     -- should all be in stm monad not IO -- perhaps
@@ -185,15 +185,14 @@ runPlayerTimer s tableName gameWhenTimerStarts plyrName =
 nextStagePause :: Pipe Game Game IO ()
 nextStagePause = do
   g <- await
-  _ <- liftIO $ threadDelay $ pauseDuration g
+  when (canProgressGame g) $ liftIO $ threadDelay $ pauseDuration g
   yield g
  where 
     pauseDuration :: Game -> Int
     pauseDuration g@Game{..} 
       | _street == PreDeal = 0
-      | _street == PreDeal = 5 * 1000000 -- 5 seconds
-      | haveAllPlayersActed g = 3 * 1000000 -- 3 seconds
-      | otherwise          = 0
+      | _street == Showdown = 5 * 1000000 -- 5 seconds
+      | otherwise = 3 * 1000000 -- 3 seconds
 
 
 -- Progresses to the next state which awaits a player action.
