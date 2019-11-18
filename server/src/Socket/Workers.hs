@@ -61,8 +61,6 @@ forkGameDBWriter connString chan tableName = do
   forkGameWriter tableKey =
     async (writeNewGameStatesToDB connString chan tableKey)
 
-
-
 writeNewGameStatesToDB
   :: ConnectionString -> TChan MsgOut -> Key TableEntity -> IO ()
 writeNewGameStatesToDB connString chan tableKey = do
@@ -72,7 +70,6 @@ writeNewGameStatesToDB connString chan tableKey = do
     case chanMsg of
       (NewGameState tableName game) -> return ()
       _                             -> return ()
-
 
 -- Fork a thread which refills low player chips balances in DB at a given interval
 forkChipRefillDBWriter :: ConnectionString -> Int -> Int -> IO (Async ())

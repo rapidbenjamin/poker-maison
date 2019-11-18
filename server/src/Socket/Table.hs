@@ -130,7 +130,7 @@ gamePipeline connStr s key tableName outMailbox inMailbox = do
     >-> logGame tableName
     >-> updateTable s tableName
     >-> writeGameToDB connStr key
-   -- >-> pause
+   -- >-> nextStagePause
    -- >-> timePlayer s tableName
     >-> progress inMailbox
     -- should all be in stm monad not IO -- perhaps
@@ -180,9 +180,10 @@ runPlayerTimer s tableName gameWhenTimerStarts plyrName =
   where timeoutAction = PlayerAction {name = plyrName, action = Timeout }
 
 
--- Delay to enhance UX based on game stages
-pause :: Pipe Game Game IO ()
-pause = do
+-- Delay to enhance UX so game doesn't move through stages
+-- instantly when no players can act i.e everyone all in.
+nextStagePause :: Pipe Game Game IO ()
+nextStagePause = do
   g <- await
   _ <- liftIO $ threadDelay $ pauseDuration g
   yield g
@@ -219,7 +220,7 @@ progress inMailbox = do
   progress' game = do
     gen <- liftIO getStdGen
     liftIO $ setStdGen $ snd $ next gen 
-    --liftIO $ print "PIPE PROGRESSING GAME"
+    liftIO $ print "PIPE PROGRESSING GAME"
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 
 
@@ -240,31 +241,20 @@ informSubscriber n g Client {..} = do
   runEffect $ yield (NewGameState n filteredGame) >-> toOutput outgoingMailbox
   return ()
 
-
 -- sends new game states to subscribers
 -- At the moment all clients receive updates from every game indiscriminately
 broadcast :: TVar ServerState -> TableName -> Pipe Game Game IO ()
 broadcast s n = do
-  g                <- await
+  g <- await
   ServerState {..} <- liftIO $ readTVarIO s
-  liftIO $ print "BROADCASTING"
-  liftIO $ print g
   let usernames' = M.keys clients -- usernames to broadcast to
-  -- TODO
-  -- 
-  -- MUST filter out private data 
   liftIO $ async $ mapM_ (informSubscriber n g) clients
   yield g
 
 logGame :: TableName -> Pipe Game Game IO ()
 logGame tableName = do
   g <- await
-  liftIO $ print ":::::::::::: New Game State :::::::::::::::::::::"
-  --liftIO $ print g
-  --liftIO $ print "VALID PLAYER ACTIONS"
-  --liftIO $ print $ getAllValidPlayerActions g
   yield g
-
 
 -- Lookups up a table with the given name and writes the new game state
 -- to the gameIn mailbox for propagation to observers.
@@ -294,19 +284,16 @@ toGameInMailbox s name game = do
 combineOutMailboxes :: [Client] -> Consumer MsgOut IO ()
 combineOutMailboxes clients = toOutput $ foldMap outgoingMailbox clients
 
-
 getTable :: TVar ServerState -> TableName -> STM (Maybe Table)
 getTable s tableName = do
   ServerState {..} <- readTVar s
   return $ M.lookup tableName $ unLobby lobby
-
 
 updateTable :: TVar ServerState -> TableName -> Pipe Game Game IO ()
 updateTable serverStateTVar tableName = do
   g <- await
   liftIO $ async $ atomically $ updateTable' serverStateTVar tableName g
   yield g
-
 
 updateTable' :: TVar ServerState -> TableName -> Game -> STM ()
 updateTable' serverStateTVar tableName newGame = do
@@ -318,9 +305,7 @@ updateTable' serverStateTVar tableName newGame = do
       swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
       return ()
 
-
 updateTableGame :: TableName -> Game -> Lobby -> Lobby
 updateTableGame tableName newGame (Lobby lobby) = Lobby
   $ M.adjust updateTable tableName lobby
   where updateTable Table {..} = Table { game = newGame, .. }
-

@@ -18,20 +18,6 @@ packages:
       sha256: 8e5b90fe8051580276d073ec028eeb2073f993c42ed9db040d73261978687a0b
   original:
     hackage: jwt-0.7.2
-- completed:
-    hackage: servant-reason-0.1.2.0@sha256:f151c407f488017cf1ecdf834db957162a2e70d9ce03f104cad5a43b8a079674,2987
-    pantry-tree:
-      size: 1700
-      sha256: 3ed4bcc14f75ee9093b6bdc43b66bbf00e24904b4302be052359c233d0914e9a
-  original:
-    hackage: servant-reason-0.1.2.0@sha256:f151c407f488017cf1ecdf834db957162a2e70d9ce03f104cad5a43b8a079674
-- completed:
-    hackage: reason-export-0.1.2.0@sha256:0b2747ef19bf6f3c8a305b5ad55e9fa19c917d96ef7d6bf4a238402338418f09,2823
-    pantry-tree:
-      size: 3090
-      sha256: e9f0cfffe9d07897f680813c5c893e8bd065abb4b34e90334ed14aa39fc422bb
-  original:
-    hackage: reason-export-0.1.2.0@sha256:0b2747ef19bf6f3c8a305b5ad55e9fa19c917d96ef7d6bf4a238402338418f09
 snapshots:
 - completed:
     size: 498365

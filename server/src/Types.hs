@@ -1,10 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
-{-# LANGUAGE OverloadedStrings #-}
-
 
 module Types where
 
@@ -18,24 +14,12 @@ import           GHC.Generics                   ( Generic )
 import           Servant
 import           Servant.Auth.Server
 
-
-import           Reason                         ( Spec(Spec)
-                                                , specsToDir
-                                                , toReasonDecoderSource
-                                                , toReasonTypeSource
-                                                )
 import           GHC.Generics                   ( Generic )
 import           Servant.API                    ( (:>)
                                                 , Capture
                                                 , Get
                                                 , JSON
                                                 )
-import           Servant.Reason                 ( ReasonType
-                                                , Proxy(Proxy)
-                                                , defReasonImports
-                                                , generateReasonForAPI
-                                                )
-
 
 type RedisConfig = ConnectInfo
 
@@ -44,15 +28,13 @@ type Password = Text
 data Login = Login
   { loginUsername :: Text
   , loginPassword :: Text
-  } deriving (Eq, Show, Generic, ToJSON, FromJSON, ReasonType)
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 data Register = Register
   { newUserEmail :: Text
   , newUsername :: Username
   , newUserPassword :: Text
-  } deriving (Eq, Show, Generic, FromJSON, ToJSON,ReasonType)
-
-
+  } deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 newtype Username =
   Username Text
@@ -66,8 +48,6 @@ instance ToJSON Username
 
 instance FromJSON Username
 
-instance ReasonType Username
-
 type UserID = Text
 
 data UserProfile = UserProfile
@@ -76,10 +56,10 @@ data UserProfile = UserProfile
   , proAvailableChips :: Int
   , proChipsInPlay :: Int
   , proUserCreatedAt :: UTCTime
-  } deriving (Eq, Show, Generic, ToJSON, FromJSON, ReasonType)
+  } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 data ReturnToken = ReturnToken
   { access_token :: Text
   , refresh_token :: Text
   , expiration :: Int --seconds to expire
-  } deriving (Generic, ToJSON, FromJSON, ReasonType)
+  } deriving (Generic, ToJSON, FromJSON)

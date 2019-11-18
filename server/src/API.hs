@@ -40,7 +40,6 @@ import Users
 import Control.Lens ((&), (<>~))
 import Debug.Trace
 import Types
-import Reason
 import Network.Wai.Middleware.Cors
 import Servant.Foreign
 

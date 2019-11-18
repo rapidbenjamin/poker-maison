@@ -95,7 +95,6 @@ import           Pipes.Parse             hiding ( decode
 import qualified Pipes.Prelude                 as P
 
 import           Socket.Table
-import           Socket.TimeAction
 import           Bots
 import Socket.Clients (getSubscribedGameStates)
 
@@ -108,13 +107,6 @@ initialServerState lobby = ServerState { clients = M.empty, lobby = lobby }
 runSocketServer
   :: BS.ByteString -> Int -> ConnectionString -> RedisConfig -> IO ()
 runSocketServer secretKey port connString redisConfig = do
-  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ TakeSeat "black" 2222)
-  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" $ Raise 400)
-  putStrLn $ T.unpack $ encodeMsgX (GameMsgIn $ GameMove "black" Fold)
-
-  putStrLn $ T.unpack $ encodeMsgX
-    (GameMsgIn $ GameMove "black" $ PostBlind Big)
-
   lobby           <- initialLobby
   serverStateTVar <- atomically $ newTVar $ initialServerState lobby
   -- set up pipelines for broadcasting, progressing and logging new game states
@@ -326,20 +318,10 @@ application secretKey dbConnString redisConfig s pending = do
       liftIO $ print ""
       forever $ do
         m <- WS.receiveData conn
-       -- liftIO $ print ""
-       -- liftIO $ print "-------------- Raw msg received from socket -----------"
-       -- liftIO $ print m
-       -- liftIO $ print "-------------------------------------------------------"
-       -- liftIO $ print ""
-       -- liftIO $ print "----------Transferred effect to socket -> mailbox -----------"
-       
         runEffect
           $   msgInDecoder (yield m >-> logMsgIn)
           >-> toOutput incomingMailbox
         return ()
-
-        
-
     Left err -> sendMsg conn (ErrMsg err)
  where
   msgConf c username = MsgHandlerConfig

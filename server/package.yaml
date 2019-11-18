@@ -40,8 +40,6 @@ dependencies:
   - cryptohash
   - hashable
   - bytestring
-  - servant-reason
-  - reason-export
   - jose
   - persistent
   - persistent-postgresql

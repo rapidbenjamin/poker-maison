@@ -1,15 +1,5 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-
-{-# LANGUAGE UndecidableInstances #-}
 
 module Users where
 
@@ -28,7 +18,6 @@ import qualified Data.ByteString.Lazy          as BSL
 import qualified Crypto.JOSE                   as Jose
 import qualified Crypto.JWT                    as Jose
 import           Servant
---import Web.JWT hiding (JSON)
 import           Servant.Foreign
 import           GHC.TypeLits
 import           Data.Maybe
@@ -47,26 +36,6 @@ import           Data.Proxy
 
 import           Data.ByteString.Lazy.UTF8     as BLU
 
-{-
-
-instance forall lang ftype api.
-    ( HasForeign lang ftype api
-    , HasForeignType lang ftype Text
-    )
-  => forall a. HasForeign lang ftype (Auth '[JWT] a :> api) where
-  type Foreign ftype (Auth '[JWT] a :> api) = Foreign ftype api
-
-  foreignFor lang Proxy Proxy subR =
-    foreignFor lang Proxy (Proxy :: Proxy api) req
-    where
-      req = subR{ _reqHeaders = HeaderArg arg : _reqHeaders subR }
-      arg = Arg
-        { _argName = PathSegment "Authorization"
-        , _argType = typeFor lang (Proxy :: Proxy ftype) (Proxy :: Proxy Text)
-        }
-
--}
-
 
 fetchUserProfileHandler :: ConnectionString -> Username -> Handler UserProfile
 fetchUserProfileHandler connString username' = do
@@ -83,10 +52,6 @@ fetchUserProfileHandler connString username' = do
 
 hashPassword :: Text -> Text
 hashPassword password = T.pack $ C.unpack $ H.hash $ encodeUtf8 password
-
-
---unprotectedUsers :: JWTSettings -> Server Unprotected
---unprotectedUsers jwts = checkCreds cs jwts :<|> serveDirectory "example/static"
 
 signToken :: JWTSettings -> Username -> Handler ReturnToken
 signToken jwtSettings username' = do
@@ -130,16 +95,19 @@ registerUserHandler jwtSettings connString redisConfig Register {..} = do
   currTime <- liftIO getCurrentTime
   let hashedPassword      = hashPassword newUserPassword
       (Username username) = newUsername
-      newUser             = UserEntity { userEntityUsername       = username
-                                       , userEntityEmail          = newUserEmail
-                                       , userEntityPassword = hashedPassword
-                                       , userEntityAvailableChips = 3000
-                                       , userEntityChipsInPlay    = 0
-                                       , userEntityCreatedAt      = currTime
-                                       }
-  registrationResult <- liftIO $ runExceptT $ dbRegisterUser connString
-                                                             redisConfig
-                                                             newUser
+      newUser             =
+         UserEntity { 
+              userEntityUsername       = username
+            , userEntityEmail          = newUserEmail
+            , userEntityPassword       = hashedPassword
+            , userEntityAvailableChips = 3000
+            , userEntityChipsInPlay    = 0
+            , userEntityCreatedAt      = currTime
+            }
+  registrationResult <- 
+         liftIO 
+            $ runExceptT
+            $ dbRegisterUser connString redisConfig newUser
   case registrationResult of
     Left err -> throwError $ err401 { errBody = CL.pack $ T.unpack err }
     _        -> signToken jwtSettings newUsername

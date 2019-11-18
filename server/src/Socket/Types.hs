@@ -29,7 +29,6 @@ import           Poker.Types                    ( Game
 import           Types                          ( RedisConfig
                                                 , Username
                                                 )
-
 import           Pipes.Concurrent
 import System.Random
 
@@ -40,8 +39,6 @@ data MsgHandlerConfig = MsgHandlerConfig
   , username :: Username
   , clientConn :: WS.Connection
   , redisConfig :: RedisConfig
-  , socketReadChan :: TChan MsgIn
-  , outgoingMailbox' :: Output MsgOut
   }
 
 type TableName = Text
@@ -49,7 +46,6 @@ type TableName = Text
 newtype Lobby =
   Lobby (Map TableName Table)
   deriving (Ord, Eq, Show)
-
 
 
 instance Show ServerState where
@@ -91,16 +87,14 @@ instance Ord Table where
     game1 `compare` game2
 
 data Client = Client
-  {
-    clientUsername :: Text
-  , conn :: WS.Connection -- do we need this? could just use the mailbox?
+  { clientUsername :: Text
+  , conn :: WS.Connection
   , outgoingMailbox :: Output MsgOut
   }
 
 instance Show Client where
   show Client {..} = show clientUsername
 
--- TODO wrap clients Map in a newtype
 data ServerState = ServerState
   { clients :: Map Username Client
   , lobby :: Lobby
@@ -125,7 +119,6 @@ data GameMsgIn =
   | GameMove TableName Action
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
--- TODO - add BBs per hour, hands per hour etc
 -- For the lobby view so client can make an informed decision about which game to join
 data TableSummary = TableSummary
   { _tableName :: Text
@@ -138,9 +131,9 @@ data TableSummary = TableSummary
   , _bigBlind :: Int
   } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
--- outgoing messages for ws client(s)
+-- outgoing messages for clients
 data MsgOut
-  = TableList [TableSummary] -- TODO only broadcast public table info -- add list of tables to msg
+  = TableList [TableSummary]
   | SuccessfullySatDown TableName
                         Game
   | SuccessfullyLeftSeat TableName
@@ -158,7 +151,6 @@ data GameMsgOut
   | PlayerLeft
   | PlayerJoined TableName Text
   deriving (Show, Eq, Generic, FromJSON, ToJSON)
-
 
 data Err
   = TableFull TableName
