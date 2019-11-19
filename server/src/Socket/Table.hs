@@ -192,7 +192,7 @@ nextStagePause = do
     pauseDuration g@Game{..}
       | _street == PreDeal =  250000 -- 0.25 second
       | _street == Showdown = 4 * 1000000 -- 4 seconds
-      | everyoneAllIn g = 4 * 1000000
+      | countPlayersNotAllIn g <= 1 = 4 * 1000000
       | otherwise = 1 * 1000000 -- 1 seconds
 
 
