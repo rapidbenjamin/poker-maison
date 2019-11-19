@@ -25,10 +25,10 @@ import Signout from './Signout'
 const App = ({ username }) => (
   <div className="app-wrapper">
     <Helmet
-      titleTemplate="%s - React.js Boilerplate"
-      defaultTitle="React.js Boilerplate"
+      titleTemplate="%s Ten Poker"
+      defaultTitle="Ten Poker"
     >
-      <meta name="description" content="A React.js Boilerplate application" />
+      <meta name="description" content="An open source poker app." />
     </Helmet>
     <NavBarContainer />
     <Switch>
