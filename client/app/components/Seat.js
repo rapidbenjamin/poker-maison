@@ -5,7 +5,7 @@ let isPlayerInactive = playerState =>
   playerState === 'SatOut'
 
 
-const Seat = ({ isEveryoneAllIn, playerName, chips, isTurnToAct, hasPocketCards, position, playerState }) => {
+const Seat = ({ activePlayerCount, gameStage, isEveryoneAllIn, playerName, chips, isTurnToAct, hasPocketCards, position, playerState }) => {
 
   console.log('player state', playerState)
   console.log('has pockets', hasPocketCards)
@@ -14,7 +14,7 @@ const Seat = ({ isEveryoneAllIn, playerName, chips, isTurnToAct, hasPocketCards,
 
   return (
     <div className={`seat-${position}-container`}>
-      {hasPocketCards && playerState == "In" && !isEveryoneAllIn ?
+      {hasPocketCards && playerState == "In" && !isEveryoneAllIn && (gameStage !== 'Showdown') && (activePlayerCount > 1) ?
         <div className='hidden-pocket-cards' >
           <div className='hidden-pocket-cards-container' >
             <div className='card pocket-one' />

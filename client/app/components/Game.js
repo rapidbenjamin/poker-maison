@@ -32,7 +32,9 @@ const getSeatedPlayer = (
   gameStage,
   position,
   isTurnToAct,
-  isEveryoneAllIn
+  isEveryoneAllIn,
+  activePlayerCount,
+
 ) => (
     <Seat
       key={position}
@@ -47,11 +49,12 @@ const getSeatedPlayer = (
         gameStage !== 'Showdown'
       }
       playerState={player.get('_playerState')}
+      activePlayerCount={activePlayerCount}
       isTurnToAct={isTurnToAct && (player.get('_actedThisTurn') === false) && gameStage !== 'Showdown'}
     />
   )
 
-const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct, isEveryoneAllIn) =>
+const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct, isEveryoneAllIn, activePlayerCount) =>
   Array(maxPlayers)
     .fill(null)
     .map((_, i) => {
@@ -59,7 +62,7 @@ const getSeats = (username, maxPlayers, players, gameStage, currentPosToAct, isE
       const isTurnToAct = i === currentPosToAct
 
       return player ? (
-        getSeatedPlayer(username, player, gameStage, i, isTurnToAct, isEveryoneAllIn)
+        getSeatedPlayer(username, player, gameStage, i, isTurnToAct, isEveryoneAllIn, activePlayerCount)
       ) : (
           <Seat
             key={i}
@@ -136,6 +139,7 @@ const Game = props => {
 
 
 
+
   if (game) {
     const jsgame = game.toJS()
     console.log(jsgame)
@@ -147,12 +151,13 @@ const Game = props => {
     const gameStage = game.get('_street')
     const potSize = game.get('_pot')
 
+    let activePlayerCount = players.filter(p =>
+      p.get("_playerState") == "In").size
+
     const userPlayer = game
       .get('_players')
       .find(p => p.get('_playerName') === username)
-    console.log(userPlayer)
-    console.log(userPlayer)
-    console.log(userPlayer)
+
 
     const userPocketCards = userPlayer ? userPlayer.get('_pockets') : null
     const userAvailableActions = userPlayer ? userPlayer.get('_possibleActions') : fromJS([])
@@ -192,7 +197,9 @@ const Game = props => {
               players,
               gameStage,
               currentPosToAct,
-              everyoneAllIn
+              everyoneAllIn,
+              activePlayerCount,
+              gameStage
             )}
             <div className="game-grid">
               {players ? (

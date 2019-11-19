@@ -189,10 +189,11 @@ nextStagePause = do
   yield g
  where 
     pauseDuration :: Game -> Int
-    pauseDuration g@Game{..} 
-      | _street == PreDeal = 0
-      | _street == Showdown = 5 * 1000000 -- 5 seconds
-      | otherwise = 2 * 1000000 -- 2 seconds
+    pauseDuration g@Game{..}
+      | _street == PreDeal =  250000 -- 0.25 second
+      | _street == Showdown = 4 * 1000000 -- 4 seconds
+      | countPlayersNotAllIn g <= 1 = 4 * 1000000
+      | otherwise = 1 * 1000000 -- 1 seconds
 
 
 -- Progresses to the next state which awaits a player action.
@@ -291,7 +292,7 @@ getTable s tableName = do
 updateTable :: TVar ServerState -> TableName -> Pipe Game Game IO ()
 updateTable serverStateTVar tableName = do
   g <- await
-  liftIO $ async $ atomically $ updateTable' serverStateTVar tableName g
+  liftIO $ atomically $ updateTable' serverStateTVar tableName g
   yield g
 
 updateTable' :: TVar ServerState -> TableName -> Game -> STM ()
@@ -303,6 +304,16 @@ updateTable' serverStateTVar tableName newGame = do
       let updatedLobby = updateTableGame tableName newGame lobby
       swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
       return ()
+
+updateTableAndGetMailbox :: TVar ServerState -> TableName -> Game -> STM (Maybe (Output Game))
+updateTableAndGetMailbox serverStateTVar tableName newGame = do
+  ServerState {..} <- readTVar serverStateTVar
+  case M.lookup tableName $ unLobby lobby of
+    Nothing               -> throwSTM $ TableDoesNotExistInLobby tableName
+    Just table@Table {..} -> do
+      let updatedLobby = updateTableGame tableName newGame lobby
+      swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
+      return $ Just gameInMailbox
 
 updateTableGame :: TableName -> Game -> Lobby -> Lobby
 updateTableGame tableName newGame (Lobby lobby) = Lobby
