@@ -140,7 +140,7 @@ const Game = props => {
     const jsgame = game.toJS()
     console.log(jsgame)
     console.log('everyone all in ', isEveryoneAllIn(game.get("_players")))
-
+    const everyoneAllIn = isEveryoneAllIn(game.get("_players"))
     const players = game.get('_players')
     const dealerPos = game.get('_dealer')
     const maxPlayers = 6
@@ -192,7 +192,7 @@ const Game = props => {
               players,
               gameStage,
               currentPosToAct,
-              isEveryoneAllIn(game.get("_players"))
+              everyoneAllIn
             )}
             <div className="game-grid">
               {players ? (
@@ -210,9 +210,9 @@ const Game = props => {
                 <span className="monospaced-font-bold">{`$${potSize}`}</span>
               </h3>
               {mainShowdownPot ? (
-                <p className="winners-label">
+                <h3 className="winners-label">
                   {`${mainShowdownPotHandPlayers} wins with ${mainShowdownPotHandRanking}`}
-                </p>
+                </h3>
               ) : (
                   ''
                 )}
