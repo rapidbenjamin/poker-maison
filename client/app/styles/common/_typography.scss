@@ -33,6 +33,17 @@ $monospaced-font2: "MonoP-Bold", sans-serif;
   font-family: $monospaced-font2;
 }
 
+/* cabin-500 - latin */
+@font-face {
+  font-family: "Cabin";
+  font-style: normal;
+  font-weight: 500;
+  src: local("Cabin Medium"), local("Cabin-Medium"),
+    /* IE6-IE8 */ url("../../static/fonts/cabin/cabin-v14-latin-500.woff2") format("woff2"),
+    /* Super Modern Browsers */ url("../../static/fonts/cabin/cabin-v14-latin-500.woff") format("woff"),
+    /* Modern Browsers */ url("../../static/fonts/cabin/cabin-v14-latin-500.ttf") format("truetype");
+}
+
 // Raleway
 
 /* raleway-200 - latin */
@@ -92,6 +103,8 @@ $monospaced-font2: "MonoP-Bold", sans-serif;
 }
 
 $raleway-bold: "Raleway Bold", sans-serif;
+
+$cabin: "Cabin", sans-serif;
 
 // Configure modular-scale plugin
 $modularscale: (
