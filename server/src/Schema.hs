@@ -16,7 +16,6 @@ import           Data.Aeson.Types
 import           Data.Text                      ( Text )
 import           Data.Time.Clock
 import           Database.Persist.TH
-import           Servant.Docs
 
 import           Poker.Types
 
@@ -57,48 +56,3 @@ share
     currentPosToAct Int Maybe
     deriving Show Read
 |]
-
-{-
-instance FromJSON User where
-  parseJSON (Object obj) =
-    User <$> obj .: "username" <*> obj .: "email" <*> obj .: "userTotalChips" <*>
-    obj .: "userChipsInPlay" <*>
-    obj .: "password"
-  parseJSON _ = mzero
-
-instance ToJSON User where
-  toJSON p =
-    object
-      [ "username" .= userUsername p
-      , "email" .= userEmail p
-      , "availableChips" .= userAvailableChips p
-      , "chipsInPlay" .= userChipsInPlay p
-      , "password" .= userPassword p
-      ]
-
-parseUser :: Object -> Parser User
-parseUser o = do
-  uUsername <- o .: "username"
-  uEmail <- o .: "email"
-  uTotalChips <- o .: "totalChips"
-  uChipsInPlay <- o .: "chipsInPlay"
-  uPassword <- o .: "password"
-  return
-    User
-      { userUsername = uUsername
-      , userPassword = uPassword
-      , userEmail = uEmail
-      , userAvailableChips = uTotalChips
-      , userChipsInPlay = uChipsInPlay
-      }
--}
-instance ToSample UserEntity where
-  toSamples _ = [("Sample User", g)]
-   where
-    g = UserEntity { userEntityAvailableChips = 2000
-                   , userEntityChipsInPlay    = 0
-                   , userEntityUsername       = "Tom"
-                   , userEntityEmail          = "gooby@g.com"
-                   , userEntityPassword       = "n84!@R5G"
-                   , userEntityCreatedAt      = read "" --"2013 - 12 - 15 19 : 12 : 20.841326 UTC"
-                   }

@@ -6,9 +6,7 @@ import           Control.Concurrent.Async       ( Async )
 import           Control.Lens
 import           Control.Monad                  ( void )
 import           Control.Monad.Except
-import           Control.Monad.Logger           ( LoggingT
-                                                , runStdoutLoggingT
-                                                )
+
 import           Control.Monad.Reader
 import           Control.Monad.Reader           ( runReaderT )
 import           Data.ByteString.Char8          ( pack

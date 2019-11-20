@@ -6,15 +6,84 @@
 
 ![alt text](https://i.imgur.com/GP3LSUf.png "Screenshot")
 
-## Running Tests
 
-To run the test suite on the backend which has over a hundred tests
 
+
+# Get everything up and running with Docker
+
+
+### Prerequisites
+
+In order to use Docker have the following installed.
+- [Docker](https://docs.docker.com/compose/install/) (17.12.0+) 
+- [Docker Compose](https://docs.docker.com/v17.09/engine/installation/)
+- [Docker Machine](https://docs.docker.com/machine/install-machine/)
+
+Firstly start Docker Machine 
 ```bash
-cd server && stack test
+docker-machine start
 ```
 
-## How to get everything working on your local machine.
+
+Then set the correct variables in your terminal so you can connect to Docker Machine
+```bash
+eval $(docker-machine env)
+```
+
+Now build the images which will take a while.
+```
+docker-compose up
+```
+
+Now go navigate to http://localhost:8001 in your browser and the app should be running.
+
+## Common Problems
+
+## Docker has the wrong TLS setting 
+
+If you get the error below then Docker Compose is not using the correct TLS version.
+```
+Building web
+ERROR: SSL error: HTTPSConnectionPool(host='192.168.99.100', port=2376): Max retries exceeded with url: /v1.30/build?q=False&pull=False&t=server_web&nocache=False&forcerm=False&rm=True (Caused by SSLError(SSLError(1, u'[SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:727)'),))
+``` 
+You can fix this by setting the following environment variable with the correct TLS version.
+```bash
+export COMPOSE_TLS_VERSION=TLSv1_2
+```
+
+## Container runs out of memory
+
+If the server docker container runs out of memory whilst building. Whis would look like this.
+```
+--  While building package Cabal-2.4.1.0 using:
+      /root/.stack/setup-exe-cache/x86_64-linux/Cabal-simple_mPHDZzAJ_2.4.0.1_ghc-8.6.5 --builddir=.stack-work/dist/x86_64-linux/Cabal-2.4.0.1 build --ghc-options ""
+    Process exited with code: ExitFailure (-9) (THIS MAY INDICATE OUT OF MEMORY)
+```
+
+Then set increase the memory available to the VM you are using for docker-machine.
+Assuming your VM is named "default", run:
+
+```bash
+docker-machine stop default
+VBoxManage modifyvm default --memory 4096
+docker-machine start default
+```
+
+## Slow builds
+
+If you want to speed up builds then replace `n` in the command below 
+with the number of cores your machine has and run the command. 
+The command below assumes that "default" is the name of the VM Docker Machine is using.
+
+```bash
+docker-machine stop default
+VBoxManage modifyvm default --cpus n
+docker-machine start default
+```
+
+# Building locally from scratch.
+
+The following steps are based on an Ubuntu distribution.
 
 ## Back End
 
@@ -118,6 +187,13 @@ and
 localhost:8002
 ```
 
+## Running Tests
+
+To run the test suite on the backend which has over a hundred tests
+
+```bash
+cd server && stack test
+``` 
 
 ## Contributions Welcome
 

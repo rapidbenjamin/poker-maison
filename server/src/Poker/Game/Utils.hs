@@ -21,7 +21,7 @@ import           Control.Lens hiding (Fold)
 import           Poker.Types
 
 import           Control.Monad
-import           Data.Array.IO
+
 import           System.Random
 
 -- | A standard deck of cards.

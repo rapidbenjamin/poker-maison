@@ -11,6 +11,7 @@ import           Data.Proxy
 import qualified Data.Text                     as T
 import           Data.Text                      ( Text )
 import           Data.Time.Clock
+
 import           Database
 import           Database.Persist
 import           Database.Persist.Postgresql
@@ -18,7 +19,6 @@ import qualified Data.ByteString.Lazy          as BSL
 import qualified Crypto.JOSE                   as Jose
 import qualified Crypto.JWT                    as Jose
 import           Servant
-import           Servant.Foreign
 import           GHC.TypeLits
 import           Data.Maybe
 import           Schema

@@ -17,9 +17,6 @@ import Control.Lens.At
 
 import           Control.Monad                  ( void )
 import           Control.Monad.Except
-import           Control.Monad.Logger           ( LoggingT
-                                                , runStdoutLoggingT
-                                                )
 import           Control.Monad.Reader
 import           Data.ByteString.Char8          ( pack
                                                 , unpack

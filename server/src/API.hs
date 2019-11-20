@@ -32,6 +32,7 @@ import System.Environment (getArgs)
 import Servant
 import Servant.Auth.Server
 import GHC.TypeLits
+import Servant.Foreign
 import qualified Data.ByteString.Lazy as BSL
 import Network.Wai.Middleware.Servant.Options
 import Data.Proxy
@@ -41,7 +42,6 @@ import Control.Lens ((&), (<>~))
 import Debug.Trace
 import Types
 import Network.Wai.Middleware.Cors
-import Servant.Foreign
 
 import GHC.TypeLits
 
