@@ -22,37 +22,29 @@ dependencies:
   - base >= 4.12 && < 5
   - async
   - aeson
+  - bytestring
   - hedis
-  - servant-websockets
-  - conduit
-  - stm-conduit
-  - pipes
-  - pipes-aeson
-  - pipes-concurrency
-  - pipes-parse
-  - time
-  - monad-logger
-  - mtl
-  - array
-  - stm
   - ekg
   - containers
   - cryptohash
   - hashable
-  - bytestring
   - jose
   - persistent
   - persistent-postgresql
   - persistent-template
-  - servant
   - time
+  - servant
   - servant-server
-  - servant-foreign
   - servant-auth
   - servant-auth-server
   - servant-auth-client
-  - servant-auth-swagger
-  - servant-auth-docs
+  - servant-foreign
+  - servant-options
+  - servant-websockets
+  - pipes
+  - pipes-aeson
+  - pipes-concurrency
+  - pipes-parse
   - transformers
   - random
   - text
@@ -64,18 +56,14 @@ dependencies:
   - pretty-simple
   - utf8-string
   - split
+  - stm
   - MonadRandom
-  - jose
+  - monad-logger
   - mtl
-  - wuss
   - jwt
-  - servant-docs
   - listsafe
   - warp
-  - bytestring
   - lens
-  - servant-options
-  - async
   - vector
 
 library:
