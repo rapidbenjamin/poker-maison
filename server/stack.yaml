@@ -12,7 +12,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-13.18
+resolver: lts-14.15
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -33,6 +33,8 @@ allow-newer: true
 extra-deps:
   - servant-options-0.1.0.0
   - jwt-0.7.2
+  - servant-websockets-2.0.0@sha256:6e9e3600bced90fd52ed3d1bf632205cb21479075b20d6637153cc4567000234,2253
+
 
 nix:
   enable: false
@@ -70,7 +72,7 @@ local-bin-path: build
 #
 ghc-options:
   "$locals": -j # Parallel Builds
- # "$locals": -O0 # No GHC optimisations
+  "$locals": -O0 # No GHC optimisations
 
 # Extra directories used by stack for building
 # extra-include-dirs: [/path/to/dir]
