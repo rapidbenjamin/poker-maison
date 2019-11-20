@@ -7,7 +7,6 @@ import           Data.Either
 import           Data.Maybe
 import           Data.Text                      ( pack )
 import           Database.Redis                 ( ConnectInfo
-                                                , HostName
                                                 , Redis
                                                 , connect
                                                 , connectHost
@@ -24,7 +23,7 @@ import           Types
 import           Web.JWT                        ( secret )
 import           Data.ByteString.UTF8          as BSU
 
-getRedisHostFromEnv :: HostName -> IO ConnectInfo
+getRedisHostFromEnv :: String -> IO ConnectInfo
 getRedisHostFromEnv defaultHostName = do
   maybeConnInfo <- lookupEnv "redisHost"
   case maybeConnInfo of
@@ -32,7 +31,7 @@ getRedisHostFromEnv defaultHostName = do
       print "couldn't parse redishost from env default used"
       return defaultRedisConn
     Just hostname -> do
-      print "hostName from env is: "
+      print "Redis host name from env is: "
       print hostname
       return $ defaultConnectInfo { connectHost = hostname }
   where defaultRedisConn = defaultConnectInfo { connectHost = defaultHostName }
