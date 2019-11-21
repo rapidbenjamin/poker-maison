@@ -3,7 +3,11 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-BINARY_PATH=".stack-work/dist/x86_64-linux/Cabal-2.4.0.1/build/poker-server-exe/poker-server-exe"
+# Location of executable
+BUILD_DIR="./build"
+BINARY_PATH=$BUILD_DIR"/poker-server-exe"
+
+# Where we deploy
 HOST="34.244.29.59"
 REMOTE="ubuntu@"$HOST
 
@@ -28,7 +32,8 @@ serverHealthCheck(){
 }
 
 # compile binrary
-stack build 
+stack build --copy-bins --local-bin-path $BUILD_DIR
+
 
 ssh -i ~/.ssh/id_rsa $REMOTE sudo "systemctl stop server.service" 
 
