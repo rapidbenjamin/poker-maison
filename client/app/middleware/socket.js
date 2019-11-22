@@ -12,7 +12,8 @@ import { newGameState } from '../actions/games'
 
 import * as types from '../actions/types'
 
-const SOCKET_API_URL = 'wss://tengame.co.uk'
+const SOCKET_API_URL = 'ws://localhost:5000'
+// 'wss://tengame.co.uk'
 
 import ReconnectingWebSocket from 'reconnecting-websocket';
 

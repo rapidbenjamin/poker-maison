@@ -50,6 +50,7 @@ canProgressGame game@Game {..}
   | (length _players) < 2 = False -- -- | (null $ getActivePlayers _players) = False
   | _street == Showdown = True
   | _street == PreDeal && haveRequiredBlindsBeenPosted game = True
+  | _street == PreDeal && haveAllPlayersActed game = True
   | otherwise           = haveAllPlayersActed game
 
     --  ((length $ getActivePlayers _players) < 2 && haveAllPlayersActed game) ||

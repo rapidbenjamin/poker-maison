@@ -1,0 +1,57 @@
+version: "3.5"
+
+services:
+  db:
+    image: postgres:9.4
+    environment:
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_NAME=poker
+      - POSTGRES_PASSWORD=postgres
+  #  volumes:
+  #   - db-data:/var/lib/postgresql/data
+    restart: on-failure
+    networks:
+      - backend
+  
+  redis:
+    image: redis:5.0-rc4-alpine
+    networks:
+      - backend
+    restart: on-failure
+    volumes:
+      - redis-data:/var/lib/redis
+  
+  server:
+    build: ./server 
+    environment:
+     - dbConnStr=host=db port=5432 user=postgres dbname=postgres password=postgres
+     - secret=aw4-4z0ds21c970dasdak4dm=9jhkbn8da268tkj7=rsfdaf92x88
+    depends_on:
+     - db
+     - redis
+    ports:
+     - "8000:8000"
+     - "5000:5000"
+    restart: on-failure
+    networks:
+     - backend
+
+  client:
+    build: ./client
+    restart: on-failure
+    environment: 
+      - HOST=0.0.0.0
+      - AUTH_API_URL=http://192.168.99.100:8000
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
+
+networks:
+  backend:
+
+volumes:
+  db-data:
+  redis-data:

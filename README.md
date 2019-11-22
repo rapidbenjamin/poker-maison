@@ -35,7 +35,9 @@ Now build the images which will take a while.
 docker-compose up
 ```
 
-Now go navigate to http://localhost:8001 in your browser and the app should be running.
+Now go navigate to http://localhost:3000 in your browser and the app should be running.
+
+You can have simulate multiple players playing in the same game on on your machine if you navigate to the above url in a few browser tabs. Temember to log out when you open up a new tab after you have signed in as the browser will cache the access_token for the last user who was signed in due to the URL being the same.
 
 ## Common Problems
 

@@ -22,8 +22,8 @@ export const logoutUser = history => dispatch => {
 
 console.log('env var', process.env)
 
-const AUTH_API_URL = 'https://tenpoker.co.uk'
-// process.env.NODE_ENV === 'production' ? 'https://tenpoker.co.uk' : 'http://localhost:8000'
+const AUTH_API_URL =  process.env.NODE_ENV ? process.env.NODE_ENV : 
+   process.env.NODE_ENV === 'production' ? 'https://tenpoker.co.uk' : 'http://localhost:8000'
 
 export const authRequested = () => ({ type: types.AUTH_REQUESTED })
 
@@ -52,7 +52,7 @@ export function login(username, password, history) {
         dispatch(authSuccess(username))
         dispatch(connectSocket(access_token))
         localStorage.setItem('token', JSON.stringify({ ...data, username }))
-        history.push('/profile')
+        history.push('/lobby')
       })
       .catch(err => dispatch(authError(err)))
   }
@@ -72,7 +72,7 @@ export function register(username, email, password, history) {
         dispatch(authSuccess(username))
         dispatch(connectSocket(access_token))
         localStorage.setItem('token', JSON.stringify({ ...data, username }))
-        history.push('/profile')
+        history.push('/lobby')
       })
       .catch(err => dispatch(authError(err)))
   }

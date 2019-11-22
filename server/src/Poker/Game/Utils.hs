@@ -78,6 +78,9 @@ getActivePlayers = filter (\Player {..} -> _playerState == In)
 filterPlayersWithLtChips :: Int -> [Player] -> [Player]
 filterPlayersWithLtChips count = filter (\Player {..} -> _chips >= count)
 
+filterSatOutPlayers ::  [Player] -> [Player]
+filterSatOutPlayers = filter (\Player {..} -> _playerState /= SatOut)
+
 countActive :: [Player] -> Int
 countActive = length . getActivePlayers
 

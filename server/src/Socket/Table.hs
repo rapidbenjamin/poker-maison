@@ -131,7 +131,7 @@ gamePipeline connStr s key tableName outMailbox inMailbox = do
     >-> updateTable s tableName
     >-> writeGameToDB connStr key
     >-> nextStagePause
-   -- >-> timePlayer s tableName
+    >-> timePlayer s tableName
     >-> progress inMailbox
     -- should all be in stm monad not IO -- perhaps
 
@@ -164,7 +164,7 @@ timePlayer s tableName = do
 runPlayerTimer :: TVar ServerState -> TableName -> Game -> PlayerName -> IO (Async ())
 runPlayerTimer s tableName gameWhenTimerStarts plyrName = 
   async $ do 
-    threadDelay (30 * 1000000) -- 30 seconds
+    threadDelay (3 * 1000000) -- 30 seconds
     mbTable <- atomically $ getTable s tableName
     case mbTable of 
       Nothing -> return ()

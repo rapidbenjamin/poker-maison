@@ -1,15 +1,17 @@
-FROM fedora
-RUN mkdir -p /opt/myapp/
-#ENV dbConnStr="host=127.0.0.1 port=5432 user=postgres dbname=postgres password=postgres"
-ENV secret=rkjnt4ld453kd98fjdk4f
-WORKDIR /opt/myapp
-RUN dnf -y install \
-  libpq-devel
+FROM fpco/stack-build-small
 
-COPY build/poker-server-exe /opt/myapp
+RUN mkdir -p /app
 
-#RUN curl -sSL https://get.haskellstack.org/ | sh
-#RUN export dbConnStr="host=127.0.0.1 port=5432 user=postgres dbname=postgres password=postgres"
-#CMD ["stack", "build"]
-ENV dbConnStr="\"host=127.0.0.1 port=5432 user=postgres dbname=postgres password=postgres\""
-CMD ["./poker-server-exe"]
+
+COPY . /app
+
+WORKDIR /app
+
+RUN apt-get update && \
+  apt-get install libpq-dev lzma-dev libpq-dev -yy
+
+RUN stack build --only-dependencies
+
+RUN stack build 
+
+CMD stack run

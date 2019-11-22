@@ -240,7 +240,7 @@ const Game = props => {
       </div>
     )
   }
-  return <h2>Failed to load game.</h2>
+  return <h2>Loading Game...</h2>
 }
 
 export default Game

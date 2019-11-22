@@ -201,7 +201,7 @@ getNextHand Game {..} shuffledDeck = Game
   incAmount = 1
   newDealer = modInc incAmount _dealer (length (getPlayersSatIn _players) - 1)
   freeSeatsNo = _maxPlayers - length _players
-  newPlayers = filterPlayersWithLtChips _bigBlind $ resetPlayerCardsAndBets <$> _players
+  newPlayers = filterSatOutPlayers $ filterPlayersWithLtChips _bigBlind $ resetPlayerCardsAndBets <$> _players
   newWaitlist = drop freeSeatsNo _waitlist
   nextPlayerToAct = modInc incAmount newDealer (length newPlayers - 1)
 
@@ -210,8 +210,9 @@ getNextHand Game {..} shuffledDeck = Game
 haveAllPlayersActed :: Game -> Bool
 haveAllPlayersActed g@Game {..}
   | _street == Showdown = True
+  | length activePlayers < 2 = True
   | _street == PreDeal = haveRequiredBlindsBeenPosted g
-  | otherwise = not (awaitingPlayerAction g) || (length activePlayers < 2)
+  | otherwise = not (awaitingPlayerAction g)
   where activePlayers = getActivePlayers _players
 
 awaitingPlayerAction :: Game -> Bool
