@@ -12,12 +12,17 @@ import { newGameState } from '../actions/games'
 
 import * as types from '../actions/types'
 
-const SOCKET_API_URL = 'ws://localhost:5000'
+//const SOCKET_API_URL = 'ws://localhost:5000'
 // 'wss://tengame.co.uk'
 
-import ReconnectingWebSocket from 'reconnecting-websocket';
+const SOCKET_API_URL =
+  process.env.NODE_ENV === 'docker'
+    ? 'ws://192.168.99.100:5000'
+    : process.env.NODE_ENV === 'production'
+    ? 'https://tengame.co.uk'
+    : 'http://localhost:5000'
 
-
+import ReconnectingWebSocket from 'reconnecting-websocket'
 
 //process.env.NODE_ENV === 'production' ? 'wss://tengame.co.uk' : 'ws://localhost:5000'
 
@@ -30,18 +35,14 @@ function addHandlers(socket, authToken, dispatch) {
 
   socket.onclose = event => {
     dispatch(disconnectSocket())
-    // try and reconnect nearly instantly which is  
+    // try and reconnect nearly instantly which is
     // useful when the client has refreshed their web browser
     setTimeout(() => {
-
       if (socket.connect) {
         socket.connect()
+      } else {
       }
-      else {
-
-      }
-    }, 750);
-
+    }, 750)
   }
 
   socket.onmessage = msg => {
@@ -78,7 +79,7 @@ let connectedSocket = null
 function connHandler(dispatch, action) {
   if (action.type === types.CONNECT_SOCKET) {
     const { token } = action
-    connectedSocket = new ReconnectingWebSocket(SOCKET_API_URL);
+    connectedSocket = new ReconnectingWebSocket(SOCKET_API_URL)
     // new WebSocket(SOCKET_API_URL)
 
     addHandlers(connectedSocket, token, dispatch)

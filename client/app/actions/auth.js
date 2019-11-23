@@ -22,8 +22,12 @@ export const logoutUser = history => dispatch => {
 
 console.log('env var', process.env)
 
-const AUTH_API_URL =  process.env.NODE_ENV ? process.env.NODE_ENV : 
-   process.env.NODE_ENV === 'production' ? 'https://tenpoker.co.uk' : 'http://localhost:8000'
+const AUTH_API_URL =
+  process.env.NODE_ENV === 'docker'
+    ? 'http://192.168.99.100:8000'
+    : process.env.NODE_ENV === 'production'
+    ? 'https://tenpoker.co.uk'
+    : 'http://localhost:8000'
 
 export const authRequested = () => ({ type: types.AUTH_REQUESTED })
 
@@ -33,20 +37,22 @@ export const authError = error => ({ type: types.AUTHENTICATION_ERROR, error })
 
 export const logout = () => ({ type: types.UNAUTHENTICATED })
 
-
 export function login(username, password, history) {
   return async dispatch => {
     dispatch(authRequested())
     axios
-      .post(`${AUTH_API_URL}/login`, {
-        loginUsername: username,
-        loginPassword: password,
-
-      }, {
-        headers: {
-          "Access-Control-Allow-Origin": "*"
+      .post(
+        `${AUTH_API_URL}/login`,
+        {
+          loginUsername: username,
+          loginPassword: password
+        },
+        {
+          headers: {
+            'Access-Control-Allow-Origin': '*'
+          }
         }
-      })
+      )
       .then(({ data }) => {
         const { access_token } = data
         dispatch(authSuccess(username))

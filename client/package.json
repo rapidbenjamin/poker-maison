@@ -17,6 +17,7 @@
     "build:prod": "NODE_ENV=production node_modules/.bin/webpack --config config/webpack.prod.babel.js --color -p --progress --hide-modules --display-optimization-bailout",
     "build:clean": "rimraf ./build",
     "start": "cross-env NODE_ENV=development node server/index.js",
+    "start:docker": "cross-env NODE_ENV=docker node server/index.js",
     "start:production": "npm run test && npm run build && npm run start:prod",
     "start:prod": "cross-env NODE_ENV=production node server/index.js",
     "deploy": "npm run build:clean && yarn run copy-static && yarn run build && aws s3 sync build/ s3://poker-client --delete",

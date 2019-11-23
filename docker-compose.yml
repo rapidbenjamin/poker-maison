@@ -27,6 +27,7 @@ services:
     environment:
      - dbConnStr=host=db port=5432 user=postgres dbname=postgres password=postgres
      - secret=aw4-4z0ds21c970dasdak4dm=9jhkbn8da268tkj7=rsfdaf92x88
+     - redisHost=redis
     depends_on:
      - db
      - redis
@@ -42,7 +43,6 @@ services:
     restart: on-failure
     environment: 
       - HOST=0.0.0.0
-      - AUTH_API_URL=http://192.168.99.100:8000
     ports:
       - target: 3000
         published: 3000

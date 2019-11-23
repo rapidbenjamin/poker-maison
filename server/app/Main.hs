@@ -4,7 +4,7 @@ module Main where
 
 import           Control.Concurrent.Async
 import           Database.Redis                 ( defaultConnectInfo )
-import           Network.Wai.Handler.Warp       ( run )
+import           Network.Wai.Handler.Warp
 import           Prelude
 import qualified System.Remote.Monitoring      as EKG
 import           Data.Text.Encoding            as TSE
@@ -32,10 +32,12 @@ main = do
   secretKey <- getSecretKey
   let runSocketAPI =
         runSocketServer secretKey socketAPIPort dbConnString redisConfig
-  let runUserAPI = run userAPIPort (app secretKey dbConnString redisConfig)
+      app'     = app secretKey dbConnString redisConfig
+      settings = setPort userAPIPort (setHost "0.0.0.0" $ defaultSettings)
+
   migrateDB dbConnString
   ekg <- runMonitoringServer
-  concurrently runUserAPI runSocketAPI
+  concurrently (runSettings settings app') runSocketAPI
  where
   defaultUserAPIPort             = 8000
   defaultSocketAPIPort           = 5000
