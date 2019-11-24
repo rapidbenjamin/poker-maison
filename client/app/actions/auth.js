@@ -58,7 +58,7 @@ export function login(username, password, history) {
         dispatch(authSuccess(username))
         dispatch(connectSocket(access_token))
         localStorage.setItem('token', JSON.stringify({ ...data, username }))
-        history.push('/lobby')
+        history.push('/profile')
       })
       .catch(err => dispatch(authError(err)))
   }
@@ -78,7 +78,7 @@ export function register(username, email, password, history) {
         dispatch(authSuccess(username))
         dispatch(connectSocket(access_token))
         localStorage.setItem('token', JSON.stringify({ ...data, username }))
-        history.push('/lobby')
+        history.push('/profile')
       })
       .catch(err => dispatch(authError(err)))
   }

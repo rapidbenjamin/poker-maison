@@ -6,7 +6,7 @@
 
 ![alt text](https://i.imgur.com/GP3LSUf.png "Screenshot")
 
-# Get everything up and running with Docker
+# Get everything running with Docker
 
 ### Prerequisites
 
