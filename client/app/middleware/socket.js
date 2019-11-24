@@ -19,8 +19,8 @@ const SOCKET_API_URL =
   process.env.NODE_ENV === 'docker'
     ? 'ws://192.168.99.100:5000'
     : process.env.NODE_ENV === 'production'
-    ? 'https://tengame.co.uk'
-    : 'http://localhost:5000'
+    ? 'wss://tengame.co.uk'
+    : 'ws://localhost:5000'
 
 import ReconnectingWebSocket from 'reconnecting-websocket'
 
