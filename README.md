@@ -4,7 +4,7 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/c21ef5e4-5227-4a24-87a8-b71961650fd5/deploy-status)](https://app.netlify.com/sites/tenpoker/deploys)
 
-![alt text](https://s5.gifyu.com/images/HeadsUpGame.gif "Demo")
+![alt text](https://s5.gifyu.com/images/ezgif.com-optimize5e0da53745713931.gif "Demo")
 
 # Get everything running with Docker
 
