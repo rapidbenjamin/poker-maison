@@ -1,8 +1,9 @@
-![alt text](https://i.imgur.com/big5Pqa.png "Ten Poker")
+![alt text](https://i.ibb.co/9Gv74rZ/rsz-68747470733a2f2f692e696d6775722e636f6d2f626967355071612e706e67.png "Ten Poker")
 
 ## A multiplayer app crafted with Haskell and React
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/c21ef5e4-5227-4a24-87a8-b71961650fd5/deploy-status)](https://app.netlify.com/sites/tenpoker/deploys)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
 ![alt text](https://s5.gifyu.com/images/ezgif.com-optimize5e0da53745713931.gif "Demo")
 
