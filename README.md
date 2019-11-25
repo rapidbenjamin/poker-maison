@@ -41,9 +41,9 @@ The above ip address is the one for your docker-machine VM if you are on the def
 
 You can simulate multiple players in the same game on on your machine if you navigate to the above url in a few different browser tabs. Eac time you open up a new tab just remember to log out after you have signed in as the browser will cache the access_token for the last logged in user for each new tab as URL is the same.
 
-## Common Problems
+## Common Docker Problems
 
-## Docker has the wrong TLS setting
+### Docker has the wrong TLS setting
 
 If you get the error below then Docker Compose is not using the correct TLS version.
 
@@ -58,7 +58,7 @@ You can fix this by setting the following environment variable with the correct 
 export COMPOSE_TLS_VERSION=TLSv1_2
 ```
 
-## Container runs out of memory
+### Container runs out of memory
 
 If the server docker container runs out of memory whilst building. Whis would look like this.
 
@@ -77,7 +77,7 @@ VBoxManage modifyvm default --memory 4096
 docker-machine start default
 ```
 
-## Slow builds
+### Slow builds
 
 If you want to speed up builds then replace `n` in the command below
 with the number of cores your machine has and run the command.
