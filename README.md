@@ -7,6 +7,8 @@
 
 ![alt text](https://s5.gifyu.com/images/ezgif.com-optimize-1e35dcba1eceb51f5.gif "Demo")
 
+[Play now](https://ten.poker/register)
+
 # Get everything running with Docker
 
 ### Prerequisites
