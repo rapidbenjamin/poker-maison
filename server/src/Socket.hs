@@ -27,10 +27,11 @@ import           Socket.Types
 import           Socket.Workers
 import           Types
 
-import           Control.Lens            hiding ( Fold, each)
+import           Control.Lens            hiding ( Fold
+                                                , each
+                                                )
 import           Database
 import           Poker.Types             hiding ( LeaveSeat )
---import           Data.Traversable
 import           Data.Foldable                  ( traverse_ )
 
 import qualified Data.ByteString               as BS
@@ -43,7 +44,6 @@ import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.Reader
 import           Control.Monad.STM
---import           Control.Monad.State.Lazy hiding (evalStateT)
 import qualified Data.ByteString.Lazy          as BL
 
 import           Socket.Types
@@ -96,7 +96,7 @@ import qualified Pipes.Prelude                 as P
 
 import           Socket.Table
 import           Bots
-import Socket.Clients (getSubscribedGameStates)
+import           Socket.Clients                 ( getSubscribedGameStates )
 
 
 initialServerState :: Lobby -> ServerState
@@ -134,7 +134,7 @@ runSocketServer secretKey port connString redisConfig = do
 -- subscriptions are handled by combining each subscribers mailbox into one large mailbox
 -- where mew MsgOuts with new game states are posted
 --
--- The new game state msgs will then propogate to to the subscribers mailbox and 
+-- The new game state msgs will then propogate to to the subscribers mailbox and
 -- sent via their websocket connection automatically
 subscribeToTable :: Output MsgOut -> Output MsgOut -> Output MsgOut
 subscribeToTable tableOutput playerOutput = tableOutput <> playerOutput
@@ -172,7 +172,8 @@ websocketInMailbox conf@MsgHandlerConfig {..} = do
 -- are silently ignored but logged anyway.
 socketMsgInWriter :: WS.Connection -> Output MsgIn -> IO ()
 socketMsgInWriter conn writeMsgInSource = do
-  _ <- async
+  _ <-
+    async
     $   forever
     $   runEffect
     $   msgInDecoder (socketReader conn >-> logMsgIn)
@@ -235,9 +236,9 @@ msgInHandler conf@MsgHandlerConfig {..} = do
   msgIn <- await
   res   <- lift $ runReaderT (msgHandler msgIn) conf
   case res of
-    Left  err -> yield $ ErrMsg err
+    Left err -> yield $ ErrMsg err
     Right (NewGameState tableName g) ->
-      liftIO $ atomically $ updateGameState serverStateTVar tableName g  
+      liftIO $ atomically $ updateGameState serverStateTVar tableName g
 --  --     liftIO $ atomically $ updateTable' serverStateTVar tableName g
     --   mb liftIO $
     --        atomically $ updateGame serverStateTVar tableName g    
@@ -262,10 +263,10 @@ msgInHandler conf@MsgHandlerConfig {..} = do
 -- such as progressing the game along if possible 
 updateGameState :: TVar ServerState -> TableName -> Game -> STM ()
 updateGameState serverStateTVar tableName newGame = do
-    mbGameInMailbox' <- updateTableAndGetMailbox serverStateTVar tableName newGame
-    case mbGameInMailbox' of 
-      Nothing -> return ()
-      Just gameInMailbox' -> send gameInMailbox' newGame >> return ()
+  mbGameInMailbox' <- updateTableAndGetMailbox serverStateTVar tableName newGame
+  case mbGameInMailbox' of
+    Nothing             -> return ()
+    Just gameInMailbox' -> send gameInMailbox' newGame >> return ()
 
 
 -- -- Lookups up a table with the given name and writes the new game state
@@ -323,7 +324,12 @@ filterMsgsForTable tableName =
 --
 -- After the client has been authenticated we fork a thread which writes
 -- the clients msgs to a channel.
-application :: BS.ByteString -> ConnectionString -> RedisConfig -> TVar ServerState -> WS.ServerApp
+application
+  :: BS.ByteString
+  -> ConnectionString
+  -> RedisConfig
+  -> TVar ServerState
+  -> WS.ServerApp
 application secretKey dbConnString redisConfig s pending = do
   conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
@@ -338,7 +344,7 @@ application secretKey dbConnString redisConfig s pending = do
   case eUsername of
     Right u@(Username clientUsername) -> do
       (incomingMailbox, outgoingMailbox) <- websocketInMailbox $ msgConf conn u
-      let client = Client {..}
+      let client = Client { .. }
       sendMsg conn AuthSuccess
       let isReconnect = client `elem` clients -- if client already on our list of clients then this is a reconnect
       --when isReconnect $ do

@@ -14,9 +14,13 @@ description: A Poker Server Built With Haskell
 
 dependencies:
   - base >= 4.12 && < 5
+  - adjunctions
+  - distributive
   - async
   - aeson
   - bytestring
+  - comonad
+  - free
   - hedis
   - ekg
   - containers

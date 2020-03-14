@@ -25,7 +25,7 @@ import           Poker.Game.Utils
 import           Poker.Types
 
 -- | Returns both the dealt players and remaining cards left in deck.
--- We return the new deck for the purposes of dealing the board cards 
+-- We return the new deck for the purposes of dealing the board cards
 -- over the remaining course of the hand.
 dealToPlayers :: Deck -> [Player] -> (Deck, [Player])
 dealToPlayers = mapAccumR
@@ -85,10 +85,10 @@ progressToPreFlop game@Game {..} =
     . (players %~ (<$>) (actedThisTurn .~ False))
     . deal
     . updatePlayersInHand
-    where
-      firstPosToAct 
-        | countActive _players == 2 = pure _dealer -- When heads up dealer goes first
-        | otherwise = nextPosToAct game
+ where
+  firstPosToAct | countActive _players == 2 = pure _dealer
+                | -- When heads up dealer goes first
+                  otherwise                 = nextPosToAct game
 
 
 progressToFlop :: Game -> Game
@@ -198,21 +198,25 @@ getNextHand Game {..} shuffledDeck = Game
   , ..
   }
  where
-  incAmount = 1
-  newDealer = modInc incAmount _dealer (length (getPlayersSatIn _players) - 1)
+  incAmount   = 1
+  newDealer   = modInc incAmount _dealer (length (getPlayersSatIn _players) - 1)
   freeSeatsNo = _maxPlayers - length _players
-  newPlayers = filterSatOutPlayers $ filterPlayersWithLtChips _bigBlind $ resetPlayerCardsAndBets <$> _players
-  newWaitlist = drop freeSeatsNo _waitlist
+  newPlayers =
+    filterSatOutPlayers
+      $   filterPlayersWithLtChips _bigBlind
+      $   resetPlayerCardsAndBets
+      <$> _players
+  newWaitlist     = drop freeSeatsNo _waitlist
   nextPlayerToAct = modInc incAmount newDealer (length newPlayers - 1)
 
 -- | If all players have acted and their bets are equal 
 -- to the max bet then we can move to the next stage
 haveAllPlayersActed :: Game -> Bool
 haveAllPlayersActed g@Game {..}
-  | _street == Showdown = True
+  | _street == Showdown      = True
   | length activePlayers < 2 = True
-  | _street == PreDeal = haveRequiredBlindsBeenPosted g
-  | otherwise = not (awaitingPlayerAction g)
+  | _street == PreDeal       = haveRequiredBlindsBeenPosted g
+  | otherwise                = not (awaitingPlayerAction g)
   where activePlayers = getActivePlayers _players
 
 awaitingPlayerAction :: Game -> Bool
@@ -280,14 +284,14 @@ allButOneFolded game@Game {..} =
   where playersInHand = filter ((== In) . (^. playerState)) _players
 
 initPlayer :: Text -> Int -> Player
-initPlayer playerName chips = Player { _pockets       = Nothing
-                                     , _bet           = 0
-                                     , _playerState   = In
-                                     , _playerName    = playerName
+initPlayer playerName chips = Player { _pockets         = Nothing
+                                     , _bet             = 0
+                                     , _playerState     = In
+                                     , _playerName      = playerName
                                      , _possibleActions = []
-                                     , _committed     = 0
-                                     , _actedThisTurn = False
-                                     , _chips         = chips
+                                     , _committed       = 0
+                                     , _actedThisTurn   = False
+                                     , _chips           = chips
                                      }
 
 -- During PreDeal we start timing out players who do not post their respective blinds
@@ -319,17 +323,22 @@ doesPlayerHaveToAct playerName game@Game {..}
     else case _players Safe.!! (fromJust _currentPosToAct) of
       Nothing -> False
       Just Player {..}
-        | _chips == 0 -> False
-        | _street == Showdown
+        | _chips == 0
+        -> False
+        | _street
+          == Showdown
           || (activePlayerCount < 2)
           || haveAllPlayersActed game
-          || _playerState /= In
+          || _playerState
+          /= In
           || (_street == PreDeal && _maxBet == 0)
-             -> False
-        | _street == PreDeal -> _playerName == playerName
-          && (blindRequiredByPlayer game playerName /= NoBlind) 
-          
-        | otherwise -> _playerName == playerName
+        -> False
+        | _street == PreDeal
+        -> _playerName
+          == playerName
+          && (blindRequiredByPlayer game playerName /= NoBlind)
+        | otherwise
+        -> _playerName == playerName
  where
   activePlayerCount =
     length $ filter (\Player {..} -> _playerState == In) _players
@@ -399,9 +408,8 @@ everyoneAllIn :: Game -> Bool
 everyoneAllIn = (== 0) . countPlayersNotAllIn
 
 countPlayersNotAllIn :: Game -> Int
-countPlayersNotAllIn game@Game {..} 
-  | numPlayersIn < 2 = 0
-  | otherwise = numPlayersIn - numPlayersAllIn
+countPlayersNotAllIn game@Game {..} | numPlayersIn < 2 = 0
+                                    | otherwise = numPlayersIn - numPlayersAllIn
  where
   numPlayersIn = length $ getActivePlayers _players
   numPlayersAllIn =

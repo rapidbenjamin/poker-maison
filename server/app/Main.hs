@@ -3,12 +3,12 @@
 module Main where
 
 import           Control.Concurrent.Async
+import qualified Data.ByteString.Lazy          as BL
+import           Data.Text.Encoding            as TSE
 import           Database.Redis                 ( defaultConnectInfo )
 import           Network.Wai.Handler.Warp
 import           Prelude
 import qualified System.Remote.Monitoring      as EKG
-import           Data.Text.Encoding            as TSE
-import qualified Data.ByteString.Lazy          as BL
 
 import qualified Data.ByteString.Lazy.Char8    as C
 
@@ -17,9 +17,9 @@ import           Database
 import           Env
 import           Socket
 
+import           Crypto.JWT
 import           Data.Proxy
 import           Types
-import           Crypto.JWT
 
 main :: IO ((), ())
 main = do
@@ -33,7 +33,7 @@ main = do
   let runSocketAPI =
         runSocketServer secretKey socketAPIPort dbConnString redisConfig
       app'     = app secretKey dbConnString redisConfig
-      settings = setPort userAPIPort (setHost "0.0.0.0" $ defaultSettings)
+      settings = setPort userAPIPort (setHost "0.0.0.0" defaultSettings)
 
   migrateDB dbConnString
   ekg <- runMonitoringServer
@@ -46,3 +46,4 @@ main = do
   defaultMonitoringServerPort    = 9999
   runMonitoringServer =
     EKG.forkServer defaultMonitoringServerAddress defaultMonitoringServerPort
+
