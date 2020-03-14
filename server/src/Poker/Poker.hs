@@ -151,13 +151,13 @@ updatePlayersPossibleActions g@Game {..} = Game
  where
   updatedPlayers =
     (\Player {..} ->
-        Player { _possibleActions = (getValidPlayerActions g _playerName), .. }
+        Player { _possibleActions = getValidPlayerActions g _playerName, .. }
       )
       <$> _players
 
 getAllValidPlayerActions :: Game -> [[Action]]
 getAllValidPlayerActions g@Game {..} =
-  (getValidPlayerActions g) . _playerName <$> _players
+  getValidPlayerActions g . _playerName <$> _players
 
 getValidPlayerActions :: Game -> PlayerName -> [Action]
 getValidPlayerActions g@Game {..} name

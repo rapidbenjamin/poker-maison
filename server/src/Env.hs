@@ -23,6 +23,7 @@ import           Types
 import           Web.JWT                        ( secret )
 import           Data.ByteString.UTF8          as BSU
 
+
 getRedisHostFromEnv :: String -> IO ConnectInfo
 getRedisHostFromEnv defaultHostName = do
   maybeConnInfo <- lookupEnv "redisHost"
@@ -63,7 +64,7 @@ getSocketAPIPort defaultPort = do
     Nothing   -> return defaultPort
     Just port -> maybe (return defaultPort) return (readMaybe port)
 
-    
+
 -- get the secret key for signing JWT authentication tokens
 getSecretKey = do
   maybeSecretKey <- lookupEnv "secret"

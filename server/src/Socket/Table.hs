@@ -19,68 +19,31 @@ import           Types
 
 import           Control.Lens            hiding ( Fold )
 import           Poker.Types             hiding ( LeaveSeat )
---import           Data.Traversable
 
-
-import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Lazy.Char8    as C
-import           Data.Text                      ( Text )
-import qualified Data.Text                     as T
-import qualified Data.Text.Lazy                as X
-import qualified Data.Text.Lazy.Encoding       as D
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import           Control.Monad.STM
---import           Control.Monad.State.Lazy hiding (evalStateT)
-import qualified Data.ByteString.Lazy          as BL
 
-import           Socket.Types
-import qualified Data.List                     as L
 
 import           System.Random
-import           Data.Map.Lazy                  ( Map )
 import qualified Data.Map.Lazy                 as M
 
-import           Poker.ActionValidation
 import           Poker.Game.Blinds
-import           Data.Either
-import           System.Timeout
 import           Poker.Game.Game
 import           Poker.Types                    ( Player )
 import           Data.Maybe
 import           Poker.Game.Utils
---import           Socket
 import           Socket.Types
 import           Socket.Utils
 import           System.Random
-
+import           Poker.Poker
 import           Data.ByteString.UTF8           ( fromString )
 
 import           Database
 import           Schema
-import qualified Data.List.Safe                as Safe
-
-import           Poker.Poker
-import           Crypto.JWT
-import qualified Data.Aeson                    as A
-
-import           Data.ByteString.Lazy           ( fromStrict
-                                                , toStrict
-                                                )
-
-import           Data.Aeson                     ( FromJSON
-                                                , ToJSON
-                                                )
-import           Poker.Types
-
-import           Control.Monad
-import           Control.Exception
-import qualified GHC.IO.Exception              as G
-
-import qualified Network.WebSockets            as WS
 
 import           Pipes.Aeson
-import           Pipes hiding (next)
+import           Pipes                   hiding ( next )
 import           Pipes.Core                     ( push )
 import           Pipes.Concurrent
 import           Pipes.Parse             hiding ( decode
@@ -89,7 +52,6 @@ import           Pipes.Parse             hiding ( decode
                                                 )
 import qualified Pipes.Prelude                 as P
 import           Poker.Game.Privacy
-import           Socket.Clients
 
 
 
@@ -137,47 +99,35 @@ gamePipeline connStr s key tableName outMailbox inMailbox = do
 
 
 -- Delay to enhance UX based on game stages
-timePlayer ::  TVar ServerState -> TableName -> Pipe Game Game IO ()
+timePlayer :: TVar ServerState -> TableName -> Pipe Game Game IO ()
 timePlayer s tableName = do
-  g <- await
-  liftIO $ forM_ (currPlayerNameToAct g) $ runPlayerTimer s tableName g
+  g@Game {..} <- await
+  let currPlyrToAct = ((!!) (getGamePlayerNames g)) <$> _currentPosToAct
+  liftIO $ forM_ currPlyrToAct $ runPlayerTimer s tableName g
   yield g
-  where
-    currPlayerNameToAct g@Game{..} = 
-        ((!!) (getGamePlayerNames g)) <$> _currentPosToAct
+ where
 
------------------------------------
--- VERSION 2 OF TIMEOUTS  - v1 is in timeaction file---------
 
--- this version is better than version one because now
--- each client thread isn't watching to see if there is a 
---need to time their respective player
---
--- Instead, there is just one centralised game watcher which just uses
--- the game state when the timer starts and compares it with 
--- the game state when the timer ends.
--- if the is the same then the game state hasn't changed
--- which means the player we are timing hasnt acted.
-
--- If this is the case then we can deliver a timeout action
+-- We watch incoming game states. We compare the initial gamestates
+-- with the game state when the timer ends.
+-- If the state is still the same then we timeout the player to act
 -- to force the progression of the game.
-runPlayerTimer :: TVar ServerState -> TableName -> Game -> PlayerName -> IO (Async ())
-runPlayerTimer s tableName gameWhenTimerStarts plyrName = 
-  async $ do 
-    threadDelay (3 * 1000000) -- 30 seconds
-    mbTable <- atomically $ getTable s tableName
-    case mbTable of 
-      Nothing -> return ()
-      Just Table{..} -> do 
-        let
-          gameHasNotProgressed = gameWhenTimerStarts == game
-          playerStillHasToAct = doesPlayerHaveToAct plyrName game
-        when (gameHasNotProgressed && playerStillHasToAct) $
-           case runPlayerAction game timeoutAction of
-              Left err -> print err
-              Right progressedGame -> 
-                runEffect $ yield progressedGame >-> toOutput gameInMailbox  
-  where timeoutAction = PlayerAction {name = plyrName, action = Timeout }
+runPlayerTimer
+  :: TVar ServerState -> TableName -> Game -> PlayerName -> IO (Async ())
+runPlayerTimer s tableName gameWhenTimerStarts plyrName = async $ do
+  threadDelay (3 * 1000000) -- 30 seconds
+  mbTable <- atomically $ getTable s tableName
+  case mbTable of
+    Nothing         -> return ()
+    Just Table {..} -> do
+      let gameHasNotProgressed = gameWhenTimerStarts == game
+          playerStillHasToAct  = doesPlayerHaveToAct plyrName game
+      when (gameHasNotProgressed && playerStillHasToAct)
+        $ case runPlayerAction game timeoutAction of
+            Left err -> print err
+            Right progressedGame ->
+              runEffect $ yield progressedGame >-> toOutput gameInMailbox
+  where timeoutAction = PlayerAction { name = plyrName, action = Timeout }
 
 
 -- Delay to enhance UX so game doesn't move through stages
@@ -187,13 +137,14 @@ nextStagePause = do
   g <- await
   when (canProgressGame g) $ liftIO $ threadDelay $ pauseDuration g
   yield g
- where 
-    pauseDuration :: Game -> Int
-    pauseDuration g@Game{..}
-      | _street == PreDeal =  250000 -- 0.25 second
-      | _street == Showdown = 4 * 1000000 -- 4 seconds
-      | countPlayersNotAllIn g <= 1 = 4 * 1000000
-      | otherwise = 1 * 1000000 -- 1 seconds
+ where
+  pauseDuration :: Game -> Int
+  pauseDuration g@Game {..} | _street == PreDeal          = 250000
+                            | -- 0.25 second
+                              _street == Showdown         = 4 * 1000000
+                            | -- 4 seconds
+                              countPlayersNotAllIn g <= 1 = 4 * 1000000
+                            | otherwise                   = 1 * 1000000 -- 1 seconds
 
 
 -- Progresses to the next state which awaits a player action.
@@ -219,7 +170,7 @@ progress inMailbox = do
  where
   progress' game = do
     gen <- liftIO getStdGen
-    liftIO $ setStdGen $ snd $ next gen 
+    liftIO $ setStdGen $ snd $ next gen
     liftIO $ print "PIPE PROGRESSING GAME"
     runEffect $ yield (progressGame gen game) >-> toOutput inMailbox
 
@@ -236,7 +187,6 @@ writeGameToDB connStr tableKey = do
 -- ensure they only get to see data they are allowed to see
 informSubscriber :: TableName -> Game -> Client -> IO ()
 informSubscriber n g Client {..} = do
- -- print "informing subscriber"
   let filteredGame = excludeOtherPlayerCards clientUsername g
   runEffect $ yield (NewGameState n filteredGame) >-> toOutput outgoingMailbox
   return ()
@@ -245,7 +195,7 @@ informSubscriber n g Client {..} = do
 -- At the moment all clients receive updates from every game indiscriminately
 broadcast :: TVar ServerState -> TableName -> Pipe Game Game IO ()
 broadcast s n = do
-  g <- await
+  g                <- await
   ServerState {..} <- liftIO $ readTVarIO s
   let usernames' = M.keys clients -- usernames to broadcast to
   liftIO $ async $ mapM_ (informSubscriber n g) clients
@@ -259,7 +209,7 @@ logGame tableName = do
 -- Lookups up a table with the given name and writes the new game state
 -- to the gameIn mailbox for propagation to observers.
 --
--- If table with tableName is not found in the serverState lobby 
+-- If table with tableName is not found in the serverState lobby
 -- then we just return () and do nothing.
 toGameInMailbox :: TVar ServerState -> TableName -> Game -> IO ()
 toGameInMailbox s name game = do
@@ -269,18 +219,10 @@ toGameInMailbox s name game = do
 
 
 -- Get a combined outgoing mailbox for a group of clients who are observing a table
--- 
--- Here we monoidally combined so we then have one mailbox 
+--
+-- Here we monoidally combined so we then have one mailbox
 -- we use to broadcast new game states to which will be sent out to each client's
 -- socket connection under the hood
--- 
--- Warning:
--- You will pay a performance price if you combine thousands of Outputs ("mailboxes")
--- (thousands of subscribers) or more.
---
--- This is because by doing so will create a very large STM transaction. You can improve performance for very large broadcasts 
--- if you sacrifice atomicity and manually combine multiple send actions in IO
--- instead of STM.
 combineOutMailboxes :: [Client] -> Consumer MsgOut IO ()
 combineOutMailboxes clients = toOutput $ foldMap outgoingMailbox clients
 
@@ -305,7 +247,8 @@ updateTable' serverStateTVar tableName newGame = do
       swapTVar serverStateTVar ServerState { lobby = updatedLobby, .. }
       return ()
 
-updateTableAndGetMailbox :: TVar ServerState -> TableName -> Game -> STM (Maybe (Output Game))
+updateTableAndGetMailbox
+  :: TVar ServerState -> TableName -> Game -> STM (Maybe (Output Game))
 updateTableAndGetMailbox serverStateTVar tableName newGame = do
   ServerState {..} <- readTVar serverStateTVar
   case M.lookup tableName $ unLobby lobby of

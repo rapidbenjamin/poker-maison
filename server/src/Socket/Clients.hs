@@ -4,19 +4,20 @@
 module Socket.Clients where
 
 
-import           Control.Concurrent hiding (each, yield)
+import           Control.Concurrent      hiding ( each
+                                                , yield
+                                                )
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
-import           Control.Concurrent.STM.TChan
 import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.Reader
-import Control.Lens hiding (each , fold)
-import Control.Lens.At
+import           Control.Lens            hiding ( each
+                                                , fold
+                                                )
+import           Control.Lens.At
 
-import           Data.Either
-import           Data.Foldable
 import           Data.Map.Lazy                  ( Map )
 import qualified Data.Map.Lazy                 as M
 import           Data.Text                      ( Text )
@@ -26,7 +27,6 @@ import           Database.Persist.Postgresql    ( ConnectionString
                                                 )
 import qualified Network.WebSockets            as WS
 import           Prelude
-import           Text.Pretty.Simple             ( pPrint )
 import qualified Data.ByteString.Lazy          as BL
 
 import qualified Data.Set                      as Set
@@ -48,13 +48,12 @@ import           Poker.Game.Privacy             ( excludeAllPlayerCards
                                                 )
 import qualified Data.ByteString.Lazy.Char8    as C
 import           Socket.Auth
-import           Pipes.Aeson
 import           Pipes
 import           Pipes.Core                     ( push )
 import           Pipes.Concurrent
-import           Pipes.Concurrent
-import Prelude
-import Poker.Game.Privacy
+import           Prelude
+import           Poker.Game.Privacy
+
 
 authClient
   :: BS.ByteString
@@ -65,21 +64,22 @@ authClient
   -> Token
   -> IO (Either Err Username)
 authClient secretKey state dbConn redisConfig conn (Token token) = do
-  authResult <- runExceptT $ liftIO $ verifyJWT secretKey
-                                                (C.pack $ T.unpack token)
+  authResult <- runExceptT $ liftIO $ verifyJWT secretKey token'
   case authResult of
     Left  err               -> return $ Left $ AuthFailed err
     Right (Left  err      ) -> return $ Left $ AuthFailed $ T.pack $ show err
     Right (Right claimsSet) -> case decodeJWT claimsSet of
       Left jwtErr -> return $ Left $ AuthFailed $ T.pack $ show jwtErr
       Right username@(Username name) -> return $ pure $ Username name
+  where token' = C.pack $ T.unpack token
 
 removeClient :: Username -> TVar ServerState -> IO ServerState
 removeClient username serverStateTVar = do
   ServerState {..} <- readTVarIO serverStateTVar
   let newClients = M.delete username clients
-  let newState   = ServerState { clients = newClients, .. }
+      newState   = ServerState { clients = newClients, .. }
   atomically $ swapTVar serverStateTVar newState
+
 
 clientExists :: Username -> Map Username Client -> Bool
 clientExists = M.member
@@ -87,6 +87,7 @@ clientExists = M.member
 
 insertClient :: Client -> Username -> Map Username Client -> Map Username Client
 insertClient client username = M.insert username client
+
 
 addClient :: TVar ServerState -> Client -> STM ServerState
 addClient s c@Client {..} = do
@@ -99,14 +100,8 @@ addClient s c@Client {..} = do
       }
     )
 
---handleNewConnection :: Map Username Clients -> Username -> Socket
---handleNewConnection cs username conn = 
---  case getClient cs username of 
---      Just Client -> 
-
-
 getClient :: Map Username Client -> Username -> Maybe Client
-getClient cs username = cs ^.at username 
+getClient cs username = cs ^. at username
 
 broadcastAllClients :: Map Username Client -> MsgOut -> IO ()
 broadcastAllClients clients msg =
@@ -149,28 +144,29 @@ filterPrivateGameData username (NewGameState tableName game) =
 filterPrivateGameData _ unfilteredMsg = unfilteredMsg
 
 getTablesUserSubscribedTo :: Client -> Lobby -> [(TableName, Table)]
-getTablesUserSubscribedTo Client{..} (Lobby lobby) = 
-  filter (subscriberIncludesClient . snd) (M.toList lobby) 
-    where
-      subscriberIncludesClient Table{..} = 
-        elem (Username clientUsername) subscribers 
+getTablesUserSubscribedTo Client {..} (Lobby lobby) = filter
+  (subscriberIncludesClient . snd)
+  (M.toList lobby)
+ where
+  subscriberIncludesClient Table {..} =
+    elem (Username clientUsername) subscribers
 
 tablesToMsgs :: Text -> [(TableName, Table)] -> [MsgOut]
-tablesToMsgs clientUsername' =  (<$>) toFilteredMsg
-  where 
-    gameToMsg (tableName, Table{..}) = NewGameState tableName game
-    toFilteredMsg = ((filterPrivateGameData clientUsername') . gameToMsg)
+tablesToMsgs clientUsername' = (<$>) toFilteredMsg
+ where
+  gameToMsg (tableName, Table {..}) = NewGameState tableName game
+  toFilteredMsg = ((filterPrivateGameData clientUsername') . gameToMsg)
 
 getSubscribedGameStates :: Client -> Lobby -> [MsgOut]
-getSubscribedGameStates c@Client{..} l = (tablesToMsgs clientUsername $ getTablesUserSubscribedTo c l)
+getSubscribedGameStates c@Client {..} l =
+  (tablesToMsgs clientUsername $ getTablesUserSubscribedTo c l)
 
 
 
----- used so that reconnected users can get up to speed on games when they regain connection
----- after a disconnect.
-updateWithLatestGames client@Client{..} lobby = do
-  async
-    $ runEffect
-    $ for (each latestGameStates) (\msg -> yield msg >-> toOutput outgoingMailbox)
-  return ()
+-- Used so that reconnected users can get up to speed on games when they regain connection
+-- after a disconnect.
+updateWithLatestGames :: Client -> Lobby -> IO ()
+updateWithLatestGames client@Client {..} lobby = void $ async $ runEffect $ for
+  (each latestGameStates)
+  (\msg -> yield msg >-> toOutput outgoingMailbox)
   where latestGameStates = getSubscribedGameStates client lobby

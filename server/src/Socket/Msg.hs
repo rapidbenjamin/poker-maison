@@ -139,9 +139,6 @@ takeSeatHandler (TakeSeat tableName chipsToSit) = do
 postTakeSeat :: MsgHandlerConfig -> TableName -> Int -> IO ()
 postTakeSeat conf@MsgHandlerConfig {..} name chipsSatWith =
   dbDepositChipsIntoPlay dbConn (unUsername username) chipsSatWith
-  --when
-  --  (username `notElem` subscribers)
-  --  (atomically $ subscribeToTable name conf)
 
 
 leaveSeatHandler :: GameMsgIn -> ReaderT MsgHandlerConfig IO (Either Err MsgOut)
