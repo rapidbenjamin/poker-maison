@@ -134,13 +134,14 @@ Set the env var so that the server has the postgresql connection string.
 Of course you will need to change the db connection parameters below to match your local database.
 
 ```bash
-export dbConnStr='host=0.0.0.0 port=5432 user=tom dbname=defaultdb password=pass'
+export dbConnStr='host=0.0.0.0 port=5432 user=tom dbname=pokerdbtest password=tom
 ```
 
 Set env variable with the secret key for generating auth tokens.
+Note that this secret must be 32 characters long or it won't work.
 
 ```bash
-export secret="your-super-secret"
+export secret="changeme077cf4e7441c32d2d0a86b4c"
 ```
 
 Lastly ensure redis-server is running in the background on default port
