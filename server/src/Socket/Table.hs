@@ -1,56 +1,50 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Socket.Table where
-import           Control.Concurrent      hiding ( yield )
+import           Control.Concurrent          hiding (yield)
 import           Control.Concurrent.Async
 import           Control.Concurrent.STM
-import qualified Data.Map.Lazy                 as M
+import qualified Data.Map.Lazy               as M
 import           Database.Persist.Postgresql
-import qualified Network.WebSockets            as WS
+import qualified Network.WebSockets          as WS
 import           Prelude
 
 import           Database.Persist
-import           Database.Persist.Postgresql    ( ConnectionString
-                                                , SqlPersistT
-                                                , runMigration
-                                                , withPostgresqlConn
-                                                )
+import           Database.Persist.Postgresql (ConnectionString, SqlPersistT,
+                                              runMigration, withPostgresqlConn)
 import           Types
 
-import           Control.Lens            hiding ( Fold )
-import           Poker.Types             hiding ( LeaveSeat )
+import           Control.Lens                hiding (Fold)
+import           Poker.Types                 hiding (LeaveSeat)
 
-import qualified Data.ByteString.Lazy.Char8    as C
 import           Control.Monad.Except
 import           Control.Monad.Reader
+import qualified Data.ByteString.Lazy.Char8  as C
 
 
+import qualified Data.Map.Lazy               as M
 import           System.Random
-import qualified Data.Map.Lazy                 as M
 
+import           Data.ByteString.UTF8        (fromString)
+import           Data.Maybe
 import           Poker.Game.Blinds
 import           Poker.Game.Game
-import           Poker.Types                    ( Player )
-import           Data.Maybe
 import           Poker.Game.Utils
+import           Poker.Poker
+import           Poker.Types                 (Player)
 import           Socket.Types
 import           Socket.Utils
 import           System.Random
-import           Poker.Poker
-import           Data.ByteString.UTF8           ( fromString )
 
 import           Database
 import           Schema
 
+import           Pipes                       hiding (next)
 import           Pipes.Aeson
-import           Pipes                   hiding ( next )
-import           Pipes.Core                     ( push )
 import           Pipes.Concurrent
-import           Pipes.Parse             hiding ( decode
-                                                , encode
-                                                , next
-                                                )
-import qualified Pipes.Prelude                 as P
+import           Pipes.Core                  (push)
+import           Pipes.Parse                 hiding (decode, encode, next)
+import qualified Pipes.Prelude               as P
 import           Poker.Game.Privacy
 
 
@@ -74,7 +68,7 @@ setUpTablePipes connStr s name Table {..} = do
 -- incoming mailbox for new game states.
 --
 -- New game states are send to the table's incoming mailbox every time a player acts
--- in a way that follows the game rules 
+-- in a way that follows the game rules
 --
 -- Delays with "pause" at the end of each game stage (Flop, River etc) for UX
 -- are done client side.
@@ -115,7 +109,7 @@ timePlayer s tableName = do
 runPlayerTimer
   :: TVar ServerState -> TableName -> Game -> PlayerName -> IO (Async ())
 runPlayerTimer s tableName gameWhenTimerStarts plyrName = async $ do
-  threadDelay (3 * 1000000) -- 30 seconds
+  threadDelay (3 * 10000000) -- 30 seconds
   mbTable <- atomically $ getTable s tableName
   case mbTable of
     Nothing         -> return ()
@@ -139,27 +133,27 @@ nextStagePause = do
   yield g
  where
   pauseDuration :: Game -> Int
-  pauseDuration g@Game {..} | _street == PreDeal          = 250000
-                            | -- 0.25 second
-                              _street == Showdown         = 4 * 1000000
+  pauseDuration g@Game {..} | _street == PreDeal          = 0
+                            |
+                              _street == Showdown         = 5 * 1000000
                             | -- 4 seconds
-                              countPlayersNotAllIn g <= 1 = 4 * 1000000
-                            | otherwise                   = 1 * 1000000 -- 1 seconds
+                              countPlayersNotAllIn g <= 1 = 5 * 1000000 -- everyone all in
+                            | otherwise                   = 2 * 1000000 -- 1 seconds
 
 
 -- Progresses to the next state which awaits a player action.
 --
---- If the next game state is one where no player action is possible 
+--- If the next game state is one where no player action is possible
 --  then we need to recursively progress the game.
 
 --  These such states are:
 --
 --  1. everyone is all in.
---  1. All but one player has folded or the game. 
+--  1. All but one player has folded or the game.
 --  3. Game is in the Showdown stage.
 --
--- After each progression the new game state is sent to the table 
--- mailbox. This sends the new game state through the pipeline that 
+-- After each progression the new game state is sent to the table
+-- mailbox. This sends the new game state through the pipeline that
 -- the previous game state just went through.
 progress :: Output Game -> Consumer Game IO ()
 progress inMailbox = do
